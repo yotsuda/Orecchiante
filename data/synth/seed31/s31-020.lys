@@ -1,0 +1,31 @@
+// s31-020: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s31-020"
+tempo 4 = 154
+time 4/4
+key f major
+octave absolute
+
+part lead { clef treble  midiInstrument "vibraphone" }
+part comp { clef treble  midiInstrument "acoustic grand" }
+part bass { instrument bass  midiInstrument "electric bass (pick)" }
+
+section A {
+  chords harmony { F | Am F7 | Bb | C | F E7 | Am7 | Dm | Bb C7 | }
+  lead { r1 | r1 | f''4@mf e''4 d''2 | c''1 | r1 | c''2 c''2 | a'4 g'4 d''2 | d''2 c''2 | }
+  comp { tempo 4 = 153 <a c' f'>4@f <a c' f'>4 <a c' f'>4 <a c' f'>4 | tempo 4 = 154 <a c' e'>4 <a c' e'>4 <a c' ees' f'>4 <a c' ees' f'>4 | tempo 4 = 156 <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 | tempo 4 = 155 <g c' e'>4 <g c' e'>4 <g c' e'>4 <g c' e'>4 | tempo 4 = 153 <a c' f'>4 <a c' f'>4 <aes b d' e'>4 <aes b d' e'>4 | tempo 4 = 152 <g a c' e'>4 <g a c' e'>4 <g a c' e'>4 <g a c' e'>4 | tempo 4 = 152 <a d' f'>4 <a d' f'>4 <a d' f'>4 <a d' f'>4 | tempo 4 = 151 <bes d' f'>4 <bes d' f'>4 <g bes c' e'>4 <g bes c' e'>4 | }
+  bass { f,8@mp f,8 f,8 f,8 f,8 f,8 f,8 f,8 | a,8 a,8 a,8 a,8 f,8 f,8 f,8 f,8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | c8 c8 c8 c8 c8 c8 c8 c8 | f,8 f,8 f,8 f,8 e,8 e,8 e,8 e,8 | a,8 a,8 a,8 a,8 a,8 a,8 a,8 a,8 | d8 d8 d8 d8 d8 d8 d8 d8 | bes,8 bes,8 bes,8 bes,8 c8 c8 c8 c8 | }
+}
+
+section B {
+  chords harmony { Bb | Fmaj7 | C A7 | Dm | Bb | F | Csus4 | Dm F7 | }
+  lead { bes'2@mf bes'2 | a'8 g'8 g'4 a'4 c''4 | e''8 c''8 bes'4 a'4 bes'4 | r1 | d''2 d''2 | r1 | f''4. e''8 d''4 e''4 | d''4 c''4 c''2 | }
+  comp { tempo 4 = 157 <bes d' f'>4@f <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 | tempo 4 = 157 <a c' e' f'>4 <a c' e' f'>4 <a c' e' f'>4 <a c' e' f'>4 | tempo 4 = 159 <g c' e'>4 <g c' e'>4 <g a des' e'>4 <g a des' e'>4 | tempo 4 = 161 <a d' f'>4 <a d' f'>4 <a d' f'>4 <a d' f'>4 | tempo 4 = 161 <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 | tempo 4 = 163 <a c' f'>4 <a c' f'>4 <a c' f'>4 <a c' f'>4 | tempo 4 = 161 <g c' f'>4 <g c' f'>4 <g c' f'>4 <g c' f'>4 | tempo 4 = 160 <a d' f'>4 <a d' f'>4 <a c' ees' f'>4 <a c' ees' f'>4 | }
+  bass { bes,4@mp f,4 bes,4 f,4 | f,4 c4 f,4 c4 | c4 g,4 a,4 e,4 | d4 a,4 d4 a,4 | bes,4 f,4 bes,4 f,4 | f,4 c4 f,4 c4 | c4 g,4 c4 g,4 | d4 a,4 f,4 c4 | }
+}
+
+form { A A B }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass }

@@ -1,0 +1,39 @@
+// s31-019: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s31-019"
+tempo 4 = 88
+time 4/4
+key c minor
+octave absolute
+
+part lead { clef treble  midiInstrument "violin" }
+part comp { clef treble  midiInstrument "drawbar organ" }
+part bass { instrument bass  midiInstrument "acoustic bass" }
+part kit { clef percussion }
+
+phrase hats { hh4 hh hh hh | }
+phrase back { r2 sn4 r | }
+phrase kick { bd4 r r8 bd r4 | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Ddim | G7 G7 | Cm | Cm | Cm | Gm | Abmaj7 | Bb | }
+  lead { d''4@mp c''4 d''2 | d''4. bes'8 b'4 aes'4 | c''2 aes'4 g'4 | g'4. g'8 bes'4 d''4 | c''4 d''4 ees''4 g''4 | bes''4 c'''4 aes''4 g''4 | g''1 | bes''4 c'''4 c'''4 bes''4 | }
+  comp { tempo 4 = 88 <aes d' f'>1@f | tempo 4 = 88 <g b d' f'>2 <g b d' f'>2 | tempo 4 = 89 <g c' ees'>1 | tempo 4 = 90 <g c' ees'>1 | tempo 4 = 89 <g c' ees'>1 | tempo 4 = 90 <g bes d'>1 | tempo 4 = 90 <g aes c' ees'>1 | tempo 4 = 90 <bes d' f'>1 | }
+  bass { d4@p aes,4 d4 aes,4 | g,4 d4 g,4 d4 | c4 g,4 c4 g,4 | c4 g,4 c4 g,4 | c4 g,4 c4 g,4 | g,4 d4 g,4 d4 | aes,4 ees4 aes,4 ees4 | bes,4 f,4 bes,4 f,4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { Fm | Bb | Ebmaj7 Eb7 | Abmaj7 | Cm | Gm | Ab | Bb C7 | }
+  lead { aes''8@mp bes''8 aes''4 f''4 ees''4 | f''4. aes''8 bes''4 aes''4 | g''1 | g''4. f''8 g''4 aes''4 | g''4 f''4 ees''2 | d''8 ees''8 g''4 aes''4 bes''4 | r1 | bes''8 c'''8 c'''4 c'''4 c'''4 | }
+  comp { tempo 4 = 87 <aes c' f'>1@f | tempo 4 = 86 <bes d' f'>1 | tempo 4 = 85 <g bes d' ees'>2 <g bes des' ees'>2 | tempo 4 = 84 <g aes c' ees'>1 | tempo 4 = 83 <g c' ees'>1 | tempo 4 = 83 <g bes d'>1 | tempo 4 = 84 <aes c' ees'>1 | tempo 4 = 85 <bes d' f'>2 <g bes c' e'>2 | }
+  bass { f,8@p f,8 f,8 f,8 f,8 f,8 f,8 f,8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | ees8 ees8 ees8 ees8 ees8 ees8 ees8 ees8 | aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 | c8 c8 c8 c8 c8 c8 c8 c8 | g,8 g,8 g,8 g,8 g,8 g,8 g,8 g,8 | aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 | bes,8 bes,8 bes,8 bes,8 c8 c8 c8 c8 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A A B }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass  staff kit }

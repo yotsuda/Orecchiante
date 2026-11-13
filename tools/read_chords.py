@@ -40,7 +40,7 @@ BASS_WEIGHT = 0.3       # how much the bass at the start of a bar (or its half) 
 # Measured 2026-11-14: 31 and 9 read alike, and the recording as it is reads worse (the drums).
 HARMONIC_FRAMES = 31
 BEAT_LAG = 2.0          # frames by which the onset strength peaks after the sound begins
-TIGHTNESS = 300         # how strictly the beat tracker keeps its tempo (librosa's own value is 100)
+TIGHTNESS = 100         # how strictly the beat tracker keeps its tempo (librosa's own value is 100)
 TEMPO_RATIOS = (2 / 3, 3 / 2)   # the other beats tried: half as fast again, and a third slower
 SLIDE = 0.07            # a beat this much longer or shorter than the rest is the tracker changing its mind
 SLASH_RATIO = 2.0       # a bass note that is not the root has to be this much louder than it

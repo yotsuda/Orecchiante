@@ -1,0 +1,39 @@
+// s31-012: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s31-012"
+tempo 4 = 103
+time 4/4
+key ees major
+octave absolute
+
+part lead { clef treble  midiInstrument "clarinet" }
+part comp { clef treble  midiInstrument "electric guitar (clean)" }
+part bass { instrument bass  midiInstrument "fretless bass" }
+part kit { clef percussion }
+
+phrase hats { hh4 hh hh hh | }
+phrase back { r2 sn4 r | }
+phrase kick { bd4 r r8 bd r4 | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Ebmaj7 | Gm | Cm | Ab | Eb D7 | Gm | Cm | Ab | }
+  lead { d''1@mf | d''8 bes'8 aes'4 c''4 ees''4 | c''2 ees''2 | ees''2 f''4 ees''4 | ees''4 d''4 c''2 | bes'2 c''4 d''4 | r1 | c''8 bes'8 g'4 g'4 g'4 | }
+  comp { tempo 4 = 102 <g bes d' ees'>1@fff | tempo 4 = 102 <g bes d'>1 | tempo 4 = 100 <g c' ees'>1 | tempo 4 = 101 <aes c' ees'>1 | tempo 4 = 103 <g bes ees'>2 <a c' d' ges'>2 | tempo 4 = 103 <g bes d'>1 | tempo 4 = 103 <g c' ees'>1 | tempo 4 = 103 <aes c' ees'>1 | }
+  bass { ees8@mp ees8 ees8 ees8 ees8 ees8 ees8 ees8 | g,8 g,8 g,8 g,8 g,8 g,8 g,8 g,8 | c8 c8 c8 c8 c8 c8 c8 c8 | aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 | ees8 ees8 ees8 ees8 d8 d8 d8 d8 | g,8 g,8 g,8 g,8 g,8 g,8 g,8 g,8 | c8 c8 c8 c8 c8 c8 c8 c8 | aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { Ebmaj7 | Cm7 | Ab | Bb7 | Eb | Cm | Ab | Bb | }
+  lead { r1 | bes'4@mf c''4 bes'2 | r1 | aes'2 aes'2 | bes'4. g'8 aes'4 g'4 | c''2 ees''2 | ees''4 f''4 aes''2 | f''4 g''4 aes''4 bes''4 | }
+  comp { tempo 4 = 103 r8 <g bes d' ees'>8@fff r8 <g bes d' ees'>8 r8 <g bes d' ees'>8 r8 <g bes d' ees'>8 | tempo 4 = 102 r8 <g bes c' ees'>8 r8 <g bes c' ees'>8 r8 <g bes c' ees'>8 r8 <g bes c' ees'>8 | tempo 4 = 102 r8 <aes c' ees'>8 r8 <aes c' ees'>8 r8 <aes c' ees'>8 r8 <aes c' ees'>8 | tempo 4 = 104 r8 <aes bes d' f'>8 r8 <aes bes d' f'>8 r8 <aes bes d' f'>8 r8 <aes bes d' f'>8 | tempo 4 = 103 r8 <g bes ees'>8 r8 <g bes ees'>8 r8 <g bes ees'>8 r8 <g bes ees'>8 | tempo 4 = 104 r8 <g c' ees'>8 r8 <g c' ees'>8 r8 <g c' ees'>8 r8 <g c' ees'>8 | tempo 4 = 103 r8 <aes c' ees'>8 r8 <aes c' ees'>8 r8 <aes c' ees'>8 r8 <aes c' ees'>8 | tempo 4 = 103 r8 <bes d' f'>8 r8 <bes d' f'>8 r8 <bes d' f'>8 r8 <bes d' f'>8 | }
+  bass { ees4@mp bes,4 ees4 bes,4 | c4 g,4 c4 g,4 | aes,4 ees4 aes,4 ees4 | bes,4 f,4 bes,4 f,4 | ees4 bes,4 ees4 bes,4 | c4 g,4 c4 g,4 | aes,4 ees4 aes,4 ees4 | bes,4 f,4 bes,4 f,4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A A B }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass  staff kit }

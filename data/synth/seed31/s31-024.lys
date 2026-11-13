@@ -1,0 +1,47 @@
+// s31-024: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s31-024"
+tempo 4 = 160
+time 4/4
+key des major
+octave absolute
+
+part lead { clef treble  midiInstrument "violin" }
+part comp { clef treble  midiInstrument "acoustic grand" }
+part bass { instrument bass  midiInstrument "fretless bass" }
+part kit { clef percussion }
+
+phrase hats { hh4 hh hh hh | }
+phrase back { r2 sn4 r | }
+phrase kick { bd4 r r8 bd r4 | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Gb/Db | Absus4 | Fm | Bbm | Bbm | Ebm | Ab | Db | }
+  lead { ges''1@mf | r1 | f''4 ges''4 f''4 ees''4 | f''2 des''2 | des''1 | bes'4. aes'8 aes'4 bes'4 | c''4 aes'4 c''2 | des''4. c''8 aes'4 c''4 | }
+  comp { tempo 4 = 162 r8 <bes des' ges'>8@fff r8 <bes des' ges'>8 r8 <bes des' ges'>8 r8 <bes des' ges'>8 | tempo 4 = 162 r8 <aes des' ees'>8 r8 <aes des' ees'>8 r8 <aes des' ees'>8 r8 <aes des' ees'>8 | tempo 4 = 163 r8 <aes c' f'>8 r8 <aes c' f'>8 r8 <aes c' f'>8 r8 <aes c' f'>8 | tempo 4 = 161 r8 <bes des' f'>8 r8 <bes des' f'>8 r8 <bes des' f'>8 r8 <bes des' f'>8 | tempo 4 = 162 r8 <bes des' f'>8 r8 <bes des' f'>8 r8 <bes des' f'>8 r8 <bes des' f'>8 | tempo 4 = 163 r8 <bes ees' ges'>8 r8 <bes ees' ges'>8 r8 <bes ees' ges'>8 r8 <bes ees' ges'>8 | tempo 4 = 164 r8 <aes c' ees'>8 r8 <aes c' ees'>8 r8 <aes c' ees'>8 r8 <aes c' ees'>8 | tempo 4 = 162 r8 <aes des' f'>8 r8 <aes des' f'>8 r8 <aes des' f'>8 r8 <aes des' f'>8 | }
+  bass { des1@mp | aes,1 | f,1 | bes,1 | bes,1 | ees1 | aes,1 | des1 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { Db | Gb | Ab | Gb | Db | Gb | Ab | Gb | }
+  lead { r1 | bes'8@mf aes'8 aes'4 aes'4 bes'4 | aes'4. c''8 bes'4 aes'4 | bes'4. c''8 des''4 c''4 | r1 | bes'2 aes'4 bes'4 | c''8 des''8 ees''4 f''4 ees''4 | des''8 ees''8 f''4 ges''4 f''4 | }
+  comp { tempo 4 = 160 <aes des' f'>1@fff | tempo 4 = 157 <bes des' ges'>1 | tempo 4 = 155 <aes c' ees'>1 | tempo 4 = 154 <bes des' ges'>1 | tempo 4 = 157 <aes des' f'>1 | tempo 4 = 157 <bes des' ges'>1 | tempo 4 = 160 <aes c' ees'>1 | tempo 4 = 157 <bes des' ges'>1 | }
+  bass { des4@mp aes,4 des4 aes,4 | ges,4 des4 ges,4 des4 | aes,4 ees4 aes,4 ees4 | ges,4 des4 ges,4 des4 | des4 aes,4 des4 aes,4 | ges,4 des4 ges,4 des4 | aes,4 ees4 aes,4 ees4 | ges,4 des4 ges,4 des4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section C {
+  chords harmony { Db | Gb | Ab | Gb | Gb | Db | Absus4 | Bbm | }
+  lead { aes''4.@mf c'''8 aes''4 c'''4 | ges''2 ges''2 | aes''1 | ges''4 aes''4 bes''2 | bes''4 aes''4 c'''4 c'''4 | f''1 | ees''1 | des''2 c''4 bes'4 | }
+  comp { tempo 4 = 159 <aes des' f'>1@fff | tempo 4 = 161 <bes des' ges'>1 | tempo 4 = 159 <aes c' ees'>1 | tempo 4 = 158 <bes des' ges'>1 | tempo 4 = 159 <bes des' ges'>1 | tempo 4 = 162 <aes des' f'>1 | tempo 4 = 165 <aes des' ees'>1 | tempo 4 = 163 <bes des' f'>1 | }
+  bass { des1@mp | ges,1 | aes,1 | ges,1 | ges,1 | des1 | aes,1 | bes,1 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A B A C A }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass  staff kit }

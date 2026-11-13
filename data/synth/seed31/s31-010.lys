@@ -1,0 +1,43 @@
+// s31-010: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s31-010"
+tempo 4 = 95
+time 4/4
+key fis major
+octave absolute
+
+part comp { clef treble  midiInstrument "overdriven guitar" }
+part bass { instrument bass  midiInstrument "acoustic bass" }
+part kit { clef percussion }
+
+phrase hats { hh8 8 8 8 8 8 8 8 | }
+phrase back { r4 sn r sn | }
+phrase kick { bd4 r8 bd bd4 r | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { F# | E | B | F# | F# | B | Bm | F# | }
+  comp { tempo 4 = 96 <ais cis' fis'>1@f | tempo 4 = 96 <gis b e'>1 | tempo 4 = 96 <b dis' fis'>1 | tempo 4 = 97 <ais cis' fis'>1 | tempo 4 = 96 <ais cis' fis'>1 | tempo 4 = 97 <b dis' fis'>1 | tempo 4 = 96 <b d' fis'>1 | tempo 4 = 95 <ais cis' fis'>1 | }
+  bass { fis,1@p | e,1 | b,1 | fis,1 | fis,1 | b,1 | b,1 | fis,1 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { F# | B | C# | B | F# | A#m | D#m | B | }
+  comp { tempo 4 = 95 r8 <ais cis' fis'>8@f r8 <ais cis' fis'>8 r8 <ais cis' fis'>8 r8 <ais cis' fis'>8 | tempo 4 = 96 r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 | tempo 4 = 96 r8 <gis cis' f'>8 r8 <gis cis' f'>8 r8 <gis cis' f'>8 r8 <gis cis' f'>8 | tempo 4 = 96 r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 | tempo 4 = 94 r8 <ais cis' fis'>8 r8 <ais cis' fis'>8 r8 <ais cis' fis'>8 r8 <ais cis' fis'>8 | tempo 4 = 95 r8 <ais cis' f'>8 r8 <ais cis' f'>8 r8 <ais cis' f'>8 r8 <ais cis' f'>8 | tempo 4 = 94 r8 <ais dis' fis'>8 r8 <ais dis' fis'>8 r8 <ais dis' fis'>8 r8 <ais dis' fis'>8 | tempo 4 = 93 r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 | }
+  bass { fis,1@p | b,1 | cis1 | b,1 | fis,1 | ais,1 | dis1 | b,1 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section C {
+  chords harmony { B | C# | A#m | D#m/A# | F# | E | B | F# | }
+  comp { tempo 4 = 94 <b dis' fis'>1@f | tempo 4 = 92 <gis cis' f'>1 | tempo 4 = 92 <ais cis' f'>1 | tempo 4 = 93 <ais dis' fis'>1 | tempo 4 = 93 <ais cis' fis'>1 | tempo 4 = 93 <gis b e'>1 | tempo 4 = 95 <b dis' fis'>1 | tempo 4 = 96 <ais cis' fis'>1 | }
+  bass { b,1@p | cis1 | ais,1 | ais,1 | fis,1 | e,1 | b,1 | fis,1 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A B A C A }
+
+score { chords harmony }
+
+score band { staff comp  staff bass  staff kit }

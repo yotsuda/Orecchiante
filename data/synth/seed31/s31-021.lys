@@ -1,0 +1,47 @@
+// s31-021: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s31-021"
+tempo 4 = 147
+time 4/4
+key b minor
+octave absolute
+
+part lead { clef treble  midiInstrument "clarinet" }
+part comp { clef treble  midiInstrument "electric piano 1" }
+part bass { instrument bass  midiInstrument "electric bass (pick)" }
+part kit { clef percussion }
+
+phrase hats { hh4 hh hh hh | }
+phrase back { r2 sn4 r | }
+phrase kick { bd4 r r8 bd r4 | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Bm | G | D | A | Bm/D | G | D E7 | A | }
+  lead { r1 | d''1@mf | fis''2 a''2 | a''4 g''4 fis''4 a''4 | r1 | g''4 a''4 g''2 | r1 | e''2 cis''4 a'4 | }
+  comp { tempo 4 = 146 r8 <b d' fis'>8@fff r8 <b d' fis'>8 r8 <b d' fis'>8 r8 <b d' fis'>8 | tempo 4 = 147 r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 | tempo 4 = 144 r8 <a d' fis'>8 r8 <a d' fis'>8 r8 <a d' fis'>8 r8 <a d' fis'>8 | tempo 4 = 144 r8 <a cis' e'>8 r8 <a cis' e'>8 r8 <a cis' e'>8 r8 <a cis' e'>8 | tempo 4 = 142 r8 <b d' fis'>8 r8 <b d' fis'>8 r8 <b d' fis'>8 r8 <b d' fis'>8 | tempo 4 = 144 r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 | tempo 4 = 147 r8 <a d' fis'>8 r8 <a d' fis'>8 r8 <gis b d' e'>8 r8 <gis b d' e'>8 | tempo 4 = 144 r8 <a cis' e'>8 r8 <a cis' e'>8 r8 <a cis' e'>8 r8 <a cis' e'>8 | }
+  bass { b,4@mp fis,4 b,4 fis,4 | g,4 d4 g,4 d4 | d4 a,4 d4 a,4 | a,4 e,4 a,4 e,4 | d4 b,4 d4 b,4 | g,4 d4 g,4 d4 | d4 a,4 e,4 b,4 | a,4 e,4 a,4 e,4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { Em | A | D | G | Bm D7 | G | D | A | }
+  lead { g'8@mf g'8 a'4 b'4 cis''4 | r1 | a'4 b'4 a'2 | b'8 d''8 cis''4 b'4 a'4 | d''2 d''2 | d''8 e''8 d''4 cis''4 d''4 | d''2 fis''2 | r1 | }
+  comp { tempo 4 = 146 r8 <g b e'>8@fff r8 <g b e'>8 r8 <g b e'>8 r8 <g b e'>8 | tempo 4 = 146 r8 <a cis' e'>8 r8 <a cis' e'>8 r8 <a cis' e'>8 r8 <a cis' e'>8 | tempo 4 = 147 r8 <a d' fis'>8 r8 <a d' fis'>8 r8 <a d' fis'>8 r8 <a d' fis'>8 | tempo 4 = 149 r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 | tempo 4 = 148 r8 <b d' fis'>8 r8 <b d' fis'>8 r8 <a c' d' fis'>8 r8 <a c' d' fis'>8 | tempo 4 = 150 r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 | tempo 4 = 150 r8 <a d' fis'>8 r8 <a d' fis'>8 r8 <a d' fis'>8 r8 <a d' fis'>8 | tempo 4 = 151 r8 <a cis' e'>8 r8 <a cis' e'>8 r8 <a cis' e'>8 r8 <a cis' e'>8 | }
+  bass { e,4@mp b,4 e,4 b,4 | a,4 e,4 a,4 e,4 | d4 a,4 d4 a,4 | g,4 d4 g,4 d4 | b,4 fis,4 d4 a,4 | g,4 d4 g,4 d4 | d4 a,4 d4 a,4 | a,4 e,4 a,4 e,4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section C {
+  chords harmony { Bm | Em | F# | Bm | Bm | Em | F# | Bm | }
+  lead { r1 | g''2@mf g''2 | ais''2 b''4 g''4 | b''8 a''8 b''4 a''4 b''4 | r1 | g''4. a''8 g''4 b''4 | ais''4 fis''4 ais''2 | fis''4 a''4 b''2 | }
+  comp { tempo 4 = 147 b8@fff d'8 fis'8 b8 d'8 fis'8 b8 d'8 | tempo 4 = 149 g8 b8 e'8 g8 b8 e'8 g8 b8 | tempo 4 = 151 ais8 cis'8 fis'8 ais8 cis'8 fis'8 ais8 cis'8 | tempo 4 = 149 b8 d'8 fis'8 b8 d'8 fis'8 b8 d'8 | tempo 4 = 148 b8 d'8 fis'8 b8 d'8 fis'8 b8 d'8 | tempo 4 = 149 g8 b8 e'8 g8 b8 e'8 g8 b8 | tempo 4 = 149 ais8 cis'8 fis'8 ais8 cis'8 fis'8 ais8 cis'8 | tempo 4 = 148 b8 d'8 fis'8 b8 d'8 fis'8 b8 d'8 | }
+  bass { b,4@mp fis,4 b,4 fis,4 | e,4 b,4 e,4 b,4 | fis,4 cis4 fis,4 cis4 | b,4 fis,4 b,4 fis,4 | b,4 fis,4 b,4 fis,4 | e,4 b,4 e,4 b,4 | fis,4 cis4 fis,4 cis4 | b,4 fis,4 b,4 fis,4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A B C B }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass  staff kit }

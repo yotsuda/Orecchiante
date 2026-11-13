@@ -1,0 +1,36 @@
+// s31-011: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s31-011"
+tempo 4 = 148
+time 4/4
+key cis minor
+octave absolute
+
+part comp { clef treble  midiInstrument "rock organ" }
+part bass { instrument bass  midiInstrument "acoustic bass" }
+part kit { clef percussion }
+
+phrase hats { hh8 8 8 8 8 8 8 8 | }
+phrase back { r4 sn r sn | }
+phrase kick { bd4 bd bd bd | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { C#m | F#m7 | G#7 | C#m | C#m7 | F#m7 D#7 | G#7 | C#m7 | }
+  comp { tempo 4 = 146 <gis cis' e'>1@ff | tempo 4 = 144 <a cis' e' fis'>1 | tempo 4 = 145 <gis c' dis' fis'>1 | tempo 4 = 144 <gis cis' e'>1 | tempo 4 = 143 <gis b cis' e'>1 | tempo 4 = 140 <a cis' e' fis'>2 <g ais cis' dis'>2 | tempo 4 = 139 <gis c' dis' fis'>1 | tempo 4 = 139 <gis b cis' e'>1 | }
+  bass { cis8@p cis8 cis8 cis8 cis8 cis8 cis8 cis8 | fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 | gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 | cis8 cis8 cis8 cis8 cis8 cis8 cis8 cis8 | cis8 cis8 cis8 cis8 cis8 cis8 cis8 cis8 | fis,8 fis,8 fis,8 fis,8 dis8 dis8 dis8 dis8 | gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 | cis8 cis8 cis8 cis8 cis8 cis8 cis8 cis8 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { C#m/E | F#m F#7 | B | E | C#m7 C#7 | F#m7 | B B7 | E/B G#7 | }
+  comp { tempo 4 = 151 <gis cis' e'>4@ff <gis cis' e'>4 <gis cis' e'>4 <gis cis' e'>4 | tempo 4 = 153 <a cis' fis'>4 <a cis' fis'>4 <ais cis' e' fis'>4 <ais cis' e' fis'>4 | tempo 4 = 153 <b dis' fis'>4 <b dis' fis'>4 <b dis' fis'>4 <b dis' fis'>4 | tempo 4 = 152 <gis b e'>4 <gis b e'>4 <gis b e'>4 <gis b e'>4 | tempo 4 = 152 <gis b cis' e'>4 <gis b cis' e'>4 <gis b cis' f'>4 <gis b cis' f'>4 | tempo 4 = 150 <a cis' e' fis'>4 <a cis' e' fis'>4 <a cis' e' fis'>4 <a cis' e' fis'>4 | tempo 4 = 152 <b dis' fis'>4 <b dis' fis'>4 <a b dis' fis'>4 <a b dis' fis'>4 | tempo 4 = 149 <gis b e'>4 <gis b e'>4 <gis c' dis' fis'>4 <gis c' dis' fis'>4 | }
+  bass { e,1@p | fis,2 fis,2 | b,1 | e,1 | cis2 cis2 | fis,1 | b,2 b,2 | b,2 gis,2 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A B A B }
+
+score { chords harmony }
+
+score band { staff comp  staff bass  staff kit }

@@ -1,0 +1,31 @@
+// s31-005: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s31-005"
+tempo 4 = 133
+time 4/4
+key fis major
+octave absolute
+
+part lead { clef treble  midiInstrument "violin" }
+part comp { clef treble  midiInstrument "acoustic guitar (steel)" }
+part bass { instrument bass  midiInstrument "electric bass (finger)" }
+
+section A {
+  chords harmony { B | C# E#7 | A#m | D#m | F# | B | C# F#7 | B/F# | }
+  lead { fis''4@mp f''4 dis''4 cis''4 | cis''4 dis''4 dis''2 | f''1 | r1 | fis''4 gis''4 f''4 cis''4 | b'2 ais'4 gis'4 | r1 | b'1 | }
+  comp { tempo 4 = 135 r8 <b dis' fis'>8@fff r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 | tempo 4 = 136 r8 <gis cis' f'>8 r8 <gis cis' f'>8 r8 <a c' dis' f'>8 r8 <a c' dis' f'>8 | tempo 4 = 133 r8 <ais cis' f'>8 r8 <ais cis' f'>8 r8 <ais cis' f'>8 r8 <ais cis' f'>8 | tempo 4 = 131 r8 <ais dis' fis'>8 r8 <ais dis' fis'>8 r8 <ais dis' fis'>8 r8 <ais dis' fis'>8 | tempo 4 = 132 r8 <ais cis' fis'>8 r8 <ais cis' fis'>8 r8 <ais cis' fis'>8 r8 <ais cis' fis'>8 | tempo 4 = 133 r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 | tempo 4 = 133 r8 <gis cis' f'>8 r8 <gis cis' f'>8 r8 <ais cis' e' fis'>8 r8 <ais cis' e' fis'>8 | tempo 4 = 133 r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 | }
+  bass { b,8@p b,8 b,8 b,8 b,8 b,8 b,8 b,8 | cis8 cis8 cis8 cis8 f,8 f,8 f,8 f,8 | ais,8 ais,8 ais,8 ais,8 ais,8 ais,8 ais,8 ais,8 | dis8 dis8 dis8 dis8 dis8 dis8 dis8 dis8 | fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 | b,8 b,8 b,8 b,8 b,8 b,8 b,8 b,8 | cis8 cis8 cis8 cis8 fis,8 fis,8 fis,8 fis,8 | fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 | }
+}
+
+section B {
+  chords harmony { F#/C# F#7 | B | G#m | C#sus4 | G#m | C# | F# | F# | }
+  lead { cis''4@mp b'4 ais'4 cis''4 | dis''2 dis''2 | dis''2 b'4 ais'4 | r1 | gis'2 gis'4 ais'4 | gis'1 | ais'2 ais'2 | cis''8 dis''8 cis''4 dis''4 fis''4 | }
+  comp { tempo 4 = 136 <ais cis' fis'>2@fff <ais cis' e' fis'>2 | tempo 4 = 134 <b dis' fis'>1 | tempo 4 = 133 <gis b dis'>1 | tempo 4 = 134 <gis cis' fis'>1 | tempo 4 = 134 <gis b dis'>1 | tempo 4 = 135 <gis cis' f'>1 | tempo 4 = 134 <ais cis' fis'>1 | tempo 4 = 133 <ais cis' fis'>1 | }
+  bass { cis2@p fis,2 | b,1 | gis,1 | cis1 | gis,1 | cis1 | fis,1 | fis,1 | }
+}
+
+form { A B B A }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass }

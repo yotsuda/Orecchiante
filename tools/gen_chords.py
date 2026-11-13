@@ -143,7 +143,7 @@ class Chord:
 
 
 class Song:
-    def __init__(self, song_id, rng, held=0.0):
+    def __init__(self, song_id, rng, held=0.0, drift=0.0):
         self.id = song_id
         self.rng = rng
         self.mode = rng.choice(["major", "major", "minor"])
@@ -167,6 +167,7 @@ class Song:
             self.sections[name] = {
                 "bars": self.make_bars(is_held),
                 "held": is_held,
+                "bpm": self.wander(random.Random(f"{song_id}/{name}/drift"), drift),
                 "comp": rng.choice(COMP_STYLES),
                 "bass": rng.choice(BASS_STYLES),
             }
@@ -175,6 +176,17 @@ class Song:
         self.levels = (rng.choice(["mp", "mf"]), rng.choice(["f", "ff", "fff"]), rng.choice(["p", "mp"]))
 
     # --- the chords ---
+
+    def wander(self, dice, drift):
+        """The tempo of each of a section's eight bars: a walk of steps up to `drift` of the tempo,
+        kept within three such steps of it. None when the tempo does not move."""
+        if not drift:
+            return None
+        out, off = [], 0.0
+        for _ in range(8):
+            off = max(-3 * drift, min(3 * drift, off + dice.uniform(-drift, drift)))
+            out.append(max(1, round(self.bpm * (1 + off))))
+        return out
 
     def make_bars(self, held=False):
         rng = self.rng
@@ -322,7 +334,10 @@ class Song:
             lines += ["", f"section {name} {{", f"  chords harmony {{ {row} | }}"]
             if self.lead_sound:
                 lines.append("  lead { " + self.row([self.lead_bar(b, state) for b in bars], self.levels[0]) + " }")
-            comp = self.row([self.comp_bar(b, section["comp"]) for b in bars], self.levels[1])
+            comps = [self.comp_bar(b, section["comp"]) for b in bars]
+            if section["bpm"]:  # each bar at its own tempo, said in the chord instrument's part
+                comps = [f"tempo {self.tempo_note} = {bpm} {c}" for bpm, c in zip(section["bpm"], comps)]
+            comp = self.row(comps, self.levels[1])
             bass = self.row([self.bass_bar(b, section["bass"]) for b in bars], self.levels[2])
             lines += [f"  comp {{ {comp} }}", f"  bass {{ {bass} }}"]
             if self.drums:
@@ -341,12 +356,12 @@ class Song:
         return "\n".join(lines)
 
     def truth(self):
-        eighth = 60.0 / self.bpm / self.beat8
-        bar_seconds = self.bar8 * eighth
-        bars, index = [], 0
+        bars, index, start = [], 0, 0.0
         for name in self.form:
             for n, bar in enumerate(self.sections[name]["bars"]):
-                start = index * bar_seconds
+                bpm = self.sections[name]["bpm"][n] if self.sections[name]["bpm"] else self.bpm
+                eighth = 60.0 / bpm / self.beat8
+                bar_seconds = self.bar8 * eighth
                 chords, at = [], 0
                 for length, chord in self.spans(bar):
                     chords.append({
@@ -356,11 +371,12 @@ class Song:
                     })
                     at += length
                 bars.append({
-                    "bar": index + 1, "section": name, "barOfSection": n + 1,
+                    "bar": index + 1, "section": name, "barOfSection": n + 1, **({"bpm": bpm} if bpm != self.bpm else {}),
                     "start": round(start, 4), "end": round(start + bar_seconds, 4),
                     "chords": chords,
                 })
                 index += 1
+                start += bar_seconds
         return {
             "id": self.id,
             "source": self.id + ".lys",
@@ -373,9 +389,9 @@ class Song:
                 "comp": self.comp_sound, "bass": self.bass_sound, "lead": self.lead_sound,
                 "drums": bool(self.drums),
                 "levels": {"lead": self.levels[0], "comp": self.levels[1], "bass": self.levels[2]},
-                "styles": {n: {"comp": s["comp"], "bass": s["bass"], "held": s["held"]} for n, s in self.sections.items()},
+                "styles": {n: {"comp": s["comp"], "bass": s["bass"], "held": s["held"], "bpm": s["bpm"]} for n, s in self.sections.items()},
             },
-            "musicSeconds": round(len(bars) * bar_seconds, 4),
+            "musicSeconds": round(start, 4),
             "bars": bars,
         }
 
@@ -399,6 +415,9 @@ def main():
     p.add_argument("--soundfont", default=os.environ.get("LILYSHARP_SOUNDFONT"),
                    help="a SoundFont 2 file (default: LILYSHARP_SOUNDFONT)")
     p.add_argument("--no-render", action="store_true", help="write the .lys and the truth only")
+    p.add_argument("--drift", type=float, default=0.0,
+                   help="how far the tempo may step from one bar to the next, as a share of it "
+                        "(0.02: two in a hundred; default: a tempo that does not move)")
     p.add_argument("--held", type=float, default=0.0,
                    help="the share of sections whose chords each last two bars (default: none)")
     args = p.parse_args()
@@ -408,7 +427,7 @@ def main():
     failed = 0
     for i in range(1, args.count + 1):
         song_id = f"s{args.seed}-{i:03d}"
-        song = Song(song_id, random.Random(args.seed * 100003 + i), args.held)
+        song = Song(song_id, random.Random(args.seed * 100003 + i), args.held, args.drift)
         lys = args.out / (song_id + ".lys")
         lys.write_text(song.lys(), encoding="utf-8", newline="\n")
         truth = song.truth()

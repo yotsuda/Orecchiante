@@ -1,0 +1,31 @@
+// s31-018: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s31-018"
+tempo 4 = 130
+time 3/4
+key e major
+octave absolute
+
+part lead { clef treble  midiInstrument "flute" }
+part comp { clef treble  midiInstrument "string ensemble 1" }
+part bass { instrument bass  midiInstrument "electric bass (pick)" }
+
+section A {
+  chords harmony { F#m | B/F# | G#m | C#m | E | G#m7 | C#m | Amaj7 | }
+  lead { fis''4@mp e''8 cis''8 dis''4 | fis''2. | gis''4 b''2 | e''4 e''2 | e''2. | dis''4 fis''8 e''8 cis''4 | cis''4 e''2 | cis''2. | }
+  comp { tempo 4 = 131 <a cis' fis'>2.@ff | tempo 4 = 129 <b dis' fis'>2. | tempo 4 = 127 <gis b dis'>2. | tempo 4 = 128 <gis cis' e'>2. | tempo 4 = 128 <gis b e'>2. | tempo 4 = 129 <gis b dis' fis'>2. | tempo 4 = 130 <gis cis' e'>2. | tempo 4 = 131 <gis a cis' e'>2. | }
+  bass { fis,4@mp cis4 fis,4 | fis,4 b,4 fis,4 | gis,4 dis4 gis,4 | cis4 gis,4 cis4 | e,4 b,4 e,4 | gis,4 dis4 gis,4 | cis4 gis,4 cis4 | a,4 e,4 a,4 | }
+}
+
+section B {
+  chords harmony { E | G#m7 | A | Bsus4 | E | G#m | A | B | }
+  lead { r2. | b'2.@mp | cis''4 a'4 b'4 | b'4 a'8 gis'8 gis'4 | gis'2. | gis'2 a'4 | cis''4 b'4 a'4 | b'4 gis'4 gis'4 | }
+  comp { tempo 4 = 129 <gis b e'>2.@ff | tempo 4 = 131 <gis b dis' fis'>2. | tempo 4 = 131 <a cis' e'>2. | tempo 4 = 130 <b e' fis'>2. | tempo 4 = 130 <gis b e'>2. | tempo 4 = 130 <gis b dis'>2. | tempo 4 = 132 <a cis' e'>2. | tempo 4 = 129 <b dis' fis'>2. | }
+  bass { e,8@mp e,8 e,8 e,8 e,8 e,8 | gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 | a,8 a,8 a,8 a,8 a,8 a,8 | b,8 b,8 b,8 b,8 b,8 b,8 | e,8 e,8 e,8 e,8 e,8 e,8 | gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 | a,8 a,8 a,8 a,8 a,8 a,8 | b,8 b,8 b,8 b,8 b,8 b,8 | }
+}
+
+form { A A B A }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass }

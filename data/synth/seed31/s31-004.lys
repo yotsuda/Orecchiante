@@ -1,0 +1,28 @@
+// s31-004: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s31-004"
+tempo 4 = 120
+time 4/4
+key c major
+octave absolute
+
+part comp { clef treble  midiInstrument "acoustic guitar (nylon)" }
+part bass { instrument bass  midiInstrument "electric bass (pick)" }
+
+section A {
+  chords harmony { C | Bb | F | C G7 | C | Bb | F | C | }
+  comp { tempo 4 = 118 r8 <g c' e'>8@f r8 <g c' e'>8 r8 <g c' e'>8 r8 <g c' e'>8 | tempo 4 = 117 r8 <ais d' f'>8 r8 <ais d' f'>8 r8 <ais d' f'>8 r8 <ais d' f'>8 | tempo 4 = 115 r8 <a c' f'>8 r8 <a c' f'>8 r8 <a c' f'>8 r8 <a c' f'>8 | tempo 4 = 114 r8 <g c' e'>8 r8 <g c' e'>8 r8 <g b d' f'>8 r8 <g b d' f'>8 | tempo 4 = 113 r8 <g c' e'>8 r8 <g c' e'>8 r8 <g c' e'>8 r8 <g c' e'>8 | tempo 4 = 114 r8 <ais d' f'>8 r8 <ais d' f'>8 r8 <ais d' f'>8 r8 <ais d' f'>8 | tempo 4 = 114 r8 <a c' f'>8 r8 <a c' f'>8 r8 <a c' f'>8 r8 <a c' f'>8 | tempo 4 = 113 r8 <g c' e'>8 r8 <g c' e'>8 r8 <g c' e'>8 r8 <g c' e'>8 | }
+  bass { c1@mp | ais,1 | f,1 | c2 g,2 | c1 | ais,1 | f,1 | c1 | }
+}
+
+section B {
+  chords harmony { Dm | G | C | C E7 | Am | G | F | G | }
+  comp { tempo 4 = 120 r8 <a d' f'>8@f r8 <a d' f'>8 r8 <a d' f'>8 r8 <a d' f'>8 | tempo 4 = 122 r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 | tempo 4 = 124 r8 <g c' e'>8 r8 <g c' e'>8 r8 <g c' e'>8 r8 <g c' e'>8 | tempo 4 = 123 r8 <g c' e'>8 r8 <g c' e'>8 r8 <gis b d' e'>8 r8 <gis b d' e'>8 | tempo 4 = 124 r8 <a c' e'>8 r8 <a c' e'>8 r8 <a c' e'>8 r8 <a c' e'>8 | tempo 4 = 123 r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 | tempo 4 = 125 r8 <a c' f'>8 r8 <a c' f'>8 r8 <a c' f'>8 r8 <a c' f'>8 | tempo 4 = 127 r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 | }
+  bass { d1@mp | g,1 | c1 | c2 e,2 | a,1 | g,1 | f,1 | g,1 | }
+}
+
+form { A B A B }
+
+score { chords harmony }
+
+score band { staff comp  staff bass }

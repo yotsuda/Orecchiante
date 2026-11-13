@@ -67,15 +67,15 @@ On three sets of 24 songs (2026-11-14). The reader's constants were chosen on `s
 
 | Nothing learnt | `seed1` | `seed7` | `seed11` |
 |---|---|---|---|
-| Tempo (within 4%), songs | 22 of 24 | 21 of 24 | 22 of 24 |
+| Tempo (within 4%), songs | 22 of 24 | 22 of 24 | 22 of 24 |
 | Meter, songs | 22 of 24 | 23 of 24 | 23 of 24 |
-| Key, songs | 15 of 24 | 16 of 24 | 16 of 24 |
-| Key signature, songs | 21 of 24 | 20 of 24 | 23 of 24 |
-| Bar lines (within 70 ms), F | 95.8% | 82.3% | 90.5% |
-| Chord root, by time | 87.5% | 82.8% | 90.1% |
-| Root and family (major, minor, suspended, diminished) | 75.6% | 72.9% | 83.2% |
-| Root and quality (sevenths told apart) | 61.6% | 53.6% | 72.0% |
-| The bass note too | 58.3% | 47.9% | 68.7% |
+| Key, songs | 15 of 24 | 15 of 24 | 16 of 24 |
+| Key signature, songs | 21 of 24 | 20 of 24 | 24 of 24 |
+| Bar lines (within 70 ms), F | 92.9% | 90.0% | 97.4% |
+| Chord root, by time | 87.1% | 83.2% | 90.3% |
+| Root and family (major, minor, suspended, diminished) | 75.5% | 73.3% | 83.4% |
+| Root and quality (sevenths told apart) | 61.4% | 54.0% | 72.4% |
+| The bass note too | 58.1% | 48.6% | 69.8% |
 
 The bar lines owe several points to one mend. Where the accompaniment moves to the off-beats,
 the beat tracker follows it there, sliding half a beat over a few beats, and every bar line
@@ -108,25 +108,25 @@ Learnt from the 200 songs of seed 100 (none of them in the three sets; its price
 
 | With the model | `seed1` | `seed7` | `seed11` |
 |---|---|---|---|
-| Tempo (within 4%), songs | 23 of 24 | 22 of 24 | 23 of 24 |
-| Meter, songs | 23 of 24 | 22 of 24 | 23 of 24 |
-| Key, songs | 18 of 24 | 17 of 24 | 16 of 24 |
-| Key signature, songs | 23 of 24 | 22 of 24 | 23 of 24 |
-| Bar lines (within 70 ms), F | 97.7% | 89.5% | 96.8% |
-| Chord root, by time | 95.2% | 94.5% | 96.8% |
-| Root and family | 90.3% | 91.3% | 96.0% |
-| Root and quality | 81.8% | 74.5% | 89.0% |
-| The bass note too | 76.6% | 65.6% | 85.8% |
+| Tempo (within 4%), songs | 23 of 24 | 23 of 24 | 23 of 24 |
+| Meter, songs | 23 of 24 | 23 of 24 | 23 of 24 |
+| Key, songs | 18 of 24 | 19 of 24 | 16 of 24 |
+| Key signature, songs | 23 of 24 | 23 of 24 | 23 of 24 |
+| Bar lines (within 70 ms), F | 94.7% | 97.4% | 99.1% |
+| Chord root, by time | 95.1% | 95.5% | 97.4% |
+| Root and family | 90.6% | 92.6% | 96.6% |
+| Root and quality | 83.1% | 73.8% | 89.9% |
+| The bass note too | 77.8% | 65.5% | 86.6% |
 
 The same 72 songs played through a sound font the model never heard (TimGM6mb, 6 MB, against
 MuseScore General's 215 MB) read as well, so it is not the one sound font the model leans on:
 
 | Another sound font | `seed1` | `seed7` | `seed11` |
 |---|---|---|---|
-| Chord root, nothing learnt → with the model | 85.9 → 95.4% | 87.3 → 95.7% | 87.8 → 96.2% |
-| Root and family | 78.4 → 92.6% | 83.0 → 93.1% | 83.9 → 94.6% |
-| Root and quality | 60.3 → 82.1% | 66.3 → 77.7% | 74.7 → 85.2% |
-| Bar lines, F | 84.2 → 99.7% | 84.8 → 91.7% | 79.5 → 90.2% |
+| Chord root, nothing learnt → with the model | 85.9 → 95.5% | 87.7 → 97.1% | 87.7 → 96.3% |
+| Root and family | 78.4 → 92.8% | 83.5 → 94.3% | 83.9 → 94.9% |
+| Root and quality | 60.4 → 80.7% | 66.6 → 78.8% | 74.7 → 84.8% |
+| Bar lines, F | 84.2 → 99.7% | 93.3 → 99.6% | 79.5 → 90.2% |
 | Key signature, songs | 24 of 24 | 23 of 24 | 23 of 24 |
 
 The model has still only heard this project's own songs (their patterns, no singing, no mixing),
@@ -137,14 +137,14 @@ above make them again.
 
 Every chart either reader writes passes `lysc check`. What neither does yet:
 
-- They keep a steady tempo (the beat tracker is held tight, which these songs reward and a
-  recording that slows down will not).
+- They follow a tempo that wanders a little, not one that moves far (see below), and not a
+  song that stops and starts.
 - They take the bar to be as long as one chord lasts, so a song whose chords last two bars may
   be read at half its tempo (see below).
 - The key is read from the chords found, and a key and its relative minor are made of the same
   chords: about a third of the keys are still wrong, nearly all of them the relative key, so the
   key signature is right far more often. The chords are not what holds it back: the same rule
-  given the true chords gets 55 of the 72 keys, the reading 51. These songs' keys are also less
+  given the true chords gets 55 of the 72 keys, the reading 53. These songs' keys are also less
   sure than a real song's (a major song here may begin and end on its sixth degree).
 
 ### The chords it doubts
@@ -164,16 +164,16 @@ How sure is sure was chosen on 60 songs outside the three sets, and counted on t
 
 | The marks, `seed1`, `seed7` and `seed11` together | this sound font | another |
 |---|---|---|
-| Chords read | 2633 | 2575 |
-| Wrong in root or family | 6.0% | 5.1% |
-| Marked | 23.4% | 17.7% |
-| Of the chords wrong in root or family, marked | 82.4% | 93.9% |
-| Of the marked, wrong in root or family | 21.3% | 27.0% |
-| Of the marked, wrong at all (sevenths too) | 38.2% | 41.3% |
+| Chords read | 2617 | 2578 |
+| Wrong in root or family | 5.8% | 4.9% |
+| Marked | 22.9% | 17.2% |
+| Of the chords wrong in root or family, marked | 78.9% | 87.3% |
+| Of the marked, wrong in root or family | 20.0% | 24.8% |
+| Of the marked, wrong at all (sevenths too) | 36.1% | 37.2% |
 
-So about one chord in five asks for a look, and five in six of the wrong roots and families are
+So about one chord in five asks for a look, and four in five of the wrong roots and families are
 among them. The chord offered in the mark is the true one for under half of the marked chords
-that are wrong (28.5%, 44.1%): it is a hint, not a correction. The reader with nothing learnt
+that are wrong (27.3%, 38.8%): it is a hint, not a correction. The reader with nothing learnt
 marks nothing.
 
 ### Chords that last two bars
@@ -181,7 +181,7 @@ marks nothing.
 `gen_chords.py --held 0.5` makes half of a song's sections hold each chord for two bars
 (`data/synth/seed21`, 24 songs). Left alone, the reader with the model takes the tempo of 17 of
 them right and reads the faster ones at half their tempo, with bars twice as long; the chords are
-read as well as ever (root 98.1%). What is heard does not settle it: a fast song whose chords
+read as well as ever (root 97.8%). What is heard does not settle it: a fast song whose chords
 last two bars and a slow one whose chords last one sound the same bar by bar. A price on long
 bars was tried and thrown away (it mends these songs and breaks as many of the others).
 
@@ -191,11 +191,32 @@ three or four such beats.
 | `seed21`, with the model | left alone | told the tempo |
 |---|---|---|
 | Tempo (within 4%), songs | 17 of 24 | 22 of 24 |
-| Bar lines, F | 88.3% | 90.9% |
-| Chord root, by time | 98.1% | 98.2% |
+| Bar lines, F | 90.5% | 96.5% |
+| Chord root, by time | 97.8% | 97.9% |
 
 Told the true tempo, the three sets above read the same or a little better (`seed1`: 24 tempi
-of 24, bar lines 99.7%; `seed7` and `seed11` unchanged).
+of 24, bar lines 96.7%; `seed7` and `seed11` unchanged).
+
+### A tempo that moves
+
+`gen_chords.py --drift 0.02` lets the tempo step up to two in a hundred from each bar to the
+next, within six in a hundred of where it began (`data/synth/seed31`, 24 songs; the same songs
+were also made with a tempo that does not move, and with steps of five in a hundred).
+
+| `seed31`, with the model | still | steps of 2% | steps of 5% |
+|---|---|---|---|
+| Tempo (within 4%), songs | 24 of 24 | 24 of 24 | 20 of 24 |
+| Bar lines, F | 98.5% | 97.2% | 80.7% |
+| Chord root, by time | 97.4% | 97.5% | 94.7% |
+
+A tempo that wanders as a band's does costs about a point of bar lines. One that moves by a
+seventh is where the reader begins to lose them; the chords hold longer than the bar lines.
+
+Measuring this found a constant that had outlived its reason. The beat tracker was held three
+times as tight as librosa holds it, chosen on `seed1` before the half-beat slide was mended.
+At librosa's own value the bar lines of nearly every set rose (`seed7` 89.5% to 97.4%, the 200
+songs kept for learning 94.3% to 97.0%, the moving tempo of 5% 67.7% to 80.7%); `seed1`
+alone fell, 97.7% to 94.7%.
 
 They need `numpy`, `scipy`, `librosa`, `soundfile` and `scikit-learn` (in `.venv`, not committed).
 They are written to be measured and replaced, not shipped.

@@ -1,0 +1,38 @@
+// s31-015: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s31-015"
+tempo 4 = 164
+time 3/4
+key bes major
+octave absolute
+
+part lead { clef treble  midiInstrument "trumpet" }
+part comp { clef treble  midiInstrument "acoustic grand" }
+part bass { instrument bass  midiInstrument "fretless bass" }
+
+section A {
+  chords harmony { Gm7/D | F7 | Ebmaj7 | Fsus4 | Gm7 | F7 | Ebmaj7 | F7 | }
+  lead { d''2@mf f''4 | ees''2. | ees''4 f''4 g''4 | bes''4 g''8 ees''8 c''4 | bes'4 g'2 | c''2. | bes'4 g'8 a'8 g'4 | c''4 c''2 | }
+  comp { tempo 4 = 165 <g bes d' f'>2.@fff | tempo 4 = 168 <a c' ees' f'>2. | tempo 4 = 168 <g bes d' ees'>2. | tempo 4 = 171 <bes c' f'>2. | tempo 4 = 174 <g bes d' f'>2. | tempo 4 = 172 <a c' ees' f'>2. | tempo 4 = 174 <g bes d' ees'>2. | tempo 4 = 174 <a c' ees' f'>2. | }
+  bass { d8@p d8 d8 d8 d8 d8 | f,8 f,8 f,8 f,8 f,8 f,8 | ees8 ees8 ees8 ees8 ees8 ees8 | f,8 f,8 f,8 f,8 f,8 f,8 | g,8 g,8 g,8 g,8 g,8 g,8 | f,8 f,8 f,8 f,8 f,8 f,8 | ees8 ees8 ees8 ees8 ees8 ees8 | f,8 f,8 f,8 f,8 f,8 f,8 | }
+}
+
+section B {
+  chords harmony { Cm7 | F7 | Dm | Gm | Cm7 | F | Bbmaj7 | Bbmaj7 | }
+  lead { bes'4@mf a'8 g'8 g'4 | r2. | d''4 ees''8 f''8 g''4 | bes''4 c'''4 c'''4 | bes''2 a''4 | a''4 a''2 | bes''4 a''4 bes''4 | a''4 bes''2 | }
+  comp { tempo 4 = 167 <g bes c' ees'>2.@fff | tempo 4 = 168 <a c' ees' f'>2. | tempo 4 = 168 <a d' f'>2. | tempo 4 = 166 <g bes d'>2. | tempo 4 = 168 <g bes c' ees'>2. | tempo 4 = 168 <a c' f'>2. | tempo 4 = 168 <a bes d' f'>2. | tempo 4 = 168 <a bes d' f'>2. | }
+  bass { c2.@p | f,2. | d2. | g,2. | c2. | f,2. | bes,2. | bes,2. | }
+}
+
+section C {
+  chords harmony { Bb | Dm7 | Ebmaj7 | F | Bbmaj7 | Dm7 | Ebmaj7 | F7 | }
+  lead { f''2.@mf | r2. | g''2 f''4 | f''4 d''4 c''4 | bes'2. | a'2 c''4 | d''4 bes'4 d''4 | c''2. | }
+  comp { tempo 4 = 161 r8 <bes d' f'>8@fff r8 <bes d' f'>8 r8 <bes d' f'>8 | tempo 4 = 162 r8 <a c' d' f'>8 r8 <a c' d' f'>8 r8 <a c' d' f'>8 | tempo 4 = 161 r8 <g bes d' ees'>8 r8 <g bes d' ees'>8 r8 <g bes d' ees'>8 | tempo 4 = 159 r8 <a c' f'>8 r8 <a c' f'>8 r8 <a c' f'>8 | tempo 4 = 158 r8 <a bes d' f'>8 r8 <a bes d' f'>8 r8 <a bes d' f'>8 | tempo 4 = 156 r8 <a c' d' f'>8 r8 <a c' d' f'>8 r8 <a c' d' f'>8 | tempo 4 = 159 r8 <g bes d' ees'>8 r8 <g bes d' ees'>8 r8 <g bes d' ees'>8 | tempo 4 = 159 r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 | }
+  bass { bes,4@p f,4 bes,4 | d4 a,4 d4 | ees4 bes,4 ees4 | f,4 c4 f,4 | bes,4 f,4 bes,4 | d4 a,4 d4 | ees4 bes,4 ees4 | f,4 c4 f,4 | }
+}
+
+form { A B A C A }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass }
