@@ -1,0 +1,36 @@
+// s1-021: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s1-021"
+tempo 4 = 159
+time 4/4
+key e minor
+octave absolute
+
+part comp { clef treble  midiInstrument "string ensemble 1" }
+part bass { instrument bass  midiInstrument "fretless bass" }
+part kit { clef percussion }
+
+phrase hats { hh8 8 8 8 8 8 8 8 | }
+phrase back { r4 sn r sn | }
+phrase kick { bd4 r8 bd bd4 r | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Em | G | D E7 | Am | Em/B | G A7 | D | Am | }
+  comp { g8 b8 e'8 g8 b8 e'8 g8 b8 | g8 b8 d'8 g8 b8 d'8 g8 b8 | a8 d'8 fis'8 a8 gis8 b8 d'8 e'8 | a8 c'8 e'8 a8 c'8 e'8 a8 c'8 | g8 b8 e'8 g8 b8 e'8 g8 b8 | g8 b8 d'8 g8 g8 a8 cis'8 e'8 | a8 d'8 fis'8 a8 d'8 fis'8 a8 d'8 | a8 c'8 e'8 a8 c'8 e'8 a8 c'8 | }
+  bass { e,4 b,4 e,4 b,4 | g,4 d4 g,4 d4 | d4 a,4 e,4 b,4 | a,4 e,4 a,4 e,4 | b,4 e,4 b,4 e,4 | g,4 d4 a,4 e,4 | d4 a,4 d4 a,4 | a,4 e,4 a,4 e,4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { Em | Am | B B7 | Em | F#dim F#7 | B | Em B7 | Em | }
+  comp { <g b e'>4 <g b e'>4 <g b e'>4 <g b e'>4 | <a c' e'>4 <a c' e'>4 <a c' e'>4 <a c' e'>4 | <b dis' fis'>4 <b dis' fis'>4 <a b dis' fis'>4 <a b dis' fis'>4 | <g b e'>4 <g b e'>4 <g b e'>4 <g b e'>4 | <a c' fis'>4 <a c' fis'>4 <ais cis' e' fis'>4 <ais cis' e' fis'>4 | <b dis' fis'>4 <b dis' fis'>4 <b dis' fis'>4 <b dis' fis'>4 | <g b e'>4 <g b e'>4 <a b dis' fis'>4 <a b dis' fis'>4 | <g b e'>4 <g b e'>4 <g b e'>4 <g b e'>4 | }
+  bass { e,8 e,8 e,8 e,8 e,8 e,8 e,8 e,8 | a,8 a,8 a,8 a,8 a,8 a,8 a,8 a,8 | b,8 b,8 b,8 b,8 b,8 b,8 b,8 b,8 | e,8 e,8 e,8 e,8 e,8 e,8 e,8 e,8 | fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 | b,8 b,8 b,8 b,8 b,8 b,8 b,8 b,8 | e,8 e,8 e,8 e,8 b,8 b,8 b,8 b,8 | e,8 e,8 e,8 e,8 e,8 e,8 e,8 e,8 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A A B A }
+
+score { chords harmony }
+
+score band { staff comp  staff bass  staff kit }

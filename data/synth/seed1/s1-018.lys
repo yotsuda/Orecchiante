@@ -1,0 +1,36 @@
+// s1-018: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s1-018"
+tempo 4 = 76
+time 4/4
+key fis major
+octave absolute
+
+part comp { clef treble  midiInstrument "acoustic guitar (nylon)" }
+part bass { instrument bass  midiInstrument "electric bass (finger)" }
+part kit { clef percussion }
+
+phrase hats { hh4 hh hh hh | }
+phrase back { r2 sn4 r | }
+phrase kick { bd4 r r8 bd r4 | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { B | F#/C# | C# | D#m | G#m | C#/G# | A#m | D#m | }
+  comp { r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 | r8 <ais cis' fis'>8 r8 <ais cis' fis'>8 r8 <ais cis' fis'>8 r8 <ais cis' fis'>8 | r8 <gis cis' f'>8 r8 <gis cis' f'>8 r8 <gis cis' f'>8 r8 <gis cis' f'>8 | r8 <ais dis' fis'>8 r8 <ais dis' fis'>8 r8 <ais dis' fis'>8 r8 <ais dis' fis'>8 | r8 <gis b dis'>8 r8 <gis b dis'>8 r8 <gis b dis'>8 r8 <gis b dis'>8 | r8 <gis cis' f'>8 r8 <gis cis' f'>8 r8 <gis cis' f'>8 r8 <gis cis' f'>8 | r8 <ais cis' f'>8 r8 <ais cis' f'>8 r8 <ais cis' f'>8 r8 <ais cis' f'>8 | r8 <ais dis' fis'>8 r8 <ais dis' fis'>8 r8 <ais dis' fis'>8 r8 <ais dis' fis'>8 | }
+  bass { b,1 | cis1 | cis1 | dis1 | gis,1 | gis,1 | ais,1 | dis1 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { D#m | C# | B | C# | D#m | C# | B | C#sus4 | }
+  comp { <ais dis' fis'>1 | <gis cis' f'>1 | <b dis' fis'>1 | <gis cis' f'>1 | <ais dis' fis'>1 | <gis cis' f'>1 | <b dis' fis'>1 | <gis cis' fis'>1 | }
+  bass { dis4 ais,4 dis4 ais,4 | cis4 gis,4 cis4 gis,4 | b,4 fis,4 b,4 fis,4 | cis4 gis,4 cis4 gis,4 | dis4 ais,4 dis4 ais,4 | cis4 gis,4 cis4 gis,4 | b,4 fis,4 b,4 fis,4 | cis4 gis,4 cis4 gis,4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A B A B }
+
+score { chords harmony }
+
+score band { staff comp  staff bass  staff kit }

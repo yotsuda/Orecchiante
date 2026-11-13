@@ -1,0 +1,39 @@
+// s1-002: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s1-002"
+tempo 4. = 94
+time 6/8
+key gis minor
+octave absolute
+
+part lead { clef treble  midiInstrument "clarinet" }
+part comp { clef treble  midiInstrument "acoustic guitar (steel)" }
+part bass { instrument bass  midiInstrument "acoustic bass" }
+part kit { clef percussion }
+
+phrase hats { hh8 8 8 8 8 8 | }
+phrase back { r4. sn | }
+phrase kick { bd4. r | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { C#m7/G# | F# | Bmaj7 | Emaj7 | C#m7/E | F#7 | Bmaj7 | E | }
+  lead { r2. | cis''4 dis''8 e''4 cis''8 | b'2. | r2. | r2. | cis''4. b'4. | ais'8 gis'8 ais'8 b'4. | gis'4. ais'4 b'8 | }
+  comp { gis8 b8 cis'8 e'8 gis8 b8 | ais8 cis'8 fis'8 ais8 cis'8 fis'8 | ais8 b8 dis'8 fis'8 ais8 b8 | gis8 b8 dis'8 e'8 gis8 b8 | gis8 b8 cis'8 e'8 gis8 b8 | ais8 cis'8 e'8 fis'8 ais8 cis'8 | ais8 b8 dis'8 fis'8 ais8 b8 | gis8 b8 e'8 gis8 b8 e'8 | }
+  bass { gis,4. cis4. | fis,4. cis4. | b,4. fis,4. | e,4. b,4. | e,4. cis4. | fis,4. cis4. | b,4. fis,4. | e,4. b,4. | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { G#m | F#7/A# | Emaj7 | D#7 | A#m7(b5) | D#7 | G#m | G#m | }
+  lead { r2. | ais'8 cis''8 e''8 fis''4. | r2. | g''4 ais''8 b''4 b''8 | ais''4. b''4. | ais''4. b''4 ais''8 | r2. | gis''4. e''4. | }
+  comp { <gis b dis'>4. <gis b dis'>4. | <ais cis' e' fis'>4. <ais cis' e' fis'>4. | <gis b dis' e'>4. <gis b dis' e'>4. | <g ais cis' dis'>4. <g ais cis' dis'>4. | <gis ais cis' e'>4. <gis ais cis' e'>4. | <g ais cis' dis'>4. <g ais cis' dis'>4. | <gis b dis'>4. <gis b dis'>4. | <gis b dis'>4. <gis b dis'>4. | }
+  bass { gis,4. dis4. | ais,4. fis,4. | e,4. b,4. | dis4. ais,4. | ais,4. e,4. | dis4. ais,4. | gis,4. dis4. | gis,4. dis4. | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A B A B }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass  staff kit }

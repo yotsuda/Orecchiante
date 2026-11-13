@@ -1,0 +1,36 @@
+// s1-017: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s1-017"
+tempo 4 = 102
+time 4/4
+key f major
+octave absolute
+
+part comp { clef treble  midiInstrument "acoustic guitar (nylon)" }
+part bass { instrument bass  midiInstrument "fretless bass" }
+part kit { clef percussion }
+
+phrase hats { hh4 hh hh hh | }
+phrase back { r2 sn4 r | }
+phrase kick { bd4 r r8 bd r4 | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Fmaj7 | Dm | Bbmaj7 | C | F | Dm7 | Bbmaj7 | Csus4 | }
+  comp { <a c' e' f'>1 | <a d' f'>1 | <a bes d' f'>1 | <g c' e'>1 | <a c' f'>1 | <a c' d' f'>1 | <a bes d' f'>1 | <g c' f'>1 | }
+  bass { f,4 c4 f,4 c4 | d4 a,4 d4 a,4 | bes,4 f,4 bes,4 f,4 | c4 g,4 c4 g,4 | f,4 c4 f,4 c4 | d4 a,4 d4 a,4 | bes,4 f,4 bes,4 f,4 | c4 g,4 c4 g,4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { F | Bbmaj7 | C7 | Bb | F | Bb | C | Bb | }
+  comp { <a c' f'>1 | <a bes d' f'>1 | <g bes c' e'>1 | <bes d' f'>1 | <a c' f'>1 | <bes d' f'>1 | <g c' e'>1 | <bes d' f'>1 | }
+  bass { f,1 | bes,1 | c1 | bes,1 | f,1 | bes,1 | c1 | bes,1 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A A B A }
+
+score { chords harmony }
+
+score band { staff comp  staff bass  staff kit }

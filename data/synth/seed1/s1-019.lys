@@ -1,0 +1,36 @@
+// s1-019: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s1-019"
+tempo 4 = 92
+time 4/4
+key ees minor
+octave absolute
+
+part comp { clef treble  midiInstrument "rock organ" }
+part bass { instrument bass  midiInstrument "electric bass (finger)" }
+part kit { clef percussion }
+
+phrase hats { hh8 8 8 8 8 8 8 8 | }
+phrase back { r4 sn r sn | }
+phrase kick { bd4 r8 bd bd4 r | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Fm7(b5) | Bb7 | Ebm7 | Ebm7 | Ebm7 | Abm7 | Db | Gb | }
+  comp { <aes b ees' f'>4 <aes b ees' f'>4 <aes b ees' f'>4 <aes b ees' f'>4 | <aes bes d' f'>4 <aes bes d' f'>4 <aes bes d' f'>4 <aes bes d' f'>4 | <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 | <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 | <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 | <aes b ees' ges'>4 <aes b ees' ges'>4 <aes b ees' ges'>4 <aes b ees' ges'>4 | <aes des' f'>4 <aes des' f'>4 <aes des' f'>4 <aes des' f'>4 | <bes des' ges'>4 <bes des' ges'>4 <bes des' ges'>4 <bes des' ges'>4 | }
+  bass { f,1 | bes,1 | ees1 | ees1 | ees1 | aes,1 | des1 | ges,1 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { Ebm | Gbmaj7 | Db | Abm7 | Ebm7 | Bbm7 | Cbmaj7 | Db7 | }
+  comp { r8 <bes ees' ges'>8 r8 <bes ees' ges'>8 r8 <bes ees' ges'>8 r8 <bes ees' ges'>8 | r8 <bes des' f' ges'>8 r8 <bes des' f' ges'>8 r8 <bes des' f' ges'>8 r8 <bes des' f' ges'>8 | r8 <aes des' f'>8 r8 <aes des' f'>8 r8 <aes des' f'>8 r8 <aes des' f'>8 | r8 <aes b ees' ges'>8 r8 <aes b ees' ges'>8 r8 <aes b ees' ges'>8 r8 <aes b ees' ges'>8 | r8 <bes des' ees' ges'>8 r8 <bes des' ees' ges'>8 r8 <bes des' ees' ges'>8 r8 <bes des' ees' ges'>8 | r8 <aes bes des' f'>8 r8 <aes bes des' f'>8 r8 <aes bes des' f'>8 r8 <aes bes des' f'>8 | r8 <bes b ees' ges'>8 r8 <bes b ees' ges'>8 r8 <bes b ees' ges'>8 r8 <bes b ees' ges'>8 | r8 <aes b des' f'>8 r8 <aes b des' f'>8 r8 <aes b des' f'>8 r8 <aes b des' f'>8 | }
+  bass { ees1 | ges,1 | des1 | aes,1 | ees1 | bes,1 | b,1 | des1 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A A B }
+
+score { chords harmony }
+
+score band { staff comp  staff bass  staff kit }

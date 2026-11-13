@@ -1,0 +1,39 @@
+// s1-009: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s1-009"
+tempo 4 = 180
+time 3/4
+key aes major
+octave absolute
+
+part lead { clef treble  midiInstrument "flute" }
+part comp { clef treble  midiInstrument "electric piano 2" }
+part bass { instrument bass  midiInstrument "electric bass (finger)" }
+part kit { clef percussion }
+
+phrase hats { hh8 8 8 8 8 8 | }
+phrase back { r4 sn r | }
+phrase kick { bd4 r bd | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Ab | Fm | Db | Eb | Ab | Fm | Db | Eb | }
+  lead { ees''2 f''4 | aes''4 f''2 | r2. | g''4 aes''4 bes''4 | aes''2. | f''4 g''8 f''8 ees''4 | des''2 bes'4 | g'4 g'2 | }
+  comp { <aes c' ees'>2. | <aes c' f'>2. | <aes des' f'>2. | <g bes ees'>2. | <aes c' ees'>2. | <aes c' f'>2. | <aes des' f'>2. | <g bes ees'>2. | }
+  bass { aes,2. | f,2. | des2. | ees2. | aes,2. | f,2. | des2. | ees2. | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { Db | Ab/Eb | Eb | Fm | Ab | Db | Dbm | Ab | }
+  lead { aes'4 bes'4 aes'4 | aes'2. | g'4 g'2 | c''4 aes'2 | r2. | des''2 c''4 | aes'4 aes'2 | c''2 ees''4 | }
+  comp { r8 <aes des' f'>8 r8 <aes des' f'>8 r8 <aes des' f'>8 | r8 <aes c' ees'>8 r8 <aes c' ees'>8 r8 <aes c' ees'>8 | r8 <g bes ees'>8 r8 <g bes ees'>8 r8 <g bes ees'>8 | r8 <aes c' f'>8 r8 <aes c' f'>8 r8 <aes c' f'>8 | r8 <aes c' ees'>8 r8 <aes c' ees'>8 r8 <aes c' ees'>8 | r8 <aes des' f'>8 r8 <aes des' f'>8 r8 <aes des' f'>8 | r8 <aes des' e'>8 r8 <aes des' e'>8 r8 <aes des' e'>8 | r8 <aes c' ees'>8 r8 <aes c' ees'>8 r8 <aes c' ees'>8 | }
+  bass { des4 aes,4 des4 | ees4 aes,4 ees4 | ees4 bes,4 ees4 | f,4 c4 f,4 | aes,4 ees4 aes,4 | des4 aes,4 des4 | des4 aes,4 des4 | aes,4 ees4 aes,4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A B B A }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass  staff kit }
