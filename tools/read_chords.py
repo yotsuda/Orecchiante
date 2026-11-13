@@ -7,11 +7,12 @@ For each .wav it writes <name>.lys (a Lily# chord chart) and <name>.dettato.json
 chord with its seconds, in the shape of gen_chords.py's truth). The steps:
 
 1. beats: librosa's beat tracker on the onset strength, carried back to the start and on to the end;
-2. bars: the count of beats in a bar and the beat a bar starts on are the pair under which the
-   harmony changes most ON bar lines and least between them;
-3. meter: from that count and how the beat divides (in two or in three);
-4. chords: the bar's chroma against a template for each root and quality, the bass weighing in
-   for the root; a bar is given two chords where its halves disagree;
+2. bars: for each length a bar may have (1 to 8 tracked beats, 1.5 among them), the lines are
+   put where the sound changes most; the length kept is the one whose bars each fit one chord
+   while the chord changes from bar to bar;
+3. meter: from where the onsets fall inside the bars (in fours, in threes, or in two threes);
+4. chords: the bar's chroma against a template for each root and quality, the bass at the start
+   of the chord weighing in for the root; a bar is given two chords where its halves disagree;
 5. key: Krumhansl's profiles on the whole recording, for the spelling.
 
 This is the line to beat, written to be measured (tools/score_chords.py), not to be shipped.
