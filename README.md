@@ -123,13 +123,34 @@ Every chart either reader writes passes `lysc check`. What neither does yet:
 
 - They keep a steady tempo (the beat tracker is held tight, which these songs reward and a
   recording that slows down will not).
-- They take the bar to be as long as one chord lasts, so a song whose chords last two bars would
-  be read at half its tempo. Nothing rhythmic (the drums' pattern) weighs in yet.
+- They take the bar to be as long as one chord lasts, so a song whose chords last two bars may
+  be read at half its tempo (see below).
 - The key is read from the chords found, and a key and its relative minor are made of the same
   chords: about a third of the keys are still wrong, nearly all of them the relative key, so the
   key signature is right far more often. The chords are not what holds it back: the same rule
   given the true chords gets 55 of the 72 keys, the reading 51. These songs' keys are also less
   sure than a real song's (a major song here may begin and end on its sixth degree).
+
+### Chords that last two bars
+
+`gen_chords.py --held 0.5` makes half of a song's sections hold each chord for two bars
+(`data/synth/seed21`, 24 songs). Left alone, the reader with the model takes the tempo of 16 of
+them right and reads the faster ones at half their tempo, with bars twice as long; the chords are
+read as well as ever (root 96.6%). What is heard does not settle it: a fast song whose chords
+last two bars and a slow one whose chords last one sound the same bar by bar. A price on long
+bars was tried and thrown away (it mends these songs and breaks as many of the others).
+
+So the reader can be told: `--tempo 150` (about right is enough) keeps only the bars of two,
+three or four such beats.
+
+| `seed21`, with the model | left alone | told the tempo |
+|---|---|---|
+| Tempo (within 4%), songs | 16 of 24 | 22 of 24 |
+| Bar lines, F | 80.4% | 83.6% |
+| Chord root, by time | 96.6% | 97.1% |
+
+Told the true tempo, the three sets above read the same or a little better (`seed1`: 23 tempi
+of 24, bar lines 94.0%).
 
 They need `numpy`, `scipy`, `librosa`, `soundfile` and `scikit-learn` (in `.venv`, not committed).
 They are written to be measured and replaced, not shipped.

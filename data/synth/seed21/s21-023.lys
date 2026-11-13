@@ -1,0 +1,28 @@
+// s21-023: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s21-023"
+tempo 4 = 123
+time 4/4
+key g minor
+octave absolute
+
+part comp { clef treble  midiInstrument "acoustic grand" }
+part bass { instrument bass  midiInstrument "electric bass (finger)" }
+
+section A {
+  chords harmony { Gm | Gm | Dm | Dm | Ebmaj7 | Ebmaj7 | F7 | F7 | }
+  comp { r8 <g bes d'>8@f r8 <g bes d'>8 r8 <g bes d'>8 r8 <g bes d'>8 | r8 <g bes d'>8 r8 <g bes d'>8 r8 <g bes d'>8 r8 <g bes d'>8 | r8 <a d' f'>8 r8 <a d' f'>8 r8 <a d' f'>8 r8 <a d' f'>8 | r8 <a d' f'>8 r8 <a d' f'>8 r8 <a d' f'>8 r8 <a d' f'>8 | r8 <g bes d' ees'>8 r8 <g bes d' ees'>8 r8 <g bes d' ees'>8 r8 <g bes d' ees'>8 | r8 <g bes d' ees'>8 r8 <g bes d' ees'>8 r8 <g bes d' ees'>8 r8 <g bes d' ees'>8 | r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 | r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 | }
+  bass { g,1@p | g,1 | d1 | d1 | ees1 | ees1 | f,1 | f,1 | }
+}
+
+section B {
+  chords harmony { Gm7 | Cm7 C7 | F7 | Bbmaj7 D7 | Gm7 | Cm7 A7 | D7 | Gm7 | }
+  comp { r8 <g bes d' f'>8@f r8 <g bes d' f'>8 r8 <g bes d' f'>8 r8 <g bes d' f'>8 | r8 <g bes c' ees'>8 r8 <g bes c' ees'>8 r8 <g bes c' e'>8 r8 <g bes c' e'>8 | r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 | r8 <a bes d' f'>8 r8 <a bes d' f'>8 r8 <a c' d' ges'>8 r8 <a c' d' ges'>8 | r8 <g bes d' f'>8 r8 <g bes d' f'>8 r8 <g bes d' f'>8 r8 <g bes d' f'>8 | r8 <g bes c' ees'>8 r8 <g bes c' ees'>8 r8 <g a des' e'>8 r8 <g a des' e'>8 | r8 <a c' d' ges'>8 r8 <a c' d' ges'>8 r8 <a c' d' ges'>8 r8 <a c' d' ges'>8 | r8 <g bes d' f'>8 r8 <g bes d' f'>8 r8 <g bes d' f'>8 r8 <g bes d' f'>8 | }
+  bass { g,1@p | c2 c2 | f,1 | bes,2 d2 | g,1 | c2 a,2 | d1 | g,1 | }
+}
+
+form { A B B A }
+
+score { chords harmony }
+
+score band { staff comp  staff bass }

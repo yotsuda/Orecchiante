@@ -1,0 +1,31 @@
+// s21-008: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s21-008"
+tempo 4 = 104
+time 4/4
+key f major
+octave absolute
+
+part lead { clef treble  midiInstrument "clarinet" }
+part comp { clef treble  midiInstrument "string ensemble 1" }
+part bass { instrument bass  midiInstrument "electric bass (finger)" }
+
+section A {
+  chords harmony { Bb | Bb | F | F | C | C | Dm | Dm | }
+  lead { r1 | f''2@mp e''4 f''4 | a''4 bes''4 c'''4 a''4 | c'''2 a''2 | c'''2 c'''4 c'''4 | g''4. f''8 g''4 a''4 | a''2 bes''4 a''4 | f''4 a''4 f''2 | }
+  comp { <bes d' f'>1@f | <bes d' f'>1 | <a c' f'>1 | <a c' f'>1 | <g c' e'>1 | <g c' e'>1 | <a d' f'>1 | <a d' f'>1 | }
+  bass { bes,8@p bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | c8 c8 c8 c8 c8 c8 c8 c8 | c8 c8 c8 c8 c8 c8 c8 c8 | d8 d8 d8 d8 d8 d8 d8 d8 | d8 d8 d8 d8 d8 d8 d8 d8 | }
+}
+
+section B {
+  chords harmony { Gm | Gm | C | C | Am/E | Am/E | Dm | Dm | }
+  lead { g''8@mp a''8 bes''4 a''4 g''4 | bes''4 a''4 bes''2 | g''4 a''4 f''4 g''4 | e''2 g''2 | r1 | a''4. g''8 f''4 g''4 | a''8 c'''8 a''4 bes''4 g''4 | f''4 g''4 f''2 | }
+  comp { g8@f bes8 d'8 g8 bes8 d'8 g8 bes8 | g8 bes8 d'8 g8 bes8 d'8 g8 bes8 | g8 c'8 e'8 g8 c'8 e'8 g8 c'8 | g8 c'8 e'8 g8 c'8 e'8 g8 c'8 | a8 c'8 e'8 a8 c'8 e'8 a8 c'8 | a8 c'8 e'8 a8 c'8 e'8 a8 c'8 | a8 d'8 f'8 a8 d'8 f'8 a8 d'8 | a8 d'8 f'8 a8 d'8 f'8 a8 d'8 | }
+  bass { g,8@p g,8 g,8 g,8 g,8 g,8 g,8 g,8 | g,8 g,8 g,8 g,8 g,8 g,8 g,8 g,8 | c8 c8 c8 c8 c8 c8 c8 c8 | c8 c8 c8 c8 c8 c8 c8 c8 | e,8 e,8 e,8 e,8 e,8 e,8 e,8 e,8 | e,8 e,8 e,8 e,8 e,8 e,8 e,8 e,8 | d8 d8 d8 d8 d8 d8 d8 d8 | d8 d8 d8 d8 d8 d8 d8 d8 | }
+}
+
+form { A A B A }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass }

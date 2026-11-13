@@ -13,7 +13,7 @@ chord with its seconds, in the shape of gen_chords.py's truth). The steps:
    a bar, and at a high price elsewhere; a bar line the chord does not change at costs a little.
    This is done for each length a bar may have, and the best path over all lengths is kept;
 3. meter: from where the onsets fall inside the bars (in fours, in threes, or in two threes);
-4. key: Krumhansl's profiles on the whole recording, for the spelling.
+4. key: the one whose chords the reading is made of, for the spelling.
 
 This is the line to beat, written to be measured (tools/score_chords.py), not to be shipped.
 """
@@ -56,6 +56,7 @@ EMIT_SCALE = 0.1
 LOG_FLOOR = -8.0
 BAR_UNITS = (2, 3, 4, 6, 8, 12, 16)   # a bar, in half beats: the tracker may follow any level
 BAR_SECONDS = (0.9, 4.0)              # bars shorter or longer than this are not tried
+HINT_TOLERANCE = 0.15   # how far from the tempo told a bar's beats may be
 
 MAJOR_PROFILE = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88]
 MINOR_PROFILE = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17]
@@ -250,7 +251,9 @@ def features(path):
     }
 
 
-def read(path, f=None):
+def read(path, f=None, tempo=None):
+    """The chart of a recording. `tempo`, if told, is about how many beats a minute it has: what
+    is heard cannot tell a fast song whose chords last two bars from a slow one, bar by bar."""
     name = Path(path).name
     f = f or features(path)
     oenv, chroma, bass, rms = f["oenv"], f["chroma"], f["bass"], f["rms"]
@@ -277,8 +280,13 @@ def read(path, f=None):
     change[1:] = 1.0 - np.sum(both[:, 1:] * both[:, :-1], axis=0)
 
     unit_seconds = float(np.median(seconds))
+    lengths = BAR_UNITS
+    if tempo:  # only the bars of two, three or four such beats
+        told = [n for n in BAR_UNITS
+                if any(abs(n * unit_seconds * tempo / 60.0 / beats - 1.0) <= HINT_TOLERANCE for beats in (2, 3, 4))]
+        lengths = told or BAR_UNITS
     best = (-np.inf, None, 0)
-    for length in BAR_UNITS:
+    for length in lengths:
         if not BAR_SECONDS[0] <= length * unit_seconds <= BAR_SECONDS[1] or count < 4 * length:
             continue
         total, path = decode(emit, heard, change, length)
@@ -379,6 +387,9 @@ def main():
     p.add_argument("input", type=Path, help="a .wav, or a folder of them")
     p.add_argument("--out", type=Path, required=True)
     p.add_argument("--model", type=Path, help="what train_chords.py learnt, in place of the chord templates")
+    p.add_argument("--tempo", type=float,
+                   help="about how many beats a minute the recording has, if you know: it settles "
+                        "whether a chord lasts one bar or two")
     args = p.parse_args()
     if args.model:
         use_model(args.model)
@@ -387,7 +398,7 @@ def main():
     failed = 0
     for path in files:
         try:
-            result = read(path)
+            result = read(path, tempo=args.tempo)
         except Exception as e:  # one recording that cannot be read does not stop the rest
             failed += 1
             print(f"{path.name}: {e}", file=sys.stderr)

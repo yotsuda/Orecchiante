@@ -143,7 +143,7 @@ class Chord:
 
 
 class Song:
-    def __init__(self, song_id, rng):
+    def __init__(self, song_id, rng, held=0.0):
         self.id = song_id
         self.rng = rng
         self.mode = rng.choice(["major", "major", "minor"])
@@ -162,8 +162,11 @@ class Song:
         self.form = rng.choice(FORMS).split()
         self.sections = {}
         for name in sorted(set(self.form)):
+            # its own dice, so that a set made without --held stays the set it was
+            is_held = random.Random(f"{song_id}/{name}/held").random() < held
             self.sections[name] = {
-                "bars": self.make_bars(),
+                "bars": self.make_bars(is_held),
+                "held": is_held,
                 "comp": rng.choice(COMP_STYLES),
                 "bass": rng.choice(BASS_STYLES),
             }
@@ -173,7 +176,7 @@ class Song:
 
     # --- the chords ---
 
-    def make_bars(self):
+    def make_bars(self, held=False):
         rng = self.rng
         degrees = MAJOR_DEGREES if self.mode == "major" else MINOR_DEGREES
         rows = MAJOR_ROWS if self.mode == "major" else MINOR_ROWS
@@ -189,6 +192,8 @@ class Song:
             if quality in ("", "m", "7", "m7") and rng.random() < 0.06:
                 chord.bass = chord.member(rng.choice([1, 2]))
             chords.append(chord)
+        if held:  # the first row only, each chord for two bars
+            return [[chord] for chord in chords[:4] for _ in range(2)]
         bars = []
         for i, chord in enumerate(chords):
             bar = [chord]
@@ -368,7 +373,7 @@ class Song:
                 "comp": self.comp_sound, "bass": self.bass_sound, "lead": self.lead_sound,
                 "drums": bool(self.drums),
                 "levels": {"lead": self.levels[0], "comp": self.levels[1], "bass": self.levels[2]},
-                "styles": {n: {"comp": s["comp"], "bass": s["bass"]} for n, s in self.sections.items()},
+                "styles": {n: {"comp": s["comp"], "bass": s["bass"], "held": s["held"]} for n, s in self.sections.items()},
             },
             "musicSeconds": round(len(bars) * bar_seconds, 4),
             "bars": bars,
@@ -394,6 +399,8 @@ def main():
     p.add_argument("--soundfont", default=os.environ.get("LILYSHARP_SOUNDFONT"),
                    help="a SoundFont 2 file (default: LILYSHARP_SOUNDFONT)")
     p.add_argument("--no-render", action="store_true", help="write the .lys and the truth only")
+    p.add_argument("--held", type=float, default=0.0,
+                   help="the share of sections whose chords each last two bars (default: none)")
     args = p.parse_args()
     if not args.no_render and not args.soundfont:
         p.error("name a SoundFont 2 with --soundfont, or pass --no-render")
@@ -401,7 +408,7 @@ def main():
     failed = 0
     for i in range(1, args.count + 1):
         song_id = f"s{args.seed}-{i:03d}"
-        song = Song(song_id, random.Random(args.seed * 100003 + i))
+        song = Song(song_id, random.Random(args.seed * 100003 + i), args.held)
         lys = args.out / (song_id + ".lys")
         lys.write_text(song.lys(), encoding="utf-8", newline="\n")
         truth = song.truth()

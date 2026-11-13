@@ -1,0 +1,43 @@
+// s21-019: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s21-019"
+tempo 4 = 73
+time 4/4
+key b major
+octave absolute
+
+part comp { clef treble  midiInstrument "electric piano 1" }
+part bass { instrument bass  midiInstrument "fretless bass" }
+part kit { clef percussion }
+
+phrase hats { hh8 8 8 8 8 8 8 8 | }
+phrase back { r4 sn r sn | }
+phrase kick { bd4 bd bd bd | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Emaj7 | Emaj7 | B | B | F# | F# | G#m | G#m | }
+  comp { <gis b dis' e'>1@f | <gis b dis' e'>1 | <b dis' fis'>1 | <b dis' fis'>1 | <ais cis' fis'>1 | <ais cis' fis'>1 | <gis b dis'>1 | <gis b dis'>1 | }
+  bass { e,4@mp b,4 e,4 b,4 | e,4 b,4 e,4 b,4 | b,4 fis,4 b,4 fis,4 | b,4 fis,4 b,4 fis,4 | fis,4 cis4 fis,4 cis4 | fis,4 cis4 fis,4 cis4 | gis,4 dis4 gis,4 dis4 | gis,4 dis4 gis,4 dis4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { Bmaj7 | Bmaj7 | G#m | G#m | C#m | C#m | F#7 | F#7 | }
+  comp { ais8@f b8 dis'8 fis'8 ais8 b8 dis'8 fis'8 | ais8 b8 dis'8 fis'8 ais8 b8 dis'8 fis'8 | gis8 b8 dis'8 gis8 b8 dis'8 gis8 b8 | gis8 b8 dis'8 gis8 b8 dis'8 gis8 b8 | gis8 cis'8 e'8 gis8 cis'8 e'8 gis8 cis'8 | gis8 cis'8 e'8 gis8 cis'8 e'8 gis8 cis'8 | ais8 cis'8 e'8 fis'8 ais8 cis'8 e'8 fis'8 | ais8 cis'8 e'8 fis'8 ais8 cis'8 e'8 fis'8 | }
+  bass { b,1@mp | b,1 | gis,1 | gis,1 | cis1 | cis1 | fis,1 | fis,1 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section C {
+  chords harmony { Emaj7 | Bmaj7 | F#sus4 | G#m | G#m | E | Bmaj7 | F# | }
+  comp { r8 <gis b dis' e'>8@f r8 <gis b dis' e'>8 r8 <gis b dis' e'>8 r8 <gis b dis' e'>8 | r8 <ais b dis' fis'>8 r8 <ais b dis' fis'>8 r8 <ais b dis' fis'>8 r8 <ais b dis' fis'>8 | r8 <b cis' fis'>8 r8 <b cis' fis'>8 r8 <b cis' fis'>8 r8 <b cis' fis'>8 | r8 <gis b dis'>8 r8 <gis b dis'>8 r8 <gis b dis'>8 r8 <gis b dis'>8 | r8 <gis b dis'>8 r8 <gis b dis'>8 r8 <gis b dis'>8 r8 <gis b dis'>8 | r8 <gis b e'>8 r8 <gis b e'>8 r8 <gis b e'>8 r8 <gis b e'>8 | r8 <ais b dis' fis'>8 r8 <ais b dis' fis'>8 r8 <ais b dis' fis'>8 r8 <ais b dis' fis'>8 | r8 <ais cis' fis'>8 r8 <ais cis' fis'>8 r8 <ais cis' fis'>8 r8 <ais cis' fis'>8 | }
+  bass { e,8@mp e,8 e,8 e,8 e,8 e,8 e,8 e,8 | b,8 b,8 b,8 b,8 b,8 b,8 b,8 b,8 | fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 | gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 | gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 | e,8 e,8 e,8 e,8 e,8 e,8 e,8 e,8 | b,8 b,8 b,8 b,8 b,8 b,8 b,8 b,8 | fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A B C B }
+
+score { chords harmony }
+
+score band { staff comp  staff bass  staff kit }

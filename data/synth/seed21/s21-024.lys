@@ -1,0 +1,28 @@
+// s21-024: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s21-024"
+tempo 4 = 118
+time 4/4
+key ees minor
+octave absolute
+
+part comp { clef treble  midiInstrument "drawbar organ" }
+part bass { instrument bass  midiInstrument "electric bass (pick)" }
+
+section A {
+  chords harmony { Ebm | Ebm | Abm7 | Abm7 | Bb/F | Bb/F | Ebm7 | Ebm7 | }
+  comp { <bes ees' ges'>4@ff <bes ees' ges'>4 <bes ees' ges'>4 <bes ees' ges'>4 | <bes ees' ges'>4 <bes ees' ges'>4 <bes ees' ges'>4 <bes ees' ges'>4 | <aes b ees' ges'>4 <aes b ees' ges'>4 <aes b ees' ges'>4 <aes b ees' ges'>4 | <aes b ees' ges'>4 <aes b ees' ges'>4 <aes b ees' ges'>4 <aes b ees' ges'>4 | <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 | <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 | <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 | <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 | }
+  bass { ees1@mp | ees1 | aes,1 | aes,1 | f,1 | f,1 | ees1 | ees1 | }
+}
+
+section B {
+  chords harmony { Fdim | Fdim | Bb | Bb | Ebm7 | Ebm7 | Ebm7 | Ebm7 | }
+  comp { <aes b f'>4@ff <aes b f'>4 <aes b f'>4 <aes b f'>4 | <aes b f'>4 <aes b f'>4 <aes b f'>4 <aes b f'>4 | <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 | <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 | <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 | <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 | <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 | <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 | }
+  bass { f,1@mp | f,1 | bes,1 | bes,1 | ees1 | ees1 | ees1 | ees1 | }
+}
+
+form { A B A B }
+
+score { chords harmony }
+
+score band { staff comp  staff bass }

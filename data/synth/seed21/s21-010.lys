@@ -1,0 +1,31 @@
+// s21-010: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s21-010"
+tempo 4 = 137
+time 4/4
+key gis minor
+octave absolute
+
+part lead { clef treble  midiInstrument "vibraphone" }
+part comp { clef treble  midiInstrument "acoustic grand" }
+part bass { instrument bass  midiInstrument "fretless bass" }
+
+section A {
+  chords harmony { A#m7(b5) | A#m7(b5) | D# | D# | G#m7 | G#m7 | G#m | G#m | }
+  lead { cis''4.@mp dis''8 cis''4 dis''4 | e''4 gis''4 ais''2 | g''8 gis''8 ais''4 b''4 ais''4 | r1 | b''8 ais''8 b''4 b''4 ais''4 | r1 | b''2 b''4 ais''4 | b''2 b''4 ais''4 | }
+  comp { <gis ais cis' e'>1@f | <gis ais cis' e'>1 | <g ais dis'>1 | <g ais dis'>1 | <gis b dis' fis'>1 | <gis b dis' fis'>1 | <gis b dis'>1 | <gis b dis'>1 | }
+  bass { ais,8@mp ais,8 ais,8 ais,8 ais,8 ais,8 ais,8 ais,8 | ais,8 ais,8 ais,8 ais,8 ais,8 ais,8 ais,8 ais,8 | dis8 dis8 dis8 dis8 dis8 dis8 dis8 dis8 | dis8 dis8 dis8 dis8 dis8 dis8 dis8 dis8 | gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 | gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 | gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 | gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 | }
+}
+
+section B {
+  chords harmony { G#m | Bmaj7 | F# | C#m7 | G#m7 | D#m7 | Emaj7 | F# | }
+  lead { b''8@mp b''8 b''4 ais''4 b''4 | ais''1 | r1 | b''4 ais''4 b''4 ais''4 | b''4 b''4 b''2 | fis''2 dis''2 | e''2 dis''2 | cis''4 b'4 ais'4 b'4 | }
+  comp { gis8@f b8 dis'8 gis8 b8 dis'8 gis8 b8 | ais8 b8 dis'8 fis'8 ais8 b8 dis'8 fis'8 | ais8 cis'8 fis'8 ais8 cis'8 fis'8 ais8 cis'8 | gis8 b8 cis'8 e'8 gis8 b8 cis'8 e'8 | gis8 b8 dis'8 fis'8 gis8 b8 dis'8 fis'8 | ais8 cis'8 dis'8 fis'8 ais8 cis'8 dis'8 fis'8 | gis8 b8 dis'8 e'8 gis8 b8 dis'8 e'8 | ais8 cis'8 fis'8 ais8 cis'8 fis'8 ais8 cis'8 | }
+  bass { gis,8@mp gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 | b,8 b,8 b,8 b,8 b,8 b,8 b,8 b,8 | fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 | cis8 cis8 cis8 cis8 cis8 cis8 cis8 cis8 | gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 | dis8 dis8 dis8 dis8 dis8 dis8 dis8 dis8 | e,8 e,8 e,8 e,8 e,8 e,8 e,8 e,8 | fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 | }
+}
+
+form { A B B A }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass }

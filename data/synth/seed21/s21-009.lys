@@ -1,0 +1,28 @@
+// s21-009: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s21-009"
+tempo 4 = 124
+time 3/4
+key b minor
+octave absolute
+
+part comp { clef treble  midiInstrument "electric piano 1" }
+part bass { instrument bass  midiInstrument "fretless bass" }
+
+section A {
+  chords harmony { Bm | Em7 | F#7 | Bm7 | Bm7 | Em7/G | F#7/C# | Bm | }
+  comp { b8@fff d'8 fis'8 b8 d'8 fis'8 | g8 b8 d'8 e'8 g8 b8 | ais8 cis'8 e'8 fis'8 ais8 cis'8 | a8 b8 d'8 fis'8 a8 b8 | a8 b8 d'8 fis'8 a8 b8 | g8 b8 d'8 e'8 g8 b8 | ais8 cis'8 e'8 fis'8 ais8 cis'8 | b8 d'8 fis'8 b8 d'8 fis'8 | }
+  bass { b,2.@mp | e,2. | fis,2. | b,2. | b,2. | g,2. | cis2. | b,2. | }
+}
+
+section B {
+  chords harmony { C#dim | F#7 | Bm7 | Bm | C#m7(b5) | F#7 | Bm7 | Bm7 | }
+  comp { <g cis' e'>4@fff <g cis' e'>4 <g cis' e'>4 | <ais cis' e' fis'>4 <ais cis' e' fis'>4 <ais cis' e' fis'>4 | <a b d' fis'>4 <a b d' fis'>4 <a b d' fis'>4 | <b d' fis'>4 <b d' fis'>4 <b d' fis'>4 | <g b cis' e'>4 <g b cis' e'>4 <g b cis' e'>4 | <ais cis' e' fis'>4 <ais cis' e' fis'>4 <ais cis' e' fis'>4 | <a b d' fis'>4 <a b d' fis'>4 <a b d' fis'>4 | <a b d' fis'>4 <a b d' fis'>4 <a b d' fis'>4 | }
+  bass { cis2.@mp | fis,2. | b,2. | b,2. | cis2. | fis,2. | b,2. | b,2. | }
+}
+
+form { A B B A }
+
+score { chords harmony }
+
+score band { staff comp  staff bass }

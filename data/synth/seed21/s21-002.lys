@@ -1,0 +1,47 @@
+// s21-002: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s21-002"
+tempo 4 = 152
+time 4/4
+key e major
+octave absolute
+
+part lead { clef treble  midiInstrument "clarinet" }
+part comp { clef treble  midiInstrument "acoustic guitar (nylon)" }
+part bass { instrument bass  midiInstrument "fretless bass" }
+part kit { clef percussion }
+
+phrase hats { hh8 8 8 8 8 8 8 8 | }
+phrase back { r4 sn r sn | }
+phrase kick { bd4 r8 bd bd4 r | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Emaj7 | Emaj7 | A | A | B | B | A | A | }
+  lead { r1 | dis''4.@mf cis''8 e''4 dis''4 | cis''4 dis''4 cis''2 | e''4. fis''8 e''4 cis''4 | r1 | dis''2 fis''2 | a''2 a''2 | e''4 cis''4 cis''2 | }
+  comp { <gis b dis' e'>4@fff <gis b dis' e'>4 <gis b dis' e'>4 <gis b dis' e'>4 | <gis b dis' e'>4 <gis b dis' e'>4 <gis b dis' e'>4 <gis b dis' e'>4 | <a cis' e'>4 <a cis' e'>4 <a cis' e'>4 <a cis' e'>4 | <a cis' e'>4 <a cis' e'>4 <a cis' e'>4 <a cis' e'>4 | <b dis' fis'>4 <b dis' fis'>4 <b dis' fis'>4 <b dis' fis'>4 | <b dis' fis'>4 <b dis' fis'>4 <b dis' fis'>4 <b dis' fis'>4 | <a cis' e'>4 <a cis' e'>4 <a cis' e'>4 <a cis' e'>4 | <a cis' e'>4 <a cis' e'>4 <a cis' e'>4 <a cis' e'>4 | }
+  bass { e,8@mp e,8 e,8 e,8 e,8 e,8 e,8 e,8 | e,8 e,8 e,8 e,8 e,8 e,8 e,8 e,8 | a,8 a,8 a,8 a,8 a,8 a,8 a,8 a,8 | a,8 a,8 a,8 a,8 a,8 a,8 a,8 a,8 | b,8 b,8 b,8 b,8 b,8 b,8 b,8 b,8 | b,8 b,8 b,8 b,8 b,8 b,8 b,8 b,8 | a,8 a,8 a,8 a,8 a,8 a,8 a,8 a,8 | a,8 a,8 a,8 a,8 a,8 a,8 a,8 a,8 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { E | E | C#m7 | C#m7 | F#m | F#m | B | B | }
+  lead { e''2@mf gis''2 | gis''4. a''8 b''4 b''4 | gis''2 fis''4 a''4 | r1 | fis''1 | a''1 | fis''2 fis''2 | fis''8 gis''8 fis''4 e''4 dis''4 | }
+  comp { r8 <gis b e'>8@fff r8 <gis b e'>8 r8 <gis b e'>8 r8 <gis b e'>8 | r8 <gis b e'>8 r8 <gis b e'>8 r8 <gis b e'>8 r8 <gis b e'>8 | r8 <gis b cis' e'>8 r8 <gis b cis' e'>8 r8 <gis b cis' e'>8 r8 <gis b cis' e'>8 | r8 <gis b cis' e'>8 r8 <gis b cis' e'>8 r8 <gis b cis' e'>8 r8 <gis b cis' e'>8 | r8 <a cis' fis'>8 r8 <a cis' fis'>8 r8 <a cis' fis'>8 r8 <a cis' fis'>8 | r8 <a cis' fis'>8 r8 <a cis' fis'>8 r8 <a cis' fis'>8 r8 <a cis' fis'>8 | r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 | r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 | }
+  bass { e,4@mp b,4 e,4 b,4 | e,4 b,4 e,4 b,4 | cis4 gis,4 cis4 gis,4 | cis4 gis,4 cis4 gis,4 | fis,4 cis4 fis,4 cis4 | fis,4 cis4 fis,4 cis4 | b,4 fis,4 b,4 fis,4 | b,4 fis,4 b,4 fis,4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section C {
+  chords harmony { E | E | B | B | C#m7 | C#m7 | Amaj7 | Amaj7 | }
+  lead { e''4@mf dis''4 fis''4 gis''4 | gis''2 e''4 fis''4 | fis''4 a''4 fis''4 e''4 | fis''4 e''4 fis''2 | e''8 fis''8 dis''4 e''4 dis''4 | r1 | cis''4. dis''8 fis''4 dis''4 | e''8 fis''8 gis''4 a''4 b''4 | }
+  comp { r8 <gis b e'>8@fff r8 <gis b e'>8 r8 <gis b e'>8 r8 <gis b e'>8 | r8 <gis b e'>8 r8 <gis b e'>8 r8 <gis b e'>8 r8 <gis b e'>8 | r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 | r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 | r8 <gis b cis' e'>8 r8 <gis b cis' e'>8 r8 <gis b cis' e'>8 r8 <gis b cis' e'>8 | r8 <gis b cis' e'>8 r8 <gis b cis' e'>8 r8 <gis b cis' e'>8 r8 <gis b cis' e'>8 | r8 <gis a cis' e'>8 r8 <gis a cis' e'>8 r8 <gis a cis' e'>8 r8 <gis a cis' e'>8 | r8 <gis a cis' e'>8 r8 <gis a cis' e'>8 r8 <gis a cis' e'>8 r8 <gis a cis' e'>8 | }
+  bass { e,8@mp e,8 e,8 e,8 e,8 e,8 e,8 e,8 | e,8 e,8 e,8 e,8 e,8 e,8 e,8 e,8 | b,8 b,8 b,8 b,8 b,8 b,8 b,8 b,8 | b,8 b,8 b,8 b,8 b,8 b,8 b,8 b,8 | cis8 cis8 cis8 cis8 cis8 cis8 cis8 cis8 | cis8 cis8 cis8 cis8 cis8 cis8 cis8 cis8 | a,8 a,8 a,8 a,8 a,8 a,8 a,8 a,8 | a,8 a,8 a,8 a,8 a,8 a,8 a,8 a,8 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A B A C A }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass  staff kit }

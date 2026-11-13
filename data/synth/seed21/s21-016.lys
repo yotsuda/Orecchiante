@@ -1,0 +1,39 @@
+// s21-016: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s21-016"
+tempo 4 = 104
+time 4/4
+key f major
+octave absolute
+
+part lead { clef treble  midiInstrument "trumpet" }
+part comp { clef treble  midiInstrument "drawbar organ" }
+part bass { instrument bass  midiInstrument "electric bass (pick)" }
+part kit { clef percussion }
+
+phrase hats { hh8 8 8 8 8 8 8 8 | }
+phrase back { r4 sn r sn | }
+phrase kick { bd4 bd bd bd | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Dm | Bbmaj7 | Fmaj7 G7 | Csus4 | Dm | Bb | F | C | }
+  lead { f''2@mp a''4 c'''4 | bes''8 c'''8 c'''4 a''4 f''4 | f''2 f''2 | g''4 a''4 bes''4 a''4 | r1 | f''2 d''4 c''4 | c''4. a'8 bes'4 g'4 | c''4 bes'4 g'4 g'4 | }
+  comp { <a d' f'>4@f <a d' f'>4 <a d' f'>4 <a d' f'>4 | <a bes d' f'>4 <a bes d' f'>4 <a bes d' f'>4 <a bes d' f'>4 | <a c' e' f'>4 <a c' e' f'>4 <g b d' f'>4 <g b d' f'>4 | <g c' f'>4 <g c' f'>4 <g c' f'>4 <g c' f'>4 | <a d' f'>4 <a d' f'>4 <a d' f'>4 <a d' f'>4 | <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 | <a c' f'>4 <a c' f'>4 <a c' f'>4 <a c' f'>4 | <g c' e'>4 <g c' e'>4 <g c' e'>4 <g c' e'>4 | }
+  bass { d4@mp a,4 d4 a,4 | bes,4 f,4 bes,4 f,4 | f,4 c4 g,4 d4 | c4 g,4 c4 g,4 | d4 a,4 d4 a,4 | bes,4 f,4 bes,4 f,4 | f,4 c4 f,4 c4 | c4 g,4 c4 g,4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { Dm/A | Dm/A | Bb | Bb | F | F | Csus4 | Csus4 | }
+  lead { r1 | d''4@mp c''4 bes'4 c''4 | r1 | d''1 | c''4 e''4 f''2 | f''4. a''8 bes''4 c'''4 | r1 | r1 | }
+  comp { r8 <a d' f'>8@f r8 <a d' f'>8 r8 <a d' f'>8 r8 <a d' f'>8 | r8 <a d' f'>8 r8 <a d' f'>8 r8 <a d' f'>8 r8 <a d' f'>8 | r8 <bes d' f'>8 r8 <bes d' f'>8 r8 <bes d' f'>8 r8 <bes d' f'>8 | r8 <bes d' f'>8 r8 <bes d' f'>8 r8 <bes d' f'>8 r8 <bes d' f'>8 | r8 <a c' f'>8 r8 <a c' f'>8 r8 <a c' f'>8 r8 <a c' f'>8 | r8 <a c' f'>8 r8 <a c' f'>8 r8 <a c' f'>8 r8 <a c' f'>8 | r8 <g c' f'>8 r8 <g c' f'>8 r8 <g c' f'>8 r8 <g c' f'>8 | r8 <g c' f'>8 r8 <g c' f'>8 r8 <g c' f'>8 r8 <g c' f'>8 | }
+  bass { a,1@mp | a,1 | bes,1 | bes,1 | f,1 | f,1 | c1 | c1 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A A B A }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass  staff kit }

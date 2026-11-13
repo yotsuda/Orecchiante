@@ -1,0 +1,34 @@
+// s21-005: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s21-005"
+tempo 4 = 151
+time 4/4
+key ees major
+octave absolute
+
+part comp { clef treble  midiInstrument "acoustic guitar (nylon)" }
+part bass { instrument bass  midiInstrument "electric bass (pick)" }
+
+section A {
+  chords harmony { Cm | Ab | Eb | Bb | Cm | Ab | Eb | Bb | }
+  comp { g8@fff c'8 ees'8 g8 c'8 ees'8 g8 c'8 | aes8 c'8 ees'8 aes8 c'8 ees'8 aes8 c'8 | g8 bes8 ees'8 g8 bes8 ees'8 g8 bes8 | bes8 d'8 f'8 bes8 d'8 f'8 bes8 d'8 | g8 c'8 ees'8 g8 c'8 ees'8 g8 c'8 | aes8 c'8 ees'8 aes8 c'8 ees'8 aes8 c'8 | g8 bes8 ees'8 g8 bes8 ees'8 g8 bes8 | bes8 d'8 f'8 bes8 d'8 f'8 bes8 d'8 | }
+  bass { c1@mp | aes,1 | ees1 | bes,1 | c1 | aes,1 | ees1 | bes,1 | }
+}
+
+section B {
+  chords harmony { Cm | Cm | Ab | Ab | Eb/Bb | Eb/Bb | Bb | Bb | }
+  comp { g8@fff c'8 ees'8 g8 c'8 ees'8 g8 c'8 | g8 c'8 ees'8 g8 c'8 ees'8 g8 c'8 | aes8 c'8 ees'8 aes8 c'8 ees'8 aes8 c'8 | aes8 c'8 ees'8 aes8 c'8 ees'8 aes8 c'8 | g8 bes8 ees'8 g8 bes8 ees'8 g8 bes8 | g8 bes8 ees'8 g8 bes8 ees'8 g8 bes8 | bes8 d'8 f'8 bes8 d'8 f'8 bes8 d'8 | bes8 d'8 f'8 bes8 d'8 f'8 bes8 d'8 | }
+  bass { c8@mp c8 c8 c8 c8 c8 c8 c8 | c8 c8 c8 c8 c8 c8 c8 c8 | aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 | aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | }
+}
+
+section C {
+  chords harmony { Eb | Ab | Bb | Ab | Eb | Cm | Fm | Bb | }
+  comp { <g bes ees'>1@fff | <aes c' ees'>1 | <bes d' f'>1 | <aes c' ees'>1 | <g bes ees'>1 | <g c' ees'>1 | <aes c' f'>1 | <bes d' f'>1 | }
+  bass { ees1@mp | aes,1 | bes,1 | aes,1 | ees1 | c1 | f,1 | bes,1 | }
+}
+
+form { A B C B }
+
+score { chords harmony }
+
+score band { staff comp  staff bass }
