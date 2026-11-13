@@ -1,0 +1,43 @@
+// s7-024: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s7-024"
+tempo 4 = 87
+time 4/4
+key fis major
+octave absolute
+
+part comp { clef treble  midiInstrument "drawbar organ" }
+part bass { instrument bass  midiInstrument "acoustic bass" }
+part kit { clef percussion }
+
+phrase hats { hh8 8 8 8 8 8 8 8 | }
+phrase back { r4 sn r sn | }
+phrase kick { bd4 bd bd bd | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { G#m | C# | A#m A#7 | D#m | G#m | C# | A#m | D#m D#7 | }
+  comp { gis8@ff b8 dis'8 gis8 b8 dis'8 gis8 b8 | gis8 cis'8 f'8 gis8 cis'8 f'8 gis8 cis'8 | ais8 cis'8 f'8 ais8 gis8 ais8 d'8 f'8 | ais8 dis'8 fis'8 ais8 dis'8 fis'8 ais8 dis'8 | gis8 b8 dis'8 gis8 b8 dis'8 gis8 b8 | gis8 cis'8 f'8 gis8 cis'8 f'8 gis8 cis'8 | ais8 cis'8 f'8 ais8 cis'8 f'8 ais8 cis'8 | ais8 dis'8 fis'8 ais8 g8 ais8 cis'8 dis'8 | }
+  bass { gis,1@mp | cis1 | ais,2 ais,2 | dis1 | gis,1 | cis1 | ais,1 | dis2 dis2 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { F# | D#m | G#m G#7 | C# | F# | D#m | G#m/D# | C# | }
+  comp { r8 <ais cis' fis'>8@ff r8 <ais cis' fis'>8 r8 <ais cis' fis'>8 r8 <ais cis' fis'>8 | r8 <ais dis' fis'>8 r8 <ais dis' fis'>8 r8 <ais dis' fis'>8 r8 <ais dis' fis'>8 | r8 <gis b dis'>8 r8 <gis b dis'>8 r8 <gis c' dis' fis'>8 r8 <gis c' dis' fis'>8 | r8 <gis cis' f'>8 r8 <gis cis' f'>8 r8 <gis cis' f'>8 r8 <gis cis' f'>8 | r8 <ais cis' fis'>8 r8 <ais cis' fis'>8 r8 <ais cis' fis'>8 r8 <ais cis' fis'>8 | r8 <ais dis' fis'>8 r8 <ais dis' fis'>8 r8 <ais dis' fis'>8 r8 <ais dis' fis'>8 | r8 <gis b dis'>8 r8 <gis b dis'>8 r8 <gis b dis'>8 r8 <gis b dis'>8 | r8 <gis cis' f'>8 r8 <gis cis' f'>8 r8 <gis cis' f'>8 r8 <gis cis' f'>8 | }
+  bass { fis,1@mp | dis1 | gis,2 gis,2 | cis1 | fis,1 | dis1 | dis1 | cis1 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section C {
+  chords harmony { G#m G#7 | C#sus4 E#7 | A#m | D#m/F# | F# | D#m | B G#7 | C# D#7 | }
+  comp { <gis b dis'>2@ff <gis c' dis' fis'>2 | <gis cis' fis'>2 <a c' dis' f'>2 | <ais cis' f'>1 | <ais dis' fis'>1 | <ais cis' fis'>1 | <ais dis' fis'>1 | <b dis' fis'>2 <gis c' dis' fis'>2 | <gis cis' f'>2 <g ais cis' dis'>2 | }
+  bass { gis,4@mp dis4 gis,4 dis4 | cis4 gis,4 f,4 c4 | ais,4 f,4 ais,4 f,4 | fis,4 dis4 fis,4 dis4 | fis,4 cis4 fis,4 cis4 | dis4 ais,4 dis4 ais,4 | b,4 fis,4 gis,4 dis4 | cis4 gis,4 dis4 ais,4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A B A C A }
+
+score { chords harmony }
+
+score band { staff comp  staff bass  staff kit }

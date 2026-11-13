@@ -1,0 +1,34 @@
+// s7-002: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s7-002"
+tempo 4. = 48
+time 6/8
+key b minor
+octave absolute
+
+part comp { clef treble  midiInstrument "acoustic grand" }
+part bass { instrument bass  midiInstrument "electric bass (pick)" }
+
+section A {
+  chords harmony { Bm7 A7 | Dmaj7 | A7 | Em7 | Bm7 A7 | D/F# E7 | A | Em7 F#7 | }
+  comp { <a b d' fis'>4.@fff <g a cis' e'>4. | <a cis' d' fis'>4. <a cis' d' fis'>4. | <g a cis' e'>4. <g a cis' e'>4. | <g b d' e'>4. <g b d' e'>4. | <a b d' fis'>4. <g a cis' e'>4. | <a d' fis'>4. <gis b d' e'>4. | <a cis' e'>4. <a cis' e'>4. | <g b d' e'>4. <ais cis' e' fis'>4. | }
+  bass { b,4.@p a,4. | d4. a,4. | a,4. e,4. | e,4. b,4. | b,4. a,4. | fis,4. e,4. | a,4. e,4. | e,4. fis,4. | }
+}
+
+section B {
+  chords harmony { Bm7 | A7 | G | F#7/C# | C#m7(b5) C#7 | F#sus4 | Bm7 | Bm | }
+  comp { <a b d' fis'>4.@fff <a b d' fis'>4. | <g a cis' e'>4. <g a cis' e'>4. | <g b d'>4. <g b d'>4. | <ais cis' e' fis'>4. <ais cis' e' fis'>4. | <g b cis' e'>4. <gis b cis' f'>4. | <b cis' fis'>4. <b cis' fis'>4. | <a b d' fis'>4. <a b d' fis'>4. | <b d' fis'>4. <b d' fis'>4. | }
+  bass { b,2.@p | a,2. | g,2. | cis2. | cis4. cis4. | fis,2. | b,2. | b,2. | }
+}
+
+section C {
+  chords harmony { Bm7 | A7 | G C#7 | F# | Bm7 | A7 | G C#7 | F#7 F#7 | }
+  comp { <a b d' fis'>2.@fff | <g a cis' e'>2. | <g b d'>4. <gis b cis' f'>4. | <ais cis' fis'>2. | <a b d' fis'>2. | <g a cis' e'>2. | <g b d'>4. <gis b cis' f'>4. | <ais cis' e' fis'>4. <ais cis' e' fis'>4. | }
+  bass { b,4.@p fis,4. | a,4. e,4. | g,4. cis4. | fis,4. cis4. | b,4. fis,4. | a,4. e,4. | g,4. cis4. | fis,4. fis,4. | }
+}
+
+form { A B A C A }
+
+score { chords harmony }
+
+score band { staff comp  staff bass }

@@ -1,0 +1,39 @@
+// s11-012: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s11-012"
+tempo 4 = 85
+time 4/4
+key g major
+octave absolute
+
+part lead { clef treble  midiInstrument "clarinet" }
+part comp { clef treble  midiInstrument "acoustic guitar (nylon)" }
+part bass { instrument bass  midiInstrument "fretless bass" }
+part kit { clef percussion }
+
+phrase hats { hh8 8 8 8 8 8 8 8 | }
+phrase back { r4 sn r sn | }
+phrase kick { bd4 bd bd bd | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Em7 | Am/E | D D7 | G | Gmaj7 | Cmaj7 | Am | D7 | }
+  lead { r1 | c''2@mf e''4 c''4 | r1 | d''1 | b'1 | c''1 | c''8 e''8 d''4 b'4 g'4 | c''8 e''8 d''4 fis''4 a''4 | }
+  comp { <g b d' e'>1@ff | <a c' e'>1 | <a d' fis'>2 <a c' d' fis'>2 | <g b d'>1 | <g b d' fis'>1 | <g b c' e'>1 | <a c' e'>1 | <a c' d' fis'>1 | }
+  bass { e,4@p b,4 e,4 b,4 | e,4 a,4 e,4 a,4 | d4 a,4 d4 a,4 | g,4 d4 g,4 d4 | g,4 d4 g,4 d4 | c4 g,4 c4 g,4 | a,4 e,4 a,4 e,4 | d4 a,4 d4 a,4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { Em7/B | D7 | Cmaj7 | D7 | Em7 | D7 | Cmaj7 A7 | Dsus4 | }
+  lead { r1 | a''1@mf | r1 | fis''4. g''8 fis''4 g''4 | e''2 e''2 | fis''2 a''2 | r1 | g''2 g''2 | }
+  comp { r8 <g b d' e'>8@ff r8 <g b d' e'>8 r8 <g b d' e'>8 r8 <g b d' e'>8 | r8 <a c' d' fis'>8 r8 <a c' d' fis'>8 r8 <a c' d' fis'>8 r8 <a c' d' fis'>8 | r8 <g b c' e'>8 r8 <g b c' e'>8 r8 <g b c' e'>8 r8 <g b c' e'>8 | r8 <a c' d' fis'>8 r8 <a c' d' fis'>8 r8 <a c' d' fis'>8 r8 <a c' d' fis'>8 | r8 <g b d' e'>8 r8 <g b d' e'>8 r8 <g b d' e'>8 r8 <g b d' e'>8 | r8 <a c' d' fis'>8 r8 <a c' d' fis'>8 r8 <a c' d' fis'>8 r8 <a c' d' fis'>8 | r8 <g b c' e'>8 r8 <g b c' e'>8 r8 <g a cis' e'>8 r8 <g a cis' e'>8 | r8 <g a d'>8 r8 <g a d'>8 r8 <g a d'>8 r8 <g a d'>8 | }
+  bass { b,8@p b,8 b,8 b,8 b,8 b,8 b,8 b,8 | d8 d8 d8 d8 d8 d8 d8 d8 | c8 c8 c8 c8 c8 c8 c8 c8 | d8 d8 d8 d8 d8 d8 d8 d8 | e,8 e,8 e,8 e,8 e,8 e,8 e,8 e,8 | d8 d8 d8 d8 d8 d8 d8 d8 | c8 c8 c8 c8 a,8 a,8 a,8 a,8 | d8 d8 d8 d8 d8 d8 d8 d8 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A A B }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass  staff kit }

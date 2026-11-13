@@ -1,0 +1,28 @@
+// s11-017: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s11-017"
+tempo 4 = 113
+time 4/4
+key a major
+octave absolute
+
+part comp { clef treble  midiInstrument "string ensemble 1" }
+part bass { instrument bass  midiInstrument "acoustic bass" }
+
+section A {
+  chords harmony { Bm | E/G# | C#m | F#m | Bm B7 | E G#7 | C#m | F#m F#7 | }
+  comp { b8@fff d'8 fis'8 b8 d'8 fis'8 b8 d'8 | gis8 b8 e'8 gis8 b8 e'8 gis8 b8 | gis8 cis'8 e'8 gis8 cis'8 e'8 gis8 cis'8 | a8 cis'8 fis'8 a8 cis'8 fis'8 a8 cis'8 | b8 d'8 fis'8 b8 a8 b8 dis'8 fis'8 | gis8 b8 e'8 gis8 gis8 c'8 dis'8 fis'8 | gis8 cis'8 e'8 gis8 cis'8 e'8 gis8 cis'8 | a8 cis'8 fis'8 a8 ais8 cis'8 e'8 fis'8 | }
+  bass { b,1@mp | gis,1 | cis1 | fis,1 | b,2 b,2 | e,2 gis,2 | cis1 | fis,2 fis,2 | }
+}
+
+section B {
+  chords harmony { F#m | E | D B7 | E E7 | A A7 | D | Bm | E | }
+  comp { r8 <a cis' fis'>8@fff r8 <a cis' fis'>8 r8 <a cis' fis'>8 r8 <a cis' fis'>8 | r8 <gis b e'>8 r8 <gis b e'>8 r8 <gis b e'>8 r8 <gis b e'>8 | r8 <a d' fis'>8 r8 <a d' fis'>8 r8 <a b dis' fis'>8 r8 <a b dis' fis'>8 | r8 <gis b e'>8 r8 <gis b e'>8 r8 <gis b d' e'>8 r8 <gis b d' e'>8 | r8 <a cis' e'>8 r8 <a cis' e'>8 r8 <g a cis' e'>8 r8 <g a cis' e'>8 | r8 <a d' fis'>8 r8 <a d' fis'>8 r8 <a d' fis'>8 r8 <a d' fis'>8 | r8 <b d' fis'>8 r8 <b d' fis'>8 r8 <b d' fis'>8 r8 <b d' fis'>8 | r8 <gis b e'>8 r8 <gis b e'>8 r8 <gis b e'>8 r8 <gis b e'>8 | }
+  bass { fis,8@mp fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 | e,8 e,8 e,8 e,8 e,8 e,8 e,8 e,8 | d8 d8 d8 d8 b,8 b,8 b,8 b,8 | e,8 e,8 e,8 e,8 e,8 e,8 e,8 e,8 | a,8 a,8 a,8 a,8 a,8 a,8 a,8 a,8 | d8 d8 d8 d8 d8 d8 d8 d8 | b,8 b,8 b,8 b,8 b,8 b,8 b,8 b,8 | e,8 e,8 e,8 e,8 e,8 e,8 e,8 e,8 | }
+}
+
+form { A A B A }
+
+score { chords harmony }
+
+score band { staff comp  staff bass }

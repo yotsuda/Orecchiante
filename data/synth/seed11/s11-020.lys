@@ -1,0 +1,28 @@
+// s11-020: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s11-020"
+tempo 4 = 113
+time 3/4
+key bes major
+octave absolute
+
+part comp { clef treble  midiInstrument "electric piano 2" }
+part bass { instrument bass  midiInstrument "electric bass (pick)" }
+
+section A {
+  chords harmony { Gm7 | Ebmaj7 | Bb | F | Cm7 | F | Dm7 | Gm7 | }
+  comp { <g bes d' f'>4@f <g bes d' f'>4 <g bes d' f'>4 | <g bes d' ees'>4 <g bes d' ees'>4 <g bes d' ees'>4 | <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 | <a c' f'>4 <a c' f'>4 <a c' f'>4 | <g bes c' ees'>4 <g bes c' ees'>4 <g bes c' ees'>4 | <a c' f'>4 <a c' f'>4 <a c' f'>4 | <a c' d' f'>4 <a c' d' f'>4 <a c' d' f'>4 | <g bes d' f'>4 <g bes d' f'>4 <g bes d' f'>4 | }
+  bass { g,8@mp g,8 g,8 g,8 g,8 g,8 | ees8 ees8 ees8 ees8 ees8 ees8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | f,8 f,8 f,8 f,8 f,8 f,8 | c8 c8 c8 c8 c8 c8 | f,8 f,8 f,8 f,8 f,8 f,8 | d8 d8 d8 d8 d8 d8 | g,8 g,8 g,8 g,8 g,8 g,8 | }
+}
+
+section B {
+  chords harmony { Ebmaj7 | F | Dm | Gm7 | Eb/G | F7 | Dm | Gm | }
+  comp { <g bes d' ees'>2.@f | <a c' f'>2. | <a d' f'>2. | <g bes d' f'>2. | <g bes ees'>2. | <a c' ees' f'>2. | <a d' f'>2. | <g bes d'>2. | }
+  bass { ees2.@mp | f,2. | d2. | g,2. | g,2. | f,2. | d2. | g,2. | }
+}
+
+form { A A B }
+
+score { chords harmony }
+
+score band { staff comp  staff bass }

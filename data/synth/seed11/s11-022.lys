@@ -1,0 +1,36 @@
+// s11-022: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s11-022"
+tempo 4 = 81
+time 4/4
+key d major
+octave absolute
+
+part comp { clef treble  midiInstrument "drawbar organ" }
+part bass { instrument bass  midiInstrument "acoustic bass" }
+part kit { clef percussion }
+
+phrase hats { hh8 8 8 8 8 8 8 8 | }
+phrase back { r4 sn r sn | }
+phrase kick { bd4 r8 bd bd4 r | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Bm B7 | Em | A7 | Dmaj7 | Bm | Em | A | Dmaj7 | }
+  comp { <b d' fis'>4@fff <b d' fis'>4 <a b dis' fis'>4 <a b dis' fis'>4 | <g b e'>4 <g b e'>4 <g b e'>4 <g b e'>4 | <g a cis' e'>4 <g a cis' e'>4 <g a cis' e'>4 <g a cis' e'>4 | <a cis' d' fis'>4 <a cis' d' fis'>4 <a cis' d' fis'>4 <a cis' d' fis'>4 | <b d' fis'>4 <b d' fis'>4 <b d' fis'>4 <b d' fis'>4 | <g b e'>4 <g b e'>4 <g b e'>4 <g b e'>4 | <a cis' e'>4 <a cis' e'>4 <a cis' e'>4 <a cis' e'>4 | <a cis' d' fis'>4 <a cis' d' fis'>4 <a cis' d' fis'>4 <a cis' d' fis'>4 | }
+  bass { b,4@mp fis,4 b,4 fis,4 | e,4 b,4 e,4 b,4 | a,4 e,4 a,4 e,4 | d4 a,4 d4 a,4 | b,4 fis,4 b,4 fis,4 | e,4 b,4 e,4 b,4 | a,4 e,4 a,4 e,4 | d4 a,4 d4 a,4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { G | A7 | F#m F#7 | Bm D7 | Gmaj7 | A | F#m | Bm7 | }
+  comp { g8@fff b8 d'8 g8 b8 d'8 g8 b8 | g8 a8 cis'8 e'8 g8 a8 cis'8 e'8 | a8 cis'8 fis'8 a8 ais8 cis'8 e'8 fis'8 | b8 d'8 fis'8 b8 a8 c'8 d'8 fis'8 | g8 b8 d'8 fis'8 g8 b8 d'8 fis'8 | a8 cis'8 e'8 a8 cis'8 e'8 a8 cis'8 | a8 cis'8 fis'8 a8 cis'8 fis'8 a8 cis'8 | a8 b8 d'8 fis'8 a8 b8 d'8 fis'8 | }
+  bass { g,1@mp | a,1 | fis,2 fis,2 | b,2 d2 | g,1 | a,1 | fis,1 | b,1 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A A B A }
+
+score { chords harmony }
+
+score band { staff comp  staff bass  staff kit }

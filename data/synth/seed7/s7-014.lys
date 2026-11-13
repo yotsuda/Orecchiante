@@ -1,0 +1,39 @@
+// s7-014: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s7-014"
+tempo 4 = 141
+time 3/4
+key des major
+octave absolute
+
+part lead { clef treble  midiInstrument "alto sax" }
+part comp { clef treble  midiInstrument "acoustic guitar (steel)" }
+part bass { instrument bass  midiInstrument "electric bass (finger)" }
+part kit { clef percussion }
+
+phrase hats { hh8 8 8 8 8 8 | }
+phrase back { r4 sn r | }
+phrase kick { bd4 r bd | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Ebm7 | Ab7 | Dbmaj7 | Dbmaj7 | Ebm7 | Ab7 | Dbmaj7 | Dbmaj7 | }
+  lead { ees''4@mf f''8 ees''8 des''4 | c''4 ees''2 | f''4 ges''4 f''4 | aes''2 ges''4 | ges''4 ges''2 | aes''4 f''8 des''8 c''4 | r2. | c''2 des''4 | }
+  comp { bes8@ff des'8 ees'8 ges'8 bes8 des'8 | aes8 c'8 ees'8 ges'8 aes8 c'8 | aes8 c'8 des'8 f'8 aes8 c'8 | aes8 c'8 des'8 f'8 aes8 c'8 | bes8 des'8 ees'8 ges'8 bes8 des'8 | aes8 c'8 ees'8 ges'8 aes8 c'8 | aes8 c'8 des'8 f'8 aes8 c'8 | aes8 c'8 des'8 f'8 aes8 c'8 | }
+  bass { ees2.@mp | aes,2. | des2. | des2. | ees2. | aes,2. | des2. | des2. | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { Dbmaj7 | Fm7 | Gbmaj7 | Ab7 | Dbmaj7 | Gbmaj7 | Gbm | Dbmaj7 | }
+  lead { r2. | ees''4@mf des''8 c''8 bes'4 | bes'4 des''2 | ees''4 f''4 ees''4 | r2. | f''4 des''8 c''8 des''4 | a'2. | c''4 des''4 c''4 | }
+  comp { r8 <aes c' des' f'>8@ff r8 <aes c' des' f'>8 r8 <aes c' des' f'>8 | r8 <aes c' ees' f'>8 r8 <aes c' ees' f'>8 r8 <aes c' ees' f'>8 | r8 <bes des' f' ges'>8 r8 <bes des' f' ges'>8 r8 <bes des' f' ges'>8 | r8 <aes c' ees' ges'>8 r8 <aes c' ees' ges'>8 r8 <aes c' ees' ges'>8 | r8 <aes c' des' f'>8 r8 <aes c' des' f'>8 r8 <aes c' des' f'>8 | r8 <bes des' f' ges'>8 r8 <bes des' f' ges'>8 r8 <bes des' f' ges'>8 | r8 <a des' ges'>8 r8 <a des' ges'>8 r8 <a des' ges'>8 | r8 <aes c' des' f'>8 r8 <aes c' des' f'>8 r8 <aes c' des' f'>8 | }
+  bass { des2.@mp | f,2. | ges,2. | aes,2. | des2. | ges,2. | ges,2. | des2. | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A B A B }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass  staff kit }

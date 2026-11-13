@@ -1,0 +1,28 @@
+// s11-002: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s11-002"
+tempo 4 = 159
+time 4/4
+key g minor
+octave absolute
+
+part comp { clef treble  midiInstrument "acoustic grand" }
+part bass { instrument bass  midiInstrument "acoustic bass" }
+
+section A {
+  chords harmony { Gm7/Bb | Cm7 | D | Gm D7 | Gm | Cm | D | Gm/D | }
+  comp { r8 <g bes d' f'>8@fff r8 <g bes d' f'>8 r8 <g bes d' f'>8 r8 <g bes d' f'>8 | r8 <g bes c' ees'>8 r8 <g bes c' ees'>8 r8 <g bes c' ees'>8 r8 <g bes c' ees'>8 | r8 <a d' ges'>8 r8 <a d' ges'>8 r8 <a d' ges'>8 r8 <a d' ges'>8 | r8 <g bes d'>8 r8 <g bes d'>8 r8 <a c' d' ges'>8 r8 <a c' d' ges'>8 | r8 <g bes d'>8 r8 <g bes d'>8 r8 <g bes d'>8 r8 <g bes d'>8 | r8 <g c' ees'>8 r8 <g c' ees'>8 r8 <g c' ees'>8 r8 <g c' ees'>8 | r8 <a d' ges'>8 r8 <a d' ges'>8 r8 <a d' ges'>8 r8 <a d' ges'>8 | r8 <g bes d'>8 r8 <g bes d'>8 r8 <g bes d'>8 r8 <g bes d'>8 | }
+  bass { bes,8@mp bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | c8 c8 c8 c8 c8 c8 c8 c8 | d8 d8 d8 d8 d8 d8 d8 d8 | g,8 g,8 g,8 g,8 d8 d8 d8 d8 | g,8 g,8 g,8 g,8 g,8 g,8 g,8 g,8 | c8 c8 c8 c8 c8 c8 c8 c8 | d8 d8 d8 d8 d8 d8 d8 d8 | d8 d8 d8 d8 d8 d8 d8 d8 | }
+}
+
+section B {
+  chords harmony { Gm G7 | Cm A7 | Dsus4 | Gm7 | Gm7 G7 | Cm A7 | D7 | Gm7 D7 | }
+  comp { r8 <g bes d'>8@fff r8 <g bes d'>8 r8 <g b d' f'>8 r8 <g b d' f'>8 | r8 <g c' ees'>8 r8 <g c' ees'>8 r8 <g a des' e'>8 r8 <g a des' e'>8 | r8 <g a d'>8 r8 <g a d'>8 r8 <g a d'>8 r8 <g a d'>8 | r8 <g bes d' f'>8 r8 <g bes d' f'>8 r8 <g bes d' f'>8 r8 <g bes d' f'>8 | r8 <g bes d' f'>8 r8 <g bes d' f'>8 r8 <g b d' f'>8 r8 <g b d' f'>8 | r8 <g c' ees'>8 r8 <g c' ees'>8 r8 <g a des' e'>8 r8 <g a des' e'>8 | r8 <a c' d' ges'>8 r8 <a c' d' ges'>8 r8 <a c' d' ges'>8 r8 <a c' d' ges'>8 | r8 <g bes d' f'>8 r8 <g bes d' f'>8 r8 <a c' d' ges'>8 r8 <a c' d' ges'>8 | }
+  bass { g,2@mp g,2 | c2 a,2 | d1 | g,1 | g,2 g,2 | c2 a,2 | d1 | g,2 d2 | }
+}
+
+form { A B A B }
+
+score { chords harmony }
+
+score band { staff comp  staff bass }

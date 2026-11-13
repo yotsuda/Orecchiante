@@ -1,0 +1,39 @@
+// s11-006: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s11-006"
+tempo 4 = 123
+time 4/4
+key bes minor
+octave absolute
+
+part lead { clef treble  midiInstrument "flute" }
+part comp { clef treble  midiInstrument "string ensemble 1" }
+part bass { instrument bass  midiInstrument "fretless bass" }
+part kit { clef percussion }
+
+phrase hats { hh4 hh hh hh | }
+phrase back { r2 sn4 r | }
+phrase kick { bd4 r r8 bd r4 | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Bbm | Ebm | Ab Ab7 | Db | Bbm7 C7 | Fm Db7 | Gbmaj7 Eb7 | Ab F7 | }
+  lead { des''4.@mf f''8 ees''4 des''4 | ees''2 ges''4 ees''4 | c''4 aes'4 c''4 aes'4 | aes'1 | aes'4 aes'4 bes'4 c''4 | aes'2 aes'4 bes'4 | des''4 ees''4 ees''2 | r1 | }
+  comp { <bes des' f'>1@ff | <bes ees' ges'>1 | <aes c' ees'>2 <aes c' ees' ges'>2 | <aes des' f'>1 | <aes bes des' f'>2 <g bes c' e'>2 | <aes c' f'>2 <aes b des' f'>2 | <bes des' f' ges'>2 <g bes des' ees'>2 | <aes c' ees'>2 <a c' ees' f'>2 | }
+  bass { bes,1@mp | ees1 | aes,2 aes,2 | des1 | bes,2 c2 | f,2 des2 | ges,2 ees2 | aes,2 f,2 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { Bbm | Dbmaj7 | Ab7/Eb | Ebm7/Gb | Bbm | Fm7 | Gb | Ab | }
+  lead { f''4.@mf aes''8 ges''4 aes''4 | aes''2 ges''4 bes''4 | c'''4 bes''4 aes''2 | r1 | bes''4. c'''8 c'''4 bes''4 | aes''4 f''4 des''4 c''4 | bes'4 des''4 ees''4 des''4 | c''2 des''4 c''4 | }
+  comp { <bes des' f'>1@ff | <aes c' des' f'>1 | <aes c' ees' ges'>1 | <bes des' ees' ges'>1 | <bes des' f'>1 | <aes c' ees' f'>1 | <bes des' ges'>1 | <aes c' ees'>1 | }
+  bass { bes,4@mp f,4 bes,4 f,4 | des4 aes,4 des4 aes,4 | ees4 aes,4 ees4 aes,4 | ges,4 ees4 ges,4 ees4 | bes,4 f,4 bes,4 f,4 | f,4 c4 f,4 c4 | ges,4 des4 ges,4 des4 | aes,4 ees4 aes,4 ees4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A B A B }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass  staff kit }

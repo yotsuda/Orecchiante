@@ -1,0 +1,36 @@
+// s11-018: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s11-018"
+tempo 4 = 143
+time 3/4
+key c major
+octave absolute
+
+part comp { clef treble  midiInstrument "electric piano 1" }
+part bass { instrument bass  midiInstrument "electric bass (pick)" }
+part kit { clef percussion }
+
+phrase hats { hh4 hh hh | }
+phrase back { r4 sn sn | }
+phrase kick { bd4 r r | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Cmaj7 | Em | F | G/D | Cmaj7 | Em7 | Fmaj7 | G | }
+  comp { r8 <g b c' e'>8@ff r8 <g b c' e'>8 r8 <g b c' e'>8 | r8 <g b e'>8 r8 <g b e'>8 r8 <g b e'>8 | r8 <a c' f'>8 r8 <a c' f'>8 r8 <a c' f'>8 | r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 | r8 <g b c' e'>8 r8 <g b c' e'>8 r8 <g b c' e'>8 | r8 <g b d' e'>8 r8 <g b d' e'>8 r8 <g b d' e'>8 | r8 <a c' e' f'>8 r8 <a c' e' f'>8 r8 <a c' e' f'>8 | r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 | }
+  bass { c2.@mp | e,2. | f,2. | d2. | c2. | e,2. | f,2. | g,2. | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { C | G | Am | F | C | G | Am | F | }
+  comp { r8 <g c' e'>8@ff r8 <g c' e'>8 r8 <g c' e'>8 | r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 | r8 <a c' e'>8 r8 <a c' e'>8 r8 <a c' e'>8 | r8 <a c' f'>8 r8 <a c' f'>8 r8 <a c' f'>8 | r8 <g c' e'>8 r8 <g c' e'>8 r8 <g c' e'>8 | r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 | r8 <a c' e'>8 r8 <a c' e'>8 r8 <a c' e'>8 | r8 <a c' f'>8 r8 <a c' f'>8 r8 <a c' f'>8 | }
+  bass { c4@mp g,4 c4 | g,4 d4 g,4 | a,4 e,4 a,4 | f,4 c4 f,4 | c4 g,4 c4 | g,4 d4 g,4 | a,4 e,4 a,4 | f,4 c4 f,4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A A B A }
+
+score { chords harmony }
+
+score band { staff comp  staff bass  staff kit }

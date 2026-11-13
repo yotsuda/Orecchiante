@@ -1,0 +1,31 @@
+// s7-012: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s7-012"
+tempo 4 = 86
+time 4/4
+key ees major
+octave absolute
+
+part lead { clef treble  midiInstrument "alto sax" }
+part comp { clef treble  midiInstrument "string ensemble 1" }
+part bass { instrument bass  midiInstrument "fretless bass" }
+
+section A {
+  chords harmony { Eb | Db | Ab Bb7 | Ebmaj7 Bb7 | Ebmaj7 | Gm/D | Cm | Ab | }
+  lead { g''2@mf ees''4 g''4 | aes''2 bes''4 c'''4 | c'''2 aes''2 | g''2 aes''2 | g''4 bes''4 c'''4 c'''4 | g''2 f''4 ees''4 | r1 | ees''8 g''8 ees''4 c''4 ees''4 | }
+  comp { <g bes ees'>4@ff <g bes ees'>4 <g bes ees'>4 <g bes ees'>4 | <aes des' f'>4 <aes des' f'>4 <aes des' f'>4 <aes des' f'>4 | <aes c' ees'>4 <aes c' ees'>4 <aes bes d' f'>4 <aes bes d' f'>4 | <g bes d' ees'>4 <g bes d' ees'>4 <aes bes d' f'>4 <aes bes d' f'>4 | <g bes d' ees'>4 <g bes d' ees'>4 <g bes d' ees'>4 <g bes d' ees'>4 | <g bes d'>4 <g bes d'>4 <g bes d'>4 <g bes d'>4 | <g c' ees'>4 <g c' ees'>4 <g c' ees'>4 <g c' ees'>4 | <aes c' ees'>4 <aes c' ees'>4 <aes c' ees'>4 <aes c' ees'>4 | }
+  bass { ees8@mp ees8 ees8 ees8 ees8 ees8 ees8 ees8 | des8 des8 des8 des8 des8 des8 des8 des8 | aes,8 aes,8 aes,8 aes,8 bes,8 bes,8 bes,8 bes,8 | ees8 ees8 ees8 ees8 bes,8 bes,8 bes,8 bes,8 | ees8 ees8 ees8 ees8 ees8 ees8 ees8 ees8 | d8 d8 d8 d8 d8 d8 d8 d8 | c8 c8 c8 c8 c8 c8 c8 c8 | aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 | }
+}
+
+section B {
+  chords harmony { Ab | Eb | Bb | Cm7 | Cm | Bb | Ab | Bb | }
+  lead { c''4.@mf d''8 bes'4 g'4 | g'4. bes'8 c''4 bes'4 | bes'4 c''4 bes'2 | c''1 | ees''4 d''4 ees''2 | f''2 d''2 | c''4. bes'8 d''4 ees''4 | f''1 | }
+  comp { <aes c' ees'>4@ff <aes c' ees'>4 <aes c' ees'>4 <aes c' ees'>4 | <g bes ees'>4 <g bes ees'>4 <g bes ees'>4 <g bes ees'>4 | <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 | <g bes c' ees'>4 <g bes c' ees'>4 <g bes c' ees'>4 <g bes c' ees'>4 | <g c' ees'>4 <g c' ees'>4 <g c' ees'>4 <g c' ees'>4 | <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 | <aes c' ees'>4 <aes c' ees'>4 <aes c' ees'>4 <aes c' ees'>4 | <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 <bes d' f'>4 | }
+  bass { aes,8@mp aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 | ees8 ees8 ees8 ees8 ees8 ees8 ees8 ees8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | c8 c8 c8 c8 c8 c8 c8 c8 | c8 c8 c8 c8 c8 c8 c8 c8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | }
+}
+
+form { A A B A }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass }

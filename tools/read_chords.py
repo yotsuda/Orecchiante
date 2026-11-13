@@ -6,14 +6,14 @@
 For each .wav it writes <name>.lys (a Lily# chord chart) and <name>.dettato.json (every bar and
 chord with its seconds, in the shape of gen_chords.py's truth). The steps:
 
-1. beats: librosa's beat tracker on the onset strength, carried back to the start and on to the end;
-2. bars: for each length a bar may have (1 to 8 tracked beats, 1.5 among them), the lines are
-   put where the sound changes most; the length kept is the one whose bars each fit one chord
-   while the chord changes from bar to bar;
+1. beats: librosa's beat tracker on the onset strength, carried back to the start and on to the
+   end, and halved: the half beat is the unit everything after is counted in;
+2. bars and chords, together: the path through (chord, place in the bar) that fits the chroma of
+   every unit best, where a chord may change freely at a bar line, at a price in the middle of
+   a bar, and at a high price elsewhere; a bar line the chord does not change at costs a little.
+   This is done for each length a bar may have, and the best path over all lengths is kept;
 3. meter: from where the onsets fall inside the bars (in fours, in threes, or in two threes);
-4. chords: the bar's chroma against a template for each root and quality, the bass at the start
-   of the chord weighing in for the root; a bar is given two chords where its halves disagree;
-5. key: Krumhansl's profiles on the whole recording, for the spelling.
+4. key: Krumhansl's profiles on the whole recording, for the spelling.
 
 This is the line to beat, written to be measured (tools/score_chords.py), not to be shipped.
 """
@@ -35,9 +35,21 @@ QUALITIES = {
 # what a quality has to earn before it is read: a bass that also plays the fifth makes the root and
 # the fifth equally loud, which is the suspended chord on the fifth (D minor read as Asus4)
 QUALITY_COST = {"": 0.0, "m": 0.0, "7": 0.02, "maj7": 0.02, "m7": 0.02, "sus4": 0.08, "dim": 0.04, "m7(b5)": 0.05}
-BASS_WEIGHT = 0.3       # how much the bass at the start of a chord says which note is the root
-SPLIT_MARGIN = 0.03     # two chords in a bar have to fit this much better than one
+BASS_WEIGHT = 0.3       # how much the bass at the start of a bar (or its half) says which note is the root
+# The harmonic part of a recording is what stays over this many frames; a chord that has just begun
+# has not stayed yet, so a long filter hides the start of every chord and the bar lines come late.
+HARMONIC_FRAMES = 31
+BEAT_LAG = 2.0          # frames by which the onset strength peaks after the sound begins
+TIGHTNESS = 300         # how strictly the beat tracker keeps its tempo (librosa's own value is 100)
 SLASH_RATIO = 2.0       # a bass note that is not the root has to be this much louder than it
+
+# The prices of the path, in the unit of the fit: one second of a chord that fits perfectly is 1.
+STAY_COST = 0.20        # a bar line the chord does not change at
+MID_COST = 0.50         # a change in the middle of a bar
+ELSE_COST = 1.0         # a change anywhere else
+CHANGE_GAIN = 0.0       # a change earns this times how much the sound changes there (0..1)
+BAR_UNITS = (2, 3, 4, 6, 8, 12, 16)   # a bar, in half beats: the tracker may follow any level
+BAR_SECONDS = (0.9, 4.0)              # bars shorter or longer than this are not tried
 
 MAJOR_PROFILE = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88]
 MINOR_PROFILE = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17]
@@ -47,12 +59,18 @@ SHARP_ROOTS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 FLAT_ROOTS = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
 FLAT_MINORS = {"C", "G", "D", "F"}
 
-TEMPLATES = []  # (root, quality, unit vector)
+CHORDS = []  # (root, quality)
+_rows = []
 for _quality, _intervals in QUALITIES.items():
     for _root in range(12):
         _t = np.zeros(12)
         _t[[(_root + i) % 12 for i in _intervals]] = 1.0
-        TEMPLATES.append((_root, _quality, _t / np.linalg.norm(_t)))
+        CHORDS.append((_root, _quality))
+        _rows.append(_t / np.linalg.norm(_t))
+TEMPLATES = np.array(_rows)                                    # (chords, 12)
+ALIKE = TEMPLATES @ TEMPLATES.T                                # (chords, chords): 1 for the same chord
+ROOTS = np.array([root for root, _ in CHORDS])
+COSTS = np.array([QUALITY_COST[quality] for _, quality in CHORDS])
 
 
 def unit(v):
@@ -62,7 +80,7 @@ def unit(v):
 
 def beat_grid(oenv):
     """Beat positions in frames, from the first frame to the last, and the beat's length."""
-    _, beats = librosa.beat.beat_track(onset_envelope=oenv, sr=SR, hop_length=HOP, trim=False)
+    _, beats = librosa.beat.beat_track(onset_envelope=oenv, sr=SR, hop_length=HOP, trim=False, tightness=TIGHTNESS)
     beats = np.asarray(beats, dtype=float)
     if len(beats) < 8:
         raise ValueError("too few beats found")
@@ -78,69 +96,65 @@ def beat_grid(oenv):
     return np.concatenate([before[::-1], beats, after]), period
 
 
-def over(feature, a, b):
+def over(feature, a, b, how=np.mean):
     a = int(round(a))
     b = max(a + 1, int(round(b)))
-    return np.median(feature[:, a:b], axis=1)
+    return how(feature[:, a:b], axis=1)
 
 
-TRIADS = np.array([t for _, q, t in TEMPLATES if q in ("", "m")])
-BAR_RATIOS = (1, 1.5, 2, 3, 4, 6, 8)   # a bar, in tracked beats: the tracker may follow any level
-BAR_SECONDS = (0.9, 4.0)               # bars shorter or longer than this are not tried
-SAME_CHORD_COST = 0.2                  # what a bar line costs when the chord does not change at it
+def decode(emit, bass, change, length):
+    """The best path of (chord, place in a bar of `length` units) and what it is worth.
 
-
-def lines_of(beats, ratio, phase):
-    """Bar lines `ratio` beats apart from beat `phase` (both may fall between beats)."""
-    index = np.arange(phase, len(beats) - 1 + 1e-9, ratio)
-    return np.interp(index, np.arange(len(beats)), beats)
-
-
-def find_bars(beats, period, chroma, bass, rms):
-    """The bar lines under which each bar is one chord and the chord changes at the lines.
-
-    A bar too long holds two chords and fits none; a bar too short repeats its chord in the
-    next. The lines are tried at every half beat, for a tracker that follows the offbeats.
+    emit[t, k]: how well chord k fits unit t, times the unit's seconds; bass[t]: the bass chroma
+    of unit t, weighted the same way; change[t]: how much the sound changes into unit t.
     """
-    sums = np.concatenate([np.zeros((12, 1)), np.cumsum(chroma, axis=1)], axis=1)
-    both = np.concatenate([np.zeros((24, 1)), np.cumsum(np.vstack([chroma, bass]), axis=1)], axis=1)
-    loud = np.concatenate([[0.0], np.cumsum(rms[0])])
-    quiet = 0.1 * float(np.median(rms[0]))
-    last = chroma.shape[1]
-    half = max(2, int(round(period / 2)))
-    best = (-np.inf, None)
-    for ratio in BAR_RATIOS:
-        if not BAR_SECONDS[0] <= ratio * period * HOP / SR <= BAR_SECONDS[1]:
-            continue
-        # where the lines fall: on the beats at which the sound changes most. (How well the bars
-        # fit a chord cannot say: a chord rings on into the next bar, so late lines always fit.)
-        change, phase = -np.inf, 0.0
-        for p in np.arange(0, ratio, 0.5):
-            at = np.round(lines_of(beats, ratio, p)).astype(int)
-            at = at[(at >= half) & (at + half <= last)]
-            if len(at) < 4:
+    count, chords = emit.shape
+    half = length // 2 if length % 2 == 0 else None
+    every = np.arange(chords)
+
+    def local(t, place):
+        heard = bass[max(t - place, 0)][ROOTS]
+        if half is not None and place >= half:
+            heard = np.maximum(heard, bass[max(t - (place - half), 0)][ROOTS])
+        return emit[t] + heard
+
+    worth = np.stack([local(0, place) for place in range(length)])
+    back = np.zeros((count, length, chords), dtype=np.int16)
+    for t in range(1, count):
+        new = np.empty_like(worth)
+        for place in range(length):
+            before = worth[(place - 1) % length]
+            order = np.argsort(before)
+            first, second = order[-1], order[-2]
+            other = np.where(every == first, second, first)     # the best chord that is not this one
+            moved = before[other] + CHANGE_GAIN * change[t]
+            stayed = before
+            if place == 0:
+                # at a bar line a move costs as much as the two chords are alike: staying costs
+                # all of it, and so nearly does a move to the same notes under another name
+                # (C to Am7), or every line would be dodged that way
+                gain = CHANGE_GAIN * change[t] * (1.0 - np.eye(chords))
+                reach = before[:, None] - STAY_COST * ALIKE + gain
+                source = np.argmax(reach, axis=0)
+                new[place] = reach[source, every] + local(t, place)
+                back[t, place] = source
                 continue
-            before = unit(both[:, at] - both[:, at - half])
-            after = unit(both[:, at + half] - both[:, at])
-            c = float(np.mean(1.0 - np.sum(before * after, axis=0)))
-            if c > change:
-                change, phase = c, p
-        lines = np.round(lines_of(beats, ratio, phase)).astype(int)
-        a, b = lines[:-1], np.maximum(lines[1:], lines[:-1] + 1)
-        sounding = (loud[b] - loud[a]) / (b - a) > quiet
-        if sounding.sum() < 4:
-            continue
-        fits = TRIADS @ unit(sums[:, b] - sums[:, a])
-        fit = fits.max(axis=0)[sounding].mean()
-        label = fits.argmax(axis=0)
-        pairs = sounding[1:] & sounding[:-1]
-        same = (label[1:] == label[:-1])[pairs].mean() if pairs.any() else 0.0
-        score = fit - SAME_CHORD_COST * same
-        if score > best[0]:
-            best = (score, lines_of(beats, ratio, phase))
-    if best[1] is None:
-        raise ValueError("no bar length fits")
-    return best[1]
+            elif place == half:
+                moved = moved - MID_COST
+            else:
+                moved = moved - ELSE_COST
+            take = moved > stayed
+            new[place] = np.where(take, moved, stayed) + local(t, place)
+            back[t, place] = np.where(take, other, every)
+        worth = new
+    place, chord = np.unravel_index(int(np.argmax(worth)), worth.shape)
+    total = float(worth[place, chord])
+    path = []
+    for t in range(count - 1, -1, -1):
+        path.append((int(place), int(chord)))
+        chord = back[t, place, chord]
+        place = (place - 1) % length
+    return total, path[::-1]
 
 
 def find_meter(lines, oenv):
@@ -165,21 +179,6 @@ def find_meter(lines, oenv):
     return "3/4", "4", 3
 
 
-def best_chord(chroma, bass):
-    v, vb = unit(chroma), unit(bass)
-    best = (-np.inf, 0, "")
-    for root, quality, template in TEMPLATES:
-        score = float(v @ template) + BASS_WEIGHT * float(vb[root])
-        score -= QUALITY_COST[quality]
-        if score > best[0]:
-            best = (score, root, quality)
-    score, root, quality = best
-    low = int(np.argmax(vb))
-    tones = [(root + i) % 12 for i in QUALITIES[quality]]
-    slash = low if low != root and low in tones and vb[low] > SLASH_RATIO * vb[root] else None
-    return score, root, quality, slash
-
-
 def find_key(chroma):
     total = chroma.sum(axis=1)
     best = (-np.inf, 0, "major")
@@ -191,52 +190,88 @@ def find_key(chroma):
     return best[1], best[2]
 
 
-def read(path):
+def features(path):
     y, _ = librosa.load(path, sr=SR, mono=True)
-    harmonic = librosa.effects.harmonic(y, margin=4)
-    oenv = librosa.onset.onset_strength(y=y, sr=SR, hop_length=HOP)
-    chroma = librosa.feature.chroma_cqt(y=harmonic, sr=SR, hop_length=HOP,
-                                        fmin=librosa.note_to_hz("C2"), n_octaves=5)
-    bass = librosa.feature.chroma_cqt(y=harmonic, sr=SR, hop_length=HOP,
-                                      fmin=librosa.note_to_hz("C1"), n_octaves=2)
-    rms = librosa.feature.rms(y=y, hop_length=HOP)
-    beats, period = beat_grid(oenv)
-    lines = find_bars(beats, period, chroma, bass, rms)
-    time, tempo_note, tempo_beats = find_meter(lines, oenv)
-    loud = np.array([float(over(rms, a, b)[0]) for a, b in zip(lines[:-1], lines[1:])])
-    keep = len(loud)
-    while keep > 1 and loud[keep - 1] < 0.1 * np.median(loud):  # the ring-out is not a bar
-        keep -= 1
-    lines = lines[:keep + 1]
+    harmonic = librosa.effects.harmonic(y, kernel_size=(HARMONIC_FRAMES, 31), margin=4) if HARMONIC_FRAMES else y
+    return {
+        "oenv": librosa.onset.onset_strength(y=y, sr=SR, hop_length=HOP),
+        "chroma": librosa.feature.chroma_cqt(y=harmonic, sr=SR, hop_length=HOP,
+                                             fmin=librosa.note_to_hz("C2"), n_octaves=5),
+        "bass": librosa.feature.chroma_cqt(y=harmonic, sr=SR, hop_length=HOP,
+                                           fmin=librosa.note_to_hz("C1"), n_octaves=2),
+        "rms": librosa.feature.rms(y=y, hop_length=HOP),
+    }
 
-    seconds = lambda frame: round(float(frame) * HOP / SR, 4)
+
+def read(path, f=None):
+    name = Path(path).name
+    f = f or features(path)
+    oenv, chroma, bass, rms = f["oenv"], f["chroma"], f["bass"], f["rms"]
+    beats, period = beat_grid(oenv)
+    edges = np.interp(np.arange(0, len(beats) - 1 + 1e-9, 0.5), np.arange(len(beats)), beats)
+    loud = np.array([float(over(rms, a, b)[0]) for a, b in zip(edges[:-1], edges[1:])])
+    count = len(loud)
+    while count > 8 and loud[count - 1] < 0.1 * np.median(loud):  # the ring-out is not music
+        count -= 1
+    edges = edges[:count + 1]
+    seconds = np.diff(edges) * HOP / SR
+
+    treble = unit(np.array([over(chroma, a, b) for a, b in zip(edges[:-1], edges[1:])]).T)   # (12, units)
+    low = unit(np.array([over(bass, a, b) for a, b in zip(edges[:-1], edges[1:])]).T)
+    emit = ((TEMPLATES @ treble).T - COSTS) * seconds[:, None]
+    heard = BASS_WEIGHT * low.T * seconds[:, None]
+    both = unit(np.vstack([treble, low]))
+    change = np.zeros(count)
+    change[1:] = 1.0 - np.sum(both[:, 1:] * both[:, :-1], axis=0)
+
+    unit_seconds = float(np.median(seconds))
+    best = (-np.inf, None, 0)
+    for length in BAR_UNITS:
+        if not BAR_SECONDS[0] <= length * unit_seconds <= BAR_SECONDS[1] or count < 4 * length:
+            continue
+        total, path = decode(emit, heard, change, length)
+        if total > best[0]:
+            best = (total, path, length)
+    _, path, length = best
+    if path is None:
+        raise ValueError("no bar length fits")
+
+    starts = [t for t, (place, _) in enumerate(path) if place == 0]
+    if count - starts[-1] >= length:      # the last bar is whole
+        starts.append(starts[-1] + length)
+    lines = np.array([edges[t] for t in starts])
+    time, tempo_note, tempo_beats = find_meter(lines, oenv)
+
+    stamp = lambda frame: round(max(float(frame) - BEAT_LAG, 0.0) * HOP / SR, 4)
     tonic, mode = find_key(chroma[:, :int(lines[-1])])
     tonic_name = (MAJOR_KEYS if mode == "major" else MINOR_KEYS)[tonic]
     flats = "b" in tonic_name or (tonic_name == "F" if mode == "major" else tonic_name in FLAT_MINORS)
     roots = FLAT_ROOTS if flats else SHARP_ROOTS
 
-    def symbol(root, quality, slash):
-        return roots[root] + quality + ("/" + roots[slash] if slash is not None else "")
-
     bars = []
-    for n, (a, b) in enumerate(zip(lines[:-1], lines[1:])):
-        whole = best_chord(over(chroma, a, b), over(bass, a, a + (b - a) / 4))
-        chords = [(a, b, whole)]
-        if time != "3/4":
-            mid = (a + b) / 2
-            first = best_chord(over(chroma, a, mid), over(bass, a, a + (mid - a) / 2))
-            second = best_chord(over(chroma, mid, b), over(bass, mid, mid + (b - mid) / 2))
-            differ = first[1:3] != second[1:3]
-            if differ and (first[0] + second[0]) / 2 > whole[0] + SPLIT_MARGIN:
-                chords = [(a, mid, first), (mid, b, second)]
-        bars.append({
-            "bar": n + 1, "start": seconds(a), "end": seconds(b),
-            "chords": [{"start": seconds(s), "end": seconds(e), "symbol": symbol(*c[1:]),
-                        "fit": round(c[0], 3)} for s, e, c in chords],
-        })
+    for n, (first, after) in enumerate(zip(starts[:-1], starts[1:])):
+        chords, t = [], first
+        while t < after:
+            end = t
+            while end < after and path[end][1] == path[t][1]:
+                end += 1
+            root, quality = CHORDS[path[t][1]]
+            a, b = edges[t], edges[end]
+            vb = unit(over(bass, a, a + (b - a) / 4, np.median))
+            lowest = int(np.argmax(vb))
+            tones = [(root + i) % 12 for i in QUALITIES[quality]]
+            slash = lowest != root and lowest in tones and vb[lowest] > SLASH_RATIO * vb[root]
+            fit = float(np.mean(TEMPLATES[path[t][1]] @ treble[:, t:end]))
+            chords.append({
+                "start": stamp(a), "end": stamp(b),
+                "symbol": roots[root] + quality + ("/" + roots[lowest] if slash else ""),
+                "fit": round(fit, 3),
+            })
+            t = end
+        bars.append({"bar": n + 1, "start": stamp(edges[first]), "end": stamp(edges[after]), "chords": chords})
     bar_seconds = float(np.median(np.diff(lines))) * HOP / SR
     return {
-        "audio": Path(path).name,
+        "audio": name,
         "tempo": {"note": tempo_note, "bpm": int(round(60.0 * tempo_beats / bar_seconds))},
         "time": time,
         "key": f"{tonic_name} {mode}",
@@ -247,7 +282,25 @@ def read(path):
 def lys(result, title):
     tonic, mode = result["key"].split()
     acc = {"": "", "#": "is", "b": "es"}[tonic[1:]]
-    rows = [" | ".join(" ".join(c["symbol"] for c in bar["chords"]) for bar in result["bars"][i:i + 4])
+    beats = {"4/4": 4, "3/4": 3, "6/8": 2}[result["time"]]
+
+    def slots(bar):
+        """The bar as Lily# writes it: a chord on the beat it starts on, '.' where it goes on."""
+        length = (bar["end"] - bar["start"]) / beats
+        names = []
+        for i in range(beats):
+            at = bar["start"] + (i + 0.01) * length
+            names.append(next((c["symbol"] for c in bar["chords"] if c["start"] <= at < c["end"]),
+                              bar["chords"][-1]["symbol"]))
+        marks = [n if i == 0 or n != names[i - 1] else "." for i, n in enumerate(names)]
+        if all(m == "." for m in marks[1:]):
+            return marks[0]
+        half = beats // 2
+        if beats % 2 == 0 and all(m == "." for i, m in enumerate(marks) if i not in (0, half)):
+            return f"{marks[0]} {marks[half]}"
+        return " ".join(marks)
+
+    rows = [" | ".join(slots(bar) for bar in result["bars"][i:i + 4])
             for i in range(0, len(result["bars"]), 4)]
     return "\n".join([
         f"// read from {result['audio']} by tools/read_chords.py",

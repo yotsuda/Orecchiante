@@ -1,0 +1,36 @@
+// s11-001: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s11-001"
+tempo 4 = 161
+time 4/4
+key c major
+octave absolute
+
+part comp { clef treble  midiInstrument "rock organ" }
+part bass { instrument bass  midiInstrument "fretless bass" }
+part kit { clef percussion }
+
+phrase hats { hh8 8 8 8 8 8 8 8 | }
+phrase back { r4 sn r sn | }
+phrase kick { bd4 r8 bd bd4 r | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Am D7 | Gsus4 C7 | Fmaj7 D7 | G7 E7 | Am7 | Gsus4 | Fmaj7 | G7 | }
+  comp { a8@ff c'8 e'8 a8 a8 c'8 d'8 fis'8 | g8 c'8 d'8 g8 g8 ais8 c'8 e'8 | a8 c'8 e'8 f'8 a8 c'8 d'8 fis'8 | g8 b8 d'8 f'8 gis8 b8 d'8 e'8 | g8 a8 c'8 e'8 g8 a8 c'8 e'8 | g8 c'8 d'8 g8 c'8 d'8 g8 c'8 | a8 c'8 e'8 f'8 a8 c'8 e'8 f'8 | g8 b8 d'8 f'8 g8 b8 d'8 f'8 | }
+  bass { a,2@mp d2 | g,2 c2 | f,2 d2 | g,2 e,2 | a,1 | g,1 | f,1 | g,1 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { Cmaj7 B7 | Em7 | Fmaj7 | G | Fmaj7 | G7 B7 | Em7/G | Am7 | }
+  comp { <g b c' e'>4@ff <g b c' e'>4 <a b dis' fis'>4 <a b dis' fis'>4 | <g b d' e'>4 <g b d' e'>4 <g b d' e'>4 <g b d' e'>4 | <a c' e' f'>4 <a c' e' f'>4 <a c' e' f'>4 <a c' e' f'>4 | <g b d'>4 <g b d'>4 <g b d'>4 <g b d'>4 | <a c' e' f'>4 <a c' e' f'>4 <a c' e' f'>4 <a c' e' f'>4 | <g b d' f'>4 <g b d' f'>4 <a b dis' fis'>4 <a b dis' fis'>4 | <g b d' e'>4 <g b d' e'>4 <g b d' e'>4 <g b d' e'>4 | <g a c' e'>4 <g a c' e'>4 <g a c' e'>4 <g a c' e'>4 | }
+  bass { c8@mp c8 c8 c8 b,8 b,8 b,8 b,8 | e,8 e,8 e,8 e,8 e,8 e,8 e,8 e,8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | g,8 g,8 g,8 g,8 g,8 g,8 g,8 g,8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | g,8 g,8 g,8 g,8 b,8 b,8 b,8 b,8 | g,8 g,8 g,8 g,8 g,8 g,8 g,8 g,8 | a,8 a,8 a,8 a,8 a,8 a,8 a,8 a,8 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A A B A }
+
+score { chords harmony }
+
+score band { staff comp  staff bass  staff kit }

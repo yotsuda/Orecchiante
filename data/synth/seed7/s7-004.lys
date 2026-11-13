@@ -1,0 +1,39 @@
+// s7-004: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s7-004"
+tempo 4 = 104
+time 3/4
+key a minor
+octave absolute
+
+part lead { clef treble  midiInstrument "clarinet" }
+part comp { clef treble  midiInstrument "drawbar organ" }
+part bass { instrument bass  midiInstrument "electric bass (pick)" }
+part kit { clef percussion }
+
+phrase hats { hh8 8 8 8 8 8 | }
+phrase back { r4 sn r | }
+phrase kick { bd4 r bd | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Dm7 | G7 | Cmaj7 | F | Bm7(b5) | E7 | Am7 | Am | }
+  lead { f''2.@mf | f''2 d''4 | e''2. | c''2 d''4 | d''4 c''4 d''4 | d''4 e''4 d''4 | c''4 a'4 g'4 | c''4 a'4 b'4 | }
+  comp { a8@ff c'8 d'8 f'8 a8 c'8 | g8 b8 d'8 f'8 g8 b8 | g8 b8 c'8 e'8 g8 b8 | a8 c'8 f'8 a8 c'8 f'8 | a8 b8 d'8 f'8 a8 b8 | gis8 b8 d'8 e'8 gis8 b8 | g8 a8 c'8 e'8 g8 a8 | a8 c'8 e'8 a8 c'8 e'8 | }
+  bass { d4@p a,4 d4 | g,4 d4 g,4 | c4 g,4 c4 | f,4 c4 f,4 | b,4 f,4 b,4 | e,4 b,4 e,4 | a,4 e,4 a,4 | a,4 e,4 a,4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { Am/C | Dm7 | G7 | Cmaj7 | Dm | G7 | Cmaj7 | F | }
+  lead { a'4@mf c''8 e''8 f''4 | f''4 e''4 f''4 | g''4 f''8 g''8 e''4 | g''2 a''4 | r2. | g''2 f''4 | r2. | a''4 g''4 e''4 | }
+  comp { <a c' e'>4@ff <a c' e'>4 <a c' e'>4 | <a c' d' f'>4 <a c' d' f'>4 <a c' d' f'>4 | <g b d' f'>4 <g b d' f'>4 <g b d' f'>4 | <g b c' e'>4 <g b c' e'>4 <g b c' e'>4 | <a d' f'>4 <a d' f'>4 <a d' f'>4 | <g b d' f'>4 <g b d' f'>4 <g b d' f'>4 | <g b c' e'>4 <g b c' e'>4 <g b c' e'>4 | <a c' f'>4 <a c' f'>4 <a c' f'>4 | }
+  bass { c8@p c8 c8 c8 c8 c8 | d8 d8 d8 d8 d8 d8 | g,8 g,8 g,8 g,8 g,8 g,8 | c8 c8 c8 c8 c8 c8 | d8 d8 d8 d8 d8 d8 | g,8 g,8 g,8 g,8 g,8 g,8 | c8 c8 c8 c8 c8 c8 | f,8 f,8 f,8 f,8 f,8 f,8 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A B A B }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass  staff kit }

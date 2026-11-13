@@ -50,26 +50,37 @@ mixing. They say whether a reader works at all; how well it works is measured on
 
 ## The line to beat
 
-`tools/read_chords.py` is a reader with nothing learnt in it (librosa's beat tracker, chroma,
-chord templates), and `tools/score_chords.py` counts a reading against the truth:
+`tools/read_chords.py` is a reader with nothing learnt in it: librosa's beat tracker and chroma,
+chord templates, and one search for the bar lines and the chords together (a chord changes at a
+bar line for nothing, in the middle of a bar at a price). `tools/score_chords.py` counts a
+reading against the truth:
 
 ```
 .venv/Scripts/python tools/read_chords.py data/synth/seed1 --out scratch/read/seed1
 py tools/score_chords.py data/synth/seed1 scratch/read/seed1
 ```
 
-On the 24 songs of `data/synth/seed1` (2026-11-14), which it was adjusted on:
+On three sets of 24 songs (2026-11-14). The reader's constants were chosen on `seed1`, and
+`seed7` was looked at while choosing; `seed11` was made after the last change and read once:
 
-| | Right |
-|---|---|
-| Tempo (within 4%) | 19 of 24 songs |
-| Meter | 19 of 24 songs |
-| Key | 14 of 24 songs |
-| Bar lines (within 70 ms) | F 76.2% (597 of 784 found, 783 read) |
-| Chord root, by time | 80.4% |
-| Root and family (major, minor, suspended, diminished) | 71.6% |
-| Root and quality (sevenths told apart) | 58.0% |
-| The bass note too | 55.3% |
+| | `seed1` | `seed7` | `seed11` |
+|---|---|---|---|
+| Tempo (within 4%), songs | 21 of 24 | 20 of 24 | 21 of 24 |
+| Meter, songs | 21 of 24 | 21 of 24 | 22 of 24 |
+| Key, songs | 14 of 24 | 13 of 24 | 15 of 24 |
+| Bar lines (within 70 ms), F | 89.3% | 77.0% | 87.7% |
+| Chord root, by time | 86.4% | 81.5% | 87.6% |
+| Root and family (major, minor, suspended, diminished) | 75.0% | 71.8% | 81.1% |
+| Root and quality (sevenths told apart) | 57.9% | 52.3% | 68.7% |
+| The bass note too | 54.4% | 46.8% | 66.4% |
+
+Every chart it writes passes `lysc check`. What it does not do yet:
+
+- It keeps a steady tempo (the beat tracker is held tight, which these songs reward and a
+  recording that slows down will not).
+- It takes the bar to be as long as one chord lasts, so a song whose chords last two bars would be
+  read at half its tempo. Nothing rhythmic (the drums' pattern) weighs in yet.
+- The key is a guess from the notes heard, and often the relative or the dominant.
 
 It needs `numpy`, `scipy`, `librosa` and `soundfile` (in `.venv`, not committed). It is written to
 be measured and replaced, not shipped.

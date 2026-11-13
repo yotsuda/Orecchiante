@@ -1,0 +1,31 @@
+// s7-013: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s7-013"
+tempo 4 = 123
+time 4/4
+key g minor
+octave absolute
+
+part lead { clef treble  midiInstrument "flute" }
+part comp { clef treble  midiInstrument "overdriven guitar" }
+part bass { instrument bass  midiInstrument "fretless bass" }
+
+section A {
+  chords harmony { Gm7/D | Ebmaj7 | Bb | F7 D7 | Gm7 | Ebmaj7 | Bb C7 | F7 | }
+  lead { d''8@mf c''8 ees''4 g''4 f''4 | g''1 | bes''8 c'''8 bes''4 c'''4 a''4 | c'''2 a''2 | g''4 bes''4 g''4 a''4 | g''2 f''4 ees''4 | f''8 ees''8 d''4 c''4 bes'4 | a'4. g'8 g'4 g'4 | }
+  comp { r8 <g bes d' f'>8@ff r8 <g bes d' f'>8 r8 <g bes d' f'>8 r8 <g bes d' f'>8 | r8 <g bes d' ees'>8 r8 <g bes d' ees'>8 r8 <g bes d' ees'>8 r8 <g bes d' ees'>8 | r8 <bes d' f'>8 r8 <bes d' f'>8 r8 <bes d' f'>8 r8 <bes d' f'>8 | r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 r8 <a c' d' ges'>8 r8 <a c' d' ges'>8 | r8 <g bes d' f'>8 r8 <g bes d' f'>8 r8 <g bes d' f'>8 r8 <g bes d' f'>8 | r8 <g bes d' ees'>8 r8 <g bes d' ees'>8 r8 <g bes d' ees'>8 r8 <g bes d' ees'>8 | r8 <bes d' f'>8 r8 <bes d' f'>8 r8 <g bes c' e'>8 r8 <g bes c' e'>8 | r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 | }
+  bass { d8@p d8 d8 d8 d8 d8 d8 d8 | ees8 ees8 ees8 ees8 ees8 ees8 ees8 ees8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | f,8 f,8 f,8 f,8 d8 d8 d8 d8 | g,8 g,8 g,8 g,8 g,8 g,8 g,8 g,8 | ees8 ees8 ees8 ees8 ees8 ees8 ees8 ees8 | bes,8 bes,8 bes,8 bes,8 c8 c8 c8 c8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | }
+}
+
+section B {
+  chords harmony { Cm7 | F7 | Bbmaj7 | Eb | Cm7 C7 | F7 F7 | Bb | Eb | }
+  lead { bes'2@mf c''2 | c''4. d''8 c''4 a'4 | bes'4. c''8 d''4 c''4 | r1 | c''2 bes'4 a'4 | r1 | r1 | bes'4. g'8 g'4 g'4 | }
+  comp { <g bes c' ees'>1@ff | <a c' ees' f'>1 | <a bes d' f'>1 | <g bes ees'>1 | <g bes c' ees'>2 <g bes c' e'>2 | <a c' ees' f'>2 <a c' ees' f'>2 | <bes d' f'>1 | <g bes ees'>1 | }
+  bass { c1@p | f,1 | bes,1 | ees1 | c2 c2 | f,2 f,2 | bes,1 | ees1 | }
+}
+
+form { A B A B }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass }

@@ -1,0 +1,36 @@
+// s11-010: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s11-010"
+tempo 4 = 162
+time 4/4
+key cis minor
+octave absolute
+
+part comp { clef treble  midiInstrument "electric piano 2" }
+part bass { instrument bass  midiInstrument "electric bass (pick)" }
+part kit { clef percussion }
+
+phrase hats { hh4 hh hh hh | }
+phrase back { r2 sn4 r | }
+phrase kick { bd4 r r8 bd r4 | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { C#m C#7 | F#m | B | E G#7 | C#m | A | E | B | }
+  comp { <gis cis' e'>2@ff <gis b cis' f'>2 | <a cis' fis'>1 | <b dis' fis'>1 | <gis b e'>2 <gis c' dis' fis'>2 | <gis cis' e'>1 | <a cis' e'>1 | <gis b e'>1 | <b dis' fis'>1 | }
+  bass { cis4@mp gis,4 cis4 gis,4 | fis,4 cis4 fis,4 cis4 | b,4 fis,4 b,4 fis,4 | e,4 b,4 gis,4 dis4 | cis4 gis,4 cis4 gis,4 | a,4 e,4 a,4 e,4 | e,4 b,4 e,4 b,4 | b,4 fis,4 b,4 fis,4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { F#m | B | E | A | F#m | B | E | A | }
+  comp { <a cis' fis'>1@ff | <b dis' fis'>1 | <gis b e'>1 | <a cis' e'>1 | <a cis' fis'>1 | <b dis' fis'>1 | <gis b e'>1 | <a cis' e'>1 | }
+  bass { fis,1@mp | b,1 | e,1 | a,1 | fis,1 | b,1 | e,1 | a,1 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A A B A }
+
+score { chords harmony }
+
+score band { staff comp  staff bass  staff kit }

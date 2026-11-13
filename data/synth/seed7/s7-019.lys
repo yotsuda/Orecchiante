@@ -1,0 +1,28 @@
+// s7-019: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s7-019"
+tempo 4 = 92
+time 4/4
+key aes major
+octave absolute
+
+part comp { clef treble  midiInstrument "electric piano 1" }
+part bass { instrument bass  midiInstrument "fretless bass" }
+
+section A {
+  chords harmony { Abmaj7 C7 | Fm7 | Bbm Bb7 | Eb7 | Bbm Bb7 | Ebsus4 | Cm7 | Fm7 | }
+  comp { g8@f aes8 c'8 ees'8 g8 bes8 c'8 e'8 | aes8 c'8 ees'8 f'8 aes8 c'8 ees'8 f'8 | bes8 des'8 f'8 bes8 aes8 bes8 d'8 f'8 | g8 bes8 des'8 ees'8 g8 bes8 des'8 ees'8 | bes8 des'8 f'8 bes8 aes8 bes8 d'8 f'8 | aes8 bes8 ees'8 aes8 bes8 ees'8 aes8 bes8 | g8 bes8 c'8 ees'8 g8 bes8 c'8 ees'8 | aes8 c'8 ees'8 f'8 aes8 c'8 ees'8 f'8 | }
+  bass { aes,8@mp aes,8 aes,8 aes,8 c8 c8 c8 c8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | ees8 ees8 ees8 ees8 ees8 ees8 ees8 ees8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | ees8 ees8 ees8 ees8 ees8 ees8 ees8 ees8 | c8 c8 c8 c8 c8 c8 c8 c8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | }
+}
+
+section B {
+  chords harmony { Abmaj7 | Cm7 | Dbmaj7 Bb7 | Eb7 | Db | Abmaj7 | Eb | Fm7 Eb7 | }
+  comp { <g aes c' ees'>4@f <g aes c' ees'>4 <g aes c' ees'>4 <g aes c' ees'>4 | <g bes c' ees'>4 <g bes c' ees'>4 <g bes c' ees'>4 <g bes c' ees'>4 | <aes c' des' f'>4 <aes c' des' f'>4 <aes bes d' f'>4 <aes bes d' f'>4 | <g bes des' ees'>4 <g bes des' ees'>4 <g bes des' ees'>4 <g bes des' ees'>4 | <aes des' f'>4 <aes des' f'>4 <aes des' f'>4 <aes des' f'>4 | <g aes c' ees'>4 <g aes c' ees'>4 <g aes c' ees'>4 <g aes c' ees'>4 | <g bes ees'>4 <g bes ees'>4 <g bes ees'>4 <g bes ees'>4 | <aes c' ees' f'>4 <aes c' ees' f'>4 <g bes des' ees'>4 <g bes des' ees'>4 | }
+  bass { aes,4@mp ees4 aes,4 ees4 | c4 g,4 c4 g,4 | des4 aes,4 bes,4 f,4 | ees4 bes,4 ees4 bes,4 | des4 aes,4 des4 aes,4 | aes,4 ees4 aes,4 ees4 | ees4 bes,4 ees4 bes,4 | f,4 c4 ees4 bes,4 | }
+}
+
+form { A A B }
+
+score { chords harmony }
+
+score band { staff comp  staff bass }
