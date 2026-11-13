@@ -29,8 +29,8 @@ CHORD_INDEX = {chord: i for i, chord in enumerate(rc.CHORDS)}
 
 def units_of(f):
     """The reader's half beats over a recording: (treble chroma, bass chroma, middle in seconds)."""
-    beats, _ = rc.beat_grid(f["oenv"])
-    edges = np.interp(np.arange(0, len(beats) - 1 + 1e-9, 0.5), np.arange(len(beats)), beats)
+    beats, period = rc.beat_grid(f["oenv"])
+    edges = rc.half_beats(beats, period)
     pairs = list(zip(edges[:-1], edges[1:]))
     treble = rc.unit(np.array([rc.over(f["chroma"], a, b) for a, b in pairs]).T)
     low = rc.unit(np.array([rc.over(f["bass"], a, b) for a, b in pairs]).T)

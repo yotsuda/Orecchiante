@@ -41,6 +41,7 @@ BASS_WEIGHT = 0.3       # how much the bass at the start of a bar (or its half) 
 HARMONIC_FRAMES = 31
 BEAT_LAG = 2.0          # frames by which the onset strength peaks after the sound begins
 TIGHTNESS = 300         # how strictly the beat tracker keeps its tempo (librosa's own value is 100)
+SLIDE = 0.07            # a beat this much longer or shorter than the rest is the tracker changing its mind
 SLASH_RATIO = 2.0       # a bass note that is not the root has to be this much louder than it
 
 # The prices of the path, in the unit of the fit: one second of a chord that fits perfectly is 1.
@@ -114,6 +115,27 @@ def beat_grid(oenv):
         at += period
         after.append(at)
     return np.concatenate([before[::-1], beats, after]), period
+
+
+def half_beats(beats, period):
+    """The edges of the half beats, in frames.
+
+    Where the accompaniment moves to the off-beats the tracker follows it, sliding there over a
+    few beats that are each a little long or short. Those beats together are taken as the whole
+    number of half beats nearest their length (an odd number, after such a slide), so the half
+    beats go on in step and a bar line after the slide falls where it did before.
+    """
+    steady = np.abs(np.diff(beats) / period - 1.0) <= SLIDE
+    edges, i = [beats[0]], 0
+    while i < len(beats) - 1:
+        j, n = i + 1, 2
+        if not steady[i]:
+            while j < len(beats) - 1 and not steady[j]:
+                j += 1
+            n = max(1, int(round((beats[j] - beats[i]) / (period / 2))))
+        edges += [beats[i] + (beats[j] - beats[i]) * k / n for k in range(1, n + 1)]
+        i = j
+    return np.array(edges)
 
 
 def over(feature, a, b, how=np.mean):
@@ -258,7 +280,7 @@ def read(path, f=None, tempo=None):
     f = f or features(path)
     oenv, chroma, bass, rms = f["oenv"], f["chroma"], f["bass"], f["rms"]
     beats, period = beat_grid(oenv)
-    edges = np.interp(np.arange(0, len(beats) - 1 + 1e-9, 0.5), np.arange(len(beats)), beats)
+    edges = half_beats(beats, period)
     loud = np.array([float(over(rms, a, b)[0]) for a, b in zip(edges[:-1], edges[1:])])
     count = len(loud)
     while count > 8 and loud[count - 1] < 0.1 * np.median(loud):  # the ring-out is not music
