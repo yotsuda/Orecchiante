@@ -5,7 +5,9 @@ writes editable Lily# text (`.lys`), with the places it is unsure of marked for 
 
 *Dettato* is Italian for dictation, the exercise of writing down music as it is heard.
 
-**Status: not started.** Nothing here reads a recording yet.
+**Status: a first reader, measured only on songs of its own making.** `tools/read_chords.py`
+writes a chord chart from a recording; no real recording has been counted against a known
+answer yet.
 
 ## First aim: a chord chart
 
@@ -144,6 +146,35 @@ Every chart either reader writes passes `lysc check`. What neither does yet:
   key signature is right far more often. The chords are not what holds it back: the same rule
   given the true chords gets 55 of the 72 keys, the reading 51. These songs' keys are also less
   sure than a real song's (a major song here may begin and end on its sixth degree).
+
+### The chords it doubts
+
+With the model, a chord is marked when the model is not sure of its root or of whether it is
+major or minor (a seventh heard or not is a smaller doubt, and marking it would mark one chord
+in four). The mark is Lily#'s `@todo`, with the chord the model would have said next:
+
+```
+chords harmony {
+  Dm7/A | G7 | C | F |
+  Bm7@todo("or Bm7(b5)?") | E7/B | Am7 | Am |
+}
+```
+
+How sure is sure was chosen on 60 songs outside the three sets, and counted on the three sets:
+
+| The marks, `seed1`, `seed7` and `seed11` together | this sound font | another |
+|---|---|---|
+| Chords read | 2633 | 2575 |
+| Wrong in root or family | 6.0% | 5.1% |
+| Marked | 23.4% | 17.7% |
+| Of the chords wrong in root or family, marked | 82.4% | 93.9% |
+| Of the marked, wrong in root or family | 21.3% | 27.0% |
+| Of the marked, wrong at all (sevenths too) | 38.2% | 41.3% |
+
+So about one chord in five asks for a look, and five in six of the wrong roots and families are
+among them. The chord offered in the mark is the true one for under half of the marked chords
+that are wrong (28.5%, 44.1%): it is a hint, not a correction. The reader with nothing learnt
+marks nothing.
 
 ### Chords that last two bars
 

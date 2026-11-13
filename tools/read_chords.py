@@ -56,6 +56,7 @@ CHANGE_GAIN = 0.0       # a change earns this times how much the sound changes t
 MODEL = None
 EMIT_SCALE = 0.1
 LOG_FLOOR = -8.0
+DOUBT = 0.7             # a chord the model is less sure of than this is marked for a look
 BAR_UNITS = (2, 3, 4, 6, 8, 12, 16)   # a bar, in half beats: the tracker may follow any level
 BAR_SECONDS = (0.9, 4.0)              # bars shorter or longer than this are not tried
 HINT_TOLERANCE = 0.15   # how far from the tempo told a bar's beats may be
@@ -80,6 +81,8 @@ TEMPLATES = np.array(_rows)                                    # (chords, 12)
 ALIKE = TEMPLATES @ TEMPLATES.T                                # (chords, chords): 1 for the same chord
 ROOTS = np.array([root for root, _ in CHORDS])
 COSTS = np.array([QUALITY_COST[quality] for _, quality in CHORDS])
+_KIND = {"": "maj", "7": "maj", "maj7": "maj", "m": "min", "m7": "min", "sus4": "sus", "dim": "dim", "m7(b5)": "dim"}
+SAME = np.array([[a == b and _KIND[p] == _KIND[q] for b, q in CHORDS] for a, p in CHORDS])   # the same root and family
 
 
 def use_model(path):
@@ -359,11 +362,20 @@ def read(path, f=None, tempo=None):
             tones = [(root + i) % 12 for i in QUALITIES[quality]]
             slash = lowest != root and lowest in tones and vb[lowest] > SLASH_RATIO * vb[root]
             fit = float(np.mean(TEMPLATES[path[t][1]] @ treble[:, t:end]))
-            chords.append({
+            chord = {
                 "start": stamp(a), "end": stamp(b),
                 "symbol": (root, quality, lowest if slash else None),
                 "fit": round(fit, 3),
-            })
+            }
+            if MODEL is not None:
+                # how sure the model is of it, half beat by half beat, and what else it might be
+                # (of its root and whether it is major or minor: a seventh heard or not is a
+                # smaller doubt, and would mark one chord in four)
+                same = SAME[path[t][1]]
+                chord["sure"] = round(float(np.exp(said[t:end][:, same]).sum(axis=1).mean()), 3)
+                mean = np.where(same, -np.inf, said[t:end].mean(axis=0))
+                chord["other"] = CHORDS[int(np.argmax(mean))]
+            chords.append(chord)
             t = end
         bars.append({"bar": n + 1, "start": stamp(edges[first]), "end": stamp(edges[after]), "chords": chords})
 
@@ -375,6 +387,8 @@ def read(path, f=None, tempo=None):
     for c in read_chords:
         root, quality, slash = c["symbol"]
         c["symbol"] = roots[root] + quality + ("/" + roots[slash] if slash is not None else "")
+        if "other" in c:
+            c["other"] = roots[c["other"][0]] + c["other"][1]
     bar_seconds = float(np.median(np.diff(lines))) * HOP / SR
     return {
         "audio": name,
@@ -399,6 +413,8 @@ def lys(result, title):
             names.append(next((c["symbol"] for c in bar["chords"] if c["start"] <= at < c["end"]),
                               bar["chords"][-1]["symbol"]))
         marks = [n if i == 0 or n != names[i - 1] else "." for i, n in enumerate(names)]
+        doubts = {c["symbol"]: c["other"] for c in bar["chords"] if c.get("sure", 1.0) < DOUBT}
+        marks = [f'{m}@todo("or {doubts[m]}?")' if m in doubts else m for m in marks]
         if all(m == "." for m in marks[1:]):
             return marks[0]
         half = beats // 2
