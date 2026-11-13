@@ -1,0 +1,56 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+*.trx
+artifacts/
+
+# Python (training and measuring)
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Editors
+.vscode/
+.idea/
+
+# Recordings are never committed: they are not ours.
+*.wav
+*.mp3
+*.flac
+*.m4a
+*.aac
+*.ogg
+*.opus
+*.wma
+*.aiff
+*.mp4
+*.webm
+
+# Models are never committed: they are large, and most are not ours.
+models/
+*.onnx
+*.onnx.data
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.bin
+*.npy
+*.npz
+*.sf2
+*.sf3
+
+# Local scratch
+scratch/
+
+# The VS Code extension's build
+node_modules/
+out/
+out-test/
+*.vsix
