@@ -18,17 +18,17 @@ phrase groove { drums { hats back kick } }
 
 section A {
   chords harmony { Am/C | Dm7 | E | Am | Am7 A7 | Dm | E E7 | Am | }
-  lead { c''4 a'4 b'4 a'4 | a'4 b'4 c''4 b'4 | gis'4 a'4 b'4 a'4 | a'4 c''4 c''2 | c''4 d''4 cis''2 | d''8 f''8 e''4 g''4 a''4 | b''1 | a''8 c'''8 c'''4 b''4 c'''4 | }
-  comp { <a c' e'>1 | <a c' d' f'>1 | <gis b e'>1 | <a c' e'>1 | <g a c' e'>2 <g a cis' e'>2 | <a d' f'>1 | <gis b e'>2 <gis b d' e'>2 | <a c' e'>1 | }
-  bass { c8 c8 c8 c8 c8 c8 c8 c8 | d8 d8 d8 d8 d8 d8 d8 d8 | e,8 e,8 e,8 e,8 e,8 e,8 e,8 e,8 | a,8 a,8 a,8 a,8 a,8 a,8 a,8 a,8 | a,8 a,8 a,8 a,8 a,8 a,8 a,8 a,8 | d8 d8 d8 d8 d8 d8 d8 d8 | e,8 e,8 e,8 e,8 e,8 e,8 e,8 e,8 | a,8 a,8 a,8 a,8 a,8 a,8 a,8 a,8 | }
+  lead { c''8@mf d''8 e''4 c''4 e''4 | d''2 c''4 a'4 | gis'4. b'8 c''4 b'4 | c''2 b'4 c''4 | a'2 a'4 c''4 | a'2 c''4 d''4 | b'1 | a'8 c''8 e''4 d''4 e''4 | }
+  comp { <a c' e'>1@f | <a c' d' f'>1 | <gis b e'>1 | <a c' e'>1 | <g a c' e'>2 <g a cis' e'>2 | <a d' f'>1 | <gis b e'>2 <gis b d' e'>2 | <a c' e'>1 | }
+  bass { c8@mp c8 c8 c8 c8 c8 c8 c8 | d8 d8 d8 d8 d8 d8 d8 d8 | e,8 e,8 e,8 e,8 e,8 e,8 e,8 e,8 | a,8 a,8 a,8 a,8 a,8 a,8 a,8 a,8 | a,8 a,8 a,8 a,8 a,8 a,8 a,8 a,8 | d8 d8 d8 d8 d8 d8 d8 d8 | e,8 e,8 e,8 e,8 e,8 e,8 e,8 e,8 | a,8 a,8 a,8 a,8 a,8 a,8 a,8 a,8 | }
   kit { groove groove groove groove groove groove groove groove }
 }
 
 section B {
   chords harmony { Am C7 | Fmaj7 | Dm | E | Dm D7 | G | Cmaj7 | F | }
-  lead { c'''4. c'''8 c'''4 b''4 | c'''2 a''2 | a''4 b''4 c'''4 c'''4 | gis''4. f''8 e''4 d''4 | r1 | b'4. d''8 e''4 c''4 | b'4 d''4 c''2 | a'4 b'4 c''2 | }
-  comp { r8 <a c' e'>8 r8 <a c' e'>8 r8 <g ais c' e'>8 r8 <g ais c' e'>8 | r8 <a c' e' f'>8 r8 <a c' e' f'>8 r8 <a c' e' f'>8 r8 <a c' e' f'>8 | r8 <a d' f'>8 r8 <a d' f'>8 r8 <a d' f'>8 r8 <a d' f'>8 | r8 <gis b e'>8 r8 <gis b e'>8 r8 <gis b e'>8 r8 <gis b e'>8 | r8 <a d' f'>8 r8 <a d' f'>8 r8 <a c' d' fis'>8 r8 <a c' d' fis'>8 | r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 | r8 <g b c' e'>8 r8 <g b c' e'>8 r8 <g b c' e'>8 r8 <g b c' e'>8 | r8 <a c' f'>8 r8 <a c' f'>8 r8 <a c' f'>8 r8 <a c' f'>8 | }
-  bass { a,8 a,8 a,8 a,8 c8 c8 c8 c8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | d8 d8 d8 d8 d8 d8 d8 d8 | e,8 e,8 e,8 e,8 e,8 e,8 e,8 e,8 | d8 d8 d8 d8 d8 d8 d8 d8 | g,8 g,8 g,8 g,8 g,8 g,8 g,8 g,8 | c8 c8 c8 c8 c8 c8 c8 c8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | }
+  lead { e''4.@mf g''8 g''4 f''4 | f''2 e''2 | f''4 g''4 b''4 c'''4 | gis''4. f''8 e''4 d''4 | r1 | b'4. d''8 e''4 c''4 | b'4 d''4 c''2 | a'4 b'4 c''2 | }
+  comp { r8 <a c' e'>8@f r8 <a c' e'>8 r8 <g ais c' e'>8 r8 <g ais c' e'>8 | r8 <a c' e' f'>8 r8 <a c' e' f'>8 r8 <a c' e' f'>8 r8 <a c' e' f'>8 | r8 <a d' f'>8 r8 <a d' f'>8 r8 <a d' f'>8 r8 <a d' f'>8 | r8 <gis b e'>8 r8 <gis b e'>8 r8 <gis b e'>8 r8 <gis b e'>8 | r8 <a d' f'>8 r8 <a d' f'>8 r8 <a c' d' fis'>8 r8 <a c' d' fis'>8 | r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 | r8 <g b c' e'>8 r8 <g b c' e'>8 r8 <g b c' e'>8 r8 <g b c' e'>8 | r8 <a c' f'>8 r8 <a c' f'>8 r8 <a c' f'>8 r8 <a c' f'>8 | }
+  bass { a,8@mp a,8 a,8 a,8 c8 c8 c8 c8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | d8 d8 d8 d8 d8 d8 d8 d8 | e,8 e,8 e,8 e,8 e,8 e,8 e,8 e,8 | d8 d8 d8 d8 d8 d8 d8 d8 | g,8 g,8 g,8 g,8 g,8 g,8 g,8 g,8 | c8 c8 c8 c8 c8 c8 c8 c8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | }
   kit { groove groove groove groove groove groove groove groove }
 }
 

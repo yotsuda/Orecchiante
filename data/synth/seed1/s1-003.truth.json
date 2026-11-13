@@ -19,6 +19,11 @@
     "bass": "electric bass (finger)",
     "lead": "alto sax",
     "drums": true,
+    "levels": {
+      "lead": "mf",
+      "comp": "f",
+      "bass": "mp"
+    },
     "styles": {
       "A": {
         "comp": "sustain",

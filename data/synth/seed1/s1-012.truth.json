@@ -18,6 +18,11 @@
     "bass": "acoustic bass",
     "lead": "trumpet",
     "drums": true,
+    "levels": {
+      "lead": "mf",
+      "comp": "f",
+      "bass": "p"
+    },
     "styles": {
       "A": {
         "comp": "sustain",

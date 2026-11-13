@@ -17,15 +17,15 @@ phrase groove { drums { hats back kick } }
 
 section A {
   chords harmony { Fm7(b5) | Bb7 | Ebm7 | Ebm7 | Ebm7 | Abm7 | Db | Gb | }
-  comp { <aes b ees' f'>4 <aes b ees' f'>4 <aes b ees' f'>4 <aes b ees' f'>4 | <aes bes d' f'>4 <aes bes d' f'>4 <aes bes d' f'>4 <aes bes d' f'>4 | <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 | <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 | <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 | <aes b ees' ges'>4 <aes b ees' ges'>4 <aes b ees' ges'>4 <aes b ees' ges'>4 | <aes des' f'>4 <aes des' f'>4 <aes des' f'>4 <aes des' f'>4 | <bes des' ges'>4 <bes des' ges'>4 <bes des' ges'>4 <bes des' ges'>4 | }
-  bass { f,1 | bes,1 | ees1 | ees1 | ees1 | aes,1 | des1 | ges,1 | }
+  comp { <aes b ees' f'>4@f <aes b ees' f'>4 <aes b ees' f'>4 <aes b ees' f'>4 | <aes bes d' f'>4 <aes bes d' f'>4 <aes bes d' f'>4 <aes bes d' f'>4 | <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 | <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 | <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 <bes des' ees' ges'>4 | <aes b ees' ges'>4 <aes b ees' ges'>4 <aes b ees' ges'>4 <aes b ees' ges'>4 | <aes des' f'>4 <aes des' f'>4 <aes des' f'>4 <aes des' f'>4 | <bes des' ges'>4 <bes des' ges'>4 <bes des' ges'>4 <bes des' ges'>4 | }
+  bass { f,1@p | bes,1 | ees1 | ees1 | ees1 | aes,1 | des1 | ges,1 | }
   kit { groove groove groove groove groove groove groove groove }
 }
 
 section B {
   chords harmony { Ebm | Gbmaj7 | Db | Abm7 | Ebm7 | Bbm7 | Cbmaj7 | Db7 | }
-  comp { r8 <bes ees' ges'>8 r8 <bes ees' ges'>8 r8 <bes ees' ges'>8 r8 <bes ees' ges'>8 | r8 <bes des' f' ges'>8 r8 <bes des' f' ges'>8 r8 <bes des' f' ges'>8 r8 <bes des' f' ges'>8 | r8 <aes des' f'>8 r8 <aes des' f'>8 r8 <aes des' f'>8 r8 <aes des' f'>8 | r8 <aes b ees' ges'>8 r8 <aes b ees' ges'>8 r8 <aes b ees' ges'>8 r8 <aes b ees' ges'>8 | r8 <bes des' ees' ges'>8 r8 <bes des' ees' ges'>8 r8 <bes des' ees' ges'>8 r8 <bes des' ees' ges'>8 | r8 <aes bes des' f'>8 r8 <aes bes des' f'>8 r8 <aes bes des' f'>8 r8 <aes bes des' f'>8 | r8 <bes b ees' ges'>8 r8 <bes b ees' ges'>8 r8 <bes b ees' ges'>8 r8 <bes b ees' ges'>8 | r8 <aes b des' f'>8 r8 <aes b des' f'>8 r8 <aes b des' f'>8 r8 <aes b des' f'>8 | }
-  bass { ees1 | ges,1 | des1 | aes,1 | ees1 | bes,1 | b,1 | des1 | }
+  comp { r8 <bes ees' ges'>8@f r8 <bes ees' ges'>8 r8 <bes ees' ges'>8 r8 <bes ees' ges'>8 | r8 <bes des' f' ges'>8 r8 <bes des' f' ges'>8 r8 <bes des' f' ges'>8 r8 <bes des' f' ges'>8 | r8 <aes des' f'>8 r8 <aes des' f'>8 r8 <aes des' f'>8 r8 <aes des' f'>8 | r8 <aes b ees' ges'>8 r8 <aes b ees' ges'>8 r8 <aes b ees' ges'>8 r8 <aes b ees' ges'>8 | r8 <bes des' ees' ges'>8 r8 <bes des' ees' ges'>8 r8 <bes des' ees' ges'>8 r8 <bes des' ees' ges'>8 | r8 <aes bes des' f'>8 r8 <aes bes des' f'>8 r8 <aes bes des' f'>8 r8 <aes bes des' f'>8 | r8 <bes b ees' ges'>8 r8 <bes b ees' ges'>8 r8 <bes b ees' ges'>8 r8 <bes b ees' ges'>8 | r8 <aes b des' f'>8 r8 <aes b des' f'>8 r8 <aes b des' f'>8 r8 <aes b des' f'>8 | }
+  bass { ees1@p | ges,1 | des1 | aes,1 | ees1 | bes,1 | b,1 | des1 | }
   kit { groove groove groove groove groove groove groove groove }
 }
 

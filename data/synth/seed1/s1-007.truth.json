@@ -20,6 +20,11 @@
     "bass": "fretless bass",
     "lead": "vibraphone",
     "drums": true,
+    "levels": {
+      "lead": "mf",
+      "comp": "ff",
+      "bass": "mp"
+    },
     "styles": {
       "A": {
         "comp": "arp",

@@ -11,20 +11,20 @@ part bass { instrument bass  midiInstrument "electric bass (pick)" }
 
 section A {
   chords harmony { B | D#m7 | G#m | Emaj7 | Bmaj7 | D#m | G#m | E | }
-  comp { b8 dis'8 fis'8 b8 dis'8 fis'8 | ais8 cis'8 dis'8 fis'8 ais8 cis'8 | gis8 b8 dis'8 gis8 b8 dis'8 | gis8 b8 dis'8 e'8 gis8 b8 | ais8 b8 dis'8 fis'8 ais8 b8 | ais8 dis'8 fis'8 ais8 dis'8 fis'8 | gis8 b8 dis'8 gis8 b8 dis'8 | gis8 b8 e'8 gis8 b8 e'8 | }
-  bass { b,8 b,8 b,8 b,8 b,8 b,8 | dis8 dis8 dis8 dis8 dis8 dis8 | gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 | e,8 e,8 e,8 e,8 e,8 e,8 | b,8 b,8 b,8 b,8 b,8 b,8 | dis8 dis8 dis8 dis8 dis8 dis8 | gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 | e,8 e,8 e,8 e,8 e,8 e,8 | }
+  comp { b8@f dis'8 fis'8 b8 dis'8 fis'8 | ais8 cis'8 dis'8 fis'8 ais8 cis'8 | gis8 b8 dis'8 gis8 b8 dis'8 | gis8 b8 dis'8 e'8 gis8 b8 | ais8 b8 dis'8 fis'8 ais8 b8 | ais8 dis'8 fis'8 ais8 dis'8 fis'8 | gis8 b8 dis'8 gis8 b8 dis'8 | gis8 b8 e'8 gis8 b8 e'8 | }
+  bass { b,8@mp b,8 b,8 b,8 b,8 b,8 | dis8 dis8 dis8 dis8 dis8 dis8 | gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 | e,8 e,8 e,8 e,8 e,8 e,8 | b,8 b,8 b,8 b,8 b,8 b,8 | dis8 dis8 dis8 dis8 dis8 dis8 | gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 | e,8 e,8 e,8 e,8 e,8 e,8 | }
 }
 
 section B {
   chords harmony { C#m7 | F#7 | Bmaj7 | B | C#m7 | F#7 | Bmaj7 | Bmaj7 | }
-  comp { r8 <gis b cis' e'>8 r8 <gis b cis' e'>8 r8 <gis b cis' e'>8 | r8 <ais cis' e' fis'>8 r8 <ais cis' e' fis'>8 r8 <ais cis' e' fis'>8 | r8 <ais b dis' fis'>8 r8 <ais b dis' fis'>8 r8 <ais b dis' fis'>8 | r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 | r8 <gis b cis' e'>8 r8 <gis b cis' e'>8 r8 <gis b cis' e'>8 | r8 <ais cis' e' fis'>8 r8 <ais cis' e' fis'>8 r8 <ais cis' e' fis'>8 | r8 <ais b dis' fis'>8 r8 <ais b dis' fis'>8 r8 <ais b dis' fis'>8 | r8 <ais b dis' fis'>8 r8 <ais b dis' fis'>8 r8 <ais b dis' fis'>8 | }
-  bass { cis8 cis8 cis8 cis8 cis8 cis8 | fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 | b,8 b,8 b,8 b,8 b,8 b,8 | b,8 b,8 b,8 b,8 b,8 b,8 | cis8 cis8 cis8 cis8 cis8 cis8 | fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 | b,8 b,8 b,8 b,8 b,8 b,8 | b,8 b,8 b,8 b,8 b,8 b,8 | }
+  comp { r8 <gis b cis' e'>8@f r8 <gis b cis' e'>8 r8 <gis b cis' e'>8 | r8 <ais cis' e' fis'>8 r8 <ais cis' e' fis'>8 r8 <ais cis' e' fis'>8 | r8 <ais b dis' fis'>8 r8 <ais b dis' fis'>8 r8 <ais b dis' fis'>8 | r8 <b dis' fis'>8 r8 <b dis' fis'>8 r8 <b dis' fis'>8 | r8 <gis b cis' e'>8 r8 <gis b cis' e'>8 r8 <gis b cis' e'>8 | r8 <ais cis' e' fis'>8 r8 <ais cis' e' fis'>8 r8 <ais cis' e' fis'>8 | r8 <ais b dis' fis'>8 r8 <ais b dis' fis'>8 r8 <ais b dis' fis'>8 | r8 <ais b dis' fis'>8 r8 <ais b dis' fis'>8 r8 <ais b dis' fis'>8 | }
+  bass { cis8@mp cis8 cis8 cis8 cis8 cis8 | fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 | b,8 b,8 b,8 b,8 b,8 b,8 | b,8 b,8 b,8 b,8 b,8 b,8 | cis8 cis8 cis8 cis8 cis8 cis8 | fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 | b,8 b,8 b,8 b,8 b,8 b,8 | b,8 b,8 b,8 b,8 b,8 b,8 | }
 }
 
 section C {
   chords harmony { Bmaj7 | A/C# | Emaj7 | B | B | A | E | Bmaj7 | }
-  comp { ais8 b8 dis'8 fis'8 ais8 b8 | a8 cis'8 e'8 a8 cis'8 e'8 | gis8 b8 dis'8 e'8 gis8 b8 | b8 dis'8 fis'8 b8 dis'8 fis'8 | b8 dis'8 fis'8 b8 dis'8 fis'8 | a8 cis'8 e'8 a8 cis'8 e'8 | gis8 b8 e'8 gis8 b8 e'8 | ais8 b8 dis'8 fis'8 ais8 b8 | }
-  bass { b,2. | cis2. | e,2. | b,2. | b,2. | a,2. | e,2. | b,2. | }
+  comp { ais8@f b8 dis'8 fis'8 ais8 b8 | a8 cis'8 e'8 a8 cis'8 e'8 | gis8 b8 dis'8 e'8 gis8 b8 | b8 dis'8 fis'8 b8 dis'8 fis'8 | b8 dis'8 fis'8 b8 dis'8 fis'8 | a8 cis'8 e'8 a8 cis'8 e'8 | gis8 b8 e'8 gis8 b8 e'8 | ais8 b8 dis'8 fis'8 ais8 b8 | }
+  bass { b,2.@mp | cis2. | e,2. | b,2. | b,2. | a,2. | e,2. | b,2. | }
 }
 
 form { A B A C A }

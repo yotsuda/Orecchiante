@@ -20,6 +20,11 @@
     "bass": "electric bass (pick)",
     "lead": null,
     "drums": false,
+    "levels": {
+      "lead": "mp",
+      "comp": "f",
+      "bass": "mp"
+    },
     "styles": {
       "A": {
         "comp": "arp",

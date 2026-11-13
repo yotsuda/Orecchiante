@@ -15,6 +15,7 @@ import array
 import json
 import os
 import random
+import re
 import subprocess
 import sys
 import wave
@@ -65,6 +66,7 @@ METERS = {
 }
 TEMPI = {"4/4": (70, 170), "3/4": (84, 180), "6/8": (48, 100)}
 DUR = {1: "8", 2: "4", 3: "4.", 4: "2", 6: "2.", 8: "1"}
+FIRST_NOTE = re.compile(r"(?<![\w<])(?:<[^>]+>|[a-g](?:is|es)?[',]*)\d+\.?")
 
 # hats, backbeat, kick: one bar each
 DRUMS = {
@@ -165,6 +167,9 @@ class Song:
                 "comp": rng.choice(COMP_STYLES),
                 "bass": rng.choice(BASS_STYLES),
             }
+        # how loud the melody, the chords and the bass play: at one level the bass and its
+        # overtones cover the chords, as no mixed recording lets them
+        self.levels = (rng.choice(["mp", "mf"]), rng.choice(["f", "ff", "fff"]), rng.choice(["p", "mp"]))
 
     # --- the chords ---
 
@@ -270,6 +275,12 @@ class Song:
 
     # --- the file ---
 
+    @staticmethod
+    def row(bars, level):
+        """A part's bars as one line of music, its first note marked with the part's level."""
+        text = " | ".join(bars) + " |"
+        return FIRST_NOTE.sub(lambda m: m.group(0) + "@" + level, text, count=1)
+
     def key_line(self):
         acc = {"": "", "#": "is", "b": "es"}[self.tonic[1:]]
         return f"key {self.tonic[0].lower()}{acc} {self.mode}"
@@ -305,10 +316,10 @@ class Song:
             row = " | ".join(" ".join(c.symbol(self.tonic) for c in bar) for bar in bars)
             lines += ["", f"section {name} {{", f"  chords harmony {{ {row} | }}"]
             if self.lead_sound:
-                lines.append("  lead { " + " | ".join(self.lead_bar(b, state) for b in bars) + " | }")
-            comp = " | ".join(self.comp_bar(b, section["comp"]) for b in bars)
-            bass = " | ".join(self.bass_bar(b, section["bass"]) for b in bars)
-            lines += [f"  comp {{ {comp} | }}", f"  bass {{ {bass} | }}"]
+                lines.append("  lead { " + self.row([self.lead_bar(b, state) for b in bars], self.levels[0]) + " }")
+            comp = self.row([self.comp_bar(b, section["comp"]) for b in bars], self.levels[1])
+            bass = self.row([self.bass_bar(b, section["bass"]) for b in bars], self.levels[2])
+            lines += [f"  comp {{ {comp} }}", f"  bass {{ {bass} }}"]
             if self.drums:
                 lines.append("  kit { " + " ".join(["groove"] * len(bars)) + " }")
             lines.append("}")
@@ -356,6 +367,7 @@ class Song:
             "band": {
                 "comp": self.comp_sound, "bass": self.bass_sound, "lead": self.lead_sound,
                 "drums": bool(self.drums),
+                "levels": {"lead": self.levels[0], "comp": self.levels[1], "bass": self.levels[2]},
                 "styles": {n: {"comp": s["comp"], "bass": s["bass"]} for n, s in self.sections.items()},
             },
             "musicSeconds": round(len(bars) * bar_seconds, 4),

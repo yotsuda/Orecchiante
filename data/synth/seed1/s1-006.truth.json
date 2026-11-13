@@ -19,6 +19,11 @@
     "bass": "fretless bass",
     "lead": "violin",
     "drums": true,
+    "levels": {
+      "lead": "mf",
+      "comp": "fff",
+      "bass": "mp"
+    },
     "styles": {
       "A": {
         "comp": "sustain",

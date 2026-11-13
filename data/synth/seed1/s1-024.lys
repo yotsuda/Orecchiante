@@ -18,17 +18,17 @@ phrase groove { drums { hats back kick } }
 
 section A {
   chords harmony { Gm7 | Bbmaj7 | F | Cm | Gm7 | Cm7 | D7 | Gm7 | }
-  lead { d''4 c''4 d''4 bes'4 | r1 | c''1 | ees''4. c''8 d''4 bes'4 | g'2 bes'2 | bes'4 g'4 g'2 | c''4 bes'4 a'4 g'4 | bes'2 a'4 g'4 | }
-  comp { <g bes d' f'>4 <g bes d' f'>4 <g bes d' f'>4 <g bes d' f'>4 | <a bes d' f'>4 <a bes d' f'>4 <a bes d' f'>4 <a bes d' f'>4 | <a c' f'>4 <a c' f'>4 <a c' f'>4 <a c' f'>4 | <g c' ees'>4 <g c' ees'>4 <g c' ees'>4 <g c' ees'>4 | <g bes d' f'>4 <g bes d' f'>4 <g bes d' f'>4 <g bes d' f'>4 | <g bes c' ees'>4 <g bes c' ees'>4 <g bes c' ees'>4 <g bes c' ees'>4 | <a c' d' ges'>4 <a c' d' ges'>4 <a c' d' ges'>4 <a c' d' ges'>4 | <g bes d' f'>4 <g bes d' f'>4 <g bes d' f'>4 <g bes d' f'>4 | }
-  bass { g,8 g,8 g,8 g,8 g,8 g,8 g,8 g,8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | c8 c8 c8 c8 c8 c8 c8 c8 | g,8 g,8 g,8 g,8 g,8 g,8 g,8 g,8 | c8 c8 c8 c8 c8 c8 c8 c8 | d8 d8 d8 d8 d8 d8 d8 d8 | g,8 g,8 g,8 g,8 g,8 g,8 g,8 g,8 | }
+  lead { f''4.@mf d''8 f''4 ees''4 | f''8 a''8 bes''4 a''4 f''4 | f''4 a''4 g''4 a''4 | g''4 ees''4 ees''2 | f''4 ees''4 d''4 c''4 | bes'2 a'4 g'4 | a'4 g'4 a'4 g'4 | g'2 g'4 g'4 | }
+  comp { <g bes d' f'>4@fff <g bes d' f'>4 <g bes d' f'>4 <g bes d' f'>4 | <a bes d' f'>4 <a bes d' f'>4 <a bes d' f'>4 <a bes d' f'>4 | <a c' f'>4 <a c' f'>4 <a c' f'>4 <a c' f'>4 | <g c' ees'>4 <g c' ees'>4 <g c' ees'>4 <g c' ees'>4 | <g bes d' f'>4 <g bes d' f'>4 <g bes d' f'>4 <g bes d' f'>4 | <g bes c' ees'>4 <g bes c' ees'>4 <g bes c' ees'>4 <g bes c' ees'>4 | <a c' d' ges'>4 <a c' d' ges'>4 <a c' d' ges'>4 <a c' d' ges'>4 | <g bes d' f'>4 <g bes d' f'>4 <g bes d' f'>4 <g bes d' f'>4 | }
+  bass { g,8@p g,8 g,8 g,8 g,8 g,8 g,8 g,8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | c8 c8 c8 c8 c8 c8 c8 c8 | g,8 g,8 g,8 g,8 g,8 g,8 g,8 g,8 | c8 c8 c8 c8 c8 c8 c8 c8 | d8 d8 d8 d8 d8 d8 d8 d8 | g,8 g,8 g,8 g,8 g,8 g,8 g,8 g,8 | }
   kit { groove groove groove groove groove groove groove groove }
 }
 
 section B {
   chords harmony { Gm | Cm7 | F7 | Bb | Gm7 | Bbmaj7 | F7 | Cm7 | }
-  lead { g'4 g'4 a'4 g'4 | g'2 g'4 g'4 | c''4 ees''4 ees''2 | f''1 | g''2 a''4 f''4 | d''4 c''4 a'4 g'4 | r1 | bes'4 c''4 bes'2 | }
-  comp { r8 <g bes d'>8 r8 <g bes d'>8 r8 <g bes d'>8 r8 <g bes d'>8 | r8 <g bes c' ees'>8 r8 <g bes c' ees'>8 r8 <g bes c' ees'>8 r8 <g bes c' ees'>8 | r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 | r8 <bes d' f'>8 r8 <bes d' f'>8 r8 <bes d' f'>8 r8 <bes d' f'>8 | r8 <g bes d' f'>8 r8 <g bes d' f'>8 r8 <g bes d' f'>8 r8 <g bes d' f'>8 | r8 <a bes d' f'>8 r8 <a bes d' f'>8 r8 <a bes d' f'>8 r8 <a bes d' f'>8 | r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 | r8 <g bes c' ees'>8 r8 <g bes c' ees'>8 r8 <g bes c' ees'>8 r8 <g bes c' ees'>8 | }
-  bass { g,1 | c1 | f,1 | bes,1 | g,1 | bes,1 | f,1 | c1 | }
+  lead { bes'4@mf d''4 d''2 | c''1 | a'2 bes'4 g'4 | d''4 c''4 a'4 g'4 | r1 | bes'4 c''4 d''2 | c''2 c''2 | c''4 ees''4 g''4 a''4 | }
+  comp { r8 <g bes d'>8@fff r8 <g bes d'>8 r8 <g bes d'>8 r8 <g bes d'>8 | r8 <g bes c' ees'>8 r8 <g bes c' ees'>8 r8 <g bes c' ees'>8 r8 <g bes c' ees'>8 | r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 | r8 <bes d' f'>8 r8 <bes d' f'>8 r8 <bes d' f'>8 r8 <bes d' f'>8 | r8 <g bes d' f'>8 r8 <g bes d' f'>8 r8 <g bes d' f'>8 r8 <g bes d' f'>8 | r8 <a bes d' f'>8 r8 <a bes d' f'>8 r8 <a bes d' f'>8 r8 <a bes d' f'>8 | r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 r8 <a c' ees' f'>8 | r8 <g bes c' ees'>8 r8 <g bes c' ees'>8 r8 <g bes c' ees'>8 r8 <g bes c' ees'>8 | }
+  bass { g,1@p | c1 | f,1 | bes,1 | g,1 | bes,1 | f,1 | c1 | }
   kit { groove groove groove groove groove groove groove groove }
 }
 

@@ -18,6 +18,11 @@
     "bass": "electric bass (finger)",
     "lead": null,
     "drums": true,
+    "levels": {
+      "lead": "mp",
+      "comp": "f",
+      "bass": "p"
+    },
     "styles": {
       "A": {
         "comp": "pulse",

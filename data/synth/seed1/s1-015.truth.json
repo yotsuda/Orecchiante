@@ -19,6 +19,11 @@
     "bass": "electric bass (pick)",
     "lead": null,
     "drums": true,
+    "levels": {
+      "lead": "mf",
+      "comp": "ff",
+      "bass": "p"
+    },
     "styles": {
       "A": {
         "comp": "sustain",

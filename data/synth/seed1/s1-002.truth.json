@@ -19,6 +19,11 @@
     "bass": "acoustic bass",
     "lead": "clarinet",
     "drums": true,
+    "levels": {
+      "lead": "mp",
+      "comp": "fff",
+      "bass": "mp"
+    },
     "styles": {
       "A": {
         "comp": "arp",

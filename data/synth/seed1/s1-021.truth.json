@@ -19,6 +19,11 @@
     "bass": "fretless bass",
     "lead": null,
     "drums": true,
+    "levels": {
+      "lead": "mp",
+      "comp": "ff",
+      "bass": "mp"
+    },
     "styles": {
       "A": {
         "comp": "arp",

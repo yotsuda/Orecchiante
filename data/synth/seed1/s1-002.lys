@@ -18,17 +18,17 @@ phrase groove { drums { hats back kick } }
 
 section A {
   chords harmony { C#m7/G# | F# | Bmaj7 | Emaj7 | C#m7/E | F#7 | Bmaj7 | E | }
-  lead { r2. | cis''4 dis''8 e''4 cis''8 | b'2. | r2. | r2. | cis''4. b'4. | ais'8 gis'8 ais'8 b'4. | gis'4. ais'4 b'8 | }
-  comp { gis8 b8 cis'8 e'8 gis8 b8 | ais8 cis'8 fis'8 ais8 cis'8 fis'8 | ais8 b8 dis'8 fis'8 ais8 b8 | gis8 b8 dis'8 e'8 gis8 b8 | gis8 b8 cis'8 e'8 gis8 b8 | ais8 cis'8 e'8 fis'8 ais8 cis'8 | ais8 b8 dis'8 fis'8 ais8 b8 | gis8 b8 e'8 gis8 b8 e'8 | }
-  bass { gis,4. cis4. | fis,4. cis4. | b,4. fis,4. | e,4. b,4. | e,4. cis4. | fis,4. cis4. | b,4. fis,4. | e,4. b,4. | }
+  lead { cis''2.@mp | cis''2. | b'2. | r2. | r2. | cis''4. b'4. | ais'8 gis'8 ais'8 b'4. | gis'4. ais'4 b'8 | }
+  comp { gis8@fff b8 cis'8 e'8 gis8 b8 | ais8 cis'8 fis'8 ais8 cis'8 fis'8 | ais8 b8 dis'8 fis'8 ais8 b8 | gis8 b8 dis'8 e'8 gis8 b8 | gis8 b8 cis'8 e'8 gis8 b8 | ais8 cis'8 e'8 fis'8 ais8 cis'8 | ais8 b8 dis'8 fis'8 ais8 b8 | gis8 b8 e'8 gis8 b8 e'8 | }
+  bass { gis,4.@mp cis4. | fis,4. cis4. | b,4. fis,4. | e,4. b,4. | e,4. cis4. | fis,4. cis4. | b,4. fis,4. | e,4. b,4. | }
   kit { groove groove groove groove groove groove groove groove }
 }
 
 section B {
   chords harmony { G#m | F#7/A# | Emaj7 | D#7 | A#m7(b5) | D#7 | G#m | G#m | }
-  lead { r2. | ais'8 cis''8 e''8 fis''4. | r2. | g''4 ais''8 b''4 b''8 | ais''4. b''4. | ais''4. b''4 ais''8 | r2. | gis''4. e''4. | }
-  comp { <gis b dis'>4. <gis b dis'>4. | <ais cis' e' fis'>4. <ais cis' e' fis'>4. | <gis b dis' e'>4. <gis b dis' e'>4. | <g ais cis' dis'>4. <g ais cis' dis'>4. | <gis ais cis' e'>4. <gis ais cis' e'>4. | <g ais cis' dis'>4. <g ais cis' dis'>4. | <gis b dis'>4. <gis b dis'>4. | <gis b dis'>4. <gis b dis'>4. | }
-  bass { gis,4. dis4. | ais,4. fis,4. | e,4. b,4. | dis4. ais,4. | ais,4. e,4. | dis4. ais,4. | gis,4. dis4. | gis,4. dis4. | }
+  lead { r2. | ais'8@mp cis''8 e''8 fis''4. | r2. | g''4 ais''8 b''4 b''8 | ais''4. b''4. | ais''4. b''4 ais''8 | r2. | gis''4. e''4. | }
+  comp { <gis b dis'>4.@fff <gis b dis'>4. | <ais cis' e' fis'>4. <ais cis' e' fis'>4. | <gis b dis' e'>4. <gis b dis' e'>4. | <g ais cis' dis'>4. <g ais cis' dis'>4. | <gis ais cis' e'>4. <gis ais cis' e'>4. | <g ais cis' dis'>4. <g ais cis' dis'>4. | <gis b dis'>4. <gis b dis'>4. | <gis b dis'>4. <gis b dis'>4. | }
+  bass { gis,4.@mp dis4. | ais,4. fis,4. | e,4. b,4. | dis4. ais,4. | ais,4. e,4. | dis4. ais,4. | gis,4. dis4. | gis,4. dis4. | }
   kit { groove groove groove groove groove groove groove groove }
 }
 

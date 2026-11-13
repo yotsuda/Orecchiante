@@ -19,6 +19,11 @@
     "bass": "acoustic bass",
     "lead": null,
     "drums": true,
+    "levels": {
+      "lead": "mf",
+      "comp": "fff",
+      "bass": "p"
+    },
     "styles": {
       "A": {
         "comp": "offbeat",

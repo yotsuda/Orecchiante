@@ -20,6 +20,11 @@
     "bass": "acoustic bass",
     "lead": null,
     "drums": true,
+    "levels": {
+      "lead": "mp",
+      "comp": "f",
+      "bass": "p"
+    },
     "styles": {
       "A": {
         "comp": "arp",

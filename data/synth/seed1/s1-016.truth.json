@@ -19,6 +19,11 @@
     "bass": "acoustic bass",
     "lead": "vibraphone",
     "drums": false,
+    "levels": {
+      "lead": "mf",
+      "comp": "ff",
+      "bass": "mp"
+    },
     "styles": {
       "A": {
         "comp": "arp",
@@ -531,6 +536,6 @@
     }
   ],
   "audioSeconds": 45.1461,
-  "firstSound": 0.003,
+  "firstSound": 0.0035,
   "soundfont": "MuseScore_General.sf2"
 }

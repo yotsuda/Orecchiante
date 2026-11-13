@@ -19,6 +19,11 @@
     "bass": "electric bass (finger)",
     "lead": "violin",
     "drums": true,
+    "levels": {
+      "lead": "mf",
+      "comp": "ff",
+      "bass": "mp"
+    },
     "styles": {
       "A": {
         "comp": "arp",
