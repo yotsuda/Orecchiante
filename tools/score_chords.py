@@ -7,7 +7,7 @@ The truth is gen_chords.py's <id>.truth.json; the reading is read_chords.py's
 <audio name>.dettato.json. What is counted:
 
 - tempo: right within 4%; otherwise its ratio to the truth is shown (2 = read twice as fast);
-- meter, key: the same or not;
+- meter, key: the same or not; the key signature too, which a key and its relative share;
 - bar lines: a line read within 70 ms of a true one finds it (each true line once);
   precision, recall and F;
 - chords, by the share of the music's time: the root right; root and family right (major, minor,
@@ -42,6 +42,12 @@ def key_of(text):
     return pc(tonic), mode
 
 
+def signature_of(text):
+    """The key signature, as the major key that has it: a minor key's is its relative major's."""
+    tonic, mode = key_of(text)
+    return (tonic + 3) % 12 if mode == "minor" else tonic
+
+
 def chords_of(doc):
     return [(c["start"], c["end"], parse(c["symbol"])) for bar in doc["bars"] for c in bar["chords"]]
 
@@ -57,6 +63,7 @@ def score(truth, reading):
     out["tempo"] = abs(ratio - 1) <= 0.04 and reading["tempo"]["note"] == truth["tempo"]["note"]
     out["meter"] = reading["time"] == truth["time"]
     out["key"] = key_of(reading["key"]) == key_of(truth["key"])
+    out["signature"] = signature_of(reading["key"]) == signature_of(truth["key"])
 
     true_lines = [b["start"] for b in truth["bars"]]
     read_lines = [b["start"] for b in reading["bars"]]
@@ -123,7 +130,7 @@ def main():
     share = lambda k: sum(r[k] * r["seconds"] for r in rows) / seconds
     print()
     print(f"songs {n}: tempo {sum(r['tempo'] for r in rows)}/{n}, meter {sum(r['meter'] for r in rows)}/{n}, "
-          f"key {sum(r['key'] for r in rows)}/{n}")
+          f"key {sum(r['key'] for r in rows)}/{n}, key signature {sum(r['signature'] for r in rows)}/{n}")
     print(f"bar lines: precision {precision:.1%}, recall {recall:.1%}, F {f:.1%} ({found} of {true} found, {read} read)")
     print(f"chords, by time: root {share('root'):.1%}, family {share('family'):.1%}, "
           f"quality {share('quality'):.1%}, with the bass {share('bass'):.1%}")

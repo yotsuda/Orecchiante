@@ -68,6 +68,7 @@ On three sets of 24 songs (2026-11-14). The reader's constants were chosen on `s
 | Tempo (within 4%), songs | 21 of 24 | 20 of 24 | 21 of 24 |
 | Meter, songs | 21 of 24 | 21 of 24 | 22 of 24 |
 | Key, songs | 16 of 24 | 16 of 24 | 15 of 24 |
+| Key signature, songs | 21 of 24 | 20 of 24 | 24 of 24 |
 | Bar lines (within 70 ms), F | 89.3% | 77.0% | 87.7% |
 | Chord root, by time | 86.1% | 80.9% | 87.7% |
 | Root and family (major, minor, suspended, diminished) | 74.7% | 70.9% | 81.1% |
@@ -94,14 +95,27 @@ Learnt from the 200 songs of seed 100 (none of them in the three sets; its price
 | Tempo (within 4%), songs | 22 of 24 | 21 of 24 | 22 of 24 |
 | Meter, songs | 22 of 24 | 21 of 24 | 22 of 24 |
 | Key, songs | 17 of 24 | 18 of 24 | 16 of 24 |
+| Key signature, songs | 21 of 24 | 23 of 24 | 23 of 24 |
 | Bar lines (within 70 ms), F | 92.1% | 84.6% | 88.4% |
 | Chord root, by time | 94.7% | 93.5% | 96.0% |
 | Root and family | 89.5% | 90.9% | 95.4% |
 | Root and quality | 81.4% | 72.5% | 88.4% |
 | The bass note too | 75.8% | 63.8% | 84.2% |
 
-The model has only ever heard this project's own songs through one sound font, so these numbers
-say that learning the sound and keeping the rules works, not how it reads a recording. The
+The same 72 songs played through a sound font the model never heard (TimGM6mb, 6 MB, against
+MuseScore General's 215 MB) read as well, so it is not the one sound font the model leans on:
+
+| Another sound font | `seed1` | `seed7` | `seed11` |
+|---|---|---|---|
+| Chord root, nothing learnt → with the model | 85.9 → 96.1% | 85.6 → 95.4% | 86.7 → 94.9% |
+| Root and family | 78.6 → 92.5% | 81.2 → 92.6% | 82.8 → 93.2% |
+| Root and quality | 60.6 → 80.4% | 64.1 → 78.0% | 72.9 → 82.1% |
+| Bar lines, F | 87.3 → 95.0% | 74.2 → 86.6% | 74.9 → 84.4% |
+| Key signature, songs | 24 of 24 | 23 of 24 | 23 of 24 |
+
+The model has still only heard this project's own songs (their patterns, no singing, no mixing),
+so these numbers say that learning the sound and keeping the rules works, not how it reads a
+recording. The
 training songs and the model are not committed (`data/synth/seed100`, `models/`): the commands
 above make them again.
 
@@ -112,7 +126,10 @@ Every chart either reader writes passes `lysc check`. What neither does yet:
 - They take the bar to be as long as one chord lasts, so a song whose chords last two bars would
   be read at half its tempo. Nothing rhythmic (the drums' pattern) weighs in yet.
 - The key is read from the chords found, and a key and its relative minor are made of the same
-  chords: about a third of the keys are still wrong.
+  chords: about a third of the keys are still wrong, nearly all of them the relative key, so the
+  key signature is right far more often. The chords are not what holds it back: the same rule
+  given the true chords gets 55 of the 72 keys, the reading 51. These songs' keys are also less
+  sure than a real song's (a major song here may begin and end on its sixth degree).
 
 They need `numpy`, `scipy`, `librosa`, `soundfile` and `scikit-learn` (in `.venv`, not committed).
 They are written to be measured and replaced, not shipped.
