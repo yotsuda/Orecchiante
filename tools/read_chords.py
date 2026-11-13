@@ -41,6 +41,7 @@ BASS_WEIGHT = 0.3       # how much the bass at the start of a bar (or its half) 
 HARMONIC_FRAMES = 31
 BEAT_LAG = 2.0          # frames by which the onset strength peaks after the sound begins
 TIGHTNESS = 300         # how strictly the beat tracker keeps its tempo (librosa's own value is 100)
+TEMPO_RATIOS = (2 / 3, 3 / 2)   # the other beats tried: half as fast again, and a third slower
 SLIDE = 0.07            # a beat this much longer or shorter than the rest is the tracker changing its mind
 SLASH_RATIO = 2.0       # a bass note that is not the root has to be this much louder than it
 
@@ -101,11 +102,26 @@ def unit(v):
 
 def beat_grid(oenv):
     """Beat positions in frames, from the first frame to the last, and the beat's length."""
-    _, beats = librosa.beat.beat_track(onset_envelope=oenv, sr=SR, hop_length=HOP, trim=False, tightness=TIGHTNESS)
-    beats = np.asarray(beats, dtype=float)
+    def track(bpm=None):
+        _, found = librosa.beat.beat_track(onset_envelope=oenv, sr=SR, hop_length=HOP, trim=False,
+                                           tightness=TIGHTNESS, bpm=bpm)
+        found = np.asarray(found, dtype=float)
+        if len(found) < 8:
+            return found, 0.0, -np.inf
+        length = float(np.median(np.diff(found)))
+        # how much of the sound begins on its half beats
+        at = np.clip(np.round(half_beats(found, length)).astype(int), 1, len(oenv) - 2)
+        return found, length, float(np.mean(np.maximum(np.maximum(oenv[at - 1], oenv[at]), oenv[at + 1])))
+
+    beats, period, caught = track()
     if len(beats) < 8:
         raise ValueError("too few beats found")
-    period = float(np.median(np.diff(beats)))
+    # the tracker may take three notes for two, or two for three: the beat a half faster or a
+    # third slower is tried, and kept if more of the sound begins on its half beats
+    for ratio in TEMPO_RATIOS:
+        other = track(60.0 * SR / HOP / (period * ratio))
+        if other[2] > caught:
+            beats, period, caught = other
     before, at = [], beats[0]
     while at - period > -0.5 * period:
         at -= period
@@ -203,8 +219,9 @@ def find_meter(lines, oenv):
     """(time signature, the tempo's note, beats of that note in a bar) from where a bar's onsets fall.
 
     The bars are laid over each other in 24 steps. Quarters and eighths of 4/4 fall on steps that
-    a bar in three never uses, and the other way round; in three, a beat in the middle of the bar
-    is 6/8 and beats on its thirds are 3/4.
+    a bar in three never uses, and the other way round; in three, a bar whose halves are alike is
+    6/8 and one whose thirds are alike is 3/4 (which a chord played off the beat does not change,
+    as it would the loudness of the middle of the bar).
     """
     profile = np.zeros(24)
     for a, b in zip(lines[:-1], lines[1:]):
@@ -216,7 +233,10 @@ def find_meter(lines, oenv):
     three = profile[[4, 8, 16, 20]].mean()
     if four >= three:
         return "4/4", "4", 4
-    if profile[12] > profile[[8, 16]].mean():
+    def again(steps):
+        return float(np.corrcoef(profile, np.roll(profile, steps))[0, 1])
+
+    if again(12) > again(8):
         return "6/8", "4.", 2
     return "3/4", "4", 3
 
