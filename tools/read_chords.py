@@ -34,7 +34,7 @@ QUALITIES = {
 }
 # what a quality has to earn before it is read: a bass that also plays the fifth makes the root and
 # the fifth equally loud, which is the suspended chord on the fifth (D minor read as Asus4)
-QUALITY_COST = {"": 0.0, "m": 0.0, "7": 0.02, "maj7": 0.02, "m7": 0.02, "sus4": 0.08, "dim": 0.04, "m7(b5)": 0.05}
+QUALITY_COST = {"": 0.0, "m": 0.0, "7": 0.02, "maj7": 0.05, "m7": 0.0, "sus4": 0.08, "dim": 0.04, "m7(b5)": 0.05}
 BASS_WEIGHT = 0.3       # how much the bass at the start of a bar (or its half) says which note is the root
 # The harmonic part of a recording is what stays over this many frames (0: the recording as it is).
 # Measured 2026-11-14: 31 and 9 read alike, and the recording as it is reads worse (the drums).
@@ -180,14 +180,42 @@ def find_meter(lines, oenv):
     return "3/4", "4", 3
 
 
-def find_key(chroma):
-    total = chroma.sum(axis=1)
+FAMILY = {"": "maj", "7": "maj", "maj7": "maj", "m": "min", "m7": "min",
+          "sus4": "sus", "dim": "dim", "m7(b5)": "dim"}
+# the chords a key is made of, as (semitones above the tonic, family)
+KEY_CHORDS = {
+    "major": {(0, "maj"), (2, "min"), (4, "min"), (5, "maj"), (7, "maj"), (7, "sus"), (9, "min"), (11, "dim")},
+    "minor": {(0, "min"), (2, "dim"), (3, "maj"), (5, "min"), (7, "min"), (7, "maj"), (7, "sus"),
+              (8, "maj"), (10, "maj")},
+}
+HOME_WEIGHT = 0.5       # what a second of the key's own chord counts for, beside a second of any of its chords
+END_WEIGHT = 0.1        # what ending on the key's own chord counts for, as a share of the whole
+
+
+def find_key(chords):
+    """The key whose chords the reading is made of: (seconds, root, quality) for each chord read.
+
+    The notes heard cannot tell a key from its relative or its dominant (C major, A minor and
+    G major share six notes of seven); which chords are there, which of them is stayed on
+    longest, and which one ends the piece, can.
+    """
+    whole = sum(seconds for seconds, _, _ in chords)
     best = (-np.inf, 0, "major")
-    for mode, profile in (("major", MAJOR_PROFILE), ("minor", MINOR_PROFILE)):
+    for mode, members in KEY_CHORDS.items():
+        home = "maj" if mode == "major" else "min"
         for tonic in range(12):
-            r = np.corrcoef(total, np.roll(profile, tonic))[0, 1]
-            if r > best[0]:
-                best = (r, tonic, mode)
+            score = 0.0
+            for seconds, root, quality in chords:
+                degree = ((root - tonic) % 12, FAMILY[quality])
+                if degree in members:
+                    score += seconds
+                if degree == (0, home):
+                    score += HOME_WEIGHT * seconds
+            _, last_root, last_quality = chords[-1]
+            if ((last_root - tonic) % 12, FAMILY[last_quality]) == (0, home):
+                score += END_WEIGHT * whole
+            if score > best[0]:
+                best = (score, tonic, mode)
     return best[1], best[2]
 
 
@@ -244,11 +272,6 @@ def read(path, f=None):
     time, tempo_note, tempo_beats = find_meter(lines, oenv)
 
     stamp = lambda frame: round(max(float(frame) - BEAT_LAG, 0.0) * HOP / SR, 4)
-    tonic, mode = find_key(chroma[:, :int(lines[-1])])
-    tonic_name = (MAJOR_KEYS if mode == "major" else MINOR_KEYS)[tonic]
-    flats = "b" in tonic_name or (tonic_name == "F" if mode == "major" else tonic_name in FLAT_MINORS)
-    roots = FLAT_ROOTS if flats else SHARP_ROOTS
-
     bars = []
     for n, (first, after) in enumerate(zip(starts[:-1], starts[1:])):
         chords, t = [], first
@@ -265,11 +288,20 @@ def read(path, f=None):
             fit = float(np.mean(TEMPLATES[path[t][1]] @ treble[:, t:end]))
             chords.append({
                 "start": stamp(a), "end": stamp(b),
-                "symbol": roots[root] + quality + ("/" + roots[lowest] if slash else ""),
+                "symbol": (root, quality, lowest if slash else None),
                 "fit": round(fit, 3),
             })
             t = end
         bars.append({"bar": n + 1, "start": stamp(edges[first]), "end": stamp(edges[after]), "chords": chords})
+
+    read_chords = [c for bar in bars for c in bar["chords"]]
+    tonic, mode = find_key([(c["end"] - c["start"], c["symbol"][0], c["symbol"][1]) for c in read_chords])
+    tonic_name = (MAJOR_KEYS if mode == "major" else MINOR_KEYS)[tonic]
+    flats = "b" in tonic_name or (tonic_name == "F" if mode == "major" else tonic_name in FLAT_MINORS)
+    roots = FLAT_ROOTS if flats else SHARP_ROOTS
+    for c in read_chords:
+        root, quality, slash = c["symbol"]
+        c["symbol"] = roots[root] + quality + ("/" + roots[slash] if slash is not None else "")
     bar_seconds = float(np.median(np.diff(lines))) * HOP / SR
     return {
         "audio": name,
