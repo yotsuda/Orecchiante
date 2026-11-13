@@ -61,29 +61,61 @@ py tools/score_chords.py data/synth/seed1 scratch/read/seed1
 ```
 
 On three sets of 24 songs (2026-11-14). The reader's constants were chosen on `seed1`, and
-`seed7` was looked at while choosing; `seed11` was made after the last change and read once:
+`seed7` was looked at while choosing; `seed11` was made later and not chosen on:
 
-| | `seed1` | `seed7` | `seed11` |
+| Nothing learnt | `seed1` | `seed7` | `seed11` |
 |---|---|---|---|
 | Tempo (within 4%), songs | 21 of 24 | 20 of 24 | 21 of 24 |
 | Meter, songs | 21 of 24 | 21 of 24 | 22 of 24 |
-| Key, songs | 14 of 24 | 13 of 24 | 15 of 24 |
+| Key, songs | 16 of 24 | 16 of 24 | 15 of 24 |
 | Bar lines (within 70 ms), F | 89.3% | 77.0% | 87.7% |
-| Chord root, by time | 86.4% | 81.5% | 87.6% |
-| Root and family (major, minor, suspended, diminished) | 75.0% | 71.8% | 81.1% |
-| Root and quality (sevenths told apart) | 57.9% | 52.3% | 68.7% |
-| The bass note too | 54.4% | 46.8% | 66.4% |
+| Chord root, by time | 86.1% | 80.9% | 87.7% |
+| Root and family (major, minor, suspended, diminished) | 74.7% | 70.9% | 81.1% |
+| Root and quality (sevenths told apart) | 60.8% | 51.8% | 70.2% |
+| The bass note too | 57.3% | 46.4% | 67.7% |
 
-Every chart it writes passes `lysc check`. What it does not do yet:
+## One thing learnt: what a chord sounds like
 
-- It keeps a steady tempo (the beat tracker is held tight, which these songs reward and a
+`tools/train_chords.py` learns one small thing from songs with known answers: from the chroma of
+one half beat to the chord sounding then (a network of one hidden layer, each half beat learnt in
+all twelve keys). The bar lines, when a chord may change, the meter and the key stay the rules of
+`read_chords.py`, which takes the model with `--model`:
+
+```
+py tools/gen_chords.py --seed 100 --count 200 --out data/synth/seed100 --soundfont MuseScore_General.sf2
+.venv/Scripts/python tools/train_chords.py data/synth/seed100 --out models/chords.joblib
+.venv/Scripts/python tools/read_chords.py data/synth/seed11 --out scratch/read/seed11 --model models/chords.joblib
+```
+
+Learnt from the 200 songs of seed 100 (none of them in the three sets; its prices chosen on `seed1`):
+
+| With the model | `seed1` | `seed7` | `seed11` |
+|---|---|---|---|
+| Tempo (within 4%), songs | 22 of 24 | 21 of 24 | 22 of 24 |
+| Meter, songs | 22 of 24 | 21 of 24 | 22 of 24 |
+| Key, songs | 17 of 24 | 18 of 24 | 16 of 24 |
+| Bar lines (within 70 ms), F | 92.1% | 84.6% | 88.4% |
+| Chord root, by time | 94.7% | 93.5% | 96.0% |
+| Root and family | 89.5% | 90.9% | 95.4% |
+| Root and quality | 81.4% | 72.5% | 88.4% |
+| The bass note too | 75.8% | 63.8% | 84.2% |
+
+The model has only ever heard this project's own songs through one sound font, so these numbers
+say that learning the sound and keeping the rules works, not how it reads a recording. The
+training songs and the model are not committed (`data/synth/seed100`, `models/`): the commands
+above make them again.
+
+Every chart either reader writes passes `lysc check`. What neither does yet:
+
+- They keep a steady tempo (the beat tracker is held tight, which these songs reward and a
   recording that slows down will not).
-- It takes the bar to be as long as one chord lasts, so a song whose chords last two bars would be
-  read at half its tempo. Nothing rhythmic (the drums' pattern) weighs in yet.
-- The key is a guess from the notes heard, and often the relative or the dominant.
+- They take the bar to be as long as one chord lasts, so a song whose chords last two bars would
+  be read at half its tempo. Nothing rhythmic (the drums' pattern) weighs in yet.
+- The key is read from the chords found, and a key and its relative minor are made of the same
+  chords: about a third of the keys are still wrong.
 
-It needs `numpy`, `scipy`, `librosa` and `soundfile` (in `.venv`, not committed). It is written to
-be measured and replaced, not shipped.
+They need `numpy`, `scipy`, `librosa`, `soundfile` and `scikit-learn` (in `.venv`, not committed).
+They are written to be measured and replaced, not shipped.
 
 ## Siblings
 

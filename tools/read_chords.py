@@ -49,6 +49,11 @@ MID_COST = 0.50         # a change in the middle of a bar
 ELSE_COST = 1.0         # a change anywhere else
 CHANGE_GAIN = 0.0       # a change earns this times how much the sound changes there (0..1);
                         # measured 2026-11-14: 0.3 and 0.8 read no better than none
+# A learnt model of what a chord sounds like (tools/train_chords.py), in place of the templates:
+# its log probability of each chord, cut off at LOG_FLOOR and scaled to stand beside the prices.
+MODEL = None
+EMIT_SCALE = 0.1
+LOG_FLOOR = -8.0
 BAR_UNITS = (2, 3, 4, 6, 8, 12, 16)   # a bar, in half beats: the tracker may follow any level
 BAR_SECONDS = (0.9, 4.0)              # bars shorter or longer than this are not tried
 
@@ -72,6 +77,19 @@ TEMPLATES = np.array(_rows)                                    # (chords, 12)
 ALIKE = TEMPLATES @ TEMPLATES.T                                # (chords, chords): 1 for the same chord
 ROOTS = np.array([root for root, _ in CHORDS])
 COSTS = np.array([QUALITY_COST[quality] for _, quality in CHORDS])
+
+
+def use_model(path):
+    """Reads with what train_chords.py learnt, and with the prices that go with it.
+
+    The model has heard the bass, so the bass no longer weighs in apart; and it is surer of a
+    chord than a template is, so a bar line with no change has to cost more to stand beside it
+    (chosen on data/synth/seed1, 2026-11-14).
+    """
+    global MODEL, STAY_COST, BASS_WEIGHT, EMIT_SCALE
+    import joblib
+    MODEL = joblib.load(path)
+    STAY_COST, BASS_WEIGHT, EMIT_SCALE = 0.4, 0.0, 0.2
 
 
 def unit(v):
@@ -247,7 +265,12 @@ def read(path, f=None):
 
     treble = unit(np.array([over(chroma, a, b) for a, b in zip(edges[:-1], edges[1:])]).T)   # (12, units)
     low = unit(np.array([over(bass, a, b) for a, b in zip(edges[:-1], edges[1:])]).T)
-    emit = ((TEMPLATES @ treble).T - COSTS) * seconds[:, None]
+    if MODEL is None:
+        emit = ((TEMPLATES @ treble).T - COSTS) * seconds[:, None]
+    else:
+        said = np.full((count, len(CHORDS)), LOG_FLOOR)
+        said[:, MODEL.classes_] = np.maximum(MODEL.predict_log_proba(np.hstack([treble.T, low.T])), LOG_FLOOR)
+        emit = EMIT_SCALE * said * seconds[:, None]
     heard = BASS_WEIGHT * low.T * seconds[:, None]
     both = unit(np.vstack([treble, low]))
     change = np.zeros(count)
@@ -355,7 +378,10 @@ def main():
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     p.add_argument("input", type=Path, help="a .wav, or a folder of them")
     p.add_argument("--out", type=Path, required=True)
+    p.add_argument("--model", type=Path, help="what train_chords.py learnt, in place of the chord templates")
     args = p.parse_args()
+    if args.model:
+        use_model(args.model)
     files = sorted(args.input.glob("*.wav")) if args.input.is_dir() else [args.input]
     args.out.mkdir(parents=True, exist_ok=True)
     failed = 0
