@@ -36,8 +36,8 @@ QUALITIES = {
 # the fifth equally loud, which is the suspended chord on the fifth (D minor read as Asus4)
 QUALITY_COST = {"": 0.0, "m": 0.0, "7": 0.02, "maj7": 0.02, "m7": 0.02, "sus4": 0.08, "dim": 0.04, "m7(b5)": 0.05}
 BASS_WEIGHT = 0.3       # how much the bass at the start of a bar (or its half) says which note is the root
-# The harmonic part of a recording is what stays over this many frames; a chord that has just begun
-# has not stayed yet, so a long filter hides the start of every chord and the bar lines come late.
+# The harmonic part of a recording is what stays over this many frames (0: the recording as it is).
+# Measured 2026-11-14: 31 and 9 read alike, and the recording as it is reads worse (the drums).
 HARMONIC_FRAMES = 31
 BEAT_LAG = 2.0          # frames by which the onset strength peaks after the sound begins
 TIGHTNESS = 300         # how strictly the beat tracker keeps its tempo (librosa's own value is 100)
@@ -47,7 +47,8 @@ SLASH_RATIO = 2.0       # a bass note that is not the root has to be this much l
 STAY_COST = 0.20        # a bar line the chord does not change at
 MID_COST = 0.50         # a change in the middle of a bar
 ELSE_COST = 1.0         # a change anywhere else
-CHANGE_GAIN = 0.0       # a change earns this times how much the sound changes there (0..1)
+CHANGE_GAIN = 0.0       # a change earns this times how much the sound changes there (0..1);
+                        # measured 2026-11-14: 0.3 and 0.8 read no better than none
 BAR_UNITS = (2, 3, 4, 6, 8, 12, 16)   # a bar, in half beats: the tracker may follow any level
 BAR_SECONDS = (0.9, 4.0)              # bars shorter or longer than this are not tried
 
