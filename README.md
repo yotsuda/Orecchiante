@@ -9,8 +9,10 @@ writes editable Lily# text (`.lys`), with the places it is unsure of marked for 
 `tools/read_chords.py --ears` puts a chart together from what two published models hear (the
 beats and bar lines of Beat This!, the chords of crema). On 100 studio recordings of pop songs
 it has the tempo of 93, 93% of the bar lines, the chord's root right 87% of the time and its
-root and family 82%, and it marks a quarter of the chords for a look, among them seven in ten of
-the wrong ones (see [Recordings](#recordings)). The reader with nothing but its own hearing,
+root and family 82%, and it marks 28% of the chords for a look, among them three in four of
+the wrong ones (see [Recordings](#recordings)). A song of three and a half minutes takes 18
+seconds in three Python environments; what a single command would take is
+[measured](#without-torch-and-tensorflow) and not yet decided. The reader with nothing but its own hearing,
 which the work began with, is kept for comparison.
 
 Where the work is going, and where it stands: [docs/ROADMAP.md](docs/ROADMAP.md) and
@@ -82,7 +84,8 @@ py tools/score_chords.py data/synth/seed1 scratch/read/seed1
 ### Measuring
 
 Every number below is made by `tools/measure.py`, which reads and scores in one process and
-keeps each recording's features between runs (`scratch/feat-h31/`, seconds a song the first time):
+keeps each recording's features between runs (`scratch/feat-h31/`, and `scratch/feat-h0/` for
+`--ears`; seconds a song the first time):
 
 ```
 $env:DETTATO_LYSC = "<LilySharp>/LilySharp.Cli/bin/Release/net10.0/win-x64/lysc.exe"
@@ -216,9 +219,9 @@ ones chosen for BTC, and for crema other prices are within 0.3 of a point on `rw
 | Learnt from | not written down | Isophonics, Robbie Williams, USPop2002 (its README) | BTC's labels of 1,300 hours, then 420 songs of Isophonics, Billboard, RWC Pop and USPop (their paper) | the same | |
 | Parameters; the weights' file | 0.53 M; 6.4 MB (ONNX: 2.2 MB) | 3.0 M; 12 MB | 3.0 M; 36 MB | 2.3 M; 28 MB | |
 | A song on this CPU: the spectrum, the model | 0.5 s, 0.25 s | 1 to 3 s together | 0.3 s, 0.2 s | 0.3 s, 0.07 s | |
-| `rwc-dev`: root, root and family | 86.4%, 82.2% | 85.1%, 79.4% | 86.5%, 82.6% | 84.5%, 80.2% | 87.3%, 82.9% |
-| `rwc-test`: root, root and family | 87.2%, 82.1% | 86.7%, 81.6% | 87.5%, 83.0% | 86.0%, 81.7% | 88.7%, 83.8% |
-| `rwc-test`: root and quality | 69.1% | 67.8% | 70.7% | 69.0% | 71.2% |
+| `rwc-dev`: root, root and family | 86.4%, 82.3% | 85.1%, 79.4% | 86.5%, 82.6% | 84.5%, 80.2% | 87.3%, 82.9% |
+| `rwc-test`: root, root and family | 87.3%, 82.1% | 86.7%, 81.6% | 87.5%, 83.0% | 86.0%, 81.7% | 88.7%, 83.8% |
+| `rwc-test`: root and quality | 69.1% | 67.9% | 70.7% | 68.9% | 71.2% |
 | The five sets made here: root | 93.1 to 96.0% | 94.1 to 97.6% | 93.9 to 97.5% | 93.5 to 97.4% | 94.6 to 97.1% |
 | The same: root and family | 88.4 to 93.1% | 91.0 to 94.8% | 90.7 to 95.4% | 88.9 to 93.3% | 91.2 to 95.1% |
 | The same: root and quality | 64.1 to 74.6% | 73.9 to 82.4% | 75.5 to 83.5% | 70.8 to 81.8% | 71.2 to 80.6% |
@@ -287,15 +290,19 @@ the fold models', as above):
 | Tempo (within 4%), songs | 46 of 50 | 47 of 50 | 93 | 91 | 93 |
 | Meter, songs | 49 of 50 | 49 of 50 | 98 | 96 | 98 |
 | Bar lines (within 70 ms), F | 93.0% | 93.9% | 93.4% | 93.8% | 93.4% |
-| Chord root, by time | 86.4% | 87.2% | 86.8% | 84.4% | 85.9% |
-| Root and family | 82.2% | 82.1% | 82.2% | 79.8% | 80.6% |
+| Chord root, by time | 86.4% | 87.3% | 86.8% | 84.4% | 85.9% |
+| Root and family | 82.3% | 82.1% | 82.2% | 79.8% | 80.6% |
 | Root and quality | 68.0% | 69.1% | 68.6% | 66.5% | 67.1% |
-| The bass note too | 63.3% | 64.3% | 63.8% | 61.4% | 62.4% |
+| The bass note too | 64.3% | 65.0% | 64.6% | 61.4% | 62.8% |
 
 Two points of root and of family come from the rules (a chord lasts whole half beats and
 changes where bars say it may; with BTC's chords, three). The bass note is still this reader's
-own hearing. (`rwc-dev` is where the prices were chosen, with BTC; nothing was chosen again for
-crema.)
+own hearing, and with `--ears` it hears the recording as it is: taking the harmonic part out
+first, which its own chords need, was nine tenths of the reader's time and made the bass notes a
+point worse (63.3%, 64.3% and 63.8% in the first three columns; the roots and families within a
+tenth; "Without torch and TensorFlow" below). (`rwc-dev` is where the prices were chosen, with
+BTC; nothing was chosen again for crema. "crema as it is" was not counted again: its bass notes
+are the reader's of before.)
 
 **The marks.** Such a model is sure of itself more often than it is right, so how likely a
 chord's root and family are right is weighed from four things (`SURE_OF` in `read_chords.py`,
@@ -309,15 +316,18 @@ are BTC's still: fitted again on crema they catch a point more of `rwc-dev` and 
 
 | The marks, `--ears` | `rwc-dev` | `rwc-test` (counted only) | `rwc-p`, all 100 | with BTC's chords: `rwc-dev` (chosen on), `rwc-test` |
 |---|---|---|---|---|
-| Chords read | 7034 | 6776 | 13810 | 7278, 7038 |
-| Wrong in root or family | 14.9% | 16.1% | 15.5% | 19.0%, 18.0% |
-| Marked | 29.3% | 25.7% | 27.5% | 30.1%, 24.0% |
-| Of the chords wrong in root or family, marked | 76.6% | 70.1% | 73.3% | 79.5%, 64.5% |
-| Of the marked, wrong in root or family | 39.1% | 43.8% | 41.2% | 50.2%, 48.2% |
-| Marked and wrong so: the chord offered has the true root and family | 58.5% | 53.2% | 55.9% | 42.4%, 44.9% |
+| Chords read | 7032 | 6777 | 13809 | 7274, 7042 |
+| Wrong in root or family | 14.9% | 16.0% | 15.5% | 19.0%, 18.0% |
+| Marked | 30.4% | 25.9% | 28.2% | 30.8%, 24.1% |
+| Of the chords wrong in root or family, marked | 77.8% | 71.0% | 74.4% | 79.5%, 63.1% |
+| Of the marked, wrong in root or family | 38.1% | 44.0% | 40.7% | 49.0%, 47.2% |
+| Marked and wrong so: the chord offered has the true root and family | 58.2% | 53.2% | 55.8% | 42.1%, 45.2% |
 
-(The marks of this table are up to a point more than the line alone gives, 28.7% and 24.7% with crema:
-a chord two playings of a section disagree on is marked too, see "What is said again".)
+(The marks of this table are up to a point more than the line alone gives: a chord two playings
+of a section disagree on is marked too, see "What is said again". And they are up to a point more
+than they were while the reader's own templates, one of the four things, heard the harmonic part
+alone: 29.3% of `rwc-dev` marked then and 76.6% of its wrong chords caught, 25.7% and 70.1% of
+`rwc-test`. Nothing was chosen again for it.)
 
 The aim was eight wrong chords in ten among three marked in ten, and it is not met. Marking the
 least sure 30% of each set, whatever line that takes, catches 77.8% and 75.2% with crema (79.7%
@@ -328,7 +338,7 @@ whether the key has it) catch 79.4% of `rwc-dev` at 30%, songs held out in tens.
 chords BTC is sure of are mostly ones no probability points at: a major chord read minor on the
 same root (one in four of them), and a suspended chord read major (one in ten). What does help
 is a second model (the section above). On the songs made here the same line marks 17% of the
-chords with crema and catches 70% (`seed1`, `seed7`, `seed11`) and 74% (`seed21`, `seed31`) of
+chords with crema and catches 70% (`seed1`, `seed7`, `seed11`) and 75% (`seed21`, `seed31`) of
 the wrong ones (with BTC: 7 to 9% marked, 44% and 61% caught).
 
 On the songs made here (the beats are those of Beat This!'s model for use, `final0`):
@@ -479,7 +489,7 @@ chosen on `head/seed141` (24 more such songs), `seed1` and `rwc-dev`:
 | Chord read after the last true chord, seconds a song | 0.07 | 0.10 | 1.47 | 2.25 |
 | Tempo, meter, songs | 23, 24 | 20, 20 | 46, 49 | 47, 49 |
 | Bar lines, F | 97.7% | 91.1% | 93.0% | 93.9% |
-| Chord root; root and family | 96.6%; 92.1% | 94.4%; 90.5% | 86.4%; 82.2% | 87.2%; 82.1% |
+| Chord root; root and family | 96.6%; 92.1% | 94.4%; 90.5% | 86.4%; 82.3% | 87.3%; 82.1% |
 
 - On the songs made here both readers begin a chart where the music does, the reader with its
   own model more surely (with `--ears` the bar lines are Beat This!'s). A pickup of a melody
@@ -506,6 +516,98 @@ One thing was found in Lily# on the way: a short bar's chords are fitted to the 
 not to the bar's own, so three chords in a pickup of three beats of 4/4 are warned of (`lysc
 check`: "3 chord slot(s) in a 4/4 bar fit no beat"). The reader writes the last chord of such a
 pickup alone.
+
+### Without torch and TensorFlow
+
+A chart now takes three Python environments (3.7 GB: torch for Beat This!, TensorFlow for crema,
+librosa for the reader). Measured on 2026-11-14, for the choice of what to ship (a Python
+command, or a .NET one as Lily#'s and Calamo's are); nothing is chosen yet. The scripts are in
+`tools/d2/`, what they write in `scratch/d2/`.
+
+**Both models run in onnxruntime and say the same.**
+
+| | crema's chords | Beat This! (`final0`) |
+|---|---|---|
+| Written by | tf2onnx, opset 17 | `torch.onnx.export` (both the new exporter and the old trace) |
+| The file | 2.2 MB | 82.9 MB |
+| Against the model it came from, 10 songs of RWC | probabilities within 3.3e-6; the likeliest chord the same in all 24411 frames | logits within 8.4e-5; all 4103 beats and their bar lines the same |
+| Read through the whole reader | `rwc-dev`, `rwc-test`: every number of the table the same | `seed1`: the 24 `.beats` files the same byte for byte |
+| A song of three and a half minutes on this CPU (24 cores) | 0.35 to 0.43 s (TensorFlow 0.35 s) | 3.2 to 4.3 s on 8 threads, 10 s on all 24 (torch 2.0 to 2.4 s) |
+
+Beat This!'s mel spectrogram, which torchaudio made, is forty lines of numpy and within 1.2e-4
+of it (`ears_onnx.py`). The models then need neither torch nor TensorFlow: one environment of
+numpy, librosa, soxr, soundfile and onnxruntime (450 MB, of which numba, llvmlite and scipy are
+270) reads
+`seed1` and RWC to the same numbers.
+
+**The reader's own time was the harmonic part.** Of the 10 s `read_chords.py --ears` took for
+that song, 8 to 9 were the median filter that takes the drums out (`librosa.effects.harmonic`),
+there for the reader's own chords. With `--ears` the chords are crema's, and the reader's chroma
+is left for the bass note, for how much the sound changes, and for one of the four things the
+marks weigh. From the recording as it is (`measure.py table ... --ears --set HARMONIC_FRAMES=31`
+is how it was):
+
+| `--ears` | `seed1` | `seed7` | `seed11` | `rwc-dev` | `rwc-test` (counted only) |
+|---|---|---|---|---|---|
+| Root; root and family, harmonic part | 95.1%; 91.6% | 93.1%; 88.4% | 94.5%; 92.4% | 86.4%; 82.2% | 87.2%; 82.1% |
+| The same, the recording as it is | 95.1%; 91.6% | 93.1%; 88.4% | 94.5%; 92.4% | 86.4%; 82.3% | 87.3%; 82.1% |
+| The bass note too, harmonic part | 70.4% | 56.6% | 72.2% | 63.3% | 64.3% |
+| The same, the recording as it is | 73.4% | 58.5% | 73.6% | 64.3% | 65.0% |
+
+So `use_ears()` now leaves it out (the reader with its own hearing keeps it: there the drums
+cost chords). The marks moved with it, by under a point (the table of the marks above).
+
+**One song (3 min 27 s, `RWC_P001`), each step a process of its own, started cold:**
+
+| | Beats and bar lines | Chords | The chart | In all |
+|---|---|---|---|---|
+| As it was: three environments | 5.4 s (torch) | 9 s (TensorFlow; 8 of them its start) | 10.6 s | 25 s |
+| Now: the harmonic part left out | 5.4 s | 9 s | 3.6 s | 18 s |
+| One environment, ONNX (`ears_onnx.py`, then `read_chords.py`) | 7.3 s for both: 2 s to start, 0.3 s mel, 3.9 s Beat This!, 0.4 s CQT, 0.35 s crema | | 3.6 s | 11 s |
+| .NET, ONNX (`tools/d2/spike`: the beats only) | 3.6 s: 0.2 s to start, 0.1 s resampling and mel, 3.2 s Beat This! | not written | not written | |
+
+In one Python process the third row would be about 9 s (one start, the recording loaded once);
+that was not run. Beat This! is most of what is left, in time and in size.
+
+**The .NET trial** (`tools/d2/spike`, 260 lines, with Microsoft.ML.OnnxRuntime as Calamo has it;
+12 MB beside the models) reads a `.wav`, halves its rate, makes the mel spectrogram, runs the
+model and picks the peaks. On `seed1` four of the 24 songs have another number of beats than
+torch finds, and in the other twenty 94 beats are elsewhere (of 2970 in all); bar lines F 96.6%
+to 96.4%, the chords the same. That is the resampler, not the port: in Python, scipy's
+`resample_poly` in place of soxr does as much (four songs, 77 beats; bar lines 96.5%). What a .NET command still needs, none of it written:
+
+- crema's input, librosa's constant-Q transform of two harmonics (216 bins each). librosa's with
+  another resampler inside (`res_type="polyphase"`) reads `rwc-dev` and `rwc-test` to within a
+  tenth of a point in every column, so a port need not match it sample for sample;
+- the reader's own features without the harmonic part: two chromas from the same transform (with
+  librosa's estimate of the tuning), the onset strength, the loudness;
+- the reader itself (`read_chords.py`, 920 lines of numpy: the search, the meter, the key, the
+  sections, the two files), checked by `measure.py` reading what it writes;
+- other rates than 44100 and 22050 Hz, and mp3.
+
+Not measured: Beat This!'s smaller model (`small0`, 8 MB by its README; the server it is fetched
+from answered 500 on the day), the models at half precision, another CPU, and any of this on a
+recording that is not a `.wav`.
+
+```
+.venv-crema/Scripts/python -m pip install tf2onnx onnxruntime
+.venv-bt/Scripts/python -m pip install onnx onnxruntime onnxscript
+.venv-crema/Scripts/python tools/d2/crema_onnx.py scratch/real/rwc-p --songs 10    # writes scratch/d2/crema-chord.onnx, compares
+.venv-crema/Scripts/python tools/d2/crema_classes.py                               # the order of its 170 chords
+$env:PYTHONUTF8 = "1"
+.venv-bt/Scripts/python tools/d2/bt_onnx.py scratch/real/rwc-p --songs 10 --how dynamo   # scratch/d2/beat-this-final0-dynamo.onnx
+.venv-bt/Scripts/python tools/d2/bt_mel.py data/synth/seed1 --out scratch/d2/mel/seed1   # torch's mel, to compare with
+py -3.12 -m venv scratch/d2/venv-onnx
+scratch/d2/venv-onnx/Scripts/python -m pip install numpy librosa soxr soundfile onnxruntime
+scratch/d2/venv-onnx/Scripts/python tools/d2/ears_onnx.py data/synth/seed1 --out scratch/d2/out/seed1 --mel-against scratch/d2/mel/seed1
+.venv/Scripts/python tools/measure.py table seed1 --lines scratch/d2/out/seed1 --heard scratch/d2/out/seed1
+scratch/d2/venv-onnx/Scripts/python tools/d2/ears_onnx.py scratch/real/rwc-p --out scratch/d2/out/rwc-polyphase --no-beats --cqt-res polyphase
+.venv/Scripts/python tools/measure.py table rwc-dev rwc-test --lines scratch/real/beats-bt-folds --heard scratch/d2/out/rwc-polyphase
+dotnet build tools/d2/spike -c Release -o scratch/d2/spike/out
+scratch/d2/spike/out/Spike.exe data/synth/seed1 scratch/d2/beat-this-final0-dynamo.onnx scratch/d2/out/seed1-net
+.venv/Scripts/python tools/d2/beats_diff.py scratch/beats-bt/seed1 scratch/d2/out/seed1-net
+.venv/Scripts/python tools/d2/reader_time.py song.wav ears    # where the reader's time goes (ears: the folder of song.beats and song.npz)
+```
 
 ### On the songs made here, nothing learnt
 

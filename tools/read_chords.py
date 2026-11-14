@@ -45,7 +45,8 @@ QUALITIES = {
 QUALITY_COST = {"": 0.0, "m": 0.0, "7": 0.02, "maj7": 0.05, "m7": 0.0, "sus4": 0.08, "dim": 0.04, "m7(b5)": 0.05}
 BASS_WEIGHT = 0.3       # how much the bass at the start of a bar (or its half) says which note is the root
 # The harmonic part of a recording is what stays over this many frames (0: the recording as it is).
-# Measured 2026-11-14: 31 and 9 read alike, and the recording as it is reads worse (the drums).
+# Measured 2026-11-14: 31 and 9 read alike, and the recording as it is reads worse (the drums),
+# for this reader's own hearing. With ears trained on recordings it is 0 (use_ears).
 HARMONIC_FRAMES = 31
 BEAT_LAG = 2.0          # frames by which the onset strength peaks after the sound begins
 TIGHTNESS = 100         # how strictly the beat tracker keeps its tempo (librosa's own value is 100)
@@ -131,9 +132,14 @@ def use_ears():
     (chosen on rwc-dev, 2026-11-14). That model has already smoothed what it says over the bars
     around, so a change costs far less than it does for a model that hears one half beat: with
     this reader's own prices (0.4, 0.5, 1.0) roots are 82.7% right there, with these 84.8%."""
-    global STAY_COST, MID_COST, ELSE_COST, BASS_WEIGHT, EMIT_SCALE, DOUBT
+    global STAY_COST, MID_COST, ELSE_COST, BASS_WEIGHT, EMIT_SCALE, DOUBT, HARMONIC_FRAMES
     STAY_COST, MID_COST, ELSE_COST, BASS_WEIGHT, EMIT_SCALE = 0.1, 0.1, 0.25, 0.0, 0.2
     DOUBT = DOUBT_EARS
+    # The chords are the model's, so this reader's own chroma no longer has to be free of the drums:
+    # it is taken from the recording as it is. Taking the harmonic part out is nine tenths of the
+    # reader's time (8 s of a 4 minute song), and with it left in the roots read the same and the
+    # bass notes worse (rwc-dev 63.3% -> 64.3% without; README, "Without torch and TensorFlow").
+    HARMONIC_FRAMES = 0
 
 
 NONE = np.zeros((170, 1))   # the model's "N": no chord

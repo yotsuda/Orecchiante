@@ -69,7 +69,7 @@ SETS = {
 TEST = ["seed1", "seed7", "seed11"]
 TIM = ["tim/seed1", "tim/seed7", "tim/seed11"]
 
-_RULES = {k: getattr(rc, k) for k in ("MODEL", "STAY_COST", "MID_COST", "ELSE_COST", "BASS_WEIGHT", "EMIT_SCALE", "DOUBT", "SAID_AGAIN")}
+_RULES = {k: getattr(rc, k) for k in ("MODEL", "STAY_COST", "MID_COST", "ELSE_COST", "BASS_WEIGHT", "EMIT_SCALE", "DOUBT", "SAID_AGAIN", "HARMONIC_FRAMES")}
 
 
 def configure(model, ears=False):
