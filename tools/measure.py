@@ -38,6 +38,7 @@ import numpy as np
 
 import read_chords as rc
 import score_chords as sc
+import sidecar
 
 ROOT = Path(__file__).resolve().parent.parent
 MODEL = ROOT / "models" / "chords.joblib"
@@ -254,7 +255,8 @@ def check(charts):
             bad += 1
             print(f"lysc check {chart}: {said.strip()[:300]}")
     print(f"lysc check: {len(charts) - bad} of {len(charts)} charts pass")
-    return bad
+    # and the file beside each chart: as docs/SIDECAR.md says, with as many bars as Lily# plays
+    return bad + sidecar.check([c.with_name(c.stem + ".dettato.json") for c in charts])
 
 
 def doubted(names, ears=False):

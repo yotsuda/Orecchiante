@@ -5,7 +5,7 @@
 
 For each .wav it writes <name>.lys (a Lily# chord chart) and <name>.dettato.json (every bar and
 chord with its seconds, its section and which bar of it it is, in the shape of gen_chords.py's
-truth). The steps:
+truth: docs/SIDECAR.md is its specification, tools/sidecar.py checks a file against it). The steps:
 
 1. beats: librosa's beat tracker on the onset strength, carried back to the start and on to the
    end, and halved: the half beat is the unit everything after is counted in;
@@ -34,6 +34,7 @@ import numpy as np
 
 SR = 22050
 HOP = 512
+FORMAT = 1              # the .dettato.json written here (docs/SIDECAR.md): raised when a reader of it must change
 
 QUALITIES = {
     "": [0, 4, 7], "m": [0, 3, 7], "7": [0, 4, 7, 10], "maj7": [0, 4, 7, 11],
@@ -798,12 +799,15 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
         if "other" in c:
             c["other"] = roots[c["other"][0]] + c["other"][1]
     bar_seconds = float(np.median(np.diff(lines))) * HOP / SR
-    return {
+    return {                                        # docs/SIDECAR.md says what each of these is
+        "dettato": FORMAT,
         "audio": name,
+        "duration": round((len(oenv) - 1) * HOP / SR, 2),
         "tempo": {"note": tempo_note, "bpm": int(round(60.0 * tempo_beats / bar_seconds))},
         "time": time,
         "key": f"{tonic_name} {mode}",
         **({"strange": True} if strange else {}),
+        **({"doubt": DOUBT} if any("sure" in c for c in read_chords) else {}),
         "form": form,
         "bars": bars,
     }

@@ -113,7 +113,10 @@ def main():
         if not read_path.exists():
             print(f"{truth['id']}: not read", file=sys.stderr)
             continue
-        rows.append(score(truth, json.loads(read_path.read_text(encoding="utf-8"))))
+        reading = json.loads(read_path.read_text(encoding="utf-8"))
+        if reading.get("dettato", 1) != 1:      # docs/SIDECAR.md: a file with no number is one from before it
+            sys.exit(f"{read_path}: format {reading['dettato']} is not one this scores")
+        rows.append(score(truth, reading))
     if not rows:
         sys.exit("nothing to score")
 

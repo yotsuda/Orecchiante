@@ -27,7 +27,10 @@ From a recording of a song, read three things and write them as a Lily# `chords`
 A chord the reader doubts is marked on its symbol (`@todo`), as
 [Calamo](https://github.com/yotsuda/Calamo) marks a note it doubts. Beside the `.lys`, a file holds
 where each bar is in the recording, so an editor can play that bar of the original while it is
-corrected.
+corrected: `<name>.dettato.json`, every bar played in the order Lily# plays it, with its seconds
+and its chords. [docs/SIDECAR.md](docs/SIDECAR.md) is its specification, and
+`py tools/sidecar.py <folder>` checks files against it and against the charts beside them (Lily#
+must play as many bars as the file has).
 
 Notes, melody, bass and drums come after this, if at all.
 
@@ -96,7 +99,9 @@ $env:DETTATO_SAMPLES = "<LilySharp>/samples"        # the table of "songs it was
 `beats seed7 s7-005`, `table seed1 rwc-dev --ears`, `doubt rwc-dev --ears`, `form rwc-dev --ears` and
 `head seed41 rwc-dev --ears` (with models trained on recordings, below).
 `all` takes about fifteen minutes once the features are kept (the recordings below among them),
-and last passed all 1388 charts it wrote through `lysc check` (2026-11-14).
+and last passed all 1388 charts it wrote through `lysc check` (2026-11-14); the `.dettato.json`
+beside each of the 1388 was as [docs/SIDECAR.md](docs/SIDECAR.md) says, with as many bars as
+Lily# plays of the chart.
 
 ## Recordings
 
