@@ -184,70 +184,130 @@ git clone --depth 1 https://github.com/jayg996/BTC-ISMIR19 scratch/btc
 .venv/Scripts/python tools/measure.py table rwc-p --chords scratch/real/chords-btc --lines scratch/real/beats-bt-folds
 ```
 
+### Which model hears the chords
+
+BTC's repository is MIT and has the weights in it, but nowhere do its authors say what the
+weights may be used for, and they learnt from records bought in shops. So four models were set
+side by side (2026-11-14), each read through the same rules (the next section; the prices are the
+ones chosen for BTC, and for crema other prices are within 0.3 of a point on `rwc-dev`):
+
+| | [crema](https://github.com/bmcfee/crema) 0.2.0 | [BTC](https://github.com/jayg996/BTC-ISMIR19) | [ChordMini](https://github.com/ptnghia-j/ChordMini), BTC | ChordMini, 2E1D | crema and BTC, averaged |
+|---|---|---|---|---|---|
+| Licence of the code | BSD 2-Clause | MIT | MIT | MIT | |
+| The weights | in the package; their author counts them as part of the software ([issue 42](https://github.com/bmcfee/crema/issues/42)) | in the repository; nothing said | in the repository; nothing said | the same | |
+| Learnt from | not written down | Isophonics, Robbie Williams, USPop2002 (its README) | BTC's labels of 1,300 hours, then 420 songs of Isophonics, Billboard, RWC Pop and USPop (their paper) | the same | |
+| Parameters; the weights' file | 0.53 M; 6.4 MB (ONNX: 2.2 MB) | 3.0 M; 12 MB | 3.0 M; 36 MB | 2.3 M; 28 MB | |
+| A song on this CPU: the spectrum, the model | 0.5 s, 0.25 s | 1 to 3 s together | 0.3 s, 0.2 s | 0.3 s, 0.07 s | |
+| `rwc-dev`: root, root and family | 86.0%, 81.8% | 84.8%, 79.1% | 86.1%, 82.2% | 84.1%, 79.8% | 87.0%, 82.6% |
+| `rwc-test`: root, root and family | 87.1%, 82.0% | 86.4%, 81.3% | 87.2%, 82.6% | 85.6%, 81.3% | 88.5%, 83.6% |
+| `rwc-test`: root and quality | 69.0% | 67.6% | 70.3% | 68.6% | 70.9% |
+| The five sets made here: root | 93.1 to 95.9% | 94.3 to 97.5% | 93.9 to 97.4% | 93.4 to 97.2% | 94.6 to 97.0% |
+| The same: root and family | 88.4 to 93.0% | 91.2 to 94.7% | 90.6 to 95.3% | 88.8 to 93.3% | 91.1 to 94.9% |
+| The same: root and quality | 64.1 to 74.5% | 73.9 to 82.3% | 75.5 to 83.4% | 70.8 to 81.6% | 71.0 to 80.6% |
+
+**crema is the one the reader uses.** It is the only one whose author has said the weights are
+under the licence of the code; it is the smallest; and on recordings it reads the roots and the
+families as well as any of the others. What it gives up is the sevenths on the songs made here
+(three to ten points behind BTC), and up to two and a half points of their roots. The numbers on RWC are not all
+alike in worth: ChordMini's models learnt from RWC Pop songs (which ones is not published), and
+what crema learnt from is not written down, so RWC may be among it; only BTC is known not to
+have heard these songs, and only the songs made here are new to all four.
+
+Two ears are better than one, and that is kept for the day BTC's authors say what its weights
+may be used for (they have not been asked). Averaging crema's probabilities with BTC's reads
+`rwc-test` at 88.5% and 83.6%. And a second ear tells where the first is wrong: weighing in the
+second model's probability of the chord read, the least sure 30% of `rwc-test` hold 77.4% of the
+wrong chords instead of 75.2% (crema first, BTC second; 79.0% instead of 74.2% the other way
+round; weights fitted on `rwc-dev`), and a third ear adds nothing to two.
+
+Not measured: the [large-vocabulary model](https://github.com/music-x-lab/ISMIR2019-Large-Vocabulary-Chord-Recognition)
+of Jiang et al. (MIT; nothing said of the weights) and omnizart's (MIT; the same), which give
+labels and not the probabilities the reader needs; madmom's, whose models are CC BY-NC-SA.
+
+```
+py -3.12 -m venv .venv-crema
+.venv-crema/Scripts/python -m pip install crema tf-keras "setuptools<81"
+.venv-crema/Scripts/python tools/crema_chords.py scratch/real/rwc-p --out scratch/real/chords-crema
+git clone --depth 1 https://github.com/ptnghia-j/ChordMini scratch/chordmini
+.venv-bt/Scripts/python tools/chordmini_chords.py scratch/chordmini scratch/real/rwc-p --model btc --out scratch/real/chords-cmbtc
+.venv/Scripts/python tools/measure.py table rwc-dev rwc-test --ears          # crema
+.venv/Scripts/python tools/measure.py table rwc-dev rwc-test --ears cmbtc    # scratch/real/chords-cmbtc
+```
+
+crema 0.2.0 was written for Keras 2 and `pkg_resources`: `crema_chords.py` runs it on `tf-keras`
+and takes only the spectrum from its own pipeline. The sets made here go the same way
+(`data/synth/seed1 --out scratch/chords-crema/seed1`).
+
 ### Their ears, this reader's rules
 
-`read_chords.py --ears` puts a chart together from what those two models hear, and writes the
+`read_chords.py --ears` puts a chart together from what two such models hear (Beat This! and
+crema; the same words hold for BTC, on which the prices and the marks were chosen), and writes the
 `.lys` and the `.dettato.json` as before:
 
 - the bars are Beat This!'s, and so is the meter: the beats it counts in a bar, where two beats
   are the two dotted quarters of 6/8 when the sound between them falls in threes, and the halves
   of a bar of four when they are slower than 80 a minute;
-- each bar is cut into half beats, and BTC's probabilities of its 170 chords (`btc_chords.py
-  --probs`: about eleven frames a second) are folded into the reader's 96 and averaged over each;
+- each bar is cut into half beats, and the chord model's probabilities of its 170 chords
+  (`crema_chords.py`, or `btc_chords.py --probs`: about eleven frames a second) are folded into
+  the reader's 96 and averaged over each;
 - the reader's search then names the chords: a change costs a little at a bar line or its half
-  and more elsewhere. BTC has already smoothed what it says, so the prices are a quarter of what
-  the reader's own model needs; they were chosen on `rwc-dev`.
+  and more elsewhere. Such a model has already smoothed what it says, so the prices are a quarter
+  of what the reader's own model needs; they were chosen on `rwc-dev`, with BTC.
 
 ```
 .venv-bt/Scripts/python tools/track_beats.py song.wav --out ears
-.venv-bt/Scripts/python tools/btc_chords.py scratch/btc song.wav --out ears --probs
+.venv-crema/Scripts/python tools/crema_chords.py song.wav --out ears
 .venv/Scripts/python tools/read_chords.py song.wav --out charts --ears ears
 ```
 
 Counted on 2026-11-14 (`measure.py table rwc-dev rwc-test rwc-p --ears`; the beats of RWC are
 the fold models', as above):
 
-| | `rwc-dev` (chosen on) | `rwc-test` (counted only) | `rwc-p`, all 100 | BTC as it is, `rwc-p` |
+| | `rwc-dev` (chosen on) | `rwc-test` (counted only) | `rwc-p`, all 100 | crema as it is, `rwc-p` | with BTC's chords, `rwc-p` |
+|---|---|---|---|---|---|
+| Tempo (within 4%), songs | 46 of 50 | 47 of 50 | 93 | 91 | 93 |
+| Meter, songs | 49 of 50 | 49 of 50 | 98 | 96 | 98 |
+| Bar lines (within 70 ms), F | 93.3% | 94.4% | 93.8% | 93.8% | 93.8% |
+| Chord root, by time | 86.0% | 87.1% | 86.6% | 84.4% | 85.6% |
+| Root and family | 81.8% | 82.0% | 81.9% | 79.8% | 80.2% |
+| Root and quality | 67.7% | 69.0% | 68.4% | 66.5% | 66.8% |
+| The bass note too | 63.0% | 64.1% | 63.6% | 61.4% | 62.1% |
+
+Two points of root and of family come from the rules (a chord lasts whole half beats and
+changes where bars say it may; with BTC's chords, three). The bass note is still this reader's
+own hearing. (`rwc-dev` is where the prices were chosen, with BTC; nothing was chosen again for
+crema.)
+
+**The marks.** Such a model is sure of itself more often than it is right, so how likely a
+chord's root and family are right is weighed from four things (`SURE_OF` in `read_chords.py`,
+five numbers chosen on `rwc-dev`, with BTC): the model's mean probability of the chord over its
+half beats; the same in its last half beat, which weighs the other way (what the model says there
+is already the next chord's); whether this reader's own templates name the same root and family;
+and the first of these over the whole song. A chord below 0.84 is marked. With crema
+(`measure.py doubt rwc-dev --ears`, counted 2026-11-14, by chords; the five numbers and the line
+are BTC's still: fitted again on crema they catch a point more of `rwc-dev` and no more of
+`rwc-test`):
+
+| The marks, `--ears` | `rwc-dev` | `rwc-test` (counted only) | `rwc-p`, all 100 | with BTC's chords: `rwc-dev` (chosen on), `rwc-test` |
 |---|---|---|---|---|
-| Tempo (within 4%), songs | 46 of 50 | 47 of 50 | 93 | 91 |
-| Meter, songs | 49 of 50 | 49 of 50 | 98 | 96 |
-| Bar lines (within 70 ms), F | 93.3% | 94.4% | 93.8% | 93.8% |
-| Chord root, by time | 84.8% | 86.4% | 85.6% | 82.6% |
-| Root and family | 79.1% | 81.3% | 80.2% | 77.4% |
-| Root and quality | 65.9% | 67.6% | 66.8% | 64.3% |
-| The bass note too | 61.6% | 62.6% | 62.1% | 58.7% |
+| Chords read | 7010 | 6776 | 13786 | 7284, 7049 |
+| Wrong in root or family | 15.0% | 16.0% | 15.5% | 19.3%, 18.2% |
+| Marked | 28.7% | 24.7% | 26.7% | 29.9%, 23.2% |
+| Of the chords wrong in root or family, marked | 76.4% | 68.7% | 72.5% | 79.7%, 64.2% |
+| Of the marked, wrong in root or family | 40.1% | 44.5% | 42.1% | 51.4%, 50.3% |
+| Marked and wrong so: the chord offered has the true root and family | 57.9% | 52.1% | 55.1% | 41.5%, 44.1% |
 
-Three points of root and of family come from the rules (a chord lasts whole half beats and
-changes where bars say it may). The bass note is still this reader's own hearing.
-
-**The marks.** BTC is sure of itself more often than it is right, so how likely a chord's root
-and family are right is weighed from four things (`SURE_OF` in `read_chords.py`, five numbers
-chosen on `rwc-dev`): BTC's mean probability of the chord over its half beats; the same in its
-last half beat, which weighs the other way (what BTC says there is already the next chord's);
-whether this reader's own templates name the same root and family; and the first of these over
-the whole song. A chord below 0.84 is marked, which is three chords in ten on `rwc-dev`
-(`measure.py doubt rwc-dev --ears`, counted 2026-11-14, by chords):
-
-| The marks, `--ears` | `rwc-dev` (chosen on) | `rwc-test` (counted only) | `rwc-p`, all 100 |
-|---|---|---|---|
-| Chords read | 7284 | 7049 | 14333 |
-| Wrong in root or family | 19.3% | 18.2% | 18.8% |
-| Marked | 29.9% | 23.2% | 26.6% |
-| Of the chords wrong in root or family, marked | 79.7% | 64.2% | 72.3% |
-| Of the marked, wrong in root or family | 51.4% | 50.3% | 50.9% |
-| Marked and wrong so: the chord offered has the true root and family | 41.5% | 44.1% | 42.6% |
-
-The aim was eight wrong chords in ten among three marked in ten. It is met on the songs the
-numbers were chosen on and not on the others: there the same line marks fewer chords and catches
-fewer. Marking the least sure 30% of each set, whatever line that takes, catches 79.7% and 74.0%
-(by BTC's own probability alone: 75.2% and 71.6%); to catch 80% of `rwc-test`, 38% have to be
-marked. More measures do not help: twenty-seven of them weighed together (the bass, the chords
-before and after, how often the song has the chord, whether the key has it) catch 79.4% of
-`rwc-dev` at 30%, songs held out in tens. The wrong chords it is sure of are mostly ones no
-probability points at: a major chord read minor on the same root (one in four of them), and a
-suspended chord read major (one in ten). On the songs made here the same line marks 7 to 9% of
-the chords and catches 44% (`seed1`, `seed7`, `seed11`) and 61% (`seed21`, `seed31`) of the
-wrong ones: the weights are of recordings.
+The aim was eight wrong chords in ten among three marked in ten, and it is not met. Marking the
+least sure 30% of each set, whatever line that takes, catches 77.8% and 75.2% with crema (79.7%
+and 74.0% with BTC; by BTC's own probability alone 75.2% and 71.6%; to catch 80% of `rwc-test`
+with BTC, 38% have to be marked). More measures do not help (tried with BTC): twenty-seven of
+them weighed together (the bass, the chords before and after, how often the song has the chord,
+whether the key has it) catch 79.4% of `rwc-dev` at 30%, songs held out in tens. The wrong
+chords BTC is sure of are mostly ones no probability points at: a major chord read minor on the
+same root (one in four of them), and a suspended chord read major (one in ten). What does help
+is a second model (the section above). On the songs made here the same line marks 17% of the
+chords with crema and catches 70% (`seed1`, `seed7`, `seed11`) and 74% (`seed21`, `seed31`) of
+the wrong ones (with BTC: 7 to 9% marked, 44% and 61% caught).
 
 On the songs made here (the beats are those of Beat This!'s model for use, `final0`):
 
@@ -256,13 +316,14 @@ On the songs made here (the beats are those of Beat This!'s model for use, `fina
 | Tempo, songs of 24 | 22 | 20 | 21 | 18 | 23 |
 | Meter, songs of 24 | 22 | 22 | 22 | 21 | 23 |
 | Bar lines, F | 96.4% | 90.6% | 93.7% | 86.2% | 92.4% |
-| Chord root, by time | 94.5% | 94.3% | 96.8% | 97.2% | 97.5% |
-| Root and family | 91.2% | 91.2% | 94.7% | 94.6% | 93.4% |
-| Root and quality | 77.1% | 73.9% | 82.3% | 79.9% | 79.7% |
+| Chord root, by time | 95.1% | 93.1% | 94.4% | 94.8% | 95.9% |
+| Root and family | 91.5% | 88.4% | 92.3% | 92.9% | 93.0% |
+| Root and quality | 74.4% | 64.1% | 74.5% | 72.3% | 74.1% |
 
-Beside the reader with its own model (below), the roots and families are within a point and
-the sevenths (root and quality) are behind by up to eight: the reader's model was made on this
-very sound. The bar lines are behind on four of the five sets (90.6 to 93.7% against 97.2 to
+Beside the reader with its own model (below), the roots are behind by up to three
+points and the sevenths (root and quality) by far more (with BTC's chords: the roots and
+families within a point, the sevenths behind by up to eight): the reader's model was made on
+this very sound. The bar lines are behind on four of the five sets (90.6 to 93.7% against 97.2 to
 99.1% on `seed7`, `seed11` and `seed31`), and that is the beat tracker: where it follows a
 song at half its tempo it counts four slow beats to two true bars, and some waltzes it counts
 in four or in two. The rule for two slow beats was chosen looking at `seed7` and `seed11`.

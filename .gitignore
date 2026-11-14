@@ -60,3 +60,4 @@ data/synth/seed100/
 
 # The environment of the models trained on recordings
 .venv-bt/
+.venv-crema/

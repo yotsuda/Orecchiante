@@ -6,7 +6,7 @@
     .venv/Scripts/python tools/measure.py table seed1 seed7 -v      # one line a set (-v: a line a song too)
     .venv/Scripts/python tools/measure.py table seed21 --hint       # told each song's true tempo
     .venv/Scripts/python tools/measure.py table seed1 --rules       # the reader with nothing learnt
-    .venv/Scripts/python tools/measure.py table seed1 rwc-dev --ears   # with models trained on recordings
+    .venv/Scripts/python tools/measure.py table seed1 rwc-dev --ears   # with models trained on recordings (--ears btc: another's chords)
     .venv/Scripts/python tools/measure.py sweep seed100 TIGHTNESS=300,100 Q:maj7=0.02,0.05
     .venv/Scripts/python tools/measure.py doubt seed1 seed7 seed11 --at 0.5,0.7
     .venv/Scripts/python tools/measure.py barlines seed1            # how the bar lines are missed
@@ -179,13 +179,17 @@ def lab_reading(truth, wav, labs, lines):
             "key": "C major", "bars": bars}
 
 
+EARS = "crema"        # the chord model --ears takes its chords from: scratch/chords-<this> (README: which model)
+
+
 def ears_of(name):
     """Where what the models trained on recordings made of a set is kept: (the folder of .beats,
-    the folder of .npz), as tools/track_beats.py and tools/btc_chords.py --probs wrote them (README)."""
+    the folder of .npz), as tools/track_beats.py and tools/crema_chords.py (or btc_chords.py --probs,
+    chordmini_chords.py: EARS) wrote them (README)."""
     base = PARTS.get(name, name).split("@")[0]
     if base == "rwc-p":
-        return ROOT / "scratch" / "real" / "beats-bt-folds", ROOT / "scratch" / "real" / "chords-btc"
-    return ROOT / "scratch" / "beats-bt" / base, ROOT / "scratch" / "chords-btc" / base
+        return ROOT / "scratch" / "real" / "beats-bt-folds", ROOT / "scratch" / "real" / f"chords-{EARS}"
+    return ROOT / "scratch" / "beats-bt" / base, ROOT / "scratch" / f"chords-{EARS}" / base
 
 
 def run(name, hint=False, verbose=False, write=None, lines=None, labs=None, heard=None, ears=False):
@@ -275,7 +279,7 @@ def doubted(names, ears=False):
                     rows.append({"said": c["sure"], "fam": fam, "all": fam and quality == true[1],
                                  "offered": oroot == true[0] and oquality == true[1],
                                  "offeredFam": oroot == true[0] and sc.FAMILY[oquality] == sc.FAMILY[true[1]],
-                                 "song": truth["id"], "symbol": c["symbol"], "true": true, "key": got["key"], "start": c["start"],
+                                 "song": truth["id"], "symbol": c["symbol"], "true": true, "key": got["key"], "start": c["start"], "end": c["end"],
                                  **c["why"]})
     return rows
 
@@ -437,7 +441,7 @@ def everything(model, write):
             rows, written = run(name, hint=hint, verbose=verbose, write=Path(write) / f"{i + 1}" if write else None)
             charts += written
             print(f"{name}: {totals(rows)}", flush=True)
-    print("\n## With ears trained on recordings (Beat This! and BTC)")
+    print(f"\n## With ears trained on recordings (Beat This! and {EARS})")
     configure(None, ears=True)
     for name in TEST + ["seed21", "seed31", "rwc-dev", "rwc-test", "rwc-p"]:
         rows, written = run(name, ears=True, write=Path(write) / "ears" if write and name != "rwc-p" else None)
@@ -479,8 +483,9 @@ def main():
     s.add_argument("--lines", help='bar lines found by other means: "truth", or a folder of <recording>.beats files')
     s.add_argument("--heard", help="with --lines: chords put together from what a model trained on recordings hears, "
                                    "a folder of <recording>.npz files (tools/btc_chords.py --probs)")
-    s.add_argument("--ears", action="store_true",
-                   help="--lines and --heard from where the README keeps them for each set (scratch/beats-bt, scratch/chords-btc)")
+    s.add_argument("--ears", nargs="?", const="crema", metavar="MODEL",
+                   help="--lines and --heard from where the README keeps them for each set (scratch/beats-bt, "
+                        "scratch/chords-crema); with a name, another chord model's (btc: scratch/chords-btc)")
     s = reader(sub.add_parser("all", help="every table of the README"), sets=None)
     s.add_argument("--write", type=Path, default=ROOT / "scratch" / "read-all", help="where the charts go (default: scratch/read-all)")
     s = reader(sub.add_parser("sweep", help="the table over a grid of constants"), sets=None)
@@ -489,10 +494,10 @@ def main():
     s.add_argument("--hint", action="store_true")
     s.add_argument("--lines", help="as for table")
     s.add_argument("--heard", help="as for table")
-    s.add_argument("--ears", action="store_true", help="as for table")
+    s.add_argument("--ears", nargs="?", const="crema", metavar="MODEL", help="as for table")
     s = reader(sub.add_parser("doubt", help="do the marks point at the wrong chords?"))
     s.add_argument("--at", default=None, help="thresholds with commas between (default: the reader's DOUBT)")
-    s.add_argument("--ears", action="store_true", help="as for table")
+    s.add_argument("--ears", nargs="?", const="crema", metavar="MODEL", help="as for table")
     s = reader(sub.add_parser("barlines", help="how the bar lines are missed, song by song"))
     s.add_argument("--hint", action="store_true")
     s = sub.add_parser("keys", help="the key rule, given the true chords")
@@ -524,7 +529,10 @@ def main():
     heard, ears = getattr(args, "heard", None), getattr(args, "ears", False)
     if heard and not getattr(args, "lines", None):
         sys.exit("--heard needs --lines: the model trained on recordings names chords, not bars")
-    configure(model, ears=bool(heard) or ears)
+    if ears:
+        global EARS
+        EARS = ears
+    configure(model, ears=bool(heard) or bool(ears))
     for item in args.set:
         key, value = item.split("=", 1)
         set_constant(key, ast.literal_eval(value))

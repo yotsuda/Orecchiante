@@ -3,111 +3,98 @@
 **毎セッションの終わりに書き換える**（追記しない。200 行以内）。方向づけは [ROADMAP.md](ROADMAP.md)、
 数字と使い方は [README](../README.md)、録音の出典は [DATASETS.md](DATASETS.md)。
 
-最終更新: 2026-11-14（B2 を終えたセッションの終わり。HEAD は `git log -1` で確かめる）。
+最終更新: 2026-11-14（B3 を終えたセッションの終わり。HEAD は `git log -1` で確かめる）。
 
 ## 現在地
 
-B1（耳の差し替え）と B2（印の質）が終わった。`read_chords.py --ears` が、Beat This! の拍・小節頭と BTC の
-フレームごとの確率から `.lys` と `.dettato.json` を組み立てる。B2 は「終わり」の後ろの枝（**目標には届かない。
-理由と届く所の数字**）で閉じた。コード・小節線の数字は B1 から動いていない。
+B3（コードモデルを決める）が終わった。**配るものに入れるコードモデルは crema 0.2.0**
+（McFee & Bello。BSD 2-Clause）。`measure.py --ears` の既定も crema にした（`--ears btc` で BTC）。
+`read_chords.py` の値段（`use_ears()`）と印の式（`SURE_OF`・`DOUBT_EARS`）は BTC で選んだ値のまま変えていない
+（crema で選び直しても値段は 0.3 ポイント以内、印は `rwc-dev` で +1 ポイント・`rwc-test` で変わらず）。
 
-RWC-P（Beat This! は fold のモデル。全項目は README の「Their ears, this reader's rules」）:
+### crema にした理由
 
-| | 自作の読み取り器 | 素の BTC＋Beat This!（B0） | `--ears` `rwc-p` | `--ears` `rwc-dev` | `--ears` `rwc-test` |
+- **重みのライセンスを作者が明言しているのは crema だけ。** bmcfee/crema の issue 42（2026-11-12、open）で
+  作者が「重みはソフトウェアの一部で、ライセンスの内。クレジットを書くこと」と答えている
+  （LICENSE の文面の変更ではなく issue のコメント）。重みは PyPI のパッケージに同梱（`crema/models/chord/model.h5`）。
+- BTC: リポジトリは MIT で重みも同梱だが、README・LICENSE・issue のどこにも重みの扱いの記述がない（license の
+  issue は 0 件）。第三者の変換（HF の cstr/btc-chords-GGUF）は「学習データの条件から CC BY-NC-SA」と書いているが、
+  根拠の条件は確かめられなかった（Isophonics のページにコード注釈のライセンスの記載はない）。
+- ChordMini（Phan ほか、DAFx 2026。MIT のリポジトリに重み同梱、重みの明記なし）: BTC を教師にした疑似ラベル＋
+  Isophonics・Billboard・**RWC Pop**・USPop の 420 曲で学習。BTC の派生物なので BTC より条件が良くなることはない。
+  RWC を学習しているので RWC の数字は割り引く。
+- 小さい: 52.8 万パラメータ、h5 で 6.4 MB。**ONNX に書き出せた**（tf2onnx、opset 17、2.2 MB、出力は元と 3e-6 以内で一致、
+  onnxruntime で 1 曲 0.9 秒）。入力は CQT（44.1 kHz、hop 4096、216 ビン × 2）で、CQT は ONNX の外。
+- 精度は実録音で BTC 以上（下の表）。弱いのは合成曲の七の和音（BTC より 3〜10 ポイント下）と根音（最大 2.4 下）。
+
+### 数字（`--ears <名前>`。値段は全部 BTC 用のまま。全項目は README の「Which model hears the chords」）
+
+| | crema（既定） | `btc` | `cmbtc`（ChordMini の BTC） | `cm2e1d` | `crema+btc`（確率の平均） |
 |---|---|---|---|---|---|
-| テンポ | 60/100 | 91/100 | 93/100 | 46/50 | 47/50 |
-| 拍子 | 94/100 | 96/100 | 98/100 | 49/50 | 49/50 |
-| 小節線 F | 66.1% | 93.8% | 93.8% | 93.3% | 94.4% |
-| ルート | 74.7% | 82.6% | 85.6% | 84.8% | 86.4% |
-| ルート＋長短 | 63.4% | 77.4% | 80.2% | 79.1% | 81.3% |
+| `rwc-dev` ルート / 長短 | 86.0 / 81.8 | 84.8 / 79.1 | 86.1 / 82.2 | 84.1 / 79.8 | 87.0 / 82.6 |
+| `rwc-test` ルート / 長短 | 87.1 / 82.0 | 86.4 / 81.3 | 87.2 / 82.6 | 85.6 / 81.3 | 88.5 / 83.6 |
+| `rwc-p` ルート / 長短 | 86.6 / 81.9 | 85.6 / 80.2 | 86.7 / 82.4 | 84.9 / 80.6 | 87.8 / 83.1 |
+| 合成曲 5 セットのルート | 93.1〜95.9 | 94.3〜97.5 | 93.9〜97.4 | 93.4〜97.2 | 94.6〜97.0 |
+| 合成曲の七の和音まで | 64.1〜74.5 | 73.9〜82.3 | 75.5〜83.4 | 70.8〜81.6 | 71.0〜80.6 |
 
-- B1 の「終わり」（`rwc-dev` で小節線 93.3%・ルート 81.9%・長短 76.3% 以上）を満たした。
-- `rwc-test` は M2 の目安のうち、ルート 80%・長短 75%・小節線 85%・テンポ 85/100 相当をすでに超えている。
-  **M2 で残っているのは印**（誤りの 8 割に印、印は 3 割以下）。これは `rwc-test` で届いていない（下）。
+- テンポ・拍子・小節線は Beat This! のものなので全列同じ（`rwc-test` 47/50・49/50・94.4%）。
+- **RWC の数字の重み:** RWC を聞いていないと分かっているのは BTC だけ。ChordMini は聞いている。crema の学習データは
+  どこにも書かれていない（Humphrey & Bello の 1217 曲で、RWC Pop を含むと記憶しているが未確認）。4 つとも聞いていないのは合成曲だけ。
+- 素の crema（規則なし、`--chords`）は `rwc-p` で 84.4 / 79.8。規則で +2 ポイント。
 
-### 印（B2 の結果。コードの数で数える。`measure.py doubt <セット> --ears`）
+### 印（crema。`measure.py doubt <セット> --ears`。式と閾値 0.84 は BTC で選んだまま）
 
-| | `rwc-dev`（選んだ側） | `rwc-test`（数えただけ） | `rwc-p` |
-|---|---|---|---|
-| 印の付く割合 | 29.9% | 23.2% | 26.6% |
-| ルートか長短の誤りのうち、印の付いた割合 | 79.7% | 64.2% | 72.3% |
-| 印のうち誤りの割合 | 51.4% | 50.3% | 50.9% |
-| 印の付いた誤りで、別候補のルート・長短が正解 | 41.5% | 44.1% | 42.6% |
+| | `rwc-dev` | `rwc-test` | `rwc-p` | BTC のとき（dev / test） |
+|---|---|---|---|---|
+| 印の付く割合 | 28.7% | 24.7% | 26.7% | 29.9% / 23.2% |
+| ルートか長短の誤りのうち、印の付いた割合 | 76.4% | 68.7% | 72.5% | 79.7% / 64.2% |
+| 印のうち誤りの割合 | 40.1% | 44.5% | 42.1% | 51.4% / 50.3% |
+| 印の付いた誤りで、別候補のルート・長短が正解 | 57.9% | 52.1% | 55.1% | 41.5% / 44.1% |
 
-- 式（`read_chords.py` の `SURE_OF`、`--ears` のときだけ）: 「ルートと長短が合っている確からしさ」=
-  logistic(8·sure − 2·last + 0.7·agree + 5.5·songsure − 7.5)。sure は BTC がそのコード（同じルート・同じ長短）に
-  与える確率の半拍ごとの平均（B1 までの `sure`）、last は最後の半拍のそれ（逆向きに効く: そこはもう次のコードの音）、
-  agree は自作のテンプレートが同じルート・長短を 1 位にするか、songsure は sure の曲全体の平均。
-  0.84（`DOUBT_EARS`）未満に印。5 つの数と閾値は `rwc-dev` で選んだ。`.dettato.json` の `sure` はこの値になった。
-- 前との比較（`rwc-dev`）: 古い `sure < 0.7` は印 28.3%・誤りの 72.6%。
-- **閾値を固定すると `rwc-test` では印が減り（23.2%）、拾うのも 64.2%。** 各セットで下から 30% に印を付けたとすると
-  `rwc-dev` 79.7%・`rwc-test` 74.0%（古い sure だけなら 75.2%・71.6%）。`rwc-test` で 8 割を拾うには 38% に印が要る。
-  （`rwc-test` は集計だけを見た。閾値は動かしていない。）
-- **届かない理由:** 特徴を増やしても伸びない。27 個（ベース、前後のコードの sure、その曲でのコードの頻度、調に入るか、
-  エントロピーなど）を logistic / 勾配ブースティングにかけても `rwc-dev` の 30% で 79.4%（曲を 10 分割で外して）。
-  自信があるのに誤り（sure ≥ 0.8 の誤り 204 個）の中身は、正解が長調・読みが同じルートの短調 24%、
-  正解 sus・読みが長調 10% など、BTC が確信して間違える型で、確率からは指せない。
-- 合成曲の `--ears` では印 7〜9%・誤りの 44%（seed1・7・11）と 61%（seed21・31）。重みは実録音のもの。
-- 別候補（`other`）: 印の付いた誤りの 4 割強で、ルート・長短が正解。
-- 合成曲（seed1・7・11・21・31）の `--ears`: ルート 94.3〜97.5%・長短 91.2〜94.7%（自作モデルと 1 ポイント以内）。
-  七の和音まで（quality）は最大 8 ポイント負ける（自作モデルはこの音源そのもので学習している）。
-  小節線は 5 セット中 4 つで負ける（seed7 90.6% 対 97.4%、seed11 93.7% 対 99.1%）。原因は Beat This!:
-  半分のテンポで追って 2 小節を 1 小節と数える曲と、3/4 を 4 拍・2 拍で数える曲。テンポ 18〜23/24、拍子 21〜23/24。
+- 各セットで下から 30% に印: crema 77.8% / 75.2%（BTC 79.7% / 74.0%）。M2 の目安（8 割・印 3 割以下）には届いていない。
+- **2 つ目の耳は印に効く**（`scratch/b3two.py`。重みは `rwc-dev` で logistic、`rwc-test` は数えただけ）:
+  crema＋BTC で `rwc-test` の 30% が 75.2% → 77.4%、閾値を dev で固定して 70.0% → 72.4%。BTC＋crema なら 74.2% → 79.0%、
+  64.6% → 74.5%。足すのは「2 つ目の耳が、読んだコードと同じルート・長短に与える確率の平均」1 個で足りる。3 つ目の耳は足しても変わらない。
+- 合成曲（crema）: 印 17%、誤りの 70%（seed1・7・11）と 74%（seed21・31）。
 
-### `--ears` の中身（`read_chords.py`）
+### 道具（`tools/`）
 
-- `lines_of(.beats)` → 小節線の秒と 1 小節の拍数。`read(..., lines=, beats=, heard=)`。
-- 拍子は拍数から: 3 → 3/4、4 → 4/4、6 → 6/8。2 拍は、小節の中の刻みが 3 つ割り（`find_meter`）なら 6/8、
-  1 小節が 1.5 秒より長ければ（拍が毎分 80 より遅い）4/4、それ以外は 2/4。`SLOW_TWO = 1.5` は seed7・seed11
-  （テスト用）を見て決めた。5 拍・7 拍は `5/4` などと書く（`lysc check` を通るかは未確認。RWC では出ていない）。
-- `said_in`: BTC の 170 クラス（`FOLD` で自前の 96 に畳む。aug・X・N は捨てる）の確率を、半拍ごとに
-  重なりの長さで平均して対数を取る。
-- `use_ears()` の値段: `STAY_COST 0.1`・`MID_COST 0.1`・`ELSE_COST 0.25`・`EMIT_SCALE 0.2`・`BASS_WEIGHT 0`
-  （`rwc-dev` で選んだ。自作モデル用の 0.4・0.5・1.0 だとルート 82.7%。値段は下げるほど良く、84.4〜84.9% の
-  平らな所の中ほどを取った。これ以上下げると半拍ごとに変わる譜面になるので下げていない）。
-  `LOG_FLOOR`（-4〜-14）と `BASS_WEIGHT`（0・0.1）は効かない（0.2 ポイント以内）。
-- ベース音（分数コード）、`fit`、拍子の刻みは今も librosa の特徴量（`features`）から。`--ears` でも 1 曲数秒かかる。
-
-道具（すべて `tools/`）:
-
-- `measure.py`: `table`・`sweep` に `--ears`（セットごとの置き場所から拍と確率を取る。`ears_of`）、
-  `--lines <.beats のフォルダ|truth>`、`--heard <.npz のフォルダ>`、`--chords <.lab のフォルダ>`。
-  `all` の最後の方に「With ears trained on recordings」と「The marks, with ears trained on recordings」が出る。
-  `doubt --ears --at 0.8,0.84` で印の表。`doubted(names, ears)` がコード 1 個ずつの行（`rc.read(..., why=True)` の
-  特徴 20 個ほどと正誤）を返すので、確信度の案はこれで比べる（比べたスクリプトは `scratch/b2*.py`。commit の外）。
-- `track_beats.py`（Beat This! → `.beats`）、`btc_chords.py --probs`（BTC → `.lab` と `.npz`）: `.venv-bt` で動かす。
-- `rwc_truth.py`・`gen_chords.py`・`train_chords.py`・`score_chords.py`・`sample_songs.py` は前のまま。
+- `crema_chords.py`（`.venv-crema`）: crema → `.lab` と `.npz`（BTC と同じ 170 クラスの順に並べ替えた対数確率）。
+  crema 0.2.0 は Keras 2 と `pkg_resources` 前提なので、`tf-keras` を `keras` として差し込み、CQT だけを pump から取る
+  （pump の残りは今の scikit-learn で落ちる）。`chord_tag` の出力だけを使う（root・bass・pitch の出力は使っていない）。
+- `chordmini_chords.py`（`.venv-bt`）: ChordMini の 2 モデル → 同じ形。`--model 2e1d|btc`。
+- `measure.py`: `--ears [名前]` が `scratch/real/chords-<名前>`・`scratch/chords-<名前>/seedN` を読む（既定 `crema`）。
+  `doubted()` の行に `end` を足した。`all` の「With ears」「The marks, with ears」は crema。
+- `read_chords.py` は変えていない。`--ears <フォルダ>` は `.beats` と `.npz` があればどのモデルのものでも読む。
+- 前からのもの: `track_beats.py`・`btc_chords.py --probs`・`rwc_truth.py`・`gen_chords.py`・`train_chords.py`・`score_chords.py`・`sample_songs.py`。
 
 ## 次の一手
 
-**ROADMAP の B3（コードモデルを決める）。** 順に:
+**ROADMAP の C2（繰り返しを見つける）を先に。** 理由: M2 で残っているのは印だけで、確率からは指せない誤りに届く
+見込みがあるのは「同じはずの小節同士の照合」（B2 の結論）。C2 は譜面を短くする M3 の項目でもある。順に:
 
-1. BTC の重みのライセンスと学習データを確かめる（リポジトリの LICENSE・README・issue、論文。学習曲の一覧が
-   あれば RWC を含まないことも）。配れないなら候補を探す（公開のコード認識モデルで、重みの配布条件が明記されたもの）。
-2. 候補ごとに `rwc-dev` / `rwc-test` でルート・長短（`table --lines ... --heard ...` の形に確率を合わせる）、
-   大きさ、CPU での速さ、ONNX に書き出せるか。
-3. 印にも関わる: 2 つ目のモデルがあれば「2 つの耳が食い違う所」を印の材料にできる（自作のテンプレートとの一致
-   `agree` は効いた。独立した耳ほど効くはず）。候補を測るついでに `doubted()` の行に足して見る。
+1. `rwc-dev` で、読んだコード列の中の繰り返し（同じ長さ 4・8 小節の並びが 2 回以上）を見つける。まず正解のコード列で
+   「繰り返しはどれだけあるか」を数え、次に読んだ列で見つかる割合を見る。
+2. 繰り返しの中で読みが食い違う小節に印を足したとき、印の割合と拾える誤りがどう動くか（`doubted()` の行に列を足す）。
+   多数決で読みを直す案も同じ行で測れる。
+3. 効くなら `read_chords.py` に入れ、`section` / `form` の書き出しは別の一手にする。
 
-終わり: 配るものに入れるモデルが決まり、理由が HANDOFF にある。
+C1（曲の頭）と D1（`.dettato.json` の仕様）はその後。D2（配る形）は下の「未決」が決まると進めやすい。
 
-印をさらに良くする道（B2 で分かったこと。どれも未着手）:
+やり残し（急がない）:
 
-- 繰り返しの照合（C2）。同じはずの小節同士で読みが違う所に印。確率からは指せない誤りに届く見込みがある唯一の案。
-- 2 つ目の耳との食い違い（上の 3）。
-- M2 の印の目安そのものを見直すか（未決の欄）。
-
-B1 でやり残したこと（急がない）:
-
-- `--ears` は拍と確率のファイルを先に作らせる 3 コマンド。`.venv` と `.venv-bt` を 1 つにまとめるか、
-  1 コマンドにするかは D2・D3 で決める（torch を配るかどうかに関わる）。
-- 素の BTC が RWC を本当に聞いていないかは、BTC の README の記述だけが根拠（学習曲の一覧は見ていない）。
+- `crema_chords.py` は TensorFlow を入れた 3 つ目の venv で動く。配る形（D2）では ONNX（書き出せることは確認済み）にして
+  `.venv` だけ、または .NET から呼ぶ。CQT を librosa なしで作る所が残る。
+- crema の `chord_root`・`chord_bass`・`chord_pitch` の出力は未使用。ベース音（分数コード）はいまも自作の特徴量から
+  （bass 63〜64%）。crema の `chord_bass` を使えば上がるかもしれない（未確認）。
+- 値段と印の式を crema＋BTC の平均用に選び直すことはしていない（BTC を配れるか決まってから）。
 
 ## 環境（この PC）
 
 - 作業は `C:\MyProj\Dettato`。シェルは pwsh MCP（`mcp__pwsh__*`）。組み込みの PowerShell は使えない。
-- Python は 2 つ。`.venv`（3.12。librosa 1.0.1、scikit-learn 1.9.1、numpy 2.5.4）が読み取りと測定。
-  `.venv-bt`（torch 2.15 CPU、beat-this 1.1.0、librosa ほか）が Beat This! と BTC。作り方は README。
+- Python は 3 つ。`.venv`（3.12。librosa 1.0.1、scikit-learn 1.9.1、numpy 2.5.4）が読み取りと測定。
+  `.venv-bt`（torch 2.15 CPU、beat-this 1.1.0）が Beat This!・BTC・ChordMini。`.venv-crema`（tensorflow、tf-keras、
+  crema 0.2.0、`setuptools<81`、tf2onnx、onnxruntime）が crema。作り方は README。
   素の `python` は LilyPond 同梱のものを拾うので使わない。標準ライブラリだけの道具は `py -3.12` でもよい。
 - 新しいコンソールごとに最初に設定する（コンソールは 11 分使わないと閉じ、環境変数も消える）:
   `$env:NUMBA_CACHE_DIR='C:\MyProj\Dettato\scratch\numba'`、
@@ -115,11 +102,12 @@ B1 でやり残したこと（急がない）:
   `.venv-bt` を動かすときは `$env:TORCH_HOME='C:\MyProj\Dettato\scratch\torch'` も（設定しなくても動いた）。
   `make` で作り直すときは `DETTATO_SOUNDFONT_ALT`（`C:\MyProj\omr-compare\minor\venvs\zhaovan\Lib\site-packages\pretty_midi\TimGM6mb.sf2`）と
   `DETTATO_SAMPLES`（`C:\MyProj\LilySharp\samples`。場所は未確認）も。
-- 動作確認の 1 コマンド（45 秒。数字は上の表と README）:
+- 動作確認の 1 コマンド（15 秒。数字は上の表と README）:
   `.venv\Scripts\python.exe tools\measure.py table seed1 rwc-dev rwc-test --ears`
+  → seed1 ルート 95.1%、`rwc-dev` 86.0% / 81.8%、`rwc-test` 87.1% / 82.0%。
   自作の読み取り器の方は `table seed1 seed7 seed11 seed21 seed31 rwc-p`（特徴量があれば 2 分半）。
 - 時間の目安: `--ears` の `table` は RWC 50 曲で 5〜7 秒。`sweep` は 1 通り 4〜7 秒。`all` は 12 分ほど。
-  RWC の特徴量の作り直しは 20 分。Beat This! は CPU で 1 曲 5〜8 秒、BTC は 1 曲 1〜3 秒（100 曲で 3 分）。
+  RWC の特徴量の作り直しは 20 分。Beat This! は CPU で 1 曲 5〜8 秒、BTC は 1〜3 秒、crema は 0.8 秒、ChordMini は 0.4 秒。
 - 2 分を超える仕事は切り離して走らせ、ログを見に行く。pwsh MCP の 1 回の呼び出しは 115 秒以内に収める:
   `Start-Process cmd -ArgumentList '/d /s /c "<コマンド> < NUL > scratch\x.log 2>&1"' -WindowStyle Hidden -WorkingDirectory C:\MyProj\Dettato`
   掃引を途中で止めるときは、コマンドラインに `measure.py sweep` を含む python.exe を止める。
@@ -135,61 +123,71 @@ B1 でやり残したこと（急がない）:
 | `models/chords.joblib` | `train_chords.py data\synth\seed100 --features scratch\feat-h31 --out models\chords.joblib` |
 | `scratch/feat-h31/*.npz`（特徴量。実録音は `real_RWC_P*.npz`） | `measure.py` が初回に作る |
 | `scratch/real/rwc-p/`（wav 100 個と truth）、`rwc-annotations/`、`RWC-P.zip`（3.79 GB） | DATASETS.md の手順 |
-| `scratch/real/beat_this_annotations/`、`scratch/btc/`（clone）、`.venv-bt/` | README の「What models trained on recordings do」 |
-| `scratch/real/beats-bt-folds/*.beats`（RWC を fold のモデルで）、`scratch/beats-bt/seed*/`（合成曲 5 セットを `final0` で） | `track_beats.py`（README） |
-| `scratch/real/chords-btc/*.lab`・`*.npz`、`scratch/chords-btc/seed*/`（合成曲 5 セット） | `btc_chords.py scratch\btc <セットのフォルダ> --out <ここ> --probs` |
+| `scratch/real/beat_this_annotations/`、`scratch/btc/`・`scratch/chordmini/`（clone）、`.venv-bt/`、`.venv-crema/` | README |
+| `scratch/real/beats-bt-folds/*.beats`、`scratch/beats-bt/seed*/`（合成曲 5 セットを `final0` で） | `track_beats.py`（README） |
+| `scratch/real/chords-crema/`、`scratch/chords-crema/seed*/` | `crema_chords.py <セットのフォルダ> --out <ここ>` |
+| `scratch/real/chords-btc/`、`scratch/chords-btc/seed*/` | `btc_chords.py scratch\btc <セットのフォルダ> --out <ここ> --probs` |
+| `scratch/real/chords-cmbtc/`・`chords-cm2e1d/`、`scratch/chords-cm*/seed*/` | `chordmini_chords.py scratch\chordmini <セット> --model btc\|2e1d --out <ここ>` |
+| `scratch/**/chords-crema+btc/`・`chords-crema+cmbtc/`（確率の平均） | `scratch/b3avg.py crema btc`（commit の外。消えたら 20 行で書ける） |
 
-`scratch/` の古いスクリプト（`run.py` ほか）とログ、`scratch/read-ears/`・`scratch/read-all/`（書いた譜面）は消してよい。
+`scratch/b3two.py`（2 つ目の耳と印）・`b3fit.py`（印の式の合わせ直し）・`b3avg.py` は commit の外。
+`scratch/` の古いスクリプトとログ、`scratch/read-all/`（書いた譜面）、`scratch/cmtest/` は消してよい。
 
 ## セットの扱い
 
 | セット | 役割 | 注意 |
 |---|---|---|
-| seed100、`held/seed101` | 合成曲の学習用・定数を選ぶ用 | 自作モデルはこれしか聞いていない。Beat This!・BTC の出力はまだ作っていない |
+| seed100、`held/seed101` | 合成曲の学習用・定数を選ぶ用 | 自作モデルはこれしか聞いていない。公開モデルの出力はまだ作っていない |
 | seed1・7・11、seed21・31、`still/`・`drift5/`・`tim/`、`samples` | 合成曲のテスト | 定数を選ぶときに数字を見たことがある。`SLOW_TWO` は seed7・11 の曲ごとの行を見て決めた |
-| `rwc-dev`（P001〜P050） | 実録音で見て決める側 | `use_ears()` の値段、印の式 `SURE_OF` と `DOUBT_EARS` はここで選んだ |
-| `rwc-test`（P051〜P100） | 実録音で数えるだけの側 | 集計だけを見ている。曲ごとには見ない |
+| `rwc-dev`（P001〜P050） | 実録音で見て決める側 | 値段、`SURE_OF`、`DOUBT_EARS` はここで選んだ（BTC で）。2 つ目の耳の重みもここ |
+| `rwc-test`（P051〜P100） | 実録音で数えるだけの側 | 集計だけを見ている。**B3 では 4 モデルの `rwc-test` の集計を並べて見たうえで crema に決めた**（決め手はライセンス） |
 
 公開モデルで測るときは、そのモデルが測る曲を学習していないかを先に確かめる。Beat This! は RWC を学習している
-（`final0` を RWC で測ると不当に良く出る）ので、`--rwc` で fold のモデルを使う。BTC は README 上は RWC を使っていない。
+（`--rwc` で fold のモデルを使う）。BTC は README 上は RWC を使っていない。ChordMini は使っている。crema は不明。
 
 ## 捨てた案（試し直さない）
 
 - **自作の拍追跡と合成曲だけのコードモデルを実録音向けに磨くこと。** 公開モデルが素の出力で上回るので、やらない。
-- `--ears` で値段を自作モデル並みに高くする（BTC は自分で均しているので、高い値段は正しい変化を潰す）。
-  `--ears` でベースのクロマを根音の手がかりに足す（`BASS_WEIGHT 0.1`: +0.2 ポイントで誤差の内）。
-- 印（`--ears`）の確信度の案で、効かなかったもの（`rwc-dev`）: 半拍ごとの最小値、2 番目の候補との差・比、
-  対数の平均、エントロピー、N・X の確率、コードの長さ、ベースがルートか。単独ではどれも元の sure（平均）に負ける。
-  特徴を 27 個に増やす・勾配ブースティングにする（4 個の式と 1 ポイント以内）。短調への一律の割増（誤差の内）。
-- 別候補 `other` を「確率の合計が最大のルート・長短」から選ぶ（41.5% → 41.0%。いまの「1 個のコードで最大」のまま）。
+- **コードモデルの候補で外したもの:** madmom（モデルが CC BY-NC-SA）。Jiang ほかの large-vocabulary モデル・omnizart
+  （MIT だが重みの明記なし。出すのはラベルで、フレームごとの確率を取り出す作りではない）。BACHI（楽譜からの認識で、音ではない）。
+  ChordMini（BTC の派生で RWC を学習。2E1D は BTC 並み、BTC 再学習版は +1 ポイントだが、ライセンスは BTC 以上にはならない）。
+- crema 用に値段を選び直す（`EMIT_SCALE` 0.1〜0.4 × `ELSE_COST` 0.15〜0.4 で 85.4〜86.3%。平ら）、印の式を合わせ直す（上）。
+- 印に 3 つ目の耳を足す（2 つと同じ）。
+- `--ears` で値段を自作モデル並みに高くする。`--ears` でベースのクロマを根音の手がかりに足す（誤差の内）。
+- 印の確信度の案で効かなかったもの（BTC、`rwc-dev`）: 半拍ごとの最小値、2 番目の候補との差・比、対数の平均、エントロピー、
+  N・X の確率、コードの長さ、ベースがルートか。特徴を 27 個に増やす・勾配ブースティング。短調への一律の割増。
+- 別候補 `other` を「確率の合計が最大のルート・長短」から選ぶ（41.5% → 41.0%）。
 - 小節線を別に探す手法（新奇度の対比、平均クロマの当てはめ）。→ コードと小節線を 1 回の探索で一緒に決める形にした。
 - HPSS をやめて生の音を使う、NNLS で倍音を除く、対数圧縮、`CHANGE_GAIN`、ベースの重み 0.6（合成曲で効かない）。
 - 規則だけでコードの重みを詰める（ルート 86〜88% で頭打ち）。短調の属和音の重みを下げて調を当てる（悪化）。
 - 小節の長さの事前分布、拍の長さを局所の中央値で見る（合成曲で普通の曲を壊す）。
-- 七の和音の迷いまで印にする（自作モデルでは 4 個に 1 個に付き、効率が落ちた。`--ears` では未確認）。
-- 実録音のデータ: Isophonics・McGill Billboard・JAAH は音源が配られていない。Winterreise は歌曲で用途が遠い。
-  AAM は合成。→ RWC-P にした。GuitarSet（CC BY 4.0）は次の候補。
+- 七の和音の迷いまで印にする（自作モデルでは効率が落ちた。`--ears` では未確認）。
+- 実録音のデータ: Isophonics・McGill Billboard・JAAH は音源が配られていない。Winterreise は歌曲。AAM は合成。
+  → RWC-P にした。GuitarSet（CC BY 4.0）は次の候補。
 
 ## 分かっている弱点・未確認
 
-- BTC の重みのライセンスは、MIT のリポジトリに同梱されているというだけで、重みについての明記はない。学習データは
-  市販曲。配るものに入れる前に B3 で決める。Beat This! はコードも重みも MIT と明記（学習データには条件つきのものがある、との注記あり）。
-- Beat This! が半分のテンポで追う曲（合成曲で 1 セットに 2〜4 曲、`rwc-dev` で P050）は 2 小節が 1 小節になる。
-  2 拍を 4/4 に読み替える規則では直らない（拍数は 4 で合っているため）。C4（2 小節コード）と同じ問題。
-- RWC の注釈に調がなく、調は実録音で測れていない。調はいまも読んだコードから規則で決めている（`find_key`）。
+- crema の重みのライセンスの根拠は、作者の issue コメント（issue 42。自分では開いておらず、取得を任せた要約で読んだ）と、
+  パッケージ同梱であること。学習データは不明で、市販曲の録音で学習しているのは他のモデルと同じ。
+  配るときは BSD 2-Clause の著作権表示（Copyright (c) 2017, Brian McFee）を同梱する。
+- crema が RWC を聞いているかは不明。聞いていれば RWC の数字は甘い。聞いていない実録音での確認はしていない
+  （GuitarSet か、ユーザーの曲があればできる）。
+- crema は合成曲の七の和音に弱い（seed7 で 64.1%。BTC 73.9%、自作モデル 73.8%）。実録音では BTC より上（`rwc-test` 69.0% 対 67.6%）。
+- Beat This! が半分のテンポで追う曲（合成曲で 1 セットに 2〜4 曲、`rwc-dev` で P050）は 2 小節が 1 小節になる。C4 と同じ問題。
+- RWC の注釈に調がなく、調は実録音で測れていない。調は読んだコードから規則で決めている（`find_key`）。
 - RWC のコードは読み取り器の 8 種類に畳んで採点している（DATASETS.md）。「種類まで」「ベースまで」は畳み方に左右される。
-- 1 小節目の前（最初の小節頭より前の音）は譜面に入らない。曲の頭の無音・弱起、繰り返しのまとめ、
-  大きなテンポ変化は未対応（ROADMAP の C）。伴奏のない旋律だけの曲は `--ears` で測っていない（`samples` に拍と確率がない）。
-- Chord Tracker そのものとは比べていない（自動では測れない）。同じ数曲の結果をユーザーに見せてもらえば比べられる。
+- 1 小節目の前は譜面に入らない。曲の頭の無音・弱起、繰り返しのまとめ、大きなテンポ変化は未対応（ROADMAP の C）。
+  伴奏のない旋律だけの曲は `--ears` で測っていない。5 拍・7 拍の拍子が `lysc check` を通るかは未確認（RWC では出ていない）。
+- Chord Tracker そのものとは比べていない（自動では測れない）。
 
 ## 未決（ユーザーの判断待ち）
 
-- **M2 の印の目安（誤りの 8 割・印 3 割以下）をどうするか。** `rwc-test` で届くのは「印 23% で 64%」「印 30% で 74%」
-  「印 38% で 80%」。(a) 目安を実測に合わせて下げる、(b) 閾値を上げて印を増やす、(c) C2（繰り返しの照合）や
-  2 つ目の耳で上げてから判断する、のどれか。決まるまで閾値は 0.84 のまま。
-- **印の式の 5 つの数は `rwc-dev`（CC BY-NC 4.0）で選んだ。** `use_ears()` の値段 5 つと同じ扱い（少数の定数の選択で、
-  モデルの学習ではない）のつもりだが、「RWC を学習に使わない」の線のどちら側と見るかはユーザーの判断。
-
-- **コードモデルを自前で学習する場合のデータ**（RWC は CC BY-NC 4.0）。B3 までは不要。
+- **BTC を 2 つ目の耳として配るか。** 入れると `rwc-test` でルート 87.1% → 88.5%・長短 82.0% → 83.6%、印も良くなる（上）。
+  条件は BTC の作者が重みの扱いを明言すること。jayg996/BTC-ISMIR19 に issue で尋ねるのはユーザー（文面の案は
+  2026-11-14 の報告にある。尋ねていない）。決まるまで crema 1 つで進める。
+- **M2 の印の目安（誤りの 8 割・印 3 割以下）をどうするか。** crema で `rwc-test` は「印 25% で 69%」「印 30% で 75%」。
+  (a) 目安を下げる、(b) 印を増やす、(c) C2（繰り返しの照合）や 2 つ目の耳の後で判断する。決まるまで閾値は 0.84 のまま。
+- **値段 5 つと印の式 5 つは `rwc-dev`（CC BY-NC 4.0）で選んだ。** 少数の定数の選択で、モデルの学習ではないつもりだが、
+  「RWC を学習に使わない」の線のどちら側と見るかはユーザーの判断。
 - 使いたい曲の種類が RWC-P（スタジオ録音のポップス）と違うなら、その種類の曲を数曲。Chord Tracker で読んだ結果があればそれも。
-- 配る形（Python か .NET か。torch が入るので ONNX 化の可否が関わる）、名前の重複の確認、リモートへの push（ROADMAP §5）。
+- 配る形（Python か .NET か。crema は ONNX にできる。Beat This! は torch のまま）、名前の重複の確認、リモートへの push（ROADMAP §5）。
