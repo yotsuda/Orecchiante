@@ -9,7 +9,7 @@ Source and issues: <https://github.com/yotsuda/Dettato>.
 
 ## Use
 
-1. Right-click a `.wav` in the Explorer, or run
+1. Right-click a recording (`.mp3`, `.m4a`, `.flac`, `.wav`, …) in the Explorer, or run
    **Dettato: Transcribe Recording to Lily# Chord Chart (.lys)… (Preview)** from the Command
    Palette and pick one.
 2. After some seconds (about five for a three-minute song) `x.lys` opens. It is written beside the
@@ -30,7 +30,7 @@ at the start of a song, are not handled yet. The numbers and how they were measu
 ## Requirements
 
 - Windows x64.
-- A `.wav` recording. Other formats (mp3, m4a, flac) are to come.
+- A recording Windows can decode: mp3, m4a, mp4, aac, flac, wma or wav, of 5 seconds or more.
 
 ## Licenses
 

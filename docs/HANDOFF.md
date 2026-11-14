@@ -3,28 +3,36 @@
 **毎セッションの終わりに書き換える**（追記しない。200 行以内）。方向づけは [ROADMAP.md](ROADMAP.md)、
 数字と使い方は [README](../README.md)、録音の出典は [DATASETS.md](DATASETS.md)。
 
-最終更新: 2026-11-14（拡張の最初のパッケージを作ってこの PC に入れたセッションの終わり。HEAD は `git log -1` で確かめる）。
+最終更新: 2026-11-14（D3 のコマンドと mp3 などの入力を作り、拡張 0.2.0 をこの PC に入れたセッションの終わり。HEAD は `git log -1` で確かめる）。
 
 ## 現在地
 
-**移植（ROADMAP の D2 の 4 段）は終わった。`dettato read <wav> --out <フォルダ>` が wav から `.lys` と `.dettato.json` を書く**
-（Python なし。RWC_P001 で 5.5 秒）。配る形は .NET＋ONNX の実行ファイルを VS Code 拡張に入れる（Calamo と同じ形。ユーザーの答えは
-「VS code extension」の一言で、.NET と読んだのは Claude）。Python の読み取り器は変えていない（`measure.py` に `--read` と `check` を足しただけ）。
-**拡張 `yotsuda.dettato` 0.1.0 をこの PC の VS Code に入れた**（`extension/`、`tools/deploy-extension.ps1`。113 MB、Lily# とは別の拡張）。
-コマンドは 1 つ（wav を選ぶか右クリック → 隣に `.lys` と `.dettato.json` → 開く。既にある `.lys` は尋ねてから置き換える）。入った
-`dettato.exe` が seed1 の 1 曲で `scratch/net/read` と同じ譜面を書くことは確かめた。**VS Code の中でコマンドを動かすのは未確認**（ユーザーが試す）。
+**`dettato <録音> [-o <x.lys>] [--force]` が、mp3・m4a・mp4・aac・flac・wma・wav から `.lys` と `.dettato.json` を録音の隣に書く**
+（Python なし。RWC_P001 の mp3 で 6.3 秒）。配る形は .NET＋ONNX の実行ファイルを VS Code 拡張に入れる（Calamo と同じ形。ユーザーの答えは
+「VS code extension」の一言で、.NET と読んだのは Claude）。Python の読み取り器と .NET の規則は変えていない（wav の道は 124 曲で前と同じ譜面）。
+**拡張 `yotsuda.dettato` 0.2.0 をこの PC の VS Code に入れた**（`extension/`、`tools/deploy-extension.ps1`。113 MB、Lily# とは別の拡張）。
+コマンドは 1 つ（録音を選ぶか右クリック → 隣に `.lys` と `.dettato.json` → 開く。既にある `.lys` は尋ねてから置き換える）。入った
+`dettato.exe` が m4a を読むことは確かめた。**VS Code の中でコマンドを動かすのは未確認**（ユーザーが試す。窓の再読み込みが要る）。
+
+### コマンドと入力（D3。`Program.cs`・`Audio.cs`。README の「A recording as it comes」、Lily# 向けは便りの §2a）
+
+- stdout は書いた `.lys` のパス 1 行、stderr は段階ごとに 1 行で失敗時は最後の行が `dettato: <理由>`。終了コード 0 書けた／1 録音が読めない／
+  2 引数（`.lys` が既にある、を含む）／3 読み取り器自身。2 つのファイルは `.part` に書いてから置き換える。5 秒未満は読まない。
+- `dettato --version --json` → 版・`protocol` 1・`commands`・`inputs`（拡張が `bin\dettato.json` から返す）。版は `Program.cs` と `extension/package.json` の 2 か所。
+- **wav 以外は Windows の Media Foundation（NAudio 2.2.1、MIT）で読む。** 復号器は Windows のもので、配るものに入れない。素の wav は `Wav.cs` のまま。
+- **Media Foundation はエンコーダの足す無音を頭に残す**（mp3 CBR 39 ms、VBR 13 ms、AAC 23 ms。ffmpeg やブラウザは取り除く）。`Audio.Lead` が
+  ファイルの記録（mp3 の Xing/Info＋LAME の delay、MP4 の編集リスト）から取り除き、wav とのずれは 0 サンプル。Xing のない mp3 と素の `.aac` は残る。
+  **「Info」（CBR）のフレームは無音として出てくるが、「Xing」（VBR）のフレームは Media Foundation が自分で飛ばす**（測って分かった）。
+- seed1 の 24 曲を mp3・m4a にして読むと、精度は wav と同じ（小節線 96.6 → 96.4・95.6%、ルート 95.1 → 95.1・95.2%）だが、同じ譜面ではない
+  （小節の数が違う曲が 3・5 曲。Beat This! が非可逆圧縮で小節線を変える）。48000 Hz の wav は 8 曲とも 44100 と一字一句同じ譜面。
+- 測る道具: `dettato audio` → `tools/heard_check.py`（頭のずれ）、`tools/kinds_check.py`（譜面どうし）。試した録音は `scratch/d3/`（消してよい）。ffmpeg は PATH にある。
 
 ### .NET の規則（`Reader.cs` 532 行・`Form.cs` 213・`Writer.cs` 145・`Np.cs` 105。README の「In .NET: the rules」。全体で 1894 行）
 
-- 移したのは `--ears` の道だけ（`read()`・`decode`・`fold`・`find_form`・`find_key`・`lys()`）。自作の拍追跡・`MODEL`・`--tempo`・`why` は Python に残す。
-- **`.dettato.json` は一字一句、`.lys` は 1 行目（プログラム名）以外、268 曲すべてで Python と同じ**（seed1・7・11・21・31・41、
-  `head/seed141`、RWC 100）。`tools/read_check.py <Python のフォルダ> <.NET のフォルダ>` が比べる。`measure.py … --ears --read scratch/net/read`
-  は .NET の譜面を数える（`table`・`doubt`・`form`・`head` が同じ）。`measure.py check <フォルダ>` で lysc check 268/268、sidecar 268/268。
-- 比べ方: 両方に同じ拍と確率（`--lines`・`--heard`。RWC は fold のモデルの拍）と同じ特徴量（.NET のもの。Python は `--net scratch/net`）。
-  モデルを中で走らせた `dettato read`（`--lines` なし）は、`dettato ears` のファイル経由と seed1 で 24/24 同じ。
-- **一致させるために真似たこと（`Np.cs`）:** numpy の和の順（8 個未満は順に、128 個までは 8 本並べて、それ以上は半分ずつ）、
-  特徴量の平均とノルムは単精度のまま、Python の `//` と `round(x, 桁)`（.NET では `ToString("F桁")` を読み直す）、`repr`。
-  同点は numpy の argmax と同じ「最初の最大」。`argsort` の同点（経路探索の上位 2 つ）は「後ろの添字」にしたが、差が出る曲はなかった。
+- 移したのは `--ears` の道だけ。自作の拍追跡・`MODEL`・`--tempo`・`why` は Python に残す。
+- **`.dettato.json` は一字一句、`.lys` は 1 行目以外、268 曲すべてで Python と同じ**（`tools/read_check.py`。比べ方とコマンドは README）。
+  同じ拍と確率（`--lines`・`--heard`）と同じ特徴量（`--net scratch/net`）を与えて比べる。`measure.py … --read` は .NET の譜面を数える。
+- 一致させるために真似たこと（`Np.cs`）: numpy の和の順、単精度のままの平均とノルム、Python の `//` と `round`、`repr`、同点の扱い。
 - **規則を変えるときの手順:** Python で試して測る → .NET に写す → `read_check.py` で全セット一致を確かめる（Python が正）。
 
 ### .NET の耳と特徴量（`dettato ears`・`dettato features`。README の「In .NET」の最初の 2 節と「Without torch and TensorFlow」）
@@ -65,27 +73,21 @@
 
 ## 次の一手
 
-**D3: `dettato read` を、ユーザーの曲に掛けられるコマンドにする**（mp3 などの入力、コマンドの体裁、エラーの言い方）。
-ユーザー決定（2026-11-14）は「実際の曲で試すより先に、移植を完了させる」で、移植は終わった。試すのに足りないのは入力だけ。
+**ユーザーの録音で試す**（D3 の「終わり」の残り: ユーザーの mp3 を 1 つ渡して `.lys` が開ける）。作る所は終わっていて、Claude の手元には
+ユーザーの曲がない。ユーザーが VS Code で録音を右クリック →「Dettato: Transcribe Recording…」を試すか、録音の場所を教えてもらって
+`dettato <録音>` を掛ける。見る所: 読めるか、時間、iTunes などの m4a・ほかのエンコーダの mp3 の頭のずれ（ffmpeg で wav にしたものと
+`heard_check.py` で比べる）、長い録音のメモリ、譜面の出来（コードの分かっている曲なら数字も）。
 
-- 入力: いまは wav（`Wav.cs`）だけ。mp3・m4a・flac をどう読むかを最初に決める（候補は着手時に調べる。未調査: .NET だけで
-  読めるデコーダとそのライセンス、Windows の Media Foundation、ffmpeg を呼ぶ形。Calamo が画像をどう読んでいるかも先例）。
-  44100 Hz 以外の録音（48000 など）は `Resample.To` が任意の比を取るが、1 曲も試していない。mp3 は頭に無音が足されることがあるので、
-  同じ曲の wav と小節の時刻を比べる。
-- 体裁: `dettato <録音> [-o <.lys>]` で `.lys` と `.dettato.json` を録音の隣に書く、が Claude の案（Calamo の引数を先に見る）。
-  モデルは実行ファイルの隣（`--models`）。進み具合と失敗は stderr、終了コード。`read`・`ears`・`features` は測定用に残す。
-- **メニューは Lily# 本体へ移す（ユーザー決定。ROADMAP §5）。** D3 で `dettato --version --json`（版と `protocol`）を足して約束を固め、D4 で Lily# にメニューを入れると同時に拡張の `dettato.transcribe` を外す。それまでは拡張が仮に持つ。
-- 終わり: ユーザーの mp3 を 1 つ渡して `.lys` が開ける。合成曲 1 セットを mp3 にして読み、wav の読みとの差を README に書く。
-- その次: ユーザーの曲で試す（コードの分かっている曲があれば数字も）→ D4（VS Code から呼ぶ。下の「未確認」の 2 点が最初）。
-
-ほかにできる一手: C3（テンポの大きな変化）。規則を触るなら「.NET の規則」の手順で。
+- その次: D4（VS Code から呼ぶ）。**Lily# 側の返事待ち**（`docs/repro/REQUESTS.md` の 1〜3 は `open` のまま。セッションの頭に見る）。
+  メニューは Lily# 本体へ移す（ユーザー決定。ROADMAP §5）。Lily# にメニューが入ると同時に拡張の `dettato.transcribe` を外す。
+  Lily# がメニューを出す鍵の名前を決めたら、拡張が起動時に立てる（`onStartupFinished`）。下の「未確認」の 2 点が Lily# 側の最初。
+- 返事を待つ間にできる一手: C3（テンポの大きな変化）。規則を触るなら「.NET の規則」の手順で。`--progress json` は Lily# が要ると言ったら。
 
 やり残し（急がない）:
 - **Beat This! の小さい版（`small0`、8 MB）は測れていない**（配布元 cloud.cp.jku.at が 500）。取れたら `track_beats.py --model small0` で
   合成曲、RWC は `final0` と相対比較。時間と大きさの大半が Beat This! なので効く。半精度（fp16）も測っていない。
 - 和音のないイントロの小節（`rwc-dev` の P027）は譜面に入れていない。`fold`・`beat_names`・`lys()` が「和音のない拍」を扱う必要がある（Lily# は `r` で N.C.）。
-- 最後の和音がどこまで伸びるか、小節の中の拍の時刻は `.dettato.json` にない（足すなら形式の番号は上げない）。
-  `measure.py` の `check` を `lysc check --batch` にすれば速くなる。1〜2 小節の section を減らす手は試していない。
+- 最後の和音の終わり、小節の中の拍の時刻は `.dettato.json` にない（足すなら形式の番号は上げない）。`check` は `lysc check --batch` で速くなる。
 - crema の `chord_root`・`chord_bass`・`chord_pitch` は未使用（ベース音は自作のクロマ）。crema＋BTC 用の値段と印の選び直しは BTC が決まってから。
 
 ## 環境（この PC）
@@ -106,15 +108,12 @@
 - 動作確認の 1 コマンド（20 秒）:
   `.venv\Scripts\python.exe tools\measure.py table seed1 rwc-dev rwc-test --ears`
   → seed1 ルート 95.1%・小節線 96.6%・ベース 73.4%、`rwc-dev` 86.4% / 82.3% / 93.0%、`rwc-test` 87.3% / 82.1% / 93.9%。
-- 時間の目安: `--ears` の `table` は RWC 50 曲で 7 秒。`all` は 20〜25 分（自作の読み取り器で `rwc-p` を読む表が 1 枚 2 分）。
-  RWC の特徴量の作り直しは HPSS ありで 20 分、なしで 3 分。合成曲 24 曲のセットを作るのは 30 秒。
+- 時間の目安: `--ears` の `table` は RWC 50 曲で 7 秒。`all` は 20〜25 分。RWC の特徴量の作り直しは HPSS ありで 20 分、なしで 3 分。
 - 2 分を超える仕事は切り離して走らせ、ログを見に行く。pwsh MCP の 1 回の呼び出しは 115 秒以内に収める:
   `Start-Process cmd -ArgumentList '/d /s /c "<コマンド> < NUL > scratch\x.log 2>&1"' -WindowStyle Hidden -WorkingDirectory C:\MyProj\Dettato`
-  止めるときは、コマンドラインに `measure.py all`（または `sweep`）を含む python.exe を止める。
-- 速さを測るときは、裏で走っている仕事が終わってから測る（24 コアでも ONNX と torch は取り合う）。
+  止めるときは `measure.py all` を含む python.exe を止める。速さは裏の仕事が終わってから測る（24 コアでも ONNX と torch は取り合う）。
 - `lysc check <1 枚>` の合否は終了コードと `warning` / `: error`。`lysc <コマンド> --batch <一覧>` なら 1 プロセスで多数を扱える。
-- `C:\MyProj` 全体の再帰検索は固まる。Windows はフォルダ名の大文字小文字を区別しない。
-- pwsh MCP の `Update-MatchInFile` で書き換えたファイルは、Edit ツールの前に読み直しが要る。
+- `C:\MyProj` 全体の再帰検索は固まる。pwsh MCP の `Update-MatchInFile` で書き換えたファイルは、Edit ツールの前に読み直しが要る。
 - **README.md などユーザーがプレビューで開いている Markdown は、Edit を 1 回ずつ出す**（並べるとエラーのダイアログが編集の数だけ出る）。
 
 ### commit の外にあるもの（消えたら作り直す）
@@ -145,9 +144,8 @@
 | `rwc-dev`（P001〜P050） | 実録音で見て決める側 | 値段、`SURE_OF`、`DOUBT_EARS`、`SAID_AGAIN`、C1 の定数、HPSS なしはここで決めた |
 | `rwc-test`（P051〜P100） | 実録音で数えるだけの側 | 集計だけを見ている。HPSS なしの集計は、決める前に `rwc-dev` と同時に出た（どちらも同じ向き） |
 
-公開モデルで測るときは、そのモデルが測る曲を学習していないかを先に確かめる。Beat This! は RWC を学習している
-（`--rwc` で fold のモデルを使う）。BTC は README 上は RWC を使っていない。ChordMini は使っている。crema は不明。
-速さと一致を見るだけの測定（D2）は `final0` で行った。精度の数字には使っていない。
+公開モデルで測るときは、そのモデルが測る曲を学習していないかを先に確かめる。Beat This! は RWC を学習している（`--rwc` で fold のモデル）。
+BTC は README 上は使っていない。ChordMini は使っている。crema は不明。速さと一致だけの測定（D2・D3）は `final0`。精度の数字には使っていない。
 
 ## 捨てた案（試し直さない）
 
@@ -170,10 +168,12 @@
 ## 分かっている弱点・未確認
 
 - **.NET で確かめていないこと:** `RWC_P059` の調律が 0.01 ずれる理由（再標本化か単精度の FFT か、切り分けていない。表には出ない）。
-  44100 Hz 以外の録音（手元の録音は全部 44100）。RWC を wav から通しで読んだ数字（`final0` は RWC を学習済みなので数えない。
+  **入力（D3）:** ffmpeg 以外が書いたファイル（iTunes の AAC は無音 2112 標本。Media Foundation が編集リストを無視するのは ffmpeg の
+  m4a で見ただけ）、絵の入った mp3、動画つきの mp4、数分を超える録音、実録音を mp3 にしたときの精度（1 曲読めただけ）、
+  Windows 10 や N エディション（Media Foundation の復号器の有無）。RWC を wav から通しで読んだ数字（`final0` は RWC を学習済みなので数えない。
   fold のモデルは ONNX にしていない）。規則の一致は「同じ拍・確率・特徴量を与えたとき」で、通しの経路は seed1 の 24 曲だけ。
   拍子が 5/4・7/4 などの曲、`dettato read` が失敗する曲（268 曲に 1 つもなかった。例外の種類を絞って握っている）。
-  メモリ（100 曲を 1 プロセスで読むと最大 2.4 GB）。wav 以外の入力。別の CPU での速さ（この PC は 24 コア）。`small0` と半精度。
+  メモリ（100 曲を 1 プロセスで読むと最大 2.4 GB）。別の CPU での速さ（この PC は 24 コア）。`small0` と半精度。
 - **D4 の最初に Lily# 側で確かめる 2 点:** `lilysharp/playback` の `Beats` が `partial` の小節にも小節の頭（`A`）を立てるか、
   `lilysharp/placeAt` が弱起に返す小節番号。`lysc layout` は弱起を 1 小節に数えることだけ確認した。
 - 弱起つき・section つきの `.lys` は `lysc check` と `lysc layout` を通しただけ。描いた譜面と鳴り方は目と耳で確かめていない。

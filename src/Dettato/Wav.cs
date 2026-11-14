@@ -45,4 +45,14 @@ static class Wav
         }
         throw new InvalidDataException("no samples: " + path);
     }
+
+    /// <summary>One channel as a 32-bit float .wav (`dettato audio`: what the reader heard of a recording).</summary>
+    public static void Write(string path, double[] mono, int rate)
+    {
+        using var w = new BinaryWriter(File.Create(path));
+        w.Write("RIFF"u8); w.Write(36 + mono.Length * 4); w.Write("WAVEfmt "u8);
+        w.Write(16); w.Write((short)3); w.Write((short)1); w.Write(rate); w.Write(rate * 4); w.Write((short)4); w.Write((short)32);
+        w.Write("data"u8); w.Write(mono.Length * 4);
+        foreach (double x in mono) w.Write((float)x);
+    }
 }

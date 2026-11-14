@@ -11,7 +11,7 @@
 |---|---|
 | 読み取り器 | `dettato.exe`（.NET 10、win-x64、ONNX Runtime）。`dettato read <x.wav> --out <フォルダ>` が `x.lys` と `x.dettato.json` を書く。3 分半の曲で 5.5 秒 |
 | 終了コード | 0 = 書けた、1 = 読めなかった録音がある（理由は stderr）、2 = 引数の誤り。進み具合は stdout に英語の文で出る（機械向けの形ではない） |
-| 入力 | **いまは `.wav` だけ。** mp3・m4a・flac・mp4 は次の作業（ROADMAP の D3）で足す |
+| 入力 | 0.1.0 は `.wav` だけ。0.2.0 で mp3・m4a・flac・mp4 ほかを足した（§2a） |
 | 横に置くファイル | `x.dettato.json`、形式 1。仕様は `docs\SIDECAR.md`。`bars[]` の n 番目が、Lily# が `form` を通して鳴らす n 番目の小節で、`start`・`end` は録音の頭からの秒 |
 | 拡張 | `yotsuda.dettato` 0.1.0（Windows x64、113 MB）。**この PC に入れただけで、Marketplace には出していない。** `tools\deploy-extension.ps1` が作って入れる |
 | 拡張が返すもの | `vscode.extensions.getExtension('yotsuda.dettato')` を `activate()` すると `{ path, version }`（`path` は `bin\dettato.exe`）。Windows x64 以外と `bin` がないときは `undefined`。起動は軽い（子プロセスなし） |
@@ -51,6 +51,26 @@ Dettato 側のいまの案:
 | 取り消し | プロセスを止めるだけでよい（出力は最後にまとめて書くので、半端なファイルは残らないようにする） | |
 | 入力の種類 | D3 で決める（wav のほか mp3・m4a・flac・mp4 を予定）。読める拡張子は `--version --json` に並べることもできる | メニューを出す条件（`when`）に、拡張子の一覧が要るか |
 | メニューを出す鍵 | Calamo は起動時に `lilysharp.omrAvailable` を立てる | Dettato の拡張が立てる鍵の名前を決めてほしい（立てるなら起動は `onStartupFinished` にする） |
+
+## 2a. 0.2.0 で入れた形（2026-11-14 追記。返事を待たずに案のまま入れた。変えられる）
+
+§0 の表の「読み取り器」「終了コード」「入力」「拡張が返すもの」は 0.1.0 のもの。0.2.0（この PC に入れてある）では次のとおり。
+英語の正本は Dettato の README の「A recording as it comes」。
+
+| 項目 | 0.2.0 |
+|---|---|
+| 呼び方 | `dettato <録音> [-o <x.lys>] [--force] [--models <フォルダ>] [--threads 8]`。`-o` がなければ録音の隣。`x.dettato.json` は `.lys` の隣。Calamo と同じ形が良ければ `dettato read <録音> --out <フォルダ>` もある（測定用。フォルダの中は黙って上書きし、stdout に時間の内訳を出す） |
+| 上書き | 既にある `.lys` は `--force` なしでは書かない（終了コード 2）。尋ねるのは呼ぶ側 |
+| 書き方 | 2 つのファイルは最後に、別名で書いてから置き換える。途中で止めても半端なファイルは残らない（取り消しはプロセスを止めるだけでよい） |
+| 入力 | wav・mp3・m4a・mp4・aac・flac・wma（Windows の Media Foundation が復号）。5 秒未満は読まない |
+| stdout | 書いた `.lys` の絶対パス 1 行だけ |
+| stderr | 段階ごとに 1 行（`listening to x.mp3`、`the beats`、`the chords`、読めた内容、`written in 5.5 s`）。失敗のときは最後の行が `dettato: <理由>`（英語 1 文） |
+| 終了コード | 0 = 書けた、1 = 録音が読めなかった（録音でない、短い、小節線が見つからない）、2 = 引数（ファイルがない、読まない種類、`.lys` が既にある）、3 = 読み取り器自身（モデルがない、故障） |
+| 版 | `dettato --version --json` → `{"version":"0.2.0","protocol":1,"commands":["read"],"inputs":["wav","mp3",…]}`。`--json` なしは版だけ |
+| 拡張が返すもの | `{ path, version, protocol, inputs }`（`bin\dettato.json` を読むだけ。子プロセスなし）。メニューを出す鍵（`lilysharp.…Available`）はまだ立てていない: 名前を決めてもらってから |
+| 時刻 | mp3・AAC の頭にエンコーダが足す無音は、ファイルが長さを言っていれば取り除いてある。`x.dettato.json` の秒は、ブラウザや ffmpeg がその録音を鳴らすときの秒に合う（Media Foundation で鳴らすと mp3 で 39 ms、AAC で 23 ms 遅れる） |
+
+まだないもの: 機械向けの進み具合（`--progress json`）。要るなら言ってほしい。
 
 ## 3. 依頼: 直しながら、選んだ小節の原音を鳴らせるようにしてほしい（REQUESTS 2）
 

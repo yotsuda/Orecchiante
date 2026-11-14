@@ -1,50 +1,222 @@
-// dettato: a recording, read into a chart (docs/ROADMAP.md, D2: the reader moved here from tools/read_chords.py).
+// dettato: a recording, read into a chart (docs/ROADMAP.md, D2: the reader moved here from tools/read_chords.py;
+// D3: the command a user and Lily# call).
 //
-//   dettato read <a .wav or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--lines <folder>] [--heard <folder>]
+//   dettato <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]
 //
-// writes <name>.lys (a Lily# chord chart) and <name>.dettato.json (docs/SIDECAR.md). --lines and --heard take the
-// beats and the chords' probabilities from folders of <name>.beats and <name>.npz, as the two commands below and
-// the tools in Python write them, in place of running the models (to compare with read_chords.py: tools/read_check.py).
+// writes <name>.lys (a Lily# chord chart) beside the recording, or where -o says, and beside the chart
+// <name>.dettato.json (docs/SIDECAR.md). A chart already there is not written over without --force: it may hold
+// corrections. Both files are written at the end, whole or not at all. stderr says what is being done, a line a
+// step, and on failure why in its last line; stdout has the chart's path alone. Exit codes: 0 written, 1 the
+// recording was not read, 2 the arguments (no such file, a kind not read, a chart in the way), 3 the reader itself.
 //
-// And the parts of it, each to a file:
+//   dettato --version [--json]
 //
-//   dettato ears <a .wav or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--cqt]
+// the version, and with --json also the protocol (the arguments, the exit codes and .dettato.json: raised when
+// they change incompatibly), the commands and the kinds of recording read (Audio.Inputs).
+//
+// And for measuring, on one recording or a folder of them, each part to a file:
+//
+//   dettato read <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--lines <folder>] [--heard <folder>]
+//
+// the same reading into a folder, written over whatever is there. --lines and --heard take the beats and the
+// chords' probabilities from folders of <name>.beats and <name>.npz, as the two commands below and the tools in
+// Python write them, in place of running the models (to compare with read_chords.py: tools/read_check.py).
+//
+//   dettato ears <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--cqt]
 //
 // writes <name>.beats (as tools/track_beats.py does) and <name>.npz (as tools/crema_chords.py does);
 // with --cqt, also <name>.cqt.npy, what the chord model was given. The models are beat-this-final0-dynamo.onnx
 // and crema-chord.onnx (README: how they are made), beside the program unless --models says where.
 //
-//   dettato features <a .wav or a folder of them> --out <folder>
+//   dettato features <a recording or a folder of them> --out <folder>
 //
 // writes <name>.feat.npz: oenv, chroma, bass and rms as read_chords.py's features() makes them for --ears,
 // and tuning (tools/measure.py --net reads them in place of its own).
+//
+//   dettato audio <a recording or a folder of them> --out <folder>
+//
+// writes <file's name>.heard.wav (song.mp3.heard.wav): the samples as the reader takes them from the file (one channel, 32-bit float, the
+// recording's rate), to compare what two kinds of file of one recording give.
 using System.Diagnostics;
+using System.Text;
 using Dettato;
 using Microsoft.ML.OnnxRuntime;
 
-const string usage = "usage: dettato read <a .wav or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--lines <folder>] [--heard <folder>]\n"
-                   + "       dettato ears <a .wav or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--cqt]\n"
-                   + "       dettato features <a .wav or a folder of them> --out <folder>";
-if (args.Length < 2 || args[0] is not ("read" or "ears" or "features"))
+const string version = "0.2.0";
+const int protocol = 1;
+const string usage = "usage: dettato <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]\n"
+                   + "       dettato --version [--json]\n"
+                   + "       dettato read <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--lines <folder>] [--heard <folder>]\n"
+                   + "       dettato ears <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--cqt]\n"
+                   + "       dettato features <a recording or a folder of them> --out <folder>\n"
+                   + "       dettato audio <a recording or a folder of them> --out <folder>";
+Console.OutputEncoding = new UTF8Encoding(false);
+if (args.Length > 0 && args[0] == "--version")
+{
+    static string List(string[] items) => "[" + string.Join(",", items.Select(i => $"\"{i}\"")) + "]";
+    Console.WriteLine(args.Contains("--json")
+        ? $"{{\"version\":\"{version}\",\"protocol\":{protocol},\"commands\":{List(["read"])},\"inputs\":{List(Audio.Inputs)}}}"
+        : version);
+    return 0;
+}
+if (args.Length == 0 || args[0] is "-h" or "--help" or "-?" or "/?")
 {
     Console.Error.WriteLine(usage);
-    return 2;
+    return args.Length == 0 ? 2 : 0;
 }
-string? Option(string name) { int i = Array.IndexOf(args, name); return i >= 0 && i + 1 < args.Length ? args[i + 1] : null; }
-string output = Option("--out") ?? throw new ArgumentException("--out <folder>");
 
 var started = Stopwatch.StartNew();
-var files = Directory.Exists(args[1]) ? Directory.GetFiles(args[1], "*.wav").Order().ToArray() : [args[1]];
+double load = 0, mel = 0, beat = 0, cqt = 0, chord = 0, audio = 0, rules = 0;
+InferenceSession? beatModel = null, chordModel = null;
+string? linesFrom = null, heardFrom = null;
+
+int Fail(int code, string why) { Console.Error.WriteLine("dettato: " + why); return code; }
+
+void Open(string models, int threads, bool beats, bool chords)
+{
+    // With every core, Beat This! is 2.5 times slower on 24 of them (README).
+    var options = new SessionOptions { IntraOpNumThreads = threads };
+    if (beats) beatModel = new InferenceSession(Path.Combine(models, "beat-this-final0-dynamo.onnx"), options);
+    if (chords) chordModel = new InferenceSession(Path.Combine(models, "crema-chord.onnx"), options);
+}
+
+// One recording to its chart; `say` is told each step as it begins.
+Chart Read(string file, Action<string>? say = null)
+{
+    string name = Path.GetFileNameWithoutExtension(file);
+    var clock = Stopwatch.StartNew();
+    say?.Invoke($"listening to {Path.GetFileName(file)}");
+    var (mono, rate) = Audio.Read(file);
+    load += clock.Elapsed.TotalSeconds; audio += mono.Length / (double)rate; clock.Restart();
+    int seconds = (int)(mono.Length / (double)rate);
+    say?.Invoke($"  {seconds / 60}:{seconds % 60:D2} at {rate} Hz");
+    if (mono.Length < rate * 5L) throw new InvalidDataException("shorter than 5 seconds");
+    var low = Resample.To(mono, Features.Rate, rate);       // the beat model's rate too
+    mel += clock.Elapsed.TotalSeconds; clock.Restart();
+    var heard = Features.Of(low);
+    cqt += clock.Elapsed.TotalSeconds; clock.Restart();
+    say?.Invoke("the beats");
+    var (lines, beats) = Reader.LinesOf(linesFrom != null ? File.ReadAllText(Path.Combine(linesFrom, name + ".beats")) : Beats.Lines(beatModel!, low));
+    beat += clock.Elapsed.TotalSeconds; clock.Restart();
+    say?.Invoke("the chords");
+    float[] logp;
+    int frames;
+    double step = Crema.Step;
+    if (heardFrom != null) (logp, frames, step) = Npy.ReadHeard(Path.Combine(heardFrom, name + ".npz"));
+    else
+    {
+        logp = Crema.LogP(chordModel!, Crema.Input(Resample.To(mono, Crema.Rate, rate), out frames), frames);
+        for (int i = 0; i < logp.Length; i++) logp[i] = (float)(Half)logp[i];       // as `dettato ears` writes them
+    }
+    chord += clock.Elapsed.TotalSeconds; clock.Restart();
+    var chart = Reader.Read(Path.GetFileName(file), heard, lines, beats, logp, frames, step);
+    rules += clock.Elapsed.TotalSeconds;
+    return chart;
+}
+
+// What a recording that cannot be read throws (the rules' own complaints are InvalidDataException).
+static bool Unread(Exception e) => e is InvalidDataException or IOException or UnauthorizedAccessException;
+
+if (args[0] is not ("read" or "ears" or "features" or "audio"))
+{
+    // The user's way in, and Lily#'s.
+    string? recording = null, chartPath = null, modelsAt = null;
+    bool force = false;
+    int threads = 8;
+    for (int i = 0; i < args.Length; i++)
+    {
+        string a = args[i];
+        if (a is "-o" or "--models" or "--threads")
+        {
+            if (++i >= args.Length) return Fail(2, $"{a} wants a value\n{usage}");
+            if (a == "-o") chartPath = args[i];
+            else if (a == "--models") modelsAt = args[i];
+            else if (!int.TryParse(args[i], out threads) || threads < 1) return Fail(2, $"--threads wants a number, not {args[i]}");
+        }
+        else if (a == "--force") force = true;
+        else if (a.StartsWith('-')) return Fail(2, $"unknown option {a}\n{usage}");
+        else if (recording != null) return Fail(2, $"one recording at a time: {recording}, {a}");
+        else recording = a;
+    }
+    if (recording == null) return Fail(2, "no recording to read\n" + usage);
+    if (!File.Exists(recording)) return Fail(2, $"no file {recording}");
+    if (!Audio.Reads(recording)) return Fail(2, $"{Path.GetFileName(recording)}: not a kind of recording this reads ({string.Join(", ", Audio.Inputs)})");
+    recording = Path.GetFullPath(recording);
+    chartPath = Path.GetFullPath(chartPath ?? Path.ChangeExtension(recording, ".lys"));
+    if (!chartPath.EndsWith(".lys", StringComparison.OrdinalIgnoreCase)) return Fail(2, $"-o wants a .lys file, not {chartPath}");
+    string sidePath = chartPath[..^4] + ".dettato.json";
+    if (File.Exists(chartPath) && !force) return Fail(2, $"{chartPath} is already there (--force to write over it)");
+
+    string lys, json;
+    try
+    {
+        modelsAt ??= AppContext.BaseDirectory;
+        foreach (var model in new[] { "beat-this-final0-dynamo.onnx", "crema-chord.onnx" })
+            if (!File.Exists(Path.Combine(modelsAt, model))) return Fail(3, $"the model {model} is not in {Path.GetFullPath(modelsAt)} (--models <folder>)");
+        try { Open(modelsAt, threads, true, true); }
+        catch (Exception e) { return Fail(3, $"the models did not open ({e.Message.Trim()})"); }
+        var chart = Read(recording, Console.Error.WriteLine);
+        lys = Writer.Lys(chart, Path.GetFileNameWithoutExtension(recording));
+        json = Writer.Json(chart);
+        int marks = lys.Split("@todo").Length - 1;
+        Console.Error.WriteLine($"  {chart.Bars.Count} bars in {chart.Time} at {chart.Bpm}, {chart.Key}; {marks} {(marks == 1 ? "chord" : "chords")} marked @todo");
+    }
+    catch (Exception e) when (Unread(e))
+    {
+        return Fail(1, $"{Path.GetFileName(recording)} was not read: {e.Message}");
+    }
+    catch (Exception e)
+    {
+        Console.Error.WriteLine(e);
+        return Fail(3, $"{Path.GetFileName(recording)} was not read: the reader failed ({e.GetType().Name})");
+    }
+    try
+    {
+        // Whole or not at all: each under another name first, the chart last (a chart there has its side file).
+        Directory.CreateDirectory(Path.GetDirectoryName(chartPath)!);
+        File.WriteAllText(sidePath + ".part", json);
+        File.WriteAllText(chartPath + ".part", lys);
+        File.Move(sidePath + ".part", sidePath, true);
+        File.Move(chartPath + ".part", chartPath, true);
+    }
+    catch (Exception e) when (Unread(e))
+    {
+        foreach (var part in new[] { sidePath + ".part", chartPath + ".part" })
+            try { File.Delete(part); } catch (Exception x) when (Unread(x)) { }
+        return Fail(1, $"{chartPath} was not written: {e.Message}");
+    }
+    Console.Error.WriteLine($"written in {started.Elapsed.TotalSeconds:F1} s");
+    Console.WriteLine(chartPath);
+    return 0;
+}
+
+// For measuring.
+string? Option(string name) { int i = Array.IndexOf(args, name); return i >= 0 && i + 1 < args.Length ? args[i + 1] : null; }
+if (args.Length < 2) return Fail(2, usage);
+string? output = Option("--out");
+if (output == null) return Fail(2, "--out <folder>\n" + usage);
+if (!Directory.Exists(args[1]) && !File.Exists(args[1])) return Fail(2, $"no file or folder {args[1]}");
+var files = Directory.Exists(args[1]) ? Directory.GetFiles(args[1]).Where(Audio.Reads).Order().ToArray() : [args[1]];
 Directory.CreateDirectory(output);
 int n = files.Length;
-double load = 0, mel = 0, beat = 0, cqt = 0, chord = 0, audio = 0;
+
+if (args[0] == "audio")
+{
+    foreach (var file in files)
+    {
+        var (mono, rate) = Audio.Read(file);
+        Wav.Write(Path.Combine(output, Path.GetFileName(file) + ".heard.wav"), mono, rate);
+        Console.WriteLine($"{Path.GetFileName(file)}: {mono.Length} samples at {rate} Hz");
+    }
+    return 0;
+}
 
 if (args[0] == "features")
 {
     foreach (var file in files)
     {
         var clock = Stopwatch.StartNew();
-        var (mono, rate) = Wav.Read(file);
+        var (mono, rate) = Audio.Read(file);
         load += clock.Elapsed.TotalSeconds; audio += mono.Length / (double)rate; clock.Restart();
         var low = Resample.To(mono, Features.Rate, rate);
         mel += clock.Elapsed.TotalSeconds; clock.Restart();
@@ -61,44 +233,20 @@ if (args[0] == "features")
     return 0;
 }
 
-string models = Option("--models") ?? AppContext.BaseDirectory;
-bool writeCqt = args.Contains("--cqt");
-// With every core, Beat This! is 2.5 times slower on 24 of them (README).
-var options = new SessionOptions { IntraOpNumThreads = int.Parse(Option("--threads") ?? "8") };
-string? linesFrom = args[0] == "read" ? Option("--lines") : null, heardFrom = args[0] == "read" ? Option("--heard") : null;
-using var beatModel = linesFrom == null ? new InferenceSession(Path.Combine(models, "beat-this-final0-dynamo.onnx"), options) : null;
-using var chordModel = heardFrom == null ? new InferenceSession(Path.Combine(models, "crema-chord.onnx"), options) : null;
+if (args[0] == "read") { linesFrom = Option("--lines"); heardFrom = Option("--heard"); }
+Open(Option("--models") ?? AppContext.BaseDirectory, int.Parse(Option("--threads") ?? "8"), linesFrom == null, heardFrom == null);
 Console.WriteLine($"start and open the models: {started.Elapsed.TotalSeconds:F2} s");
 
 if (args[0] == "read")
 {
     int failed = 0;
-    double rules = 0;
     foreach (var file in files)
     {
         string name = Path.GetFileNameWithoutExtension(file);
         try
         {
+            var chart = Read(file);
             var clock = Stopwatch.StartNew();
-            var (mono, rate) = Wav.Read(file);
-            load += clock.Elapsed.TotalSeconds; audio += mono.Length / (double)rate; clock.Restart();
-            var low = Resample.To(mono, Features.Rate, rate);       // the beat model's rate too
-            mel += clock.Elapsed.TotalSeconds; clock.Restart();
-            var heard = Features.Of(low);
-            cqt += clock.Elapsed.TotalSeconds; clock.Restart();
-            var (lines, beats) = Reader.LinesOf(linesFrom != null ? File.ReadAllText(Path.Combine(linesFrom, name + ".beats")) : Beats.Lines(beatModel!, low));
-            beat += clock.Elapsed.TotalSeconds; clock.Restart();
-            float[] logp;
-            int frames;
-            double step = Crema.Step;
-            if (heardFrom != null) (logp, frames, step) = Npy.ReadHeard(Path.Combine(heardFrom, name + ".npz"));
-            else
-            {
-                logp = Crema.LogP(chordModel!, Crema.Input(Resample.To(mono, Crema.Rate, rate), out frames), frames);
-                for (int i = 0; i < logp.Length; i++) logp[i] = (float)(Half)logp[i];       // as `dettato ears` writes them
-            }
-            chord += clock.Elapsed.TotalSeconds; clock.Restart();
-            var chart = Reader.Read(Path.GetFileName(file), heard, lines, beats, logp, frames, step);
             File.WriteAllText(Path.Combine(output, name + ".dettato.json"), Writer.Json(chart));
             File.WriteAllText(Path.Combine(output, name + ".lys"), Writer.Lys(chart, name));
             rules += clock.Elapsed.TotalSeconds;
@@ -120,7 +268,7 @@ foreach (var file in files)
 {
     string stem = Path.Combine(output, Path.GetFileNameWithoutExtension(file));
     var clock = Stopwatch.StartNew();
-    var (mono, rate) = Wav.Read(file);
+    var (mono, rate) = Audio.Read(file);
     load += clock.Elapsed.TotalSeconds; audio += mono.Length / (double)rate; clock.Restart();
 
     var low = Resample.To(mono, Beats.Rate, rate);
@@ -130,7 +278,7 @@ foreach (var file in files)
 
     var input = Crema.Input(Resample.To(mono, Crema.Rate, rate), out int frames);
     cqt += clock.Elapsed.TotalSeconds; clock.Restart();
-    if (writeCqt) Npy.Write(stem + ".cqt.npy", input, frames, Crema.Bins, 2);
+    if (writeCqt()) Npy.Write(stem + ".cqt.npy", input, frames, Crema.Bins, 2);
     Npy.WriteHeard(stem + ".npz", Crema.LogP(chordModel!, input, frames), frames, Crema.Chords, Crema.Step);
     chord += clock.Elapsed.TotalSeconds;
 }
@@ -138,3 +286,5 @@ Console.WriteLine($"{n} songs, {audio / n:F0} s of audio each; a song: load {loa
     + $"mel and beat model {beat / n:F2} s, CQT {cqt / n:F2} s, chord model {chord / n:F2} s");
 Console.WriteLine($"in all, from the start of the process: {started.Elapsed.TotalSeconds:F2} s");
 return 0;
+
+bool writeCqt() => args.Contains("--cqt");

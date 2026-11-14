@@ -707,7 +707,7 @@ files `dettato ears` writes. One song (3 min 27 s, `RWC_P001`), cold, from the `
 chart: 5.5 s (0.3 s to start and open the models, 0.1 s to load and resample, 0.3 s the
 features, 3.7 s Beat This!, 1.0 s the transforms and crema, 0.1 s the rules), on 8 threads.
 Not done: `--tempo`, the reasons of a mark (`why`, which `measure.py doubt` shows when Python
-reads), any input but a `.wav`. Not looked at: RWC from the `.wav` alone (the model here has
+reads). Other kinds of file than `.wav`: the next section. Not looked at: RWC from the `.wav` alone (the model here has
 heard those songs, so its bar lines are not to be counted).
 
 ```
@@ -719,6 +719,70 @@ py -3.12 tools/read_check.py scratch/pyread/seed1 scratch/net/read/seed1
 py -3.12 tools/read_check.py scratch/pyread/rwc-dev scratch/net/read/rwc-p
 .venv/Scripts/python tools/measure.py table seed1 rwc-dev rwc-test --ears --read scratch/net/read
 .venv/Scripts/python tools/measure.py check scratch/net/read/seed1 scratch/net/read/rwc-p
+```
+
+### A recording as it comes
+
+The command a user calls (2026-11-14, D3), and Lily# when it has the menu:
+
+```
+dettato song.mp3                    # song.lys and song.dettato.json beside it
+dettato song.mp3 -o charts/x.lys    # there, with x.dettato.json; --force writes over a chart
+dettato --version --json            # {"version":"0.2.0","protocol":1,"commands":["read"],"inputs":["wav","mp3","m4a","mp4","aac","flac","wma"]}
+```
+
+stderr says each step as it begins (listening, the beats, the chords) and what was read; on
+failure its last line says why (`dettato: x.wav was not read: fewer than two bar lines found`).
+stdout has the chart's path alone. Exit codes: 0 written; 1 the recording was not read (not a
+recording, shorter than 5 seconds, no bar lines, no chord); 2 the arguments (no such file, a kind
+not read, a chart already there without `--force`); 3 the reader itself (a model missing, a fault).
+The two files are written at the end, under other names first: a reading stopped half-way leaves
+nothing. The models are beside the program, or where `--models` says.
+
+A plain `.wav` (16 or 24 bit, float) is read by the program itself, as before; every other kind
+by Windows' Media Foundation, through NAudio (MIT), so no decoder is carried. Media Foundation
+leaves in front the silence an encoder adds, which a browser or ffmpeg takes out; so does the
+reader then, where the file says how much (`Audio.cs`: an mp3's Xing/Info frame and LAME's delay,
+an MPEG-4 sound track's edit list). One song made here, written by ffmpeg in each kind and read
+back (`dettato audio`, `tools/heard_check.py`: where the cross-correlation with the `.wav` peaks):
+
+| Kind (ffmpeg's encoder) | As Windows gives it | As the reader takes it |
+|---|---|---|
+| mp3, constant bit rate (libmp3lame; 44100, 48000, 22050 Hz, mono) | 1729 samples late (39 ms; 1153 at 22050 Hz) | 0 |
+| mp3, varying bit rate | 577 late (13 ms) | 0 |
+| mp3 with no Xing/Info frame | 577 late | 577 late: nothing says how much |
+| m4a, mp4 (aac; 44100, 48000 Hz) | 1024 late (23 ms) | 0 |
+| aac (bare ADTS) | 1024 late | 1024 late: nothing says how much |
+| flac, wma, 8-bit wav | 0 | 0 |
+
+The 24 songs of `seed1` as mp3 (192 kbit/s) and m4a (128 kbit/s), read from the file alone with
+the models inside, against the same from the `.wav` (`tools/kinds_check.py`, and `measure.py
+table seed1 --ears --read`):
+
+| `seed1`, 24 songs | `.wav` | mp3 | m4a |
+|---|---|---|---|
+| Bar lines F | 96.6% | 96.4% | 95.6% |
+| Root / root and family | 95.1% / 91.6% | 95.1% / 91.6% | 95.2% / 91.5% |
+| Tempo, meter | 22, 22 | 22, 22 | 22, 22 |
+| Songs with as many bars as from the `.wav` | | 21 | 19 |
+| In those, a bar's start against the `.wav`'s: the middle one, the range | | 0 ms, −60 to +20 ms | 0 ms, −1340 to +60 ms |
+| In those, chords written the same | | 96.9% | 93.4% |
+
+So a chart from an mp3 is as right as one from the `.wav`, and its bars are at the same times,
+but it is not the same chart: the beat model puts a bar line elsewhere in 3 and 5 songs of 24,
+and some chords at the edge of a decision fall the other way. Eight of the songs at 48000 Hz
+give the `.wav`'s charts to the letter; at 22050 Hz the chords are the same and 2 of 8 have a bar
+more or fewer. A recording of RWC as an mp3 with a Japanese name (3 min 27 s) is read in 6.3 s
+and passes `lysc check`. Not looked at: files not written by ffmpeg (iTunes' AAC, whose silence
+is 2112 samples; mp3 from other encoders), a file with pictures in it, anything over some
+minutes (the whole recording is held in memory), the accuracy on recordings as mp3.
+
+```
+scratch/net/out/dettato.exe audio kinds --out heard                 # kinds/: one song as a.wav, a.mp3, a.m4a ...
+.venv/Scripts/python tools/heard_check.py heard a.wav
+scratch/net/out/dettato.exe read mp3/seed1 --out read-mp3/seed1 --models scratch/d2
+py -3.12 tools/kinds_check.py read-wav/seed1 read-mp3/seed1
+.venv/Scripts/python tools/measure.py table seed1 --ears --read read-mp3
 ```
 
 ### On the songs made here, nothing learnt
@@ -924,8 +988,10 @@ They are written to be measured and replaced, not shipped.
 
 `extension/` is the reader as a VS Code extension (`yotsuda.dettato`, Windows x64): `dettato.exe`
 published self-contained, the two models beside it, and one command, **Dettato: Transcribe
-Recording to Lily# Chord Chart (.lys)…**, which reads a `.wav` and opens the chart written beside
-it. The package is 113 MB (the beat model is 83 MB of it).
+Recording to Lily# Chord Chart (.lys)…**, which reads a recording (`dettato <recording> -o
+<chart> --force`, after asking when a chart is there) and opens the chart written beside it.
+What it gives another extension is the reader's path and its `--version --json` (`bin/dettato.json`,
+written when the package is made). The package is 113 MB (the beat model is 83 MB of it).
 
 ```
 tools/pack-extension.ps1       # out/extension/dettato-win32-x64-<version>.vsix (the models from scratch/d2)

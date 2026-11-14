@@ -4,7 +4,8 @@ param(
 )
 # The reader as a VS Code extension (docs/ROADMAP.md, D2 and D4; the shape is Calamo's): dettato.exe
 # published self-contained for win-x64 into extension/bin, the two models beside it (where the program
-# looks for them), the licenses of what is bundled, and `vsce package --target win32-x64`.
+# looks for them), its `dettato --version --json` (bin/dettato.json, which extension.js hands to Lily#),
+# the licenses of what is bundled, and `vsce package --target win32-x64`.
 # Packages only: it publishes nothing. The icon and the LICENSE are the repository's own (one copy of each).
 $ErrorActionPreference = 'Stop'
 $root = Resolve-Path "$PSScriptRoot\.."
@@ -39,14 +40,24 @@ $copies = @{
     'onnxruntime-LICENSE.txt'           = "$(PackageDir 'Microsoft.ML.OnnxRuntime')\LICENSE"
     'onnxruntime-ThirdPartyNotices.txt' = "$(PackageDir 'Microsoft.ML.OnnxRuntime')\ThirdPartyNotices.txt"
 }
+# (NAudio's packages carry no license file: its MIT text is in THIRD-PARTY-NOTICES.md; this only checks it is still there to name)
+PackageDir 'NAudio.Wasapi' | Out-Null
 New-Item -ItemType Directory -Force "$bin\licenses" | Out-Null
 foreach ($name in $copies.Keys) { Copy-Item -LiteralPath $copies[$name] "$bin\licenses\$name" }
 
 # (recordings are never ours to give: none goes into a package)
-$recordings = Get-ChildItem $stage -Recurse -File | Where-Object Extension -in '.wav', '.mp3', '.flac', '.m4a'
+$recordings = Get-ChildItem $stage -Recurse -File | Where-Object Extension -in '.wav', '.mp3', '.flac', '.m4a', '.aac', '.mp4', '.wma'
 if ($recordings) { throw "recordings in the package: $($recordings.FullName -join ', ')" }
+
+# What the reader says of itself, beside it: extension.js hands it to Lily# without starting anything.
+$info = & "$bin\dettato.exe" --version --json
+if ($LASTEXITCODE -ne 0) { throw "dettato --version --json failed" }
+$version = (Get-Content "$stage\package.json" -Raw | ConvertFrom-Json).version
+if ($version -ne ($info | ConvertFrom-Json).version) { throw "extension/package.json is $version, the reader $(($info | ConvertFrom-Json).version): make them one" }
+[IO.File]::WriteAllText("$bin\dettato.json", $info)
+
 $size = (Get-ChildItem $bin -Recurse -File | Measure-Object Length -Sum).Sum / 1MB
-"reader {0}, bin {1:F1} MB" -f (Get-Content "$stage\package.json" -Raw | ConvertFrom-Json).version, $size
+"reader {0}, bin {1:F1} MB" -f $version, $size
 Push-Location $stage
 try {
     cmd /d /s /c "npx --yes @vscode/vsce package --target win32-x64 --out `"$Out`" < NUL"

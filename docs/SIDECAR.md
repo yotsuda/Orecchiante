@@ -38,14 +38,17 @@ every chart it writes.
 
 ## The items
 
-Every time is in **seconds from the start of the recording**, rounded to 0.0001.
+Every time is in **seconds from the start of the recording**, rounded to 0.0001. For an mp3 or an
+AAC file the start is where a player that heeds the file's own note of its encoder's silence starts
+(a browser, ffmpeg), not that silence's start: the reader takes it out (README, "A recording as it
+comes"; an mp3 with no such note and a bare `.aac` keep theirs, 13 and 23 ms as ffmpeg writes them).
 
 ### Of the file
 
 | Item | | What it is |
 |---|---|---|
 | `dettato` | always | The format's number: 1. |
-| `audio` | always | The recording's file name. It is in the folder of this file; no path. |
+| `audio` | always | The recording's file name. It is in the folder of this file; no path. (`dettato <recording> -o <elsewhere>/x.lys` writes this file elsewhere too: the recording is then to be brought beside it.) |
 | `duration` | always | The recording's length in seconds, right to within 0.03 s. |
 | `tempo` | always | `note` is the beat, `"4"` or (in 6/8) `"4."`; `bpm` is how many of them a minute, a whole number, from the median bar. The chart's `tempo` line. |
 | `time` | always | The meter: `"4/4"`, `"3/4"`, `"2/4"`, `"6/8"`, or another number of quarters. One for the whole recording. |
