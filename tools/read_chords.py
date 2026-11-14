@@ -464,8 +464,12 @@ def main():
         (args.out / (path.stem + ".dettato.json")).write_text(
             json.dumps(result, indent=2) + "\n", encoding="utf-8", newline="\n")
         (args.out / (path.stem + ".lys")).write_text(lys(result, path.stem), encoding="utf-8", newline="\n")
+        read_chords = [c for bar in result["bars"] for c in bar["chords"]]
+        doubted = sum(c.get("sure", 1.0) < DOUBT for c in read_chords)
         print(f"{path.name}: {result['key']}, {result['time']}, {result['tempo']['bpm']}, "
-              f"{len(result['bars'])} bars")
+              f"{len(result['bars'])} bars"
+              + (f", {doubted} of {len(read_chords)} chords doubted" if MODEL is not None else "")
+              + (": this is not music the model knows" if doubted > 0.5 * len(read_chords) else ""))
     if failed:
         sys.exit(f"{failed} of {len(files)} recordings were not read")
 

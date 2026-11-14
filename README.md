@@ -197,6 +197,30 @@ three or four such beats.
 Told the true tempo, the three sets above read the same or a little better (`seed1`: 24 tempi
 of 24, bar lines 96.7%; `seed7` and `seed11` unchanged).
 
+### Songs it was not made on
+
+`tools/sample_songs.py` takes the four of Lily#'s own sample songs that have a chord row, plays
+each without it, and counts the reading against the row. None is written the way
+`gen_chords.py` writes: two are a melody alone, one a melody and a bass, one a voice and a
+piano. They are short (8 to 16 bars, 48 bars in all).
+
+| | what plays | nothing learnt | with the model |
+|---|---|---|---|
+| Amazing Grace | a melody | tempo and all 15 bar lines right; root 20% | twice the tempo; root 23% |
+| Greensleeves | a melody | tempo right, 15 of 16 bar lines; root 12% | twice the tempo; root 6% |
+| Morning Light | a melody and a bass | tempo and all 8 bar lines right; root 93%, family 62% | the same; root 93%, family 75% |
+| Harbour Lights | a voice and a piano | tempo and all 9 bar lines right; root 83%, family 83% | read in 6/8, no bar line right; root 80%, family 80% |
+
+- A melody alone has no chords in it to hear: naming the chords a tune implies is another
+  task (harmonising), which neither reader attempts. Their tempo and bar lines are still found
+  by the reader with nothing learnt.
+- With something under the melody the roots are mostly found (80 to 93%), by both readers.
+- The model does worse than the rules on the tempo and the meter here: its opinion changes
+  from half beat to half beat on sounds it does not know, and the bar lines follow it.
+- It says so itself. It doubts 29 of 30, 32 of 36, 8 of 8 and 8 of 12 of the chords it reads in
+  these four songs (2 of 29 in a song of `seed11`), and the reader prints "this is not music
+  the model knows" when it doubts more than half.
+
 ### A tempo that moves
 
 `gen_chords.py --drift 0.02` lets the tempo step up to two in a hundred from each bar to the
