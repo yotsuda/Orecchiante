@@ -57,3 +57,6 @@ out-test/
 
 # Songs made to learn from: the seed makes them again
 data/synth/seed100/
+
+# The environment of the models trained on recordings
+.venv-bt/

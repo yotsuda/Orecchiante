@@ -137,6 +137,52 @@ last fifty (`rwc-test`) are counted and not looked into. As first read, with the
 `rwc-dev` tempo 35 of 50, bar lines 68.4%, root 73.5%, root and family 61.7%; `rwc-test` tempo
 25 of 50, bar lines 63.8%, root 75.9%, root and family 64.9%.
 
+### What models trained on recordings do
+
+Two published models, both small enough to run here in seconds a song on a CPU, counted the
+same way (2026-11-14):
+
+- [Beat This!](https://github.com/CPJKU/beat_this) (CPJKU, 2024; code and weights MIT) for the
+  beats and the bar lines. RWC is among the recordings it learnt from, so each song is read by
+  the one of its eight cross-validation models that never heard it (`tools/track_beats.py --rwc`).
+- [BTC](https://github.com/jayg996/BTC-ISMIR19) (Park et al., 2019; MIT) for the chords, its
+  170 labels folded into the reader's eight as the truth's are (`tools/btc_chords.py`). Its
+  README names Isophonics, Robbie Williams and USPop2002 as what it learnt from, not RWC.
+
+| `rwc-p`, 100 songs | this reader, with its model | its chords, true bar lines | its chords, Beat This!'s bar lines | BTC's chords, Beat This!'s bar lines | BTC's chords, true bar lines |
+|---|---|---|---|---|---|
+| Tempo (within 4%), songs | 60 | | 91 | 91 | |
+| Meter, songs | 94 | | 96 | 96 | |
+| Bar lines (within 70 ms), F | 66.1% | | 93.8% | 93.8% | |
+| Chord root, by time | 74.7% | 77.3% | 76.6% | 82.6% | 83.1% |
+| Root and family | 63.4% | 66.2% | 65.3% | 77.4% | 77.8% |
+| Root and quality | 44.4% | 46.3% | 45.5% | 64.3% | 64.6% |
+| The bass note too | 41.2% | 42.6% | 41.9% | 58.7% | 59.0% |
+
+So the bar lines were the beat tracker's fault and are mended by a model that has heard
+recordings (66% to 94%), and right bar lines do little for this reader's chords (three points): what
+it hears is the limit, and a model that has heard recordings hears eight points more of the
+roots and fourteen of the families. BTC's chords here are as it gives them, frame by frame,
+with none of the reader's rules (a chord changes at a bar line, a doubt is marked). On
+`rwc-test` alone the two together have bar lines 94.4%, root 83.3%, root and family 78.3%.
+
+On the songs made here Beat This!'s bar lines are a little behind the reader's own (F 86 to 96%
+against 89 to 99% on the five sets), and the 6/8 songs come out as two beats in a bar: the
+meter is not yet read from its beats.
+
+```
+py -3.12 -m venv .venv-bt
+.venv-bt/Scripts/python -m pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+.venv-bt/Scripts/python -m pip install tqdm einops soxr rotary-embedding-torch soundfile beat-this librosa pandas pyyaml mir_eval pretty_midi pyrubberband
+git clone --depth 1 https://github.com/CPJKU/beat_this_annotations scratch/real/beat_this_annotations
+git clone --depth 1 https://github.com/jayg996/BTC-ISMIR19 scratch/btc
+.venv-bt/Scripts/python tools/track_beats.py scratch/real/rwc-p --out scratch/real/beats-bt-folds --rwc scratch/real
+.venv-bt/Scripts/python tools/btc_chords.py scratch/btc scratch/real/rwc-p --out scratch/real/chords-btc
+.venv/Scripts/python tools/measure.py table rwc-p --lines truth
+.venv/Scripts/python tools/measure.py table rwc-p --lines scratch/real/beats-bt-folds
+.venv/Scripts/python tools/measure.py table rwc-p --chords scratch/real/chords-btc --lines scratch/real/beats-bt-folds
+```
+
 
 On three sets of 24 songs (2026-11-14). The reader's constants were chosen on `seed1`, and
 `seed7` was looked at while choosing; `seed11` was made later and not chosen on:

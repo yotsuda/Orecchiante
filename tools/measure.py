@@ -136,17 +136,68 @@ def totals(rows):
             f" quality {share('quality'):.1%} bass {share('bass'):.1%}")
 
 
-def run(name, hint=False, verbose=False, write=None):
+def bar_lines(truth, wav, source):
+    """Bar lines found by other means, as read_chords.read takes them: (seconds, parts of a bar).
+    `source` is "truth" (the true lines: what the chords are worth when the bars are right) or a
+    folder of <recording>.beats files, a line a beat: its seconds, a tab, its number in the bar."""
+    if source == "truth":
+        per = {"6/8": 3}.get(truth["time"], int(truth["time"].split("/")[0]))
+        return [b["start"] for b in truth["bars"]] + [truth["bars"][-1]["end"]], 2 * per
+    rows = [line.split() for line in (Path(source) / (wav.stem + ".beats")).read_text().splitlines() if line.strip()]
+    times, numbers = [float(r[0]) for r in rows], [int(float(r[1])) for r in rows]
+    downs = [i for i, n in enumerate(numbers) if n == 1]
+    per = Counter(b - a for a, b in zip(downs, downs[1:])).most_common(1)[0][0]
+    beat = float(np.median(np.diff(times)))
+    last = downs[-1] + per
+    end = times[last] if last < len(times) else min(times[-1] + beat, times[downs[-1]] + per * beat)
+    return [times[i] for i in downs] + ([end] if end > times[downs[-1]] + 0.5 * per * beat else []), 2 * per
+
+
+def lab_reading(truth, wav, labs, lines):
+    """A reading whose chords are another model's (<recording>.lab: start, end, Harte label), cut
+    at bar lines found by other means: what that model is worth, counted as our own is."""
+    import rwc_truth
+    given, units = bar_lines(truth, wav, lines)
+    spans = []
+    for line in (Path(labs) / (wav.stem + ".lab")).read_text().splitlines():
+        start, end, label = line.split()[:3]
+        label = label if ":" in label or label in ("N", "X") else label + ":maj"
+        spans.append((float(start), float(end), rwc_truth.symbol(label)))
+    bars = []
+    for n, (a, b) in enumerate(zip(given, given[1:])):
+        inside = []
+        for start, stop, name in spans:
+            lo, hi = max(a, start), min(b, stop)
+            if name is None or hi - lo < 0.02:
+                continue
+            if inside and inside[-1]["symbol"] == name and abs(inside[-1]["end"] - lo) < 0.02:
+                inside[-1]["end"] = round(hi, 3)
+            else:
+                inside.append({"start": round(lo, 3), "end": round(hi, 3), "symbol": name})
+        bars.append({"bar": n + 1, "start": round(a, 3), "end": round(b, 3), "chords": inside})
+    per = units // 2
+    bar = float(np.median(np.diff(given)))
+    return {"audio": wav.name, "tempo": {"note": "4", "bpm": int(round(60.0 * per / bar))}, "time": f"{per}/4",
+            "key": "C major", "bars": bars}
+
+
+def run(name, hint=False, verbose=False, write=None, lines=None, labs=None):
     """Reads and scores a set. Returns each song's numbers, and the charts written."""
     rows, written = [], []
     for truth, wav in songs(name):
         try:
-            got = rc.read(wav, feats(wav), tempo=truth["tempo"]["bpm"] if hint else None)
+            if labs:
+                got = lab_reading(truth, wav, labs, lines or "truth")
+            elif lines:
+                given, units = bar_lines(truth, wav, lines)
+                got = rc.read(wav, feats(wav), lines=given, units=units)
+            else:
+                got = rc.read(wav, feats(wav), tempo=truth["tempo"]["bpm"] if hint else None)
             r = sc.score(truth, got)
         except Exception as e:  # one song that cannot be read does not stop the rest
             print(f"{truth['id']} failed: {e}")
             continue
-        if write:
+        if write and not labs:
             d = Path(write) / name.replace("/", "-").replace("@", "-")
             d.mkdir(parents=True, exist_ok=True)
             (d / (wav.stem + ".dettato.json")).write_text(json.dumps(got, indent=2) + "\n", encoding="utf-8", newline="\n")
@@ -155,7 +206,7 @@ def run(name, hint=False, verbose=False, write=None):
         rows.append(r)
         if verbose:
             chords = [c for bar in got["bars"] for c in bar["chords"]]
-            doubted = f" doubted {sum(c['sure'] < rc.DOUBT for c in chords)}/{len(chords)}" if rc.MODEL is not None else ""
+            doubted = f" doubted {sum(c['sure'] < rc.DOUBT for c in chords)}/{len(chords)}" if rc.MODEL is not None and not labs else ""
             styles = truth.get("band", {}).get("styles", "")
             print(f"{r['id']:<14} tempo {'ok' if r['tempo'] else 'x' + str(r['tempoRatio']):>6} meter {'ok' if r['meter'] else '--'}"
                   f" key {'  ' if r['key'] is None else 'ok' if r['key'] else '--'} bars {r['barsFound']:>2}/{r['barsTrue']} ({r['barsRead']}) root {r['root']:.0%}"
@@ -381,6 +432,8 @@ def main():
     s.add_argument("-v", "--verbose", action="store_true", help="a line a song")
     s.add_argument("--write", type=Path, help="write the charts under this folder")
     s.add_argument("--check", action="store_true", help="with --write: every chart through lysc check")
+    s.add_argument("--chords", help="count another model's chords: a folder of <recording>.lab files (the bar lines: --lines, else the truth's)")
+    s.add_argument("--lines", help='bar lines found by other means: "truth", or a folder of <recording>.beats files')
     s = reader(sub.add_parser("all", help="every table of the README"), sets=None)
     s.add_argument("--write", type=Path, default=ROOT / "scratch" / "read-all", help="where the charts go (default: scratch/read-all)")
     s = reader(sub.add_parser("sweep", help="the table over a grid of constants"), sets=None)
@@ -425,7 +478,7 @@ def main():
     if args.what == "table":
         charts = []
         for name in args.sets:
-            rows, written = run(name, hint=args.hint, verbose=args.verbose, write=args.write)
+            rows, written = run(name, hint=args.hint, verbose=args.verbose, write=args.write, lines=args.lines, labs=args.chords)
             charts += written
             print(f"{name}: {totals(rows)}", flush=True)
         return check(charts) if args.check and charts else 0

@@ -301,19 +301,29 @@ def features(path):
     }
 
 
-def read(path, f=None, tempo=None):
+def read(path, f=None, tempo=None, lines=None, units=8):
     """The chart of a recording. `tempo`, if told, is about how many beats a minute it has: what
-    is heard cannot tell a fast song whose chords last two bars from a slow one, bar by bar."""
+    is heard cannot tell a fast song whose chords last two bars from a slow one, bar by bar.
+
+    `lines`, if given, are the bar lines in seconds (the end of the last bar too), found by other
+    means: then only the chords are read, each bar cut into `units` equal parts."""
     name = Path(path).name
     f = f or features(path)
     oenv, chroma, bass, rms = f["oenv"], f["chroma"], f["bass"], f["rms"]
-    beats, period = beat_grid(oenv)
-    edges = half_beats(beats, period)
-    loud = np.array([float(over(rms, a, b)[0]) for a, b in zip(edges[:-1], edges[1:])])
-    count = len(loud)
-    while count > 8 and loud[count - 1] < 0.1 * np.median(loud):  # the ring-out is not music
-        count -= 1
-    edges = edges[:count + 1]
+    if lines is not None:
+        marks = np.asarray(lines, dtype=float) * SR / HOP + BEAT_LAG
+        marks = marks[marks < len(oenv)]
+        edges = np.concatenate([np.linspace(a, b, units, endpoint=False) for a, b in zip(marks[:-1], marks[1:])]
+                               + [marks[-1:]])
+        count = len(edges) - 1
+    else:
+        beats, period = beat_grid(oenv)
+        edges = half_beats(beats, period)
+        loud = np.array([float(over(rms, a, b)[0]) for a, b in zip(edges[:-1], edges[1:])])
+        count = len(loud)
+        while count > 8 and loud[count - 1] < 0.1 * np.median(loud):  # the ring-out is not music
+            count -= 1
+        edges = edges[:count + 1]
     seconds = np.diff(edges) * HOP / SR
 
     treble = unit(np.array([over(chroma, a, b) for a, b in zip(edges[:-1], edges[1:])]).T)   # (12, units)
@@ -347,9 +357,13 @@ def read(path, f=None, tempo=None):
             raise ValueError("no bar length fits")
         return best[1], best[2]
 
-    path, length = search(emit, heard)
     strange = False
-    if MODEL is not None:
+    if lines is not None:
+        length = units
+        _, path = decode(emit, heard, change, length, first=0)
+    else:
+        path, length = search(emit, heard)
+    if MODEL is not None and lines is None:
         # Sounds the model does not know: its opinion changes from half beat to half beat and
         # the bar lines follow it. Then the bars are the ones the templates find, and the model
         # names the chords inside them.
@@ -363,8 +377,13 @@ def read(path, f=None, tempo=None):
     starts = [t for t, (place, _) in enumerate(path) if place == 0]
     if count - starts[-1] >= length:      # the last bar is whole
         starts.append(starts[-1] + length)
+    given = lines is not None
     lines = np.array([edges[t] for t in starts])
     time, tempo_note, tempo_beats = find_meter(lines, oenv)
+    if given and units != 6 and (time, units) != ("4/4", 8):   # the beats in a bar came with the lines
+        time, tempo_note, tempo_beats = f"{units // 2}/4", "4", units // 2
+    elif given and units == 6 and time == "4/4":
+        time, tempo_note, tempo_beats = "3/4", "4", 3
 
     stamp = lambda frame: round(max(float(frame) - BEAT_LAG, 0.0) * HOP / SR, 4)
     bars = []
