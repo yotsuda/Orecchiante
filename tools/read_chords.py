@@ -4,7 +4,8 @@
     .venv/Scripts/python tools/read_chords.py data/synth/seed1 --out scratch/read/seed1
 
 For each .wav it writes <name>.lys (a Lily# chord chart) and <name>.dettato.json (every bar and
-chord with its seconds, in the shape of gen_chords.py's truth). The steps:
+chord with its seconds, its section and which bar of it it is, in the shape of gen_chords.py's
+truth). The steps:
 
 1. beats: librosa's beat tracker on the onset strength, carried back to the start and on to the
    end, and halved: the half beat is the unit everything after is counted in;
@@ -13,7 +14,9 @@ chord with its seconds, in the shape of gen_chords.py's truth). The steps:
    a bar, and at a high price elsewhere; a bar line the chord does not change at costs a little.
    This is done for each length a bar may have, and the best path over all lengths is kept;
 3. meter: from where the onsets fall inside the bars (in fours, in threes, or in two threes);
-4. key: the one whose chords the reading is made of, for the spelling.
+4. sections: runs of bars said again are written once (`section`) and the order they are played
+   in after them (`form`);
+5. key: the one whose chords the reading is made of, for the spelling.
 
 This is the line to beat, written to be measured (tools/score_chords.py), not to be shipped.
 """
@@ -350,6 +353,167 @@ def find_key(chords):
     return best[1], best[2]
 
 
+SECTION_BARS = 4        # the shortest run of bars that is a section for being said again
+SAID_AGAIN = 0.95       # runs of bars are one section when this share of their beats have the same root and quality
+
+
+def fold(bars, beats, alike):
+    """Finds the sections (find_form) and makes every playing of a section say the same: on each
+    beat, the chord the playings are surest of together. Where they differed in root or family,
+    the chord is marked in every playing, and the chord offered in its place is the other reading.
+    Chords are (root, quality, bass) here. Returns the form."""
+    kind = lambda c: (c["symbol"][0], _KIND[c["symbol"][1]])
+    on = [[next((c for c in bar["chords"] if c["start"] <= bar["start"] + (i + 0.01) * (bar["end"] - bar["start"]) / beats < c["end"]),
+                bar["chords"][-1]) for i in range(beats)] for bar in bars]
+    form, places = find_form([tuple(c["symbol"][:2] for c in row) for row in on], alike)
+    said = {}
+    for n, place in enumerate(places):
+        bars[n]["section"], bars[n]["barOfSection"] = place
+        said.setdefault(place, []).append(n)
+    for playings in said.values():
+        if len(playings) < 2 or all([c["symbol"] for c in on[n]] == [c["symbol"] for c in on[playings[0]]] for n in playings):
+            continue
+        agreed = []                             # for each beat: (the chord, how sure, the other reading or None)
+        for b in range(beats):
+            heard = [on[n][b] for n in playings]
+            kinds, symbols = Counter(), Counter()
+            for c in heard:
+                kinds[kind(c)] += c.get("sure", 1.0)
+            won = max(kinds, key=kinds.get)
+            for c in heard:
+                if kind(c) == won:
+                    symbols[c["symbol"]] += c.get("sure", 1.0)
+            symbol = max(symbols, key=symbols.get)
+            sure = float(np.mean([c.get("sure", 1.0) for c in heard if kind(c) == won]))
+            others = Counter()
+            for c in heard:
+                if kind(c) != won:
+                    others[c["symbol"][:2]] += c.get("sure", 1.0)
+            agreed.append((symbol, sure, max(others, key=others.get) if others else None))
+        for n in playings:
+            bar = bars[n]
+            marked = "sure" in bar["chords"][0]
+            if all(kind(c) == (a[0][0], _KIND[a[0][1]]) for c, a in zip(on[n], agreed)):
+                for c, a in zip(on[n][::-1], agreed[::-1]):     # the same chords, named as agreed (a seventh, a bass note)
+                    c["symbol"] = a[0]
+            else:                                               # written again, a chord a beat
+                step = (bar["end"] - bar["start"]) / beats
+                chords = []
+                for b, (symbol, sure, other) in enumerate(agreed):
+                    if chords and chords[-1]["symbol"] == symbol:
+                        chords[-1]["end"] = round(bar["start"] + (b + 1) * step, 4) if b < beats - 1 else bar["end"]
+                        continue
+                    chords.append({"start": round(bar["start"] + b * step, 4), "end": round(bar["start"] + (b + 1) * step, 4) if b < beats - 1 else bar["end"],
+                                   "symbol": symbol, "fit": on[n][b]["fit"]})
+                    if "why" in on[n][b]:
+                        chords[-1]["why"] = on[n][b]["why"]
+                    if marked:
+                        chords[-1]["sure"] = round(sure, 3)
+                        chords[-1]["other"] = on[n][b]["other"] if kind(on[n][b]) == (symbol[0], _KIND[symbol[1]]) else on[n][b]["symbol"][:2]
+                bar["chords"] = chords
+            if marked:
+                for b, (symbol, sure, other) in enumerate(agreed):
+                    if other is not None:
+                        at = bar["start"] + (b + 0.01) * (bar["end"] - bar["start"]) / beats
+                        c = next(c for c in bar["chords"] if c["start"] <= at < c["end"])
+                        c["sure"], c["other"] = min(c["sure"], round(DOUBT - 0.001, 3)), other
+    return form
+
+
+def beat_names(bar, beats):
+    """The chord on each beat of a bar: what the chart writes of it."""
+    length = (bar["end"] - bar["start"]) / beats
+    names = []
+    for i in range(beats):
+        at = bar["start"] + (i + 0.01) * length
+        names.append(next((c["symbol"] for c in bar["chords"] if c["start"] <= at < c["end"]),
+                          bar["chords"][-1]["symbol"]))
+    return tuple(names)
+
+
+def find_form(keys, alike=1.0):
+    """The sections a chart is made of, from the chord on each beat of each bar (`keys`: a tuple a
+    bar): (the form, a section's name for each one played; for each bar, its section and which
+    bar of it it is).
+
+    Two runs of bars are the same section when `alike` of their beats have the same chord. The
+    run whose saying again saves the most bars becomes a section, the longer run if two save as
+    many; then the same among the bars left, until nothing is said twice. What is left between
+    sections is a section said once. Two sections that only ever come one after the other are one.
+    """
+    n = len(keys)
+    ids = {}
+    grid = np.full((n, max([len(k) for k in keys] + [1])), -1)
+    for i, k in enumerate(keys):
+        grid[i, :len(k)] = [ids.setdefault(x, len(ids)) for x in k]
+    same = ((grid[:, None, :] == grid[None, :, :]) & (grid[:, None, :] >= 0)).mean(axis=2)   # bar against bar
+    apart = np.abs(np.arange(n)[:, None] - np.arange(n)[None, :])
+    close, run = {}, np.zeros((n, n))           # for each length: do the runs from bar i and from bar j say the same?
+    for length in range(1, n // 2 + 1):
+        m = n - length + 1
+        run = run[:m, :m] + same[length - 1:, length - 1:]
+        if length >= SECTION_BARS:
+            close[length] = (run >= alike * length - 1e-9) & (apart[:m, :m] >= length)
+    owner = [None] * n
+    played = []                                 # (first bar, bars, section) for each section played
+    while True:
+        free = [0] * (n + 1)                    # how many bars from here on belong to no section yet
+        for i in range(n - 1, -1, -1):
+            free[i] = 0 if owner[i] is not None else free[i + 1] + 1
+        free = np.array(free[:n])
+        best = (0, 0, None)
+        for length, near in close.items():
+            can = free[:len(near)] >= length
+            near = near & can[None, :] & can[:, None]
+            for i in np.nonzero(near.sum(axis=1) * length >= max(best[0], 1))[0]:
+                kept = [int(i)]
+                for j in np.nonzero(near[i])[0]:
+                    if all(abs(int(j) - k) >= length for k in kept):
+                        kept.append(int(j))
+                saved = (len(kept) - 1) * length
+                if (saved, length) > best[:2]:
+                    best = (saved, length, kept)
+        if not best[0]:
+            break
+        section = len(played)
+        for s in best[2]:
+            played.append((s, best[1], section))
+            owner[s:s + best[1]] = [section] * best[1]
+    i = 0
+    while i < n:                                # what is said once
+        if owner[i] is None:
+            j = i
+            while j < n and owner[j] is None:
+                j += 1
+            played.append((i, j - i, len(played)))
+            i = j
+        else:
+            i += 1
+    played.sort()
+    while True:                                 # A B ... A B: one section
+        order = [s for _, _, s in played]
+        count = Counter(order)
+        pairs = Counter(zip(order, order[1:]))
+        pair = next(((a, b) for (a, b), k in pairs.items() if a != b and k == count[a] == count[b]), None)
+        if pair is None:
+            break
+        merged, i = [], 0
+        while i < len(played):
+            if played[i][2] == pair[0]:
+                merged.append((played[i][0], played[i][1] + played[i + 1][1], pair[0]))
+                i += 2
+            else:
+                merged.append(played[i])
+                i += 1
+        played = merged
+    names = {}
+    for _, _, s in played:
+        if s not in names:
+            k = len(names)
+            names[s] = chr(ord("A") + k) if k < 26 else f"S{k + 1}"
+    return [names[s] for _, _, s in played], [(names[s], k + 1) for _, bars, s in played for k in range(bars)]
+
+
 def features(path):
     y, _ = librosa.load(path, sr=SR, mono=True)
     harmonic = librosa.effects.harmonic(y, kernel_size=(HARMONIC_FRAMES, 31), margin=4) if HARMONIC_FRAMES else y
@@ -525,6 +689,8 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
         for c, (mean_sure, last, agree) in zip(read_chords, weighed):
             z = a_sure * mean_sure + a_last * last + a_agree * agree + a_song * song + a_none
             c["sure"] = round(1.0 / (1.0 + float(np.exp(-z))), 3)
+    form = fold(bars, 2 if time == "6/8" else int(time.split("/")[0]), SAID_AGAIN)
+    read_chords = [c for bar in bars for c in bar["chords"]]
     tonic, mode = find_key([(c["end"] - c["start"], c["symbol"][0], c["symbol"][1]) for c in read_chords])
     tonic_name = (MAJOR_KEYS if mode == "major" else MINOR_KEYS)[tonic]
     flats = "b" in tonic_name or (tonic_name == "F" if mode == "major" else tonic_name in FLAT_MINORS)
@@ -541,6 +707,7 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
         "time": time,
         "key": f"{tonic_name} {mode}",
         **({"strange": True} if strange else {}),
+        "form": form,
         "bars": bars,
     }
 
@@ -550,16 +717,17 @@ def lys(result, title):
     acc = {"": "", "#": "is", "b": "es"}[tonic[1:]]
     beats = 2 if result["time"] == "6/8" else int(result["time"].split("/")[0])
 
-    def slots(bar):
-        """The bar as Lily# writes it: a chord on the beat it starts on, '.' where it goes on."""
-        length = (bar["end"] - bar["start"]) / beats
-        names = []
-        for i in range(beats):
-            at = bar["start"] + (i + 0.01) * length
-            names.append(next((c["symbol"] for c in bar["chords"] if c["start"] <= at < c["end"]),
-                              bar["chords"][-1]["symbol"]))
+    def slots(said):
+        """A bar as Lily# writes it: a chord on the beat it starts on, '.' where it goes on.
+        `said`: the bar, each time it is played. A chord is marked when, over those times, the
+        reader is less sure of it than DOUBT; the chord offered is the least sure time's."""
+        names = beat_names(said[0], beats)
         marks = [n if i == 0 or n != names[i - 1] else "." for i, n in enumerate(names)]
-        doubts = {c["symbol"]: c["other"] for c in bar["chords"] if c.get("sure", 1.0) < DOUBT}
+        doubts = {}
+        for name in set(names):
+            heard = [c for bar in said for c in bar["chords"] if c["symbol"] == name and "sure" in c]
+            if heard and sum(c["sure"] for c in heard) / len(heard) < DOUBT:
+                doubts[name] = min(heard, key=lambda c: c["sure"])["other"]
         marks = [f'{m}@todo("or {doubts[m]}?")' if m in doubts else m for m in marks]
         if all(m == "." for m in marks[1:]):
             return marks[0]
@@ -568,22 +736,31 @@ def lys(result, title):
             return f"{marks[0]} {marks[half]}"
         return " ".join(marks)
 
-    rows = [" | ".join(slots(bar) for bar in result["bars"][i:i + 4])
-            for i in range(0, len(result["bars"]), 4)]
-    return "\n".join([
+    def rows(bars, indent):
+        return [f"{indent}{' | '.join(slots(said) for said in bars[i:i + 4])} |" for i in range(0, len(bars), 4)]
+
+    head = [
         f"// read from {result['audio']} by tools/read_chords.py",
         f'title "{title}"',
         f"tempo {result['tempo']['note']} = {result['tempo']['bpm']}",
         f"time {result['time']}",
         f"key {tonic[0].lower()}{acc} {mode}",
         "",
-        "chords harmony {",
-        *[f"  {row} |" for row in rows],
-        "}",
-        "",
-        "score { chords harmony }",
-        "",
-    ])
+    ]
+    form = result.get("form") or []
+    if len(set(form)) == len(form):     # nothing is said twice: the chart is the bars in their order
+        return "\n".join(head + ["chords harmony {", *rows([[bar] for bar in result["bars"]], "  "), "}", "",
+                                 "score { chords harmony }", ""])
+    sections = {}                       # name: its bars, each a list of the bar each time the section is played
+    for bar in result["bars"]:
+        of = sections.setdefault(bar["section"], [])
+        if bar["barOfSection"] > len(of):
+            of.append([])
+        of[bar["barOfSection"] - 1].append(bar)
+    body = []
+    for name, bars in sections.items():
+        body += [f"section {name} {{", "  chords harmony {", *rows(bars, "    "), "  }", "}", ""]
+    return "\n".join(head + body + ["form { " + " ".join(form) + " }", "", "score { chords harmony }", ""])
 
 
 def main():

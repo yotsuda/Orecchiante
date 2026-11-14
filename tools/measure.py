@@ -9,6 +9,7 @@
     .venv/Scripts/python tools/measure.py table seed1 rwc-dev --ears   # with models trained on recordings (--ears btc: another's chords)
     .venv/Scripts/python tools/measure.py sweep seed100 TIGHTNESS=300,100 Q:maj7=0.02,0.05
     .venv/Scripts/python tools/measure.py doubt seed1 seed7 seed11 --at 0.5,0.7
+    .venv/Scripts/python tools/measure.py form rwc-dev --ears -v    # the sections: how much shorter they make a chart
     .venv/Scripts/python tools/measure.py barlines seed1            # how the bar lines are missed
     .venv/Scripts/python tools/measure.py keys seed1 seed7 seed11   # the key rule, given the true chords
     .venv/Scripts/python tools/measure.py beats seed7 s7-005        # the tracked beats against the true ones
@@ -62,7 +63,7 @@ SETS = {
 TEST = ["seed1", "seed7", "seed11"]
 TIM = ["tim/seed1", "tim/seed7", "tim/seed11"]
 
-_RULES = {k: getattr(rc, k) for k in ("MODEL", "STAY_COST", "MID_COST", "ELSE_COST", "BASS_WEIGHT", "EMIT_SCALE", "DOUBT")}
+_RULES = {k: getattr(rc, k) for k in ("MODEL", "STAY_COST", "MID_COST", "ELSE_COST", "BASS_WEIGHT", "EMIT_SCALE", "DOUBT", "SAID_AGAIN")}
 
 
 def configure(model, ears=False):
@@ -298,6 +299,40 @@ def doubt(names, thresholds, ears=False):
               f" | marked and wrong in root or family, the chord offered has the true ones {a[m & wrong_f, 4].mean():.1%}")
 
 
+def form(names, ears=False, verbose=False):
+    """How much shorter the sections make a chart: the bars written of the bars played, the
+    sections a song is written in and those of them a bar or two long, for what is read and for
+    the truth's own chords put through the same finder (what a reading with no chord wrong would give)."""
+    for name in names:
+        lines, heard = ears_of(name) if ears else (None, None)
+        sums = {"read": [0, 0, 0, 0], "true": [0, 0, 0, 0]}
+        n = 0
+        for truth, wav in songs(name):
+            if ears:
+                given, units, per = bar_lines(truth, wav, lines)
+                got = rc.read(wav, feats(wav), lines=given, units=units, beats=per, heard=np.load(heard / (wav.stem + ".npz")))
+            else:
+                got = rc.read(wav, feats(wav))
+            per_bar = 2 if truth["time"] == "6/8" else int(truth["time"].split("/")[0])
+            said = {"read": (got["form"], [(b["section"], b["barOfSection"]) for b in got["bars"]]),
+                    "true": rc.find_form([tuple(sc.parse(x)[:2] for x in rc.beat_names(b, per_bar))
+                                          if b["chords"] else () for b in truth["bars"]], rc.SAID_AGAIN)}
+            n += 1
+            shown = []
+            for which, (order, places) in said.items():
+                long = {s: max(k for t, k in places if t == s) for s in set(order)}
+                written = sum(long[s] for s in set(order))
+                short = sum(long[s] <= 2 for s in set(order))
+                for i, v in enumerate((len(places), written, len(set(order)), short)):
+                    sums[which][i] += v
+                shown.append(f"{which} {written}/{len(places)} bars in {len(set(order))} sections ({short} short): {' '.join(order)}")
+            if verbose:
+                print(f"{truth['id']:<12} " + "\n             ".join(shown))
+        for which, (bars, written, sections, short) in sums.items():
+            print(f"{name} {which}: {written / bars:.1%} of the bars written ({written} of {bars}),"
+                  f" {sections / n:.1f} sections a song, {short / n:.1f} of them a bar or two long")
+
+
 def barlines(names, hint):
     """For each song that loses a tenth of its bar lines: the bar's length read against the true
     one, where the read lines fall against the true ones (in true beats), how the tracked beats sit."""
@@ -452,6 +487,8 @@ def everything(model, write):
     for names in (["rwc-dev"], ["rwc-test"], ["rwc-p"], TEST, ["seed21", "seed31"]):
         print(" ".join(names) + ": ", end="")
         doubt(names, [rc.DOUBT], ears=True)
+    print("\n## The sections, with ears trained on recordings")
+    form(["rwc-dev", "rwc-test", "rwc-p"] + TEST + ["seed21", "seed31"], ears=True)
     configure(model)
     for title, names in (("The marks, this sound font", TEST), ("The marks, another sound font", TIM)):
         print(f"\n## {title}")
@@ -498,6 +535,9 @@ def main():
     s = reader(sub.add_parser("doubt", help="do the marks point at the wrong chords?"))
     s.add_argument("--at", default=None, help="thresholds with commas between (default: the reader's DOUBT)")
     s.add_argument("--ears", nargs="?", const="crema", metavar="MODEL", help="as for table")
+    s = reader(sub.add_parser("form", help="how much shorter the sections make a chart"))
+    s.add_argument("--ears", nargs="?", const="crema", metavar="MODEL", help="as for table")
+    s.add_argument("-v", "--verbose", action="store_true", help="a song's forms, read and true")
     s = reader(sub.add_parser("barlines", help="how the bar lines are missed, song by song"))
     s.add_argument("--hint", action="store_true")
     s = sub.add_parser("keys", help="the key rule, given the true chords")
@@ -561,6 +601,8 @@ def main():
         if rc.MODEL is None and not ears:
             sys.exit("the reader with nothing learnt marks nothing")
         return doubt(args.sets, ast.literal_eval(args.at + ",") if args.at else [rc.DOUBT], ears)
+    if args.what == "form":
+        return form(args.sets, ears, args.verbose)
     if args.what == "barlines":
         return barlines(args.sets, args.hint)
     if args.what == "beats":
