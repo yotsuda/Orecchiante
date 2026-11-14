@@ -65,7 +65,7 @@
 ## 次の一手
 
 **移植の (3): 規則を .NET に書く**（`read_chords.py` の `read()`・`decode()`・`find_meter`・`find_key`・`fold`・`find_form`・`lys()`）。
-2 セッションの見込み。移すのは `--ears` の道だけでよい（Claude の考え: 自作の拍追跡 `beat_grid`・`half_beats` と
+2 セッションの見込み。**ユーザー決定（2026-11-14）: 実際の曲で試すより先に、移植を完了させる。** 移すのは `--ears` の道だけでよい（Claude の考え: 自作の拍追跡 `beat_grid`・`half_beats` と
 `MODEL`（joblib）の道は合成曲用の比較対象で、配らない。Python に残す。`lines_of`・`said_in`・`use_ears()` の値段は要る）。
 
 - 1 セッション目: `dettato read <wav> --out <フォルダ>` が耳と特徴量をメモリの中でつなぎ、`read()` の返す dict を JSON で書く。
