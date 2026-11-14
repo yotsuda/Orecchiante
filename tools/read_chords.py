@@ -14,7 +14,10 @@ truth). The steps:
    a bar, and at a high price elsewhere; a bar line the chord does not change at costs a little.
    This is done for each length a bar may have, and the best path over all lengths is kept;
 3. meter: from where the onsets fall inside the bars (in fours, in threes, or in two threes);
-4. sections: runs of bars said again are written once (`section`) and the order they are played
+4. the two ends: the chart runs from the first bar that sounds a chord to the last; whole beats
+   of chord before the first bar line are a pickup, a short bar numbered 0 (`"pickup": beats`),
+   and the bar the recording ends in is written whole;
+   sections: runs of bars said again are written once (`section`) and the order they are played
    in after them (`form`);
 5. key: the one whose chords the reading is made of, for the spelling.
 
@@ -73,7 +76,16 @@ DOUBT_EARS = 0.84       # the mark, with those ears: three chords in ten on rwc-
 BAR_UNITS = (2, 3, 4, 6, 8, 12, 16)   # a bar, in half beats: the tracker may follow any level
 BAR_SECONDS = (0.9, 4.0)              # bars shorter or longer than this are not tried
 HINT_TOLERANCE = 0.15   # how far from the tempo told a bar's beats may be
-SLOW_TWO = 1.5          # a bar of two beats longer than this (beats slower than 80 a minute) is a bar of four
+QUIET = 0.1             # a unit this much quieter than the song's middle one is silence
+HUSH = 0.01             # ears: a unit this much quieter is silence (a fade-out is not: it is quiet and still music)
+NO_CHORD = 0.5         # ears: a unit whose "no chord" is likelier than this has no chord to name
+                        # (rwc-dev: 62% of the seconds before the first chord, 93% of those after the last,
+                        # 0.3% of the chords' own)
+CHORDED = 0.25          # a bar before the first chord or after the last is in the chart when this much of it sounds one
+RING_OUT = 0.2          # ears: a bar past the last one found and this much quieter than the bar before is the ring-out
+                        # (rwc-dev and seed1; asking for the same chord too leaves 11 such bars in seed1's 24 songs, this 4)
+PARTIAL = {1: "4", 2: "2", 3: "2.", 4: "1", 6: "1."}   # a pickup of so many quarters, as Lily#'s `partial` takes it
+SLOW_TWO = 1.5         # a bar of two beats longer than this (beats slower than 80 a minute) is a bar of four
                         # (chosen looking at seed7 and seed11, test sets, 2026-11-14)
 
 MAJOR_PROFILE = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88]
@@ -123,11 +135,15 @@ def use_ears():
     DOUBT = DOUBT_EARS
 
 
-def said_in(heard, edges):
+NONE = np.zeros((170, 1))   # the model's "N": no chord
+NONE[169] = 1.0
+
+
+def said_in(heard, edges, fold=FOLD):
     """What the model trained on recordings says of each unit: the log of its mean probability of
     each of the reader's chords between one edge (in seconds) and the next. A frame counts for as
-    much of it as lies inside the unit."""
-    p = np.exp(heard["logp"].astype(np.float64)) @ FOLD
+    much of it as lies inside the unit. (`fold=NONE`: of there being no chord.)"""
+    p = np.exp(heard["logp"].astype(np.float64)) @ fold
     step = float(heard["step"])
     run = np.vstack([np.zeros(p.shape[1]), np.cumsum(p, axis=0)])
     x = np.clip(np.asarray(edges, dtype=float) / step, 0.0, len(p))
@@ -549,24 +565,48 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
             if beats == 2 and not six and float(np.median(np.diff(marks))) * HOP / SR > SLOW_TWO:
                 beats = 4       # the tracker counted the halves of a bar of four
             units = 6 if six or beats == 3 else 2 * beats
-        edges = np.concatenate([np.linspace(a, b, units, endpoint=False) for a, b in zip(marks[:-1], marks[1:])]
-                               + [marks[-1:]])
+        # The music may begin before the first line found and go on after the last: the bars are
+        # carried on, as long as the first and the last, to both ends of the recording. What of
+        # them is in the chart is settled below, by what sounds there.
+        gaps = np.diff(marks)
+        if len(gaps) > 4 and gaps[0] < 0.8 * np.median(gaps[1:5]):    # a first line less than a bar before the second
+            marks, gaps = marks[1:], gaps[1:]                         # begins a pickup, not a bar: the units below reach it
+        before, after = float(np.median(gaps[:4])) / units, float(np.median(gaps[-5:-1] if len(gaps) > 1 else gaps)) / units
+        stopped = gaps[-1] < 0.75 * after * units   # the last line is where the beats stopped, not a bar's end
+        if stopped:
+            marks = np.append(marks[:-1], marks[-2] + after * units) if marks[-2] + after * units < len(oenv) else marks[:-1]
+        led = int(max(marks[0] - BEAT_LAG, 0.0) // before)
+        edges = np.concatenate([marks[0] - before * np.arange(led, 0, -1)]
+                               + [np.linspace(a, b, units, endpoint=False) for a, b in zip(marks[:-1], marks[1:])]
+                               + [marks[-1:], marks[-1] + after * np.arange(1, int((len(oenv) - 1 - marks[-1]) // after) + 1)])
         count = len(edges) - 1
+        carried = led + (len(gaps) - stopped) * units     # from this unit on, the bars are past the last one found
+        loud = np.array([float(over(rms, a, b)[0]) for a, b in zip(edges[:-1], edges[1:])])
     else:
+        led = carried = None
         tracked, period = beat_grid(oenv)
         edges = half_beats(tracked, period)
         loud = np.array([float(over(rms, a, b)[0]) for a, b in zip(edges[:-1], edges[1:])])
         count = len(loud)
-        while count > 8 and loud[count - 1] < 0.1 * np.median(loud):  # the ring-out is not music
+        while count > 8 and loud[count - 1] < QUIET * np.median(loud):  # the ring-out is not music
             count -= 1
-        edges = edges[:count + 1]
+        edges, loud = edges[:count + 1], loud[:count]
     seconds = np.diff(edges) * HOP / SR
+    # Where a chord may be. This reader's own hearing has no word for "no chord": what is far
+    # quieter than the song is silence. The ears have one, and a fade-out is quiet and still music.
+    # (Only what is a hundred times quieter is silence to them: their "no chord" comes half a second late
+    # after a silence, and before the music they hear its first chord already.)
+    # A unit is as loud as its middle frame here: its edges are late by the lag of the onsets, and
+    # the unit before the music has the first frames of it.
+    middle = np.array([float(over(rms, a, b, np.median)[0]) for a, b in zip(edges[:-1], edges[1:])])
+    sounds = middle >= (QUIET if heard is None else HUSH) * np.median(loud)
 
     treble = unit(np.array([over(chroma, a, b) for a, b in zip(edges[:-1], edges[1:])]).T)   # (12, units)
     low = unit(np.array([over(bass, a, b) for a, b in zip(edges[:-1], edges[1:])]).T)
     said = None
     if heard is not None:
         said = np.maximum(said_in(heard, (edges - BEAT_LAG) * HOP / SR), LOG_FLOOR)
+        sounds &= np.exp(said_in(heard, (edges - BEAT_LAG) * HOP / SR, NONE))[:, 0] <= NO_CHORD
         emit = EMIT_SCALE * said * seconds[:, None]
     elif MODEL is None:
         emit = ((TEMPLATES @ treble).T - COSTS) * seconds[:, None]
@@ -600,7 +640,7 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
     strange = False
     if lines is not None:
         length = units
-        _, path = decode(emit, heard, change, length, first=0)
+        _, path = decode(emit, heard, change, length, first=-led % length)
     else:
         path, length = search(emit, heard)
     if MODEL is not None and lines is None:
@@ -627,9 +667,46 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
     elif given and units == 6 and time == "4/4":
         time, tempo_note, tempo_beats = "3/4", "4", 3
 
+    # The bars of the chart: from the first that sounds a chord to the last. Silence before the
+    # music, a count-in, the ring-out and the bars carried on past them are not in it.
+    spans = list(zip(starts[:-1], starts[1:]))
+    if 0 < count - starts[-1] < length:             # the recording ends inside a bar
+        spans.append((starts[-1], count))
+        carried = starts[-1] if carried is None else carried
+    chorded = lambda span: float(np.sum(sounds[span[0]:span[1]])) >= CHORDED * length
+    while spans and not chorded(spans[0]):
+        spans.pop(0)
+    while spans and not chorded(spans[-1]):
+        spans.pop()
+    if not spans:
+        raise ValueError("no chord is heard")
+    # Past the last bar found, what dies away is the last chord ringing out, not one more bar
+    # (a song that fades out loses less from bar to bar; what the ears name there is often another chord).
+    while (carried is not None and len(spans) > 1 and spans[-1][0] >= carried
+           and loud[spans[-1][0]:spans[-1][1]].mean() < RING_OUT * loud[spans[-2][0]:spans[-2][1]].mean()):
+        spans.pop()
+    # A pickup: whole beats of chord that lead into the first bar, in a short bar of their own.
+    # A first bar that begins with nothing is one, not a bar.
+    per = length / tempo_beats                      # units in a beat
+    still = next((i for i in range(spans[0][1] - spans[0][0]) if sounds[spans[0][0] + i]), 0)
+    if len(spans) > 1 and still:
+        spans.pop(0)
+    t = one = spans[0][0]
+    while t > 0 and sounds[t - 1] and one - t + 1 < length:
+        t -= 1
+    if one - t == length - 1:                       # all of a bar but its first unit (unheard, or before the grid begins): the first bar
+        spans.insert(0, (max(one - length, 0), one))
+        t = one = spans[0][0]
+    upbeats = min(int((one - t) / per + 1e-6), tempo_beats - 1)
+    while upbeats and time != "6/8" and upbeats not in PARTIAL:
+        upbeats -= 1
+    led_in = max(one - int(np.ceil(upbeats * per - 1e-6)), t)
+
     stamp = lambda frame: round(max(float(frame) - BEAT_LAG, 0.0) * HOP / SR, 4)
-    bars, weighed = [], []
-    for n, (first, after) in enumerate(zip(starts[:-1], starts[1:])):
+    weighed = []
+
+    def spell(first, after):
+        """The chords of the units from `first` to `after`."""
         chords, t = [], first
         while t < after:
             end = t
@@ -678,7 +755,24 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
                     }
             chords.append(chord)
             t = end
-        bars.append({"bar": n + 1, "start": stamp(edges[first]), "end": stamp(edges[after]), "chords": chords})
+        return chords
+
+    bars = []
+    if upbeats and led_in < one:
+        bars.append({"bar": 0, "pickup": upbeats, "start": stamp(edges[led_in]), "end": stamp(edges[one]),
+                     "chords": spell(led_in, one)})
+    for n, (first, after) in enumerate(spans):
+        chords, end = spell(first, after), edges[after]
+        if after - first < length and first == 0 and len(spans) > 1:    # the first bar, from where it began
+            begun = max(edges[0] - (edges[1] - edges[0]), BEAT_LAG)
+            bars.append({"bar": n + 1, "start": stamp(begun), "end": stamp(end), "chords": chords})
+            chords[0]["start"] = stamp(begun)
+            continue
+        if after - first < length:                  # the bar the recording ends in is written whole
+            end = edges[first] + (edges[first] - edges[first - length] if first >= length
+                                  else length * (end - edges[first]) / (after - first))
+            chords[-1]["end"] = stamp(end)
+        bars.append({"bar": n + 1, "start": stamp(edges[first]), "end": stamp(end), "chords": chords})
 
     read_chords = [c for bar in bars for c in bar["chords"]]
     if ears and weighed:
@@ -689,7 +783,10 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
         for c, (mean_sure, last, agree) in zip(read_chords, weighed):
             z = a_sure * mean_sure + a_last * last + a_agree * agree + a_song * song + a_none
             c["sure"] = round(1.0 / (1.0 + float(np.exp(-z))), 3)
-    form = fold(bars, 2 if time == "6/8" else int(time.split("/")[0]), SAID_AGAIN)
+    form = fold([bar for bar in bars if not bar.get("pickup")], 2 if time == "6/8" else int(time.split("/")[0]), SAID_AGAIN)
+    if bars[0].get("pickup"):                       # a section of its own: Lily# lets only the first one open short
+        bars[0]["section"], bars[0]["barOfSection"] = "Pickup", 1
+        form = ["Pickup"] + form
     read_chords = [c for bar in bars for c in bar["chords"]]
     tonic, mode = find_key([(c["end"] - c["start"], c["symbol"][0], c["symbol"][1]) for c in read_chords])
     tonic_name = (MAJOR_KEYS if mode == "major" else MINOR_KEYS)[tonic]
@@ -721,7 +818,12 @@ def lys(result, title):
         """A bar as Lily# writes it: a chord on the beat it starts on, '.' where it goes on.
         `said`: the bar, each time it is played. A chord is marked when, over those times, the
         reader is less sure of it than DOUBT; the chord offered is the least sure time's."""
-        names = beat_names(said[0], beats)
+        short = said[0].get("pickup")
+        names = beat_names(said[0], short or beats)
+        if short and len(set(names)) > 1 and beats % short:
+            # Lily# fits a bar's slots to the meter's beats, a short bar's too: three beats of 4/4
+            # cannot be written a chord a beat. The chord that leads into the first bar stands for them.
+            names = names[-1:]
         marks = [n if i == 0 or n != names[i - 1] else "." for i, n in enumerate(names)]
         doubts = {}
         for name in set(names):
@@ -732,7 +834,7 @@ def lys(result, title):
         if all(m == "." for m in marks[1:]):
             return marks[0]
         half = beats // 2
-        if beats % 2 == 0 and all(m == "." for i, m in enumerate(marks) if i not in (0, half)):
+        if not short and beats % 2 == 0 and all(m == "." for i, m in enumerate(marks) if i not in (0, half)):
             return f"{marks[0]} {marks[half]}"
         return " ".join(marks)
 
@@ -748,7 +850,8 @@ def lys(result, title):
         "",
     ]
     form = result.get("form") or []
-    if len(set(form)) == len(form):     # nothing is said twice: the chart is the bars in their order
+    short = result["bars"][0].get("pickup")
+    if len(set(form)) == len(form) and not short:   # nothing is said twice: the chart is the bars in their order
         return "\n".join(head + ["chords harmony {", *rows([[bar] for bar in result["bars"]], "  "), "}", "",
                                  "score { chords harmony }", ""])
     sections = {}                       # name: its bars, each a list of the bar each time the section is played
@@ -759,7 +862,8 @@ def lys(result, title):
         of[bar["barOfSection"] - 1].append(bar)
     body = []
     for name, bars in sections.items():
-        body += [f"section {name} {{", "  chords harmony {", *rows(bars, "    "), "  }", "}", ""]
+        partial = [f"  partial {'4.' if result['time'] == '6/8' else PARTIAL[short]}"] if name == "Pickup" else []
+        body += [f"section {name} {{", *partial, "  chords harmony {", *rows(bars, "    "), "  }", "}", ""]
     return "\n".join(head + body + ["form { " + " ".join(form) + " }", "", "score { chords harmony }", ""])
 
 

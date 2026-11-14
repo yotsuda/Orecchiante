@@ -1,0 +1,48 @@
+// s41-010: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s41-010"
+tempo 4 = 110
+time 3/4
+key fis minor
+octave absolute
+
+part lead { clef treble  midiInstrument "trumpet" }
+part comp { clef treble  midiInstrument "electric guitar (clean)" }
+part bass { instrument bass  midiInstrument "electric bass (pick)" }
+part kit { clef percussion }
+
+phrase hats { hh4 hh hh | }
+phrase back { r4 sn sn | }
+phrase kick { bd4 r r | }
+phrase groove { drums { hats back kick } }
+
+section Pickup {
+  partial 2
+  chords harmony { C# | }
+  lead { gis''4@mf d''4 | }
+  comp { <gis cis' f'>2@f | }
+  bass { cis2@mp | }
+  kit { r2 | }
+}
+
+section A {
+  chords harmony { G#dim | C# | F#m | F#m | G#dim | C# | F#m/C# | F#m | }
+  lead { r2. | f''4@mf d''4 fis''4 | fis''4 a''4 gis''4 | a''2. | b''4 gis''8 a''8 b''4 | f''4 fis''4 gis''4 | r2. | fis''4 a''4 b''4 | }
+  comp { r8 <gis b d'>8@f r8 <gis b d'>8 r8 <gis b d'>8 | r8 <gis cis' f'>8 r8 <gis cis' f'>8 r8 <gis cis' f'>8 | r8 <a cis' fis'>8 r8 <a cis' fis'>8 r8 <a cis' fis'>8 | r8 <a cis' fis'>8 r8 <a cis' fis'>8 r8 <a cis' fis'>8 | r8 <gis b d'>8 r8 <gis b d'>8 r8 <gis b d'>8 | r8 <gis cis' f'>8 r8 <gis cis' f'>8 r8 <gis cis' f'>8 | r8 <a cis' fis'>8 r8 <a cis' fis'>8 r8 <a cis' fis'>8 | r8 <a cis' fis'>8 r8 <a cis' fis'>8 r8 <a cis' fis'>8 | }
+  bass { gis,8@mp gis,8 gis,8 gis,8 gis,8 gis,8 | cis8 cis8 cis8 cis8 cis8 cis8 | fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 | fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 | gis,8 gis,8 gis,8 gis,8 gis,8 gis,8 | cis8 cis8 cis8 cis8 cis8 cis8 | cis8 cis8 cis8 cis8 cis8 cis8 | fis,8 fis,8 fis,8 fis,8 fis,8 fis,8 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { F#m | E | D | C# | F#m | E | D | C# | }
+  lead { a''4@mf a''2 | b''4 b''4 gis''4 | fis''2. | f''2 fis''4 | fis''4 e''4 gis''4 | gis''2. | fis''2 e''4 | cis''2. | }
+  comp { <a cis' fis'>2.@f | <gis b e'>2. | <a d' fis'>2. | <gis cis' f'>2. | <a cis' fis'>2. | <gis b e'>2. | <a d' fis'>2. | <gis cis' f'>2. | }
+  bass { fis,2.@mp | e,2. | d2. | cis2. | fis,2. | e,2. | d2. | cis2. | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { Pickup A A B A }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass  staff kit }

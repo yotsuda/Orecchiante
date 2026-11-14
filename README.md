@@ -5,10 +5,13 @@ writes editable Lily# text (`.lys`), with the places it is unsure of marked for 
 
 *Dettato* is Italian for dictation, the exercise of writing down music as it is heard.
 
-**Status: a first reader, good on songs of its own making and not yet on recordings.**
-`tools/read_chords.py` writes a chord chart from a recording. On 100 studio recordings of pop
-songs it finds three chord roots in four and two bar lines in three, and marks most of what it
-reads as doubtful (see [Recordings](#recordings)).
+**Status: a chord chart of a recording, to be mended by hand; not yet a tool.**
+`tools/read_chords.py --ears` puts a chart together from what two published models hear (the
+beats and bar lines of Beat This!, the chords of crema). On 100 studio recordings of pop songs
+it has the tempo of 93, 93% of the bar lines, the chord's root right 87% of the time and its
+root and family 82%, and it marks a quarter of the chords for a look, among them seven in ten of
+the wrong ones (see [Recordings](#recordings)). The reader with nothing but its own hearing,
+which the work began with, is kept for comparison.
 
 Where the work is going, and where it stands: [docs/ROADMAP.md](docs/ROADMAP.md) and
 [docs/HANDOFF.md](docs/HANDOFF.md) (both in Japanese).
@@ -51,6 +54,13 @@ The `.lys` and the truth are committed; the recordings are not (the same seed an
 them again). `--lysc` or `DETTATO_LYSC` names Lily#'s compiler. `lysc wav` reads SoundFont 2
 (`.sf2`), not `.sf3`.
 
+`--pickup 0.5 --silence 3` makes songs that do not begin at 0 s on a bar line: every recording
+begins with up to three seconds of silence, and half the songs with a pickup, one to all but one
+of a bar's beats before the first bar line. The band plays the dominant there or, where there is
+a melody, the melody plays alone as often (nothing to name). In the truth a pickup is a bar
+numbered 0 with `"pickup": <beats>`; in the `.lys` it is a section of its own with `partial`.
+(`--held` and `--drift` are told of below.)
+
 These songs are simpler than recordings: a constant tempo, no pushed chords, no singing, no
 mixing. They say whether a reader works at all; how well it works is measured on recordings.
 
@@ -75,7 +85,7 @@ keeps each recording's features between runs (`scratch/feat-h31/`, seconds a son
 $env:DETTATO_LYSC = "<LilySharp>/LilySharp.Cli/bin/Release/net10.0/win-x64/lysc.exe"
 $env:DETTATO_SOUNDFONT_ALT = "<a second .sf2>"      # the tables of "another sound font"
 $env:DETTATO_SAMPLES = "<LilySharp>/samples"        # the table of "songs it was not made on"
-.venv/Scripts/python tools/measure.py make          # renders the sets that are missing (13 sets, 580 songs)
+.venv/Scripts/python tools/measure.py make          # renders the sets that are missing (15 sets, 628 songs)
 .venv/Scripts/python tools/train_chords.py data/synth/seed100 --features scratch/feat-h31 --out models/chords.joblib
 .venv/Scripts/python tools/measure.py all           # every table here, and every chart through lysc check
 ```
@@ -83,9 +93,10 @@ $env:DETTATO_SAMPLES = "<LilySharp>/samples"        # the table of "songs it was
 `measure.py sets` lists the sets and what each is for. One table, or one question, at a time:
 `table seed1 seed7 -v`, `table seed21 --hint`, `table seed1 --rules` (nothing learnt),
 `sweep seed100 TIGHTNESS=300,100`, `doubt seed1 seed7 seed11`, `barlines seed1`, `keys seed1`,
-`beats seed7 s7-005`, `table seed1 rwc-dev --ears`, `doubt rwc-dev --ears` and `form rwc-dev --ears` (with models trained on recordings, below).
-`all` takes about twelve minutes once the features are kept (the recordings below among them),
-and last passed all 1292 charts it wrote through `lysc check` (2026-11-14).
+`beats seed7 s7-005`, `table seed1 rwc-dev --ears`, `doubt rwc-dev --ears`, `form rwc-dev --ears` and
+`head seed41 rwc-dev --ears` (with models trained on recordings, below).
+`all` takes about fifteen minutes once the features are kept (the recordings below among them),
+and last passed all 1388 charts it wrote through `lysc check` (2026-11-14).
 
 ## Recordings
 
@@ -104,11 +115,11 @@ moved by more than a tenth of a point):
 |---|---|---|---|
 | Tempo (within 4%), songs | 62 | 60 | 64 |
 | Meter, songs | 94 | 94 | 94 |
-| Bar lines (within 70 ms), F | 65.0% | 66.1% | 67.6% |
-| Chord root, by time | 70.4% | 74.7% | 74.8% |
-| Root and family | 49.2% | 63.4% | 63.3% |
-| Root and quality | 31.2% | 44.4% | 44.2% |
-| The bass note too | 30.0% | 41.3% | 41.2% |
+| Bar lines (within 70 ms), F | 64.9% | 66.1% | 67.6% |
+| Chord root, by time | 70.6% | 74.9% | 75.0% |
+| Root and family | 49.4% | 63.5% | 63.5% |
+| Root and quality | 31.3% | 44.5% | 44.3% |
+| The bass note too | 30.1% | 41.3% | 41.3% |
 
 Against the songs made here (root 95 to 97%, bar lines 95 to 99%), that is the distance between
 a sound font and a record. Where it goes wrong, with the model:
@@ -156,11 +167,11 @@ same way (2026-11-14):
 |---|---|---|---|---|---|
 | Tempo (within 4%), songs | 60 | | 93 | 91 | |
 | Meter, songs | 94 | | 98 | 96 | |
-| Bar lines (within 70 ms), F | 66.1% | | 93.8% | 93.8% | |
-| Chord root, by time | 74.7% | 77.4% | 76.7% | 82.6% | 83.1% |
-| Root and family | 63.4% | 66.2% | 65.3% | 77.4% | 77.8% |
-| Root and quality | 44.4% | 46.3% | 45.5% | 64.3% | 64.6% |
-| The bass note too | 41.3% | 42.8% | 42.0% | 58.7% | 59.0% |
+| Bar lines (within 70 ms), F | 66.1% | | 93.4% | 93.8% | |
+| Chord root, by time | 74.9% | 77.1% | 76.8% | 82.6% | 83.1% |
+| Root and family | 63.5% | 66.0% | 65.4% | 77.4% | 77.8% |
+| Root and quality | 44.5% | 46.2% | 45.6% | 64.3% | 64.6% |
+| The bass note too | 41.3% | 42.6% | 42.1% | 58.7% | 59.0% |
 
 So the bar lines were the beat tracker's fault and are mended by a model that has heard
 recordings (66% to 94%), and right bar lines do little for this reader's chords (three points): what
@@ -170,8 +181,8 @@ with none of the reader's rules (a chord changes at a bar line, a doubt is marke
 third column the meter is read from Beat This!'s beats as told below. On
 `rwc-test` alone the two together have bar lines 94.4%, root 83.3%, root and family 78.3%.
 
-On the songs made here Beat This!'s bar lines are a little behind the reader's own (F 86 to 96%
-against 89 to 99% on the five sets).
+On the songs made here Beat This!'s bar lines are a little behind the reader's own (F 86 to 97%
+against 90 to 99% on the five sets).
 
 ```
 py -3.12 -m venv .venv-bt
@@ -200,12 +211,12 @@ ones chosen for BTC, and for crema other prices are within 0.3 of a point on `rw
 | Learnt from | not written down | Isophonics, Robbie Williams, USPop2002 (its README) | BTC's labels of 1,300 hours, then 420 songs of Isophonics, Billboard, RWC Pop and USPop (their paper) | the same | |
 | Parameters; the weights' file | 0.53 M; 6.4 MB (ONNX: 2.2 MB) | 3.0 M; 12 MB | 3.0 M; 36 MB | 2.3 M; 28 MB | |
 | A song on this CPU: the spectrum, the model | 0.5 s, 0.25 s | 1 to 3 s together | 0.3 s, 0.2 s | 0.3 s, 0.07 s | |
-| `rwc-dev`: root, root and family | 86.0%, 81.8% | 84.8%, 79.1% | 86.2%, 82.3% | 84.1%, 79.9% | 87.0%, 82.6% |
-| `rwc-test`: root, root and family | 87.0%, 81.9% | 86.4%, 81.3% | 87.3%, 82.7% | 85.7%, 81.4% | 88.4%, 83.5% |
-| `rwc-test`: root and quality | 68.8% | 67.6% | 70.4% | 68.7% | 70.9% |
-| The five sets made here: root | 93.2 to 95.9% | 94.1 to 97.5% | 93.9 to 97.4% | 93.4 to 97.3% | 94.6 to 97.0% |
-| The same: root and family | 88.4 to 93.0% | 91.0 to 94.7% | 90.6 to 95.3% | 88.8 to 93.3% | 91.1 to 94.9% |
-| The same: root and quality | 64.1 to 74.5% | 73.9 to 82.3% | 75.5 to 83.4% | 70.7 to 81.6% | 71.1 to 80.5% |
+| `rwc-dev`: root, root and family | 86.4%, 82.2% | 85.1%, 79.4% | 86.5%, 82.6% | 84.5%, 80.2% | 87.3%, 82.9% |
+| `rwc-test`: root, root and family | 87.2%, 82.1% | 86.7%, 81.6% | 87.5%, 83.0% | 86.0%, 81.7% | 88.7%, 83.8% |
+| `rwc-test`: root and quality | 69.1% | 67.8% | 70.7% | 69.0% | 71.2% |
+| The five sets made here: root | 93.1 to 96.0% | 94.1 to 97.6% | 93.9 to 97.5% | 93.5 to 97.4% | 94.6 to 97.1% |
+| The same: root and family | 88.4 to 93.1% | 91.0 to 94.8% | 90.7 to 95.4% | 88.9 to 93.3% | 91.2 to 95.1% |
+| The same: root and quality | 64.1 to 74.6% | 73.9 to 82.4% | 75.5 to 83.5% | 70.8 to 81.8% | 71.2 to 80.6% |
 
 **crema is the one the reader uses.** It is the only one whose author has said the weights are
 under the licence of the code; it is the smallest; and on recordings it reads the roots and the
@@ -270,11 +281,11 @@ the fold models', as above):
 |---|---|---|---|---|---|
 | Tempo (within 4%), songs | 46 of 50 | 47 of 50 | 93 | 91 | 93 |
 | Meter, songs | 49 of 50 | 49 of 50 | 98 | 96 | 98 |
-| Bar lines (within 70 ms), F | 93.3% | 94.4% | 93.8% | 93.8% | 93.8% |
-| Chord root, by time | 86.0% | 87.0% | 86.5% | 84.4% | 85.6% |
-| Root and family | 81.8% | 81.9% | 81.8% | 79.8% | 80.3% |
-| Root and quality | 67.7% | 68.8% | 68.3% | 66.5% | 66.8% |
-| The bass note too | 63.0% | 64.0% | 63.5% | 61.4% | 62.2% |
+| Bar lines (within 70 ms), F | 93.0% | 93.9% | 93.4% | 93.8% | 93.4% |
+| Chord root, by time | 86.4% | 87.2% | 86.8% | 84.4% | 85.9% |
+| Root and family | 82.2% | 82.1% | 82.2% | 79.8% | 80.6% |
+| Root and quality | 68.0% | 69.1% | 68.6% | 66.5% | 67.1% |
+| The bass note too | 63.3% | 64.3% | 63.8% | 61.4% | 62.4% |
 
 Two points of root and of family come from the rules (a chord lasts whole half beats and
 changes where bars say it may; with BTC's chords, three). The bass note is still this reader's
@@ -293,12 +304,12 @@ are BTC's still: fitted again on crema they catch a point more of `rwc-dev` and 
 
 | The marks, `--ears` | `rwc-dev` | `rwc-test` (counted only) | `rwc-p`, all 100 | with BTC's chords: `rwc-dev` (chosen on), `rwc-test` |
 |---|---|---|---|---|
-| Chords read | 7012 | 6772 | 13784 | 7276, 7041 |
-| Wrong in root or family | 15.0% | 16.1% | 15.6% | 19.2%, 18.1% |
-| Marked | 29.3% | 25.7% | 27.5% | 30.8%, 24.5% |
-| Of the chords wrong in root or family, marked | 76.7% | 70.0% | 73.3% | 80.7%, 65.3% |
-| Of the marked, wrong in root or family | 39.3% | 43.9% | 41.4% | 50.2%, 48.3% |
-| Marked and wrong so: the chord offered has the true root and family | 58.3% | 52.7% | 55.6% | 42.1%, 44.5% |
+| Chords read | 7034 | 6776 | 13810 | 7278, 7038 |
+| Wrong in root or family | 14.9% | 16.1% | 15.5% | 19.0%, 18.0% |
+| Marked | 29.3% | 25.7% | 27.5% | 30.1%, 24.0% |
+| Of the chords wrong in root or family, marked | 76.6% | 70.1% | 73.3% | 79.5%, 64.5% |
+| Of the marked, wrong in root or family | 39.1% | 43.8% | 41.2% | 50.2%, 48.2% |
+| Marked and wrong so: the chord offered has the true root and family | 58.5% | 53.2% | 55.9% | 42.4%, 44.9% |
 
 (The marks of this table are up to a point more than the line alone gives, 28.7% and 24.7% with crema:
 a chord two playings of a section disagree on is marked too, see "What is said again".)
@@ -321,15 +332,15 @@ On the songs made here (the beats are those of Beat This!'s model for use, `fina
 |---|---|---|---|---|---|
 | Tempo, songs of 24 | 22 | 20 | 21 | 18 | 23 |
 | Meter, songs of 24 | 22 | 22 | 22 | 21 | 23 |
-| Bar lines, F | 96.4% | 90.6% | 93.7% | 86.2% | 92.4% |
-| Chord root, by time | 95.1% | 93.2% | 94.4% | 94.7% | 95.9% |
-| Root and family | 91.5% | 88.4% | 92.3% | 92.9% | 93.0% |
-| Root and quality | 74.5% | 64.1% | 74.5% | 72.3% | 74.1% |
+| Bar lines, F | 96.6% | 90.7% | 94.0% | 86.1% | 92.6% |
+| Chord root, by time | 95.1% | 93.1% | 94.5% | 94.7% | 96.0% |
+| Root and family | 91.6% | 88.4% | 92.4% | 92.9% | 93.1% |
+| Root and quality | 74.5% | 64.1% | 74.6% | 72.3% | 74.1% |
 
 Beside the reader with its own model (below), the roots are behind by up to three
 points and the sevenths (root and quality) by far more (with BTC's chords: the roots and
 families within a point, the sevenths behind by up to eight): the reader's model was made on
-this very sound. The bar lines are behind on four of the five sets (90.6 to 93.7% against 97.2 to
+this very sound. The bar lines are behind on four of the five sets (90.7 to 94.0% against 97.6 to
 99.1% on `seed7`, `seed11` and `seed31`), and that is the beat tracker: where it follows a
 song at half its tempo it counts four slow beats to two true bars, and some waltzes it counts
 in four or in two. The rule for two slow beats was chosen looking at `seed7` and `seed11`.
@@ -367,13 +378,13 @@ would give):
 
 | The sections, `--ears` | `rwc-dev` (chosen on) | `rwc-test` (counted only) | `seed1`, `seed7`, `seed11` |
 |---|---|---|---|
-| Bars written, of the bars played | 61.9% | 68.1% | 69.2%, 68.8%, 70.3% |
+| Bars written, of the bars played | 61.9% | 68.3% | 69.0%, 68.6%, 69.5% |
 | The same, of the truth's chords | 69.5% | 76.4% | 54.6%, 54.5%, 53.7% |
-| Sections a song (of them a bar or two long) | 11.5 (2.4) | 9.0 (1.8) | 3.9 (0.8), 3.5 (0.8), 3.4 (0.7) |
+| Sections a song (of them a bar or two long) | 11.5 (2.3) | 9.0 (1.8) | 3.8 (0.7), 3.4 (0.8), 3.3 (0.6) |
 | The same, of the truth's chords | 9.2 (1.5) | 7.5 (1.5) | 2.1 (0.0), 2.0 (0.0), 2.0 (0.0) |
 
 So a chart of a recording is a third shorter. The 95 in 100 was chosen on `rwc-dev`, where the
-chords read as well with the sections as without (root 86.0%, root and family 81.8%, root and
+chords read as well with the sections as without (as counted then, before the two ends of a chart were read as told below: root 86.0%, root and family 81.8%, root and
 quality 67.7%, both ways); on `rwc-test` they cost a tenth of a point of the roots and the
 families and two tenths of the qualities, and on the songs made here the reader with its own
 model loses up to two tenths of its roots and families (the tables above and below are counted
@@ -411,6 +422,86 @@ playing as a second ear), and it was measured on `rwc-dev` before the sections w
 The model reads a passage the same way each time it comes, wrong alike; what differs between
 two playings is mostly the music.
 
+### How a chart begins and ends
+
+A recording does not begin on its first bar line and end on its last. Both readers now settle
+the two ends of a chart by what sounds there (2026-11-14):
+
+- **The bars reach both ends of the recording.** With `--ears` the bars were only those between
+  the first and the last bar line Beat This! found; now they are carried on, as long as the
+  first and the last, to 0 s and to the end. On `rwc-dev` 1.2% of the annotated chords' seconds
+  lay outside the bars read (4 s before the first line, 129 s after the last: the tracker stops
+  where the drums do, and the last chords are held); now 0.5% do (3 s and 50 s).
+- **A bar is in the chart when a chord sounds in it**, from the first bar a quarter of which
+  sounds a chord to the last such: silence before the music, a count-in and the ring-out are
+  left out. To this reader's own hearing a half beat a tenth as loud as the song's middle one is
+  silence; with `--ears` a hundredth (a fade-out is quiet and still music), or where crema's "no
+  chord" is likelier than not (it names 62% of the seconds before the first annotated chord of
+  `rwc-dev`, 93% of those after the last, 0.3% of the chords' own). Past the last bar Beat This!
+  found, a bar a fifth as loud as the one before it is the last chord ringing out, and no bar.
+- **A pickup is a short bar.** Whole beats of chord before the first bar line (a first bar that
+  begins with silence is such a one) are written as a section of their own, which is how Lily#
+  lets a piece open short; in the `.dettato.json` it is a bar numbered 0 with `"pickup": <beats>`:
+
+  ```
+  section Pickup {
+    partial 2
+    chords harmony {
+      G |
+    }
+  }
+  ...
+  form { Pickup A A }
+  ```
+
+- **The bar the recording ends in is written whole**, and so is a first bar whose first half
+  beat the beat grid began after (this reader's own grid may begin a little late: such a first
+  bar used to be lost, and its chord with it).
+
+Bars with sound and no chord before the first chord (a drum intro) are not in the chart yet.
+
+Counted on 2026-11-14 (`measure.py head seed41 rwc-dev rwc-test --ears`, `measure.py head seed41`).
+`seed41` is 24 songs made with `--pickup 0.5 --silence 3` and counted only; the constants were
+chosen on `head/seed141` (24 more such songs), `seed1` and `rwc-dev`:
+
+| | `seed41`, with the model | `seed41`, `--ears` | `rwc-dev`, `--ears` | `rwc-test`, `--ears` |
+|---|---|---|---|---|
+| The first bar line read is the true one, songs | 22 of 24 | 20 of 24 | 39 of 50 | 45 of 50 |
+| The last, songs | 23 of 24 | 20 of 24 | 24 of 50 | 13 of 50 |
+| Pickups with a chord, read as pickups of as many beats | 11 of 12 | 7 of 12 | | |
+| Pickups read where there is none with a chord, songs | 2 | 2 | 11 | 11 |
+| Chord read before the first true chord, seconds a song | 0.12 | 0.02 | 0.73 | 0.52 |
+| Chord read after the last true chord, seconds a song | 0.07 | 0.10 | 1.47 | 2.25 |
+| Tempo, meter, songs | 23, 24 | 20, 20 | 46, 49 | 47, 49 |
+| Bar lines, F | 97.7% | 91.1% | 93.0% | 93.9% |
+| Chord root; root and family | 96.6%; 92.1% | 94.4%; 90.5% | 86.4%; 82.2% | 87.2%; 82.1% |
+
+- On the songs made here both readers begin a chart where the music does, the reader with its
+  own model more surely (with `--ears` the bar lines are Beat This!'s). A pickup of a melody
+  alone, which the generator makes too, has no chord to name; the reader with its own model has
+  no word for "no chord" and names one there (on `head/seed141` both pickups it read "where
+  there is none" were such).
+- The recordings' truth says less about the ends than the songs' does: its bars begin at the
+  first annotated bar line and end a bar after the last, it has no pickups, and its chords are
+  cut to its bars. 1.6 s a song of the annotated chords of `rwc-dev` lie after the truth's last
+  bar, and a bar read there is right and is counted as a bar line too many; and the bars before
+  the first chord that the chart now leaves out are bar lines of the truth (20 of them on
+  `rwc-dev`, 14 with no chord). So the bar lines of the recordings fell by half a point (`rwc-dev` 93.3% to 93.0%, `rwc-test` 94.4% to
+  93.9%) while their chords rose (root 86.0% to 86.4% and 87.0% to 87.2%; root and family 81.8%
+  to 82.2% and 81.9% to 82.1%).
+- Not looked into: why the first bar line of eleven songs of `rwc-dev` is not the annotated one
+  (in some Beat This! counts a pickup where the annotation has a bar), and the songs of `seed41`
+  that either reader gets wrong.
+- This reader's own hearing, given the true bar lines of the recordings, lost three tenths of a
+  point of its roots for it (77.4% to 77.1%, the table of "What models trained on recordings
+  do"). Why was not looked into (a tenth as loud may not be silence in a recording that fades).
+  It is the reader kept for comparison, and was left so.
+
+One thing was found in Lily# on the way: a short bar's chords are fitted to the meter's beats,
+not to the bar's own, so three chords in a pickup of three beats of 4/4 are warned of (`lysc
+check`: "3 chord slot(s) in a 4/4 bar fit no beat"). The reader writes the last chord of such a
+pickup alone.
+
 ### On the songs made here, nothing learnt
 
 
@@ -422,12 +513,12 @@ On three sets of 24 songs (2026-11-14). The reader's constants were chosen on `s
 | Tempo (within 4%), songs | 22 of 24 | 22 of 24 | 22 of 24 |
 | Meter, songs | 22 of 24 | 23 of 24 | 23 of 24 |
 | Key, songs | 15 of 24 | 15 of 24 | 16 of 24 |
-| Key signature, songs | 21 of 24 | 20 of 24 | 24 of 24 |
-| Bar lines (within 70 ms), F | 92.9% | 90.0% | 97.4% |
-| Chord root, by time | 87.1% | 83.1% | 90.3% |
-| Root and family (major, minor, suspended, diminished) | 75.5% | 73.2% | 83.4% |
-| Root and quality (sevenths told apart) | 61.3% | 53.9% | 72.4% |
-| The bass note too | 57.8% | 48.7% | 69.7% |
+| Key signature, songs | 21 of 24 | 19 of 24 | 24 of 24 |
+| Bar lines (within 70 ms), F | 93.1% | 90.2% | 97.4% |
+| Chord root, by time | 87.5% | 83.6% | 90.3% |
+| Root and family (major, minor, suspended, diminished) | 75.9% | 73.7% | 83.4% |
+| Root and quality (sevenths told apart) | 61.6% | 54.4% | 72.4% |
+| The bass note too | 58.1% | 49.2% | 69.7% |
 
 The bar lines owe several points to one mend. Where the accompaniment moves to the off-beats,
 the beat tracker follows it there, sliding half a beat over a few beats, and every bar line
@@ -465,21 +556,21 @@ Learnt from the 200 songs of seed 100 (none of them in the three sets; its price
 | Meter, songs | 23 of 24 | 23 of 24 | 23 of 24 |
 | Key, songs | 18 of 24 | 19 of 24 | 16 of 24 |
 | Key signature, songs | 23 of 24 | 23 of 24 | 23 of 24 |
-| Bar lines (within 70 ms), F | 94.7% | 97.4% | 99.1% |
-| Chord root, by time | 95.1% | 95.4% | 97.2% |
-| Root and family | 90.5% | 92.4% | 96.4% |
-| Root and quality | 83.0% | 73.7% | 89.7% |
-| The bass note too | 77.5% | 65.4% | 85.5% |
+| Bar lines (within 70 ms), F | 95.0% | 97.6% | 99.1% |
+| Chord root, by time | 95.6% | 96.0% | 97.2% |
+| Root and family | 91.0% | 93.0% | 96.4% |
+| Root and quality | 83.3% | 74.2% | 89.7% |
+| The bass note too | 77.8% | 66.0% | 85.5% |
 
 The same 72 songs played through a sound font the model never heard (TimGM6mb, 6 MB, against
 MuseScore General's 215 MB) read as well, so it is not the one sound font the model leans on:
 
 | Another sound font | `seed1` | `seed7` | `seed11` |
 |---|---|---|---|
-| Chord root, nothing learnt → with the model | 85.9 → 95.4% | 87.6 → 97.0% | 87.7 → 96.2% |
-| Root and family | 78.4 → 92.6% | 83.3 → 94.2% | 83.9 → 94.8% |
-| Root and quality | 60.4 → 80.6% | 66.4 → 78.7% | 74.7 → 84.7% |
-| Bar lines, F | 84.2 → 99.7% | 93.3 → 99.6% | 79.5 → 90.2% |
+| Chord root, nothing learnt → with the model | 86.2 → 95.8% | 88.0 → 97.5% | 88.1 → 96.4% |
+| Root and family | 78.7 → 93.1% | 83.7 → 94.7% | 84.2 → 95.1% |
+| Root and quality | 60.8 → 81.1% | 66.8 → 79.0% | 74.9 → 84.9% |
+| Bar lines, F | 84.1 → 99.7% | 93.4 → 99.7% | 79.3 → 89.9% |
 | Key signature, songs | 24 of 24 | 23 of 24 | 23 of 24 |
 
 The model has still only heard this project's own songs (their patterns, no singing, no mixing),
@@ -517,18 +608,18 @@ How sure is sure was chosen on 60 songs outside the three sets, and counted on t
 
 | The marks, `seed1`, `seed7` and `seed11` together | this sound font | another |
 |---|---|---|
-| Chords read | 2617 | 2577 |
-| Wrong in root or family | 5.8% | 4.9% |
-| Marked | 24.4% | 19.2% |
-| Of the chords wrong in root or family, marked | 78.9% | 87.4% |
-| Of the marked, wrong in root or family | 18.8% | 22.4% |
-| Of the marked, wrong at all (sevenths too) | 34.6% | 33.5% |
+| Chords read | 2627 | 2588 |
+| Wrong in root or family | 5.9% | 4.9% |
+| Marked | 24.4% | 19.3% |
+| Of the chords wrong in root or family, marked | 79.2% | 87.5% |
+| Of the marked, wrong in root or family | 19.0% | 22.4% |
+| Of the marked, wrong at all (sevenths too) | 34.9% | 33.5% |
 
 So about one chord in five asks for a look, and four in five of the wrong roots and families are
 among them. (Two marks in a hundred chords are not the model's doubt: they are chords two
 playings of a section disagree on, marked since the sections were written; without them 22.9%
 and 17.2% were marked, and as many of the wrong ones caught.) The chord offered in the mark is
-the true one for under half of the marked chords that are wrong (26.7%, 39.2%): it is a hint,
+the true one for under half of the marked chords that are wrong (26.8%, 38.9%): it is a hint,
 not a correction. The reader with nothing learnt
 marks nothing.
 
@@ -537,7 +628,7 @@ marks nothing.
 `gen_chords.py --held 0.5` makes half of a song's sections hold each chord for two bars
 (`data/synth/seed21`, 24 songs). Left alone, the reader with the model takes the tempo of 16 of
 them right and reads the faster ones at half their tempo, with bars twice as long; the chords are
-read as well as ever (root 97.9%). What is heard does not settle it: a fast song whose chords
+read as well as ever (root 98.8%). What is heard does not settle it: a fast song whose chords
 last two bars and a slow one whose chords last one sound the same bar by bar. A price on long
 bars was tried and thrown away (it mends these songs and breaks as many of the others).
 
@@ -547,11 +638,11 @@ three or four such beats.
 | `seed21`, with the model | left alone | told the tempo |
 |---|---|---|
 | Tempo (within 4%), songs | 16 of 24 | 22 of 24 |
-| Bar lines, F | 89.2% | 96.5% |
-| Chord root, by time | 97.9% | 97.9% |
+| Bar lines, F | 89.6% | 96.8% |
+| Chord root, by time | 98.8% | 98.6% |
 
 Told the true tempo, the three sets above read the same or a little better (`seed1`: 24 tempi
-of 24, bar lines 96.7%; `seed7` and `seed11` unchanged).
+of 24, bar lines 96.9%; `seed7` and `seed11` unchanged).
 
 ### Songs it was not made on
 
@@ -574,7 +665,7 @@ piano. They are short (8 to 16 bars, 48 bars in all).
 - Left to find the bars itself, the model did worse than the rules here (two songs at twice
   their tempo, Harbour Lights in 6/8 with no bar line right): its opinion changes from half
   beat to half beat on sounds it does not know, and the bar lines followed it.
-- But it says so itself: it doubts 19 of 19, 19 of 19, 8 of 8 and 9 of 13 of the chords it reads
+- But it says so itself: it doubts 20 of 20, 19 of 19, 9 of 9 and 9 of 13 of the chords it reads
   in these four songs (2 of 29 in a song of `seed11`). So when the model doubts more than half
   of the half beats, the bars are the ones the templates find and the model only names the
   chords inside them; that is the column above, and the reader prints "this is not music the
@@ -595,8 +686,8 @@ were also made with a tempo that does not move, and with steps of five in a hund
 | `seed31`, with the model | still | steps of 2% | steps of 5% |
 |---|---|---|---|
 | Tempo (within 4%), songs | 24 of 24 | 24 of 24 | 20 of 24 |
-| Bar lines, F | 98.5% | 97.2% | 80.7% |
-| Chord root, by time | 97.3% | 97.5% | 94.6% |
+| Bar lines, F | 98.9% | 97.6% | 80.9% |
+| Chord root, by time | 98.2% | 98.4% | 95.9% |
 
 A tempo that wanders as a band's does costs about a point of bar lines. One that moves by a
 seventh is where the reader begins to lose them; the chords hold longer than the bar lines.

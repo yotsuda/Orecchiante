@@ -1,0 +1,39 @@
+// s41-021: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s41-021"
+tempo 4 = 120
+time 4/4
+key e minor
+octave absolute
+
+part lead { clef treble  midiInstrument "flute" }
+part comp { clef treble  midiInstrument "electric guitar (clean)" }
+part bass { instrument bass  midiInstrument "acoustic bass" }
+part kit { clef percussion }
+
+phrase hats { hh8 8 8 8 8 8 8 8 | }
+phrase back { r4 sn r sn | }
+phrase kick { bd4 bd bd bd | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Em7 | Am7/E | B7 | Em7 | Em E7 | Am | B7 B7 | Em | }
+  lead { e''2@mp d''4 e''4 | g''8 e''8 fis''4 e''4 d''4 | dis''4 fis''4 e''4 d''4 | d''2 d''2 | e''1 | c''4 b'4 a'4 g'4 | a'2 a'4 b'4 | g'2 b'2 | }
+  comp { <g b d' e'>1@ff | <g a c' e'>1 | <a b dis' fis'>1 | <g b d' e'>1 | <g b e'>2 <gis b d' e'>2 | <a c' e'>1 | <a b dis' fis'>2 <a b dis' fis'>2 | <g b e'>1 | }
+  bass { e,4@mp b,4 e,4 b,4 | e,4 a,4 e,4 a,4 | b,4 fis,4 b,4 fis,4 | e,4 b,4 e,4 b,4 | e,4 b,4 e,4 b,4 | a,4 e,4 a,4 e,4 | b,4 fis,4 b,4 fis,4 | e,4 b,4 e,4 b,4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { Em | G | D7 E7 | Am7 B7 | Em D7 | Gmaj7 | D7 E7 | Am7 | }
+  lead { b'8@mp c''8 b'4 d''4 e''4 | d''4 e''4 d''4 b'4 | a'4 g'4 gis'2 | g'4. g'8 b'4 a'4 | r1 | r1 | c''2 d''2 | c''2 a'4 g'4 | }
+  comp { g8@ff b8 e'8 g8 b8 e'8 g8 b8 | g8 b8 d'8 g8 b8 d'8 g8 b8 | a8 c'8 d'8 fis'8 gis8 b8 d'8 e'8 | g8 a8 c'8 e'8 a8 b8 dis'8 fis'8 | g8 b8 e'8 g8 a8 c'8 d'8 fis'8 | g8 b8 d'8 fis'8 g8 b8 d'8 fis'8 | a8 c'8 d'8 fis'8 gis8 b8 d'8 e'8 | g8 a8 c'8 e'8 g8 a8 c'8 e'8 | }
+  bass { e,8@mp e,8 e,8 e,8 e,8 e,8 e,8 e,8 | g,8 g,8 g,8 g,8 g,8 g,8 g,8 g,8 | d8 d8 d8 d8 e,8 e,8 e,8 e,8 | a,8 a,8 a,8 a,8 b,8 b,8 b,8 b,8 | e,8 e,8 e,8 e,8 d8 d8 d8 d8 | g,8 g,8 g,8 g,8 g,8 g,8 g,8 g,8 | d8 d8 d8 d8 e,8 e,8 e,8 e,8 | a,8 a,8 a,8 a,8 a,8 a,8 a,8 a,8 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A B B A }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass  staff kit }

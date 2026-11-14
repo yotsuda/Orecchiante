@@ -1,0 +1,44 @@
+// s41-014: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s41-014"
+tempo 4 = 89
+time 4/4
+key f major
+octave absolute
+
+part comp { clef treble  midiInstrument "electric piano 2" }
+part bass { instrument bass  midiInstrument "electric bass (finger)" }
+part kit { clef percussion }
+
+phrase hats { hh8 8 8 8 8 8 8 8 | }
+phrase back { r4 sn r sn | }
+phrase kick { bd4 r8 bd bd4 r | }
+phrase groove { drums { hats back kick } }
+
+section Pickup {
+  partial 2
+  chords harmony { C7 | }
+  comp { <g bes c' e'>2@f | }
+  bass { c2@p | }
+  kit { r2 | }
+}
+
+section A {
+  chords harmony { F | Am | Dm | Bbmaj7 | F | Am | Dm | Bbmaj7 | }
+  comp { <a c' f'>1@f | <a c' e'>1 | <a d' f'>1 | <a bes d' f'>1 | <a c' f'>1 | <a c' e'>1 | <a d' f'>1 | <a bes d' f'>1 | }
+  bass { f,8@p f,8 f,8 f,8 f,8 f,8 f,8 f,8 | a,8 a,8 a,8 a,8 a,8 a,8 a,8 a,8 | d8 d8 d8 d8 d8 d8 d8 d8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | a,8 a,8 a,8 a,8 a,8 a,8 a,8 a,8 | d8 d8 d8 d8 d8 d8 d8 d8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { F | Bbmaj7 | Gm7 | C | Fmaj7 | Bb | Gm | C7 | }
+  comp { a8@f c'8 f'8 a8 c'8 f'8 a8 c'8 | a8 bes8 d'8 f'8 a8 bes8 d'8 f'8 | g8 bes8 d'8 f'8 g8 bes8 d'8 f'8 | g8 c'8 e'8 g8 c'8 e'8 g8 c'8 | a8 c'8 e'8 f'8 a8 c'8 e'8 f'8 | bes8 d'8 f'8 bes8 d'8 f'8 bes8 d'8 | g8 bes8 d'8 g8 bes8 d'8 g8 bes8 | g8 bes8 c'8 e'8 g8 bes8 c'8 e'8 | }
+  bass { f,8@p f,8 f,8 f,8 f,8 f,8 f,8 f,8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | g,8 g,8 g,8 g,8 g,8 g,8 g,8 g,8 | c8 c8 c8 c8 c8 c8 c8 c8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | g,8 g,8 g,8 g,8 g,8 g,8 g,8 g,8 | c8 c8 c8 c8 c8 c8 c8 c8 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { Pickup A A B A }
+
+score { chords harmony }
+
+score band { staff comp  staff bass  staff kit }

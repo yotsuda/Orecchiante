@@ -1,0 +1,39 @@
+// s41-018: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s41-018"
+tempo 4 = 76
+time 4/4
+key f minor
+octave absolute
+
+part lead { clef treble  midiInstrument "trumpet" }
+part comp { clef treble  midiInstrument "acoustic grand" }
+part bass { instrument bass  midiInstrument "electric bass (pick)" }
+
+section Pickup {
+  partial 2.
+  chords harmony { C | }
+  lead { g''4@mf f''4 c''4 | }
+  comp { <g c' e'>2.@fff | }
+  bass { c2.@p | }
+}
+
+section A {
+  chords harmony { Bbm | Eb7 | Abmaj7 | Db | Fm7 | Eb7 Ab7 | Db/F | C F7 | }
+  lead { bes'2@mf c''4 ees''4 | ees''4 c''4 aes'4 g'4 | aes'1 | des''2 c''4 des''4 | c''4. bes'8 c''4 des''4 | ees''1 | r1 | e''4 f''4 f''2 | }
+  comp { <bes des' f'>1@fff | <g bes des' ees'>1 | <g aes c' ees'>1 | <aes des' f'>1 | <aes c' ees' f'>1 | <g bes des' ees'>2 <aes c' ees' ges'>2 | <aes des' f'>1 | <g c' e'>2 <a c' ees' f'>2 | }
+  bass { bes,8@p bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | ees8 ees8 ees8 ees8 ees8 ees8 ees8 ees8 | aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 | des8 des8 des8 des8 des8 des8 des8 des8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | ees8 ees8 ees8 ees8 aes,8 aes,8 aes,8 aes,8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | c8 c8 c8 c8 f,8 f,8 f,8 f,8 | }
+}
+
+section B {
+  chords harmony { Bbm7 | Eb7 | Abmaj7 | Dbmaj7 | Fm7 | Db | Bbm | C7 | }
+  lead { aes''4@mf g''4 f''4 g''4 | r1 | g''4 bes''4 c'''4 c'''4 | aes''2 c'''4 c'''4 | c'''4. c'''8 c'''4 bes''4 | aes''2 c'''4 c'''4 | bes''2 f''2 | g''4. aes''8 f''4 g''4 | }
+  comp { r8 <aes bes des' f'>8@fff r8 <aes bes des' f'>8 r8 <aes bes des' f'>8 r8 <aes bes des' f'>8 | r8 <g bes des' ees'>8 r8 <g bes des' ees'>8 r8 <g bes des' ees'>8 r8 <g bes des' ees'>8 | r8 <g aes c' ees'>8 r8 <g aes c' ees'>8 r8 <g aes c' ees'>8 r8 <g aes c' ees'>8 | r8 <aes c' des' f'>8 r8 <aes c' des' f'>8 r8 <aes c' des' f'>8 r8 <aes c' des' f'>8 | r8 <aes c' ees' f'>8 r8 <aes c' ees' f'>8 r8 <aes c' ees' f'>8 r8 <aes c' ees' f'>8 | r8 <aes des' f'>8 r8 <aes des' f'>8 r8 <aes des' f'>8 r8 <aes des' f'>8 | r8 <bes des' f'>8 r8 <bes des' f'>8 r8 <bes des' f'>8 r8 <bes des' f'>8 | r8 <g bes c' e'>8 r8 <g bes c' e'>8 r8 <g bes c' e'>8 r8 <g bes c' e'>8 | }
+  bass { bes,1@p | ees1 | aes,1 | des1 | f,1 | des1 | bes,1 | c1 | }
+}
+
+form { Pickup A A B }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass }

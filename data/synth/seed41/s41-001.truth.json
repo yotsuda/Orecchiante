@@ -1,0 +1,441 @@
+{
+  "id": "s41-001",
+  "source": "s41-001.lys",
+  "audio": "s41-001-band.wav",
+  "tempo": {
+    "note": "4",
+    "bpm": 116
+  },
+  "time": "4/4",
+  "key": "F# major",
+  "form": [
+    "Pickup",
+    "A",
+    "A",
+    "B"
+  ],
+  "silence": 0.329,
+  "band": {
+    "comp": "drawbar organ",
+    "bass": "electric bass (pick)",
+    "lead": null,
+    "drums": true,
+    "levels": {
+      "lead": "mp",
+      "comp": "ff",
+      "bass": "mp"
+    },
+    "styles": {
+      "A": {
+        "comp": "pulse",
+        "bass": "eighths",
+        "held": false,
+        "bpm": null
+      },
+      "B": {
+        "comp": "sustain",
+        "bass": "root",
+        "held": false,
+        "bpm": null
+      }
+    }
+  },
+  "musicSeconds": 51.5359,
+  "chordSeconds": 51.2069,
+  "bars": [
+    {
+      "bar": 0,
+      "pickup": 3,
+      "section": "Pickup",
+      "barOfSection": 1,
+      "start": 0.329,
+      "end": 1.8807,
+      "chords": [
+        {
+          "start": 0.329,
+          "end": 1.8807,
+          "symbol": "C#7"
+        }
+      ]
+    },
+    {
+      "bar": 1,
+      "section": "A",
+      "barOfSection": 1,
+      "start": 1.8807,
+      "end": 3.9497,
+      "chords": [
+        {
+          "start": 1.8807,
+          "end": 2.9152,
+          "symbol": "F#maj7"
+        },
+        {
+          "start": 2.9152,
+          "end": 3.9497,
+          "symbol": "F#7"
+        }
+      ]
+    },
+    {
+      "bar": 2,
+      "section": "A",
+      "barOfSection": 2,
+      "start": 3.9497,
+      "end": 6.0187,
+      "chords": [
+        {
+          "start": 3.9497,
+          "end": 6.0187,
+          "symbol": "Bmaj7"
+        }
+      ]
+    },
+    {
+      "bar": 3,
+      "section": "A",
+      "barOfSection": 3,
+      "start": 6.0187,
+      "end": 8.0876,
+      "chords": [
+        {
+          "start": 6.0187,
+          "end": 7.0531,
+          "symbol": "G#m7"
+        },
+        {
+          "start": 7.0531,
+          "end": 8.0876,
+          "symbol": "G#7"
+        }
+      ]
+    },
+    {
+      "bar": 4,
+      "section": "A",
+      "barOfSection": 4,
+      "start": 8.0876,
+      "end": 10.1566,
+      "chords": [
+        {
+          "start": 8.0876,
+          "end": 10.1566,
+          "symbol": "C#"
+        }
+      ]
+    },
+    {
+      "bar": 5,
+      "section": "A",
+      "barOfSection": 5,
+      "start": 10.1566,
+      "end": 12.2256,
+      "chords": [
+        {
+          "start": 10.1566,
+          "end": 11.1911,
+          "symbol": "F#maj7"
+        },
+        {
+          "start": 11.1911,
+          "end": 12.2256,
+          "symbol": "F#7"
+        }
+      ]
+    },
+    {
+      "bar": 6,
+      "section": "A",
+      "barOfSection": 6,
+      "start": 12.2256,
+      "end": 14.2945,
+      "chords": [
+        {
+          "start": 12.2256,
+          "end": 14.2945,
+          "symbol": "B/D#"
+        }
+      ]
+    },
+    {
+      "bar": 7,
+      "section": "A",
+      "barOfSection": 7,
+      "start": 14.2945,
+      "end": 16.3635,
+      "chords": [
+        {
+          "start": 14.2945,
+          "end": 16.3635,
+          "symbol": "G#m7"
+        }
+      ]
+    },
+    {
+      "bar": 8,
+      "section": "A",
+      "barOfSection": 8,
+      "start": 16.3635,
+      "end": 18.4324,
+      "chords": [
+        {
+          "start": 16.3635,
+          "end": 18.4324,
+          "symbol": "C#sus4"
+        }
+      ]
+    },
+    {
+      "bar": 9,
+      "section": "A",
+      "barOfSection": 1,
+      "start": 18.4324,
+      "end": 20.5014,
+      "chords": [
+        {
+          "start": 18.4324,
+          "end": 19.4669,
+          "symbol": "F#maj7"
+        },
+        {
+          "start": 19.4669,
+          "end": 20.5014,
+          "symbol": "F#7"
+        }
+      ]
+    },
+    {
+      "bar": 10,
+      "section": "A",
+      "barOfSection": 2,
+      "start": 20.5014,
+      "end": 22.5704,
+      "chords": [
+        {
+          "start": 20.5014,
+          "end": 22.5704,
+          "symbol": "Bmaj7"
+        }
+      ]
+    },
+    {
+      "bar": 11,
+      "section": "A",
+      "barOfSection": 3,
+      "start": 22.5704,
+      "end": 24.6393,
+      "chords": [
+        {
+          "start": 22.5704,
+          "end": 23.6049,
+          "symbol": "G#m7"
+        },
+        {
+          "start": 23.6049,
+          "end": 24.6393,
+          "symbol": "G#7"
+        }
+      ]
+    },
+    {
+      "bar": 12,
+      "section": "A",
+      "barOfSection": 4,
+      "start": 24.6393,
+      "end": 26.7083,
+      "chords": [
+        {
+          "start": 24.6393,
+          "end": 26.7083,
+          "symbol": "C#"
+        }
+      ]
+    },
+    {
+      "bar": 13,
+      "section": "A",
+      "barOfSection": 5,
+      "start": 26.7083,
+      "end": 28.7773,
+      "chords": [
+        {
+          "start": 26.7083,
+          "end": 27.7428,
+          "symbol": "F#maj7"
+        },
+        {
+          "start": 27.7428,
+          "end": 28.7773,
+          "symbol": "F#7"
+        }
+      ]
+    },
+    {
+      "bar": 14,
+      "section": "A",
+      "barOfSection": 6,
+      "start": 28.7773,
+      "end": 30.8462,
+      "chords": [
+        {
+          "start": 28.7773,
+          "end": 30.8462,
+          "symbol": "B/D#"
+        }
+      ]
+    },
+    {
+      "bar": 15,
+      "section": "A",
+      "barOfSection": 7,
+      "start": 30.8462,
+      "end": 32.9152,
+      "chords": [
+        {
+          "start": 30.8462,
+          "end": 32.9152,
+          "symbol": "G#m7"
+        }
+      ]
+    },
+    {
+      "bar": 16,
+      "section": "A",
+      "barOfSection": 8,
+      "start": 32.9152,
+      "end": 34.9842,
+      "chords": [
+        {
+          "start": 32.9152,
+          "end": 34.9842,
+          "symbol": "C#sus4"
+        }
+      ]
+    },
+    {
+      "bar": 17,
+      "section": "B",
+      "barOfSection": 1,
+      "start": 34.9842,
+      "end": 37.0531,
+      "chords": [
+        {
+          "start": 34.9842,
+          "end": 36.0187,
+          "symbol": "F#maj7"
+        },
+        {
+          "start": 36.0187,
+          "end": 37.0531,
+          "symbol": "E#7"
+        }
+      ]
+    },
+    {
+      "bar": 18,
+      "section": "B",
+      "barOfSection": 2,
+      "start": 37.0531,
+      "end": 39.1221,
+      "chords": [
+        {
+          "start": 37.0531,
+          "end": 39.1221,
+          "symbol": "A#m7"
+        }
+      ]
+    },
+    {
+      "bar": 19,
+      "section": "B",
+      "barOfSection": 3,
+      "start": 39.1221,
+      "end": 41.1911,
+      "chords": [
+        {
+          "start": 39.1221,
+          "end": 41.1911,
+          "symbol": "B"
+        }
+      ]
+    },
+    {
+      "bar": 20,
+      "section": "B",
+      "barOfSection": 4,
+      "start": 41.1911,
+      "end": 43.26,
+      "chords": [
+        {
+          "start": 41.1911,
+          "end": 42.2256,
+          "symbol": "C#7"
+        },
+        {
+          "start": 42.2256,
+          "end": 43.26,
+          "symbol": "D#7"
+        }
+      ]
+    },
+    {
+      "bar": 21,
+      "section": "B",
+      "barOfSection": 5,
+      "start": 43.26,
+      "end": 45.329,
+      "chords": [
+        {
+          "start": 43.26,
+          "end": 45.329,
+          "symbol": "G#m7"
+        }
+      ]
+    },
+    {
+      "bar": 22,
+      "section": "B",
+      "barOfSection": 6,
+      "start": 45.329,
+      "end": 47.398,
+      "chords": [
+        {
+          "start": 45.329,
+          "end": 47.398,
+          "symbol": "C#7"
+        }
+      ]
+    },
+    {
+      "bar": 23,
+      "section": "B",
+      "barOfSection": 7,
+      "start": 47.398,
+      "end": 49.4669,
+      "chords": [
+        {
+          "start": 47.398,
+          "end": 49.4669,
+          "symbol": "F#"
+        }
+      ]
+    },
+    {
+      "bar": 24,
+      "section": "B",
+      "barOfSection": 8,
+      "start": 49.4669,
+      "end": 51.5359,
+      "chords": [
+        {
+          "start": 49.4669,
+          "end": 51.5359,
+          "symbol": "F#maj7"
+        }
+      ]
+    }
+  ],
+  "audioSeconds": 53.5359,
+  "firstSound": 0.3319,
+  "soundfont": "MuseScore_General.sf2"
+}

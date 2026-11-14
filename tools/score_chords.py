@@ -68,8 +68,9 @@ def score(truth, reading):
     else:                                    # a truth with no key (annotated recordings): not counted
         out["key"] = out["signature"] = None
 
-    true_lines = [b["start"] for b in truth["bars"]]
-    read_lines = [b["start"] for b in reading["bars"]]
+    # a pickup is a short bar before the first bar line: its chords are counted, its start is no line
+    true_lines = [b["start"] for b in truth["bars"] if not b.get("pickup")]
+    read_lines = [b["start"] for b in reading["bars"] if not b.get("pickup")]
     found, used = 0, set()
     for t in true_lines:
         near = [(abs(r - t), i) for i, r in enumerate(read_lines) if i not in used and abs(r - t) <= BAR_TOLERANCE]

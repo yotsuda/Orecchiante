@@ -1,0 +1,43 @@
+// s41-003: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s41-003"
+tempo 4 = 162
+time 4/4
+key g major
+octave absolute
+
+part comp { clef treble  midiInstrument "overdriven guitar" }
+part bass { instrument bass  midiInstrument "fretless bass" }
+part kit { clef percussion }
+
+phrase hats { hh4 hh hh hh | }
+phrase back { r2 sn4 r | }
+phrase kick { bd4 r r8 bd r4 | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Gmaj7 | Cmaj7 | D7 | Cmaj7 | Am7 | D7 | Gmaj7 | Gmaj7 | }
+  comp { <g b d' fis'>4@fff <g b d' fis'>4 <g b d' fis'>4 <g b d' fis'>4 | <g b c' e'>4 <g b c' e'>4 <g b c' e'>4 <g b c' e'>4 | <a c' d' fis'>4 <a c' d' fis'>4 <a c' d' fis'>4 <a c' d' fis'>4 | <g b c' e'>4 <g b c' e'>4 <g b c' e'>4 <g b c' e'>4 | <g a c' e'>4 <g a c' e'>4 <g a c' e'>4 <g a c' e'>4 | <a c' d' fis'>4 <a c' d' fis'>4 <a c' d' fis'>4 <a c' d' fis'>4 | <g b d' fis'>4 <g b d' fis'>4 <g b d' fis'>4 <g b d' fis'>4 | <g b d' fis'>4 <g b d' fis'>4 <g b d' fis'>4 <g b d' fis'>4 | }
+  bass { g,4@mp d4 g,4 d4 | c4 g,4 c4 g,4 | d4 a,4 d4 a,4 | c4 g,4 c4 g,4 | a,4 e,4 a,4 e,4 | d4 a,4 d4 a,4 | g,4 d4 g,4 d4 | g,4 d4 g,4 d4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { G | Bm7 | Em | Cmaj7 | Am7 | D | G | Gmaj7 | }
+  comp { <g b d'>1@fff | <a b d' fis'>1 | <g b e'>1 | <g b c' e'>1 | <g a c' e'>1 | <a d' fis'>1 | <g b d'>1 | <g b d' fis'>1 | }
+  bass { g,1@mp | b,1 | e,1 | c1 | a,1 | d1 | g,1 | g,1 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section C {
+  chords harmony { Gmaj7 | Bm7 | C | D7 | Em7 | Am7 | D7 | G | }
+  comp { g8@fff b8 d'8 fis'8 g8 b8 d'8 fis'8 | a8 b8 d'8 fis'8 a8 b8 d'8 fis'8 | g8 c'8 e'8 g8 c'8 e'8 g8 c'8 | a8 c'8 d'8 fis'8 a8 c'8 d'8 fis'8 | g8 b8 d'8 e'8 g8 b8 d'8 e'8 | g8 a8 c'8 e'8 g8 a8 c'8 e'8 | a8 c'8 d'8 fis'8 a8 c'8 d'8 fis'8 | g8 b8 d'8 g8 b8 d'8 g8 b8 | }
+  bass { g,4@mp d4 g,4 d4 | b,4 fis,4 b,4 fis,4 | c4 g,4 c4 g,4 | d4 a,4 d4 a,4 | e,4 b,4 e,4 b,4 | a,4 e,4 a,4 e,4 | d4 a,4 d4 a,4 | g,4 d4 g,4 d4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A B C B }
+
+score { chords harmony }
+
+score band { staff comp  staff bass  staff kit }

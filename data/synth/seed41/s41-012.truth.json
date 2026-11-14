@@ -1,0 +1,712 @@
+{
+  "id": "s41-012",
+  "source": "s41-012.lys",
+  "audio": "s41-012-band.wav",
+  "tempo": {
+    "note": "4",
+    "bpm": 125
+  },
+  "time": "4/4",
+  "key": "C major",
+  "form": [
+    "Pickup",
+    "A",
+    "B",
+    "A",
+    "C",
+    "A"
+  ],
+  "silence": 0.524,
+  "band": {
+    "comp": "electric guitar (clean)",
+    "bass": "acoustic bass",
+    "lead": "vibraphone",
+    "drums": true,
+    "levels": {
+      "lead": "mp",
+      "comp": "fff",
+      "bass": "mp"
+    },
+    "styles": {
+      "A": {
+        "comp": "pulse",
+        "bass": "eighths",
+        "held": false,
+        "bpm": null
+      },
+      "B": {
+        "comp": "sustain",
+        "bass": "root5",
+        "held": false,
+        "bpm": null
+      },
+      "C": {
+        "comp": "pulse",
+        "bass": "eighths",
+        "held": false,
+        "bpm": null
+      }
+    }
+  },
+  "musicSeconds": 78.764,
+  "chordSeconds": 76.8,
+  "bars": [
+    {
+      "bar": 0,
+      "pickup": 3,
+      "section": "Pickup",
+      "barOfSection": 1,
+      "start": 0.524,
+      "end": 1.964,
+      "chords": []
+    },
+    {
+      "bar": 1,
+      "section": "A",
+      "barOfSection": 1,
+      "start": 1.964,
+      "end": 3.884,
+      "chords": [
+        {
+          "start": 1.964,
+          "end": 2.924,
+          "symbol": "Cmaj7"
+        },
+        {
+          "start": 2.924,
+          "end": 3.884,
+          "symbol": "C7"
+        }
+      ]
+    },
+    {
+      "bar": 2,
+      "section": "A",
+      "barOfSection": 2,
+      "start": 3.884,
+      "end": 5.804,
+      "chords": [
+        {
+          "start": 3.884,
+          "end": 4.844,
+          "symbol": "Fmaj7"
+        },
+        {
+          "start": 4.844,
+          "end": 5.804,
+          "symbol": "C7"
+        }
+      ]
+    },
+    {
+      "bar": 3,
+      "section": "A",
+      "barOfSection": 3,
+      "start": 5.804,
+      "end": 7.724,
+      "chords": [
+        {
+          "start": 5.804,
+          "end": 6.764,
+          "symbol": "Fm"
+        },
+        {
+          "start": 6.764,
+          "end": 7.724,
+          "symbol": "G7"
+        }
+      ]
+    },
+    {
+      "bar": 4,
+      "section": "A",
+      "barOfSection": 4,
+      "start": 7.724,
+      "end": 9.644,
+      "chords": [
+        {
+          "start": 7.724,
+          "end": 9.644,
+          "symbol": "Cmaj7"
+        }
+      ]
+    },
+    {
+      "bar": 5,
+      "section": "A",
+      "barOfSection": 5,
+      "start": 9.644,
+      "end": 11.564,
+      "chords": [
+        {
+          "start": 9.644,
+          "end": 11.564,
+          "symbol": "Am7"
+        }
+      ]
+    },
+    {
+      "bar": 6,
+      "section": "A",
+      "barOfSection": 6,
+      "start": 11.564,
+      "end": 13.484,
+      "chords": [
+        {
+          "start": 11.564,
+          "end": 12.524,
+          "symbol": "F"
+        },
+        {
+          "start": 12.524,
+          "end": 13.484,
+          "symbol": "G7"
+        }
+      ]
+    },
+    {
+      "bar": 7,
+      "section": "A",
+      "barOfSection": 7,
+      "start": 13.484,
+      "end": 15.404,
+      "chords": [
+        {
+          "start": 13.484,
+          "end": 15.404,
+          "symbol": "C"
+        }
+      ]
+    },
+    {
+      "bar": 8,
+      "section": "A",
+      "barOfSection": 8,
+      "start": 15.404,
+      "end": 17.324,
+      "chords": [
+        {
+          "start": 15.404,
+          "end": 17.324,
+          "symbol": "G7"
+        }
+      ]
+    },
+    {
+      "bar": 9,
+      "section": "B",
+      "barOfSection": 1,
+      "start": 17.324,
+      "end": 19.244,
+      "chords": [
+        {
+          "start": 17.324,
+          "end": 18.284,
+          "symbol": "Dm"
+        },
+        {
+          "start": 18.284,
+          "end": 19.244,
+          "symbol": "D7"
+        }
+      ]
+    },
+    {
+      "bar": 10,
+      "section": "B",
+      "barOfSection": 2,
+      "start": 19.244,
+      "end": 21.164,
+      "chords": [
+        {
+          "start": 19.244,
+          "end": 21.164,
+          "symbol": "Gsus4"
+        }
+      ]
+    },
+    {
+      "bar": 11,
+      "section": "B",
+      "barOfSection": 3,
+      "start": 21.164,
+      "end": 23.084,
+      "chords": [
+        {
+          "start": 21.164,
+          "end": 22.124,
+          "symbol": "Em7"
+        },
+        {
+          "start": 22.124,
+          "end": 23.084,
+          "symbol": "E7"
+        }
+      ]
+    },
+    {
+      "bar": 12,
+      "section": "B",
+      "barOfSection": 4,
+      "start": 23.084,
+      "end": 25.004,
+      "chords": [
+        {
+          "start": 23.084,
+          "end": 24.044,
+          "symbol": "Am7/E"
+        },
+        {
+          "start": 24.044,
+          "end": 25.004,
+          "symbol": "C7"
+        }
+      ]
+    },
+    {
+      "bar": 13,
+      "section": "B",
+      "barOfSection": 5,
+      "start": 25.004,
+      "end": 26.924,
+      "chords": [
+        {
+          "start": 25.004,
+          "end": 26.924,
+          "symbol": "F"
+        }
+      ]
+    },
+    {
+      "bar": 14,
+      "section": "B",
+      "barOfSection": 6,
+      "start": 26.924,
+      "end": 28.844,
+      "chords": [
+        {
+          "start": 26.924,
+          "end": 27.884,
+          "symbol": "G7"
+        },
+        {
+          "start": 27.884,
+          "end": 28.844,
+          "symbol": "B7"
+        }
+      ]
+    },
+    {
+      "bar": 15,
+      "section": "B",
+      "barOfSection": 7,
+      "start": 28.844,
+      "end": 30.764,
+      "chords": [
+        {
+          "start": 28.844,
+          "end": 30.764,
+          "symbol": "Em7"
+        }
+      ]
+    },
+    {
+      "bar": 16,
+      "section": "B",
+      "barOfSection": 8,
+      "start": 30.764,
+      "end": 32.684,
+      "chords": [
+        {
+          "start": 30.764,
+          "end": 32.684,
+          "symbol": "Am7"
+        }
+      ]
+    },
+    {
+      "bar": 17,
+      "section": "A",
+      "barOfSection": 1,
+      "start": 32.684,
+      "end": 34.604,
+      "chords": [
+        {
+          "start": 32.684,
+          "end": 33.644,
+          "symbol": "Cmaj7"
+        },
+        {
+          "start": 33.644,
+          "end": 34.604,
+          "symbol": "C7"
+        }
+      ]
+    },
+    {
+      "bar": 18,
+      "section": "A",
+      "barOfSection": 2,
+      "start": 34.604,
+      "end": 36.524,
+      "chords": [
+        {
+          "start": 34.604,
+          "end": 35.564,
+          "symbol": "Fmaj7"
+        },
+        {
+          "start": 35.564,
+          "end": 36.524,
+          "symbol": "C7"
+        }
+      ]
+    },
+    {
+      "bar": 19,
+      "section": "A",
+      "barOfSection": 3,
+      "start": 36.524,
+      "end": 38.444,
+      "chords": [
+        {
+          "start": 36.524,
+          "end": 37.484,
+          "symbol": "Fm"
+        },
+        {
+          "start": 37.484,
+          "end": 38.444,
+          "symbol": "G7"
+        }
+      ]
+    },
+    {
+      "bar": 20,
+      "section": "A",
+      "barOfSection": 4,
+      "start": 38.444,
+      "end": 40.364,
+      "chords": [
+        {
+          "start": 38.444,
+          "end": 40.364,
+          "symbol": "Cmaj7"
+        }
+      ]
+    },
+    {
+      "bar": 21,
+      "section": "A",
+      "barOfSection": 5,
+      "start": 40.364,
+      "end": 42.284,
+      "chords": [
+        {
+          "start": 40.364,
+          "end": 42.284,
+          "symbol": "Am7"
+        }
+      ]
+    },
+    {
+      "bar": 22,
+      "section": "A",
+      "barOfSection": 6,
+      "start": 42.284,
+      "end": 44.204,
+      "chords": [
+        {
+          "start": 42.284,
+          "end": 43.244,
+          "symbol": "F"
+        },
+        {
+          "start": 43.244,
+          "end": 44.204,
+          "symbol": "G7"
+        }
+      ]
+    },
+    {
+      "bar": 23,
+      "section": "A",
+      "barOfSection": 7,
+      "start": 44.204,
+      "end": 46.124,
+      "chords": [
+        {
+          "start": 44.204,
+          "end": 46.124,
+          "symbol": "C"
+        }
+      ]
+    },
+    {
+      "bar": 24,
+      "section": "A",
+      "barOfSection": 8,
+      "start": 46.124,
+      "end": 48.044,
+      "chords": [
+        {
+          "start": 46.124,
+          "end": 48.044,
+          "symbol": "G7"
+        }
+      ]
+    },
+    {
+      "bar": 25,
+      "section": "C",
+      "barOfSection": 1,
+      "start": 48.044,
+      "end": 49.964,
+      "chords": [
+        {
+          "start": 48.044,
+          "end": 49.964,
+          "symbol": "C"
+        }
+      ]
+    },
+    {
+      "bar": 26,
+      "section": "C",
+      "barOfSection": 2,
+      "start": 49.964,
+      "end": 51.884,
+      "chords": [
+        {
+          "start": 49.964,
+          "end": 51.884,
+          "symbol": "Am7"
+        }
+      ]
+    },
+    {
+      "bar": 27,
+      "section": "C",
+      "barOfSection": 3,
+      "start": 51.884,
+      "end": 53.804,
+      "chords": [
+        {
+          "start": 51.884,
+          "end": 53.804,
+          "symbol": "Fmaj7"
+        }
+      ]
+    },
+    {
+      "bar": 28,
+      "section": "C",
+      "barOfSection": 4,
+      "start": 53.804,
+      "end": 55.724,
+      "chords": [
+        {
+          "start": 53.804,
+          "end": 55.724,
+          "symbol": "G7"
+        }
+      ]
+    },
+    {
+      "bar": 29,
+      "section": "C",
+      "barOfSection": 5,
+      "start": 55.724,
+      "end": 57.644,
+      "chords": [
+        {
+          "start": 55.724,
+          "end": 57.644,
+          "symbol": "Cmaj7"
+        }
+      ]
+    },
+    {
+      "bar": 30,
+      "section": "C",
+      "barOfSection": 6,
+      "start": 57.644,
+      "end": 59.564,
+      "chords": [
+        {
+          "start": 57.644,
+          "end": 58.604,
+          "symbol": "Am7"
+        },
+        {
+          "start": 58.604,
+          "end": 59.564,
+          "symbol": "C7"
+        }
+      ]
+    },
+    {
+      "bar": 31,
+      "section": "C",
+      "barOfSection": 7,
+      "start": 59.564,
+      "end": 61.484,
+      "chords": [
+        {
+          "start": 59.564,
+          "end": 61.484,
+          "symbol": "Fmaj7"
+        }
+      ]
+    },
+    {
+      "bar": 32,
+      "section": "C",
+      "barOfSection": 8,
+      "start": 61.484,
+      "end": 63.404,
+      "chords": [
+        {
+          "start": 61.484,
+          "end": 63.404,
+          "symbol": "G7"
+        }
+      ]
+    },
+    {
+      "bar": 33,
+      "section": "A",
+      "barOfSection": 1,
+      "start": 63.404,
+      "end": 65.324,
+      "chords": [
+        {
+          "start": 63.404,
+          "end": 64.364,
+          "symbol": "Cmaj7"
+        },
+        {
+          "start": 64.364,
+          "end": 65.324,
+          "symbol": "C7"
+        }
+      ]
+    },
+    {
+      "bar": 34,
+      "section": "A",
+      "barOfSection": 2,
+      "start": 65.324,
+      "end": 67.244,
+      "chords": [
+        {
+          "start": 65.324,
+          "end": 66.284,
+          "symbol": "Fmaj7"
+        },
+        {
+          "start": 66.284,
+          "end": 67.244,
+          "symbol": "C7"
+        }
+      ]
+    },
+    {
+      "bar": 35,
+      "section": "A",
+      "barOfSection": 3,
+      "start": 67.244,
+      "end": 69.164,
+      "chords": [
+        {
+          "start": 67.244,
+          "end": 68.204,
+          "symbol": "Fm"
+        },
+        {
+          "start": 68.204,
+          "end": 69.164,
+          "symbol": "G7"
+        }
+      ]
+    },
+    {
+      "bar": 36,
+      "section": "A",
+      "barOfSection": 4,
+      "start": 69.164,
+      "end": 71.084,
+      "chords": [
+        {
+          "start": 69.164,
+          "end": 71.084,
+          "symbol": "Cmaj7"
+        }
+      ]
+    },
+    {
+      "bar": 37,
+      "section": "A",
+      "barOfSection": 5,
+      "start": 71.084,
+      "end": 73.004,
+      "chords": [
+        {
+          "start": 71.084,
+          "end": 73.004,
+          "symbol": "Am7"
+        }
+      ]
+    },
+    {
+      "bar": 38,
+      "section": "A",
+      "barOfSection": 6,
+      "start": 73.004,
+      "end": 74.924,
+      "chords": [
+        {
+          "start": 73.004,
+          "end": 73.964,
+          "symbol": "F"
+        },
+        {
+          "start": 73.964,
+          "end": 74.924,
+          "symbol": "G7"
+        }
+      ]
+    },
+    {
+      "bar": 39,
+      "section": "A",
+      "barOfSection": 7,
+      "start": 74.924,
+      "end": 76.844,
+      "chords": [
+        {
+          "start": 74.924,
+          "end": 76.844,
+          "symbol": "C"
+        }
+      ]
+    },
+    {
+      "bar": 40,
+      "section": "A",
+      "barOfSection": 8,
+      "start": 76.844,
+      "end": 78.764,
+      "chords": [
+        {
+          "start": 76.844,
+          "end": 78.764,
+          "symbol": "G7"
+        }
+      ]
+    }
+  ],
+  "audioSeconds": 80.764,
+  "firstSound": 0.5315,
+  "soundfont": "MuseScore_General.sf2"
+}

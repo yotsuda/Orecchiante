@@ -10,6 +10,7 @@
     .venv/Scripts/python tools/measure.py sweep seed100 TIGHTNESS=300,100 Q:maj7=0.02,0.05
     .venv/Scripts/python tools/measure.py doubt seed1 seed7 seed11 --at 0.5,0.7
     .venv/Scripts/python tools/measure.py form rwc-dev --ears -v    # the sections: how much shorter they make a chart
+    .venv/Scripts/python tools/measure.py head seed41 rwc-dev --ears   # how a chart begins and ends: pickups, silence, the ring-out
     .venv/Scripts/python tools/measure.py barlines seed1            # how the bar lines are missed
     .venv/Scripts/python tools/measure.py keys seed1 seed7 seed11   # the key rule, given the true chords
     .venv/Scripts/python tools/measure.py beats seed7 s7-005        # the tracked beats against the true ones
@@ -54,6 +55,10 @@ SETS = {
     "held/seed101": ("scratch/alt-held/seed101", ["--seed", "101", "--count", "60", "--held", "0.5"], False, "for choosing constants"),
     "still/seed31": ("scratch/alt-still/seed31", ["--seed", "31"], False, "seed31 with a tempo that does not move"),
     "drift5/seed31": ("scratch/alt-drift5/seed31", ["--seed", "31", "--drift", "0.05"], False, "seed31 stepping 5% a bar"),
+    "seed41": ("data/synth/seed41", ["--seed", "41", "--pickup", "0.5", "--silence", "3"], False,
+               "test: half the songs begin with a pickup, all with up to 3 s of silence"),
+    "head/seed141": ("scratch/alt-head/seed141", ["--seed", "141", "--pickup", "0.5", "--silence", "3"], False,
+                     "for choosing constants: pickups and silence, as seed41"),
     "tim/seed1": ("scratch/alt-tim/seed1", ["--seed", "1"], True, "seed1 through another sound font"),
     "tim/seed7": ("scratch/alt-tim/seed7", ["--seed", "7"], True, "seed7 through another sound font"),
     "tim/seed11": ("scratch/alt-tim/seed11", ["--seed", "11"], True, "seed11 through another sound font"),
@@ -147,7 +152,7 @@ def bar_lines(truth, wav, source):
     folder of <recording>.beats files, a line a beat: its seconds, a tab, its number in the bar."""
     if source == "truth":
         per = {"6/8": 3}.get(truth["time"], int(truth["time"].split("/")[0]))
-        return [b["start"] for b in truth["bars"]] + [truth["bars"][-1]["end"]], 2 * per, None
+        return [b["start"] for b in truth["bars"] if not b.get("pickup")] + [truth["bars"][-1]["end"]], 2 * per, None
     given, per = rc.lines_of(Path(source) / (wav.stem + ".beats"))
     return given, 2 * per, per
 
@@ -314,9 +319,10 @@ def form(names, ears=False, verbose=False):
             else:
                 got = rc.read(wav, feats(wav))
             per_bar = 2 if truth["time"] == "6/8" else int(truth["time"].split("/")[0])
-            said = {"read": (got["form"], [(b["section"], b["barOfSection"]) for b in got["bars"]]),
+            said = {"read": ([s for s in got["form"] if s != "Pickup"],
+                             [(b["section"], b["barOfSection"]) for b in got["bars"] if not b.get("pickup")]),
                     "true": rc.find_form([tuple(sc.parse(x)[:2] for x in rc.beat_names(b, per_bar))
-                                          if b["chords"] else () for b in truth["bars"]], rc.SAID_AGAIN)}
+                                          if b["chords"] else () for b in truth["bars"] if not b.get("pickup")], rc.SAID_AGAIN)}
             n += 1
             shown = []
             for which, (order, places) in said.items():
@@ -333,6 +339,40 @@ def form(names, ears=False, verbose=False):
                   f" {sections / n:.1f} sections a song, {short / n:.1f} of them a bar or two long")
 
 
+def head(names, ears=False, verbose=False):
+    """How a chart begins and ends: is its first bar line the true one, and its last; are the
+    pickups (beats of chord before the first bar line) read as pickups of as many beats, and
+    none where there is none; how many seconds of chord are read before the first true chord
+    and after the last, where there is nothing to name."""
+    for name in names:
+        lines, heard = ears_of(name) if ears else (None, None)
+        n = first = last = ups = ups_read = ups_false = 0
+        early = late = 0.0
+        for truth, wav in songs(name):
+            if ears:
+                given, units, per = bar_lines(truth, wav, lines)
+                got = rc.read(wav, feats(wav), lines=given, units=units, beats=per, heard=np.load(heard / (wav.stem + ".npz")))
+            else:
+                got = rc.read(wav, feats(wav))
+            tb, rb = ([b for b in d["bars"] if not b.get("pickup")] for d in (truth, got))
+            tc, rcs = sc.chords_of(truth), sc.chords_of(got)
+            up = truth["bars"][0].get("pickup") if truth["bars"][0]["chords"] else None     # a pickup with a chord to name
+            read_up = got["bars"][0].get("pickup")
+            one = abs(rb[0]["start"] - tb[0]["start"]) <= sc.BAR_TOLERANCE
+            end = abs(rb[-1]["start"] - tb[-1]["start"]) <= sc.BAR_TOLERANCE
+            before = sum(max(0.0, min(e, tc[0][0]) - s) for s, e, _ in rcs)
+            after = sum(max(0.0, e - max(s, tc[-1][1])) for s, e, _ in rcs)
+            n, first, last, early, late = n + 1, first + one, last + end, early + before, late + after
+            ups, ups_read, ups_false = ups + bool(up), ups_read + bool(up and read_up == up), ups_false + bool(read_up and not up)
+            if verbose:
+                print(f"{truth['id']:<12} first line {rb[0]['start']:7.2f} (true {tb[0]['start']:7.2f}) {'ok' if one else '--'}"
+                      f" | last {rb[-1]['start']:7.2f} (true {tb[-1]['start']:7.2f}) {'ok' if end else '--'}"
+                      f" | pickup {read_up or '-'} (true {truth['bars'][0].get('pickup') or '-'}{'' if up or not truth['bars'][0].get('pickup') else ', no chord'})"
+                      f" | chord read before the first true one {before:.2f} s, after the last {after:.2f} s")
+        print(f"{name}: first bar line {first}/{n}, last {last}/{n} | pickups read {ups_read}/{ups}, read where there is none {ups_false}"
+              f" | chord read before the first true chord {early / n:.2f} s a song, after the last {late / n:.2f} s", flush=True)
+
+
 def barlines(names, hint):
     """For each song that loses a tenth of its bar lines: the bar's length read against the true
     one, where the read lines fall against the true ones (in true beats), how the tracked beats sit."""
@@ -347,11 +387,11 @@ def barlines(names, hint):
                 continue
             beats, period = rc.beat_grid(f["oenv"])
             bt = beats * rc.HOP / rc.SR
-            tb = np.array([b["start"] for b in truth["bars"]])
+            tb = np.array([b["start"] for b in truth["bars"] if not b.get("pickup")])
             bar = float(np.median(np.diff(tb)))
             per = 2 if truth["time"] == "6/8" else int(truth["time"].split("/")[0])
             beat = bar / per
-            rb = np.array([b["start"] for b in got["bars"]])
+            rb = np.array([b["start"] for b in got["bars"] if not b.get("pickup")])
             ratio = float(np.median(np.diff(rb))) / bar
             # where a moment falls in true beats, counted inside its own true bar (a recording's tempo moves)
             ends = np.append(tb, truth["bars"][-1]["end"])
@@ -408,7 +448,7 @@ def beats(name, song):
             continue
         tracked, period = rc.beat_grid(feats(wav)["oenv"])
         bt = tracked * rc.HOP / rc.SR
-        tb = [b["start"] for b in truth["bars"]]
+        tb = [b["start"] for b in truth["bars"] if not b.get("pickup")]
         beat = (tb[1] - tb[0]) / (2 if truth["time"] == "6/8" else int(truth["time"].split("/")[0]))
         print("true beat", round(beat, 3), "s, tracked", round(period * rc.HOP / rc.SR, 3), "s", truth.get("form", ""),
               truth.get("band", {}).get("styles", ""))
@@ -459,6 +499,7 @@ def everything(model, write):
         ("Another sound font, with the model", TIM, model, False, False),
         ("A tempo that moves (still, 2%, 5%), with the model", ["still/seed31", "seed31", "drift5/seed31"], model, False, False),
         ("The songs constants are chosen on, with the model", ["seed100", "held/seed101"], model, False, False),
+        ("Songs that begin with silence, half of them with a pickup, with the model", ["seed41", "head/seed141"], model, False, False),
         ("Songs it was not made on, nothing learnt", ["samples"], None, False, True),
         ("Songs it was not made on, with the model", ["samples"], model, False, True),
         ("Recordings, nothing learnt", ["rwc-p"], None, False, False),
@@ -478,7 +519,7 @@ def everything(model, write):
             print(f"{name}: {totals(rows)}", flush=True)
     print(f"\n## With ears trained on recordings (Beat This! and {EARS})")
     configure(None, ears=True)
-    for name in TEST + ["seed21", "seed31", "rwc-dev", "rwc-test", "rwc-p"]:
+    for name in TEST + ["seed21", "seed31", "seed41", "head/seed141", "rwc-dev", "rwc-test", "rwc-p"]:
         rows, written = run(name, ears=True, write=Path(write) / "ears" if write and name != "rwc-p" else None)
         charts += written
         if rows:
@@ -489,7 +530,11 @@ def everything(model, write):
         doubt(names, [rc.DOUBT], ears=True)
     print("\n## The sections, with ears trained on recordings")
     form(["rwc-dev", "rwc-test", "rwc-p"] + TEST + ["seed21", "seed31"], ears=True)
+    print("\n## How a chart begins and ends, with ears trained on recordings")
+    head(["seed41", "head/seed141", "seed1", "rwc-dev", "rwc-test"], ears=True)
     configure(model)
+    print("\n## How a chart begins and ends, with the model")
+    head(["seed41", "head/seed141", "seed1"])
     for title, names in (("The marks, this sound font", TEST), ("The marks, another sound font", TIM)):
         print(f"\n## {title}")
         doubt(names, [rc.DOUBT])
@@ -538,6 +583,9 @@ def main():
     s = reader(sub.add_parser("form", help="how much shorter the sections make a chart"))
     s.add_argument("--ears", nargs="?", const="crema", metavar="MODEL", help="as for table")
     s.add_argument("-v", "--verbose", action="store_true", help="a song's forms, read and true")
+    s = reader(sub.add_parser("head", help="how a chart begins and ends: the first and last bar lines, pickups, chords read in silence"))
+    s.add_argument("--ears", nargs="?", const="crema", metavar="MODEL", help="as for table")
+    s.add_argument("-v", "--verbose", action="store_true", help="a line a song")
     s = reader(sub.add_parser("barlines", help="how the bar lines are missed, song by song"))
     s.add_argument("--hint", action="store_true")
     s = sub.add_parser("keys", help="the key rule, given the true chords")
@@ -603,6 +651,8 @@ def main():
         return doubt(args.sets, ast.literal_eval(args.at + ",") if args.at else [rc.DOUBT], ears)
     if args.what == "form":
         return form(args.sets, ears, args.verbose)
+    if args.what == "head":
+        return head(args.sets, ears, args.verbose)
     if args.what == "barlines":
         return barlines(args.sets, args.hint)
     if args.what == "beats":

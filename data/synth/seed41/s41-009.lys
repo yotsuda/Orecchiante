@@ -1,0 +1,28 @@
+// s41-009: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s41-009"
+tempo 4. = 50
+time 6/8
+key c minor
+octave absolute
+
+part comp { clef treble  midiInstrument "acoustic grand" }
+part bass { instrument bass  midiInstrument "fretless bass" }
+
+section A {
+  chords harmony { Cm | Gm/D | Ab | Bb | Cm | Gm | Ab | Bb | }
+  comp { r8 <g c' ees'>8@f <g c' ees'>8 r8 <g c' ees'>8 <g c' ees'>8 | r8 <g bes d'>8 <g bes d'>8 r8 <g bes d'>8 <g bes d'>8 | r8 <aes c' ees'>8 <aes c' ees'>8 r8 <aes c' ees'>8 <aes c' ees'>8 | r8 <bes d' f'>8 <bes d' f'>8 r8 <bes d' f'>8 <bes d' f'>8 | r8 <g c' ees'>8 <g c' ees'>8 r8 <g c' ees'>8 <g c' ees'>8 | r8 <g bes d'>8 <g bes d'>8 r8 <g bes d'>8 <g bes d'>8 | r8 <aes c' ees'>8 <aes c' ees'>8 r8 <aes c' ees'>8 <aes c' ees'>8 | r8 <bes d' f'>8 <bes d' f'>8 r8 <bes d' f'>8 <bes d' f'>8 | }
+  bass { c4.@mp g,4. | d4. g,4. | aes,4. ees4. | bes,4. f,4. | c4. g,4. | g,4. d4. | aes,4. ees4. | bes,4. f,4. | }
+}
+
+section B {
+  chords harmony { Fm | Bb | Eb | Ab | Cm | Eb | Bb | Fm | }
+  comp { <aes c' f'>2.@f | <bes d' f'>2. | <g bes ees'>2. | <aes c' ees'>2. | <g c' ees'>2. | <g bes ees'>2. | <bes d' f'>2. | <aes c' f'>2. | }
+  bass { f,8@mp f,8 f,8 f,8 f,8 f,8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | ees8 ees8 ees8 ees8 ees8 ees8 | aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 | c8 c8 c8 c8 c8 c8 | ees8 ees8 ees8 ees8 ees8 ees8 | bes,8 bes,8 bes,8 bes,8 bes,8 bes,8 | f,8 f,8 f,8 f,8 f,8 f,8 | }
+}
+
+form { A B B A }
+
+score { chords harmony }
+
+score band { staff comp  staff bass }

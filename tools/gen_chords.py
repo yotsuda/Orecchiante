@@ -143,8 +143,9 @@ class Chord:
 
 
 class Song:
-    def __init__(self, song_id, rng, held=0.0, drift=0.0):
+    def __init__(self, song_id, rng, held=0.0, drift=0.0, pickup=0.0, silence=0.0):
         self.id = song_id
+        self.pickup, self.silence = pickup, silence
         self.rng = rng
         self.mode = rng.choice(["major", "major", "minor"])
         self.tonic = rng.choice(MAJOR_KEYS if self.mode == "major" else MINOR_KEYS)
@@ -174,6 +175,17 @@ class Song:
         # how loud the melody, the chords and the bass play: at one level the bass and its
         # overtones cover the chords, as no mixed recording lets them
         self.levels = (rng.choice(["mp", "mf"]), rng.choice(["f", "ff", "fff"]), rng.choice(["p", "mp"]))
+        # How the song begins (--pickup, --silence), from dice of its own, so that a set made
+        # without them stays the set it was. A pickup is one to all but one of a bar's beats before
+        # the first bar line: the dominant played by the band or, where there is a melody, the
+        # melody alone as often (no chord to name).
+        dice = random.Random(f"{song_id}/head")
+        self.upbeats = dice.randint(1, self.bar8 // self.beat8 - 1) if dice.random() < self.pickup else 0
+        steps, semis, triad, seventh = (MAJOR_DEGREES if self.mode == "major" else MINOR_DEGREES)["V"]
+        alone = self.lead_sound is not None and dice.random() < 0.5
+        self.up_chord = None if alone or not self.upbeats else Chord(steps, semis, dice.choice([triad, seventh]))
+        self.up_notes = [dice.choice([-3, -2, -1, 1, 2]) for _ in range(self.upbeats)]
+        self.quiet = round(dice.uniform(0.0, self.silence), 3)       # seconds of silence before the music
 
     # --- the chords ---
 
@@ -328,6 +340,30 @@ class Song:
                 "phrase groove { drums { hats back kick } }",
             ]
         state = {"pitch": 76}
+        if self.upbeats:
+            whole, beat = DUR[self.upbeats * self.beat8], DUR[self.beat8]
+            lines += ["", "section Pickup {", f"  partial {whole}",
+                      f"  chords harmony {{ {self.up_chord.symbol(self.tonic) if self.up_chord else 'r'} | }}"]
+            if self.lead_sound:
+                tonic_pc = pc_of(self.tonic)
+                steps = [0, 2, 4, 5, 7, 9, 11] if self.mode == "major" else [0, 2, 3, 5, 7, 8, 10]
+                scale = [p for p in range(67, 85) if (p - tonic_pc) % 12 in steps]
+                at, notes = min(range(len(scale)), key=lambda i: abs(scale[i] - state["pitch"])), []
+                for move in self.up_notes:
+                    at = max(0, min(len(scale) - 1, at + move))
+                    notes.append(self.note(scale[at]) + beat)
+                state["pitch"] = scale[at]
+                lines.append("  lead { " + self.row([" ".join(notes)], self.levels[0]) + " }")
+            if self.up_chord:
+                tones = sorted(self.in_range(pc, 55) for pc in self.up_chord.pcs(self.tonic))
+                comp = "<" + " ".join(self.note(t) for t in tones) + ">" + whole
+                bass = self.note(self.in_range(self.up_chord.bass_pc(self.tonic), 40)) + whole
+                lines += ["  comp { " + self.row([comp], self.levels[1]) + " }", "  bass { " + self.row([bass], self.levels[2]) + " }"]
+            else:
+                lines += [f"  comp {{ r{whole} | }}", f"  bass {{ r{whole} | }}"]
+            if self.drums:
+                lines.append(f"  kit {{ r{whole} | }}")
+            lines.append("}")
         for name, section in self.sections.items():
             bars = section["bars"]
             row = " | ".join(" ".join(c.symbol(self.tonic) for c in bar) for bar in bars)
@@ -346,7 +382,7 @@ class Song:
         staves = (["lead"] if self.lead_sound else []) + ["comp", "bass"] + (["kit"] if self.drums else [])
         lines += [
             "",
-            "form { " + " ".join(self.form) + " }",
+            "form { " + " ".join((["Pickup"] if self.upbeats else []) + self.form) + " }",
             "",
             "score { chords harmony }",
             "",
@@ -356,7 +392,13 @@ class Song:
         return "\n".join(lines)
 
     def truth(self):
-        bars, index, start = [], 0, 0.0
+        bars, index, start = [], 0, self.quiet
+        if self.upbeats:
+            end = start + self.upbeats * 60.0 / self.bpm
+            chords = [{"start": round(start, 4), "end": round(end, 4), "symbol": self.up_chord.symbol(self.tonic)}] if self.up_chord else []
+            bars.append({"bar": 0, "pickup": self.upbeats, "section": "Pickup", "barOfSection": 1,
+                         "start": round(start, 4), "end": round(end, 4), "chords": chords})
+            start = end
         for name in self.form:
             for n, bar in enumerate(self.sections[name]["bars"]):
                 bpm = self.sections[name]["bpm"][n] if self.sections[name]["bpm"] else self.bpm
@@ -384,7 +426,8 @@ class Song:
             "tempo": {"note": self.tempo_note, "bpm": self.bpm},
             "time": self.meter,
             "key": f"{self.tonic} {self.mode}",
-            "form": self.form,
+            "form": (["Pickup"] if self.upbeats else []) + self.form,
+            **({"silence": self.quiet} if self.quiet else {}),
             "band": {
                 "comp": self.comp_sound, "bass": self.bass_sound, "lead": self.lead_sound,
                 "drums": bool(self.drums),
@@ -392,6 +435,9 @@ class Song:
                 "styles": {n: {"comp": s["comp"], "bass": s["bass"], "held": s["held"], "bpm": s["bpm"]} for n, s in self.sections.items()},
             },
             "musicSeconds": round(start, 4),
+            # the time that has a chord to name, where that is not all of it
+            **({"chordSeconds": round(sum(c["end"] - c["start"] for b in bars for c in b["chords"]), 4)}
+               if self.quiet or self.upbeats else {}),
             "bars": bars,
         }
 
@@ -403,6 +449,15 @@ def measure(wav_path):
         head = array.array("h", f.readframes(min(frames, rate * 5)))
     first = next((i for i, v in enumerate(head) if abs(v) > 327), None)
     return frames / rate, (None if first is None else first // channels / rate)
+
+
+def hush(wav_path, seconds):
+    """Puts `seconds` of silence before the recording."""
+    with wave.open(str(wav_path), "rb") as f:
+        params, frames = f.getparams(), f.readframes(f.getnframes())
+    with wave.open(str(wav_path), "wb") as f:
+        f.setparams(params)
+        f.writeframes(bytes(int(round(seconds * params.framerate)) * params.nchannels * params.sampwidth) + frames)
 
 
 def main():
@@ -420,6 +475,10 @@ def main():
                         "(0.02: two in a hundred; default: a tempo that does not move)")
     p.add_argument("--held", type=float, default=0.0,
                    help="the share of sections whose chords each last two bars (default: none)")
+    p.add_argument("--pickup", type=float, default=0.0,
+                   help="the share of songs that begin with a pickup: beats before the first bar line (default: none)")
+    p.add_argument("--silence", type=float, default=0.0,
+                   help="each recording begins with up to this many seconds of silence (default: none)")
     args = p.parse_args()
     if not args.no_render and not args.soundfont:
         p.error("name a SoundFont 2 with --soundfont, or pass --no-render")
@@ -427,7 +486,7 @@ def main():
     failed = 0
     for i in range(1, args.count + 1):
         song_id = f"s{args.seed}-{i:03d}"
-        song = Song(song_id, random.Random(args.seed * 100003 + i), args.held, args.drift)
+        song = Song(song_id, random.Random(args.seed * 100003 + i), args.held, args.drift, args.pickup, args.silence)
         lys = args.out / (song_id + ".lys")
         lys.write_text(song.lys(), encoding="utf-8", newline="\n")
         truth = song.truth()
@@ -442,6 +501,8 @@ def main():
                 failed += 1
                 print(f"{song_id}: lysc said (exit {run.returncode}):\n{said}", file=sys.stderr)
                 continue
+            if song.quiet:
+                hush(wav, song.quiet)
             seconds, first = measure(wav)
             truth["audioSeconds"] = round(seconds, 4)
             truth["firstSound"] = None if first is None else round(first, 4)

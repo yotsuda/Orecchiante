@@ -1,0 +1,28 @@
+// s41-006: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s41-006"
+tempo 4 = 133
+time 4/4
+key a major
+octave absolute
+
+part comp { clef treble  midiInstrument "rock organ" }
+part bass { instrument bass  midiInstrument "acoustic bass" }
+
+section A {
+  chords harmony { A/C# | G A7 | D E7 | Amaj7 E7 | A | G | Dmaj7 | A | }
+  comp { r8 <a cis' e'>8@f r8 <a cis' e'>8 r8 <a cis' e'>8 r8 <a cis' e'>8 | r8 <g b d'>8 r8 <g b d'>8 r8 <g a cis' e'>8 r8 <g a cis' e'>8 | r8 <a d' fis'>8 r8 <a d' fis'>8 r8 <gis b d' e'>8 r8 <gis b d' e'>8 | r8 <gis a cis' e'>8 r8 <gis a cis' e'>8 r8 <gis b d' e'>8 r8 <gis b d' e'>8 | r8 <a cis' e'>8 r8 <a cis' e'>8 r8 <a cis' e'>8 r8 <a cis' e'>8 | r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 r8 <g b d'>8 | r8 <a cis' d' fis'>8 r8 <a cis' d' fis'>8 r8 <a cis' d' fis'>8 r8 <a cis' d' fis'>8 | r8 <a cis' e'>8 r8 <a cis' e'>8 r8 <a cis' e'>8 r8 <a cis' e'>8 | }
+  bass { cis4@p a,4 cis4 a,4 | g,4 d4 a,4 e,4 | d4 a,4 e,4 b,4 | a,4 e,4 e,4 b,4 | a,4 e,4 a,4 e,4 | g,4 d4 g,4 d4 | d4 a,4 d4 a,4 | a,4 e,4 a,4 e,4 | }
+}
+
+section B {
+  chords harmony { A D7 | G | D E7 | A E7 | A D7 | G/B | D | A | }
+  comp { a8@f cis'8 e'8 a8 a8 c'8 d'8 fis'8 | g8 b8 d'8 g8 b8 d'8 g8 b8 | a8 d'8 fis'8 a8 gis8 b8 d'8 e'8 | a8 cis'8 e'8 a8 gis8 b8 d'8 e'8 | a8 cis'8 e'8 a8 a8 c'8 d'8 fis'8 | g8 b8 d'8 g8 b8 d'8 g8 b8 | a8 d'8 fis'8 a8 d'8 fis'8 a8 d'8 | a8 cis'8 e'8 a8 cis'8 e'8 a8 cis'8 | }
+  bass { a,2@p d2 | g,1 | d2 e,2 | a,2 e,2 | a,2 d2 | b,1 | d1 | a,1 | }
+}
+
+form { A B B A }
+
+score { chords harmony }
+
+score band { staff comp  staff bass }

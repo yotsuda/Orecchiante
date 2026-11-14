@@ -1,0 +1,35 @@
+// s41-024: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s41-024"
+tempo 4 = 137
+time 3/4
+key ees minor
+octave absolute
+
+part comp { clef treble  midiInstrument "drawbar organ" }
+part bass { instrument bass  midiInstrument "acoustic bass" }
+
+section Pickup {
+  partial 2
+  chords harmony { Bb7 | }
+  comp { <aes bes d' f'>2@f | }
+  bass { bes,2@mp | }
+}
+
+section A {
+  chords harmony { Ebm7 | Cbmaj7 | Gbmaj7 | Db7 | Ebm | Cbmaj7 | Gbmaj7 | Db7 | }
+  comp { r8 <bes des' ees' ges'>8@f r8 <bes des' ees' ges'>8 r8 <bes des' ees' ges'>8 | r8 <bes b ees' ges'>8 r8 <bes b ees' ges'>8 r8 <bes b ees' ges'>8 | r8 <bes des' f' ges'>8 r8 <bes des' f' ges'>8 r8 <bes des' f' ges'>8 | r8 <aes b des' f'>8 r8 <aes b des' f'>8 r8 <aes b des' f'>8 | r8 <bes ees' ges'>8 r8 <bes ees' ges'>8 r8 <bes ees' ges'>8 | r8 <bes b ees' ges'>8 r8 <bes b ees' ges'>8 r8 <bes b ees' ges'>8 | r8 <bes des' f' ges'>8 r8 <bes des' f' ges'>8 r8 <bes des' f' ges'>8 | r8 <aes b des' f'>8 r8 <aes b des' f'>8 r8 <aes b des' f'>8 | }
+  bass { ees4@mp bes,4 ees4 | b,4 ges,4 b,4 | ges,4 des4 ges,4 | des4 aes,4 des4 | ees4 bes,4 ees4 | b,4 ges,4 b,4 | ges,4 des4 ges,4 | des4 aes,4 des4 | }
+}
+
+section B {
+  chords harmony { Abm7 | Db7 | Gbmaj7 | Cbmaj7 | Abm | Db7 | Gb | Cbmaj7 | }
+  comp { r8 <aes b ees' ges'>8@f r8 <aes b ees' ges'>8 r8 <aes b ees' ges'>8 | r8 <aes b des' f'>8 r8 <aes b des' f'>8 r8 <aes b des' f'>8 | r8 <bes des' f' ges'>8 r8 <bes des' f' ges'>8 r8 <bes des' f' ges'>8 | r8 <bes b ees' ges'>8 r8 <bes b ees' ges'>8 r8 <bes b ees' ges'>8 | r8 <aes b ees'>8 r8 <aes b ees'>8 r8 <aes b ees'>8 | r8 <aes b des' f'>8 r8 <aes b des' f'>8 r8 <aes b des' f'>8 | r8 <bes des' ges'>8 r8 <bes des' ges'>8 r8 <bes des' ges'>8 | r8 <bes b ees' ges'>8 r8 <bes b ees' ges'>8 r8 <bes b ees' ges'>8 | }
+  bass { aes,2.@mp | des2. | ges,2. | b,2. | aes,2. | des2. | ges,2. | b,2. | }
+}
+
+form { Pickup A B A B }
+
+score { chords harmony }
+
+score band { staff comp  staff bass }

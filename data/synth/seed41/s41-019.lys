@@ -1,0 +1,44 @@
+// s41-019: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s41-019"
+tempo 4 = 74
+time 4/4
+key f minor
+octave absolute
+
+part comp { clef treble  midiInstrument "overdriven guitar" }
+part bass { instrument bass  midiInstrument "electric bass (pick)" }
+part kit { clef percussion }
+
+phrase hats { hh8 8 8 8 8 8 8 8 | }
+phrase back { r4 sn r sn | }
+phrase kick { bd4 r8 bd bd4 r | }
+phrase groove { drums { hats back kick } }
+
+section Pickup {
+  partial 4
+  chords harmony { C7 | }
+  comp { <g bes c' e'>4@fff | }
+  bass { c4@p | }
+  kit { r4 | }
+}
+
+section A {
+  chords harmony { Gdim | C | Fm | Fm | Gdim | C | Fm | Fm | }
+  comp { <g bes des'>1@fff | <g c' e'>1 | <aes c' f'>1 | <aes c' f'>1 | <g bes des'>1 | <g c' e'>1 | <aes c' f'>1 | <aes c' f'>1 | }
+  bass { g,8@p g,8 g,8 g,8 g,8 g,8 g,8 g,8 | c8 c8 c8 c8 c8 c8 c8 c8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | g,8 g,8 g,8 g,8 g,8 g,8 g,8 g,8 | c8 c8 c8 c8 c8 c8 c8 c8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { Fm | Db | Ab | Eb | Fm | Db | Ab/C | Eb | }
+  comp { <aes c' f'>4@fff <aes c' f'>4 <aes c' f'>4 <aes c' f'>4 | <aes des' f'>4 <aes des' f'>4 <aes des' f'>4 <aes des' f'>4 | <aes c' ees'>4 <aes c' ees'>4 <aes c' ees'>4 <aes c' ees'>4 | <g bes ees'>4 <g bes ees'>4 <g bes ees'>4 <g bes ees'>4 | <aes c' f'>4 <aes c' f'>4 <aes c' f'>4 <aes c' f'>4 | <aes des' f'>4 <aes des' f'>4 <aes des' f'>4 <aes des' f'>4 | <aes c' ees'>4 <aes c' ees'>4 <aes c' ees'>4 <aes c' ees'>4 | <g bes ees'>4 <g bes ees'>4 <g bes ees'>4 <g bes ees'>4 | }
+  bass { f,8@p f,8 f,8 f,8 f,8 f,8 f,8 f,8 | des8 des8 des8 des8 des8 des8 des8 des8 | aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 aes,8 | ees8 ees8 ees8 ees8 ees8 ees8 ees8 ees8 | f,8 f,8 f,8 f,8 f,8 f,8 f,8 f,8 | des8 des8 des8 des8 des8 des8 des8 des8 | c8 c8 c8 c8 c8 c8 c8 c8 | ees8 ees8 ees8 ees8 ees8 ees8 ees8 ees8 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { Pickup A B A B }
+
+score { chords harmony }
+
+score band { staff comp  staff bass  staff kit }

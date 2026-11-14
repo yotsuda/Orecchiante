@@ -1,0 +1,39 @@
+// s41-016: written by tools/gen_chords.py. The chord row is the answer;
+// the score `band` is what the recording plays (the chord row is not in it).
+title "s41-016"
+tempo 4 = 161
+time 3/4
+key d major
+octave absolute
+
+part lead { clef treble  midiInstrument "clarinet" }
+part comp { clef treble  midiInstrument "rock organ" }
+part bass { instrument bass  midiInstrument "electric bass (pick)" }
+part kit { clef percussion }
+
+phrase hats { hh4 hh hh | }
+phrase back { r4 sn sn | }
+phrase kick { bd4 r r | }
+phrase groove { drums { hats back kick } }
+
+section A {
+  chords harmony { Em7 | A7 | F#m7 | Bm | Em7 | A7 | F#m7 | Bm | }
+  lead { e''4@mp cis''4 b'4 | cis''4 cis''2 | r2. | r2. | b'4 d''2 | cis''4 cis''2 | e''4 fis''4 d''4 | r2. | }
+  comp { g8@f b8 d'8 e'8 g8 b8 | g8 a8 cis'8 e'8 g8 a8 | a8 cis'8 e'8 fis'8 a8 cis'8 | b8 d'8 fis'8 b8 d'8 fis'8 | g8 b8 d'8 e'8 g8 b8 | g8 a8 cis'8 e'8 g8 a8 | a8 cis'8 e'8 fis'8 a8 cis'8 | b8 d'8 fis'8 b8 d'8 fis'8 | }
+  bass { e,4@mp b,4 e,4 | a,4 e,4 a,4 | fis,4 cis4 fis,4 | b,4 fis,4 b,4 | e,4 b,4 e,4 | a,4 e,4 a,4 | fis,4 cis4 fis,4 | b,4 fis,4 b,4 | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+section B {
+  chords harmony { Dmaj7 | F#m | Bm7 | G | Dmaj7 | F#m | Bm7 | Gmaj7 | }
+  lead { cis''2@mp d''4 | cis''4 e''8 cis''8 d''4 | r2. | d''4 d''2 | d''2. | fis''4 e''8 fis''8 a''4 | a''2. | g''4 fis''8 d''8 fis''4 | }
+  comp { a8@f cis'8 d'8 fis'8 a8 cis'8 | a8 cis'8 fis'8 a8 cis'8 fis'8 | a8 b8 d'8 fis'8 a8 b8 | g8 b8 d'8 g8 b8 d'8 | a8 cis'8 d'8 fis'8 a8 cis'8 | a8 cis'8 fis'8 a8 cis'8 fis'8 | a8 b8 d'8 fis'8 a8 b8 | g8 b8 d'8 fis'8 g8 b8 | }
+  bass { d2.@mp | fis,2. | b,2. | g,2. | d2. | fis,2. | b,2. | g,2. | }
+  kit { groove groove groove groove groove groove groove groove }
+}
+
+form { A A B }
+
+score { chords harmony }
+
+score band { staff lead  staff comp  staff bass  staff kit }
