@@ -142,8 +142,12 @@ A、B0〜B3、C1、C2、D1 は 2026-11-14 に終わった。D2 の判断材料�
   判断材料（2026-11-14。README の「Without torch and TensorFlow」）:
   2 つのモデルは ONNX で同じ答えを出す。1 曲（3 分半）は 3 つの venv で 18 秒、1 つの venv＋ONNX で 11 秒、
   .NET は拍の経路だけ試作して 3.6 秒。組み立ての時間の 9 割だった HPSS は `--ears` では外した（精度は同じ、ベースは上がる）。
-- **D3 mp3 などの入力、コマンドの体裁、エラーの言い方。**
+- **D3 mp3 などの入力、コマンドの体裁、エラーの言い方。** Lily# との約束もここで固める: 引数、終了コード、
+  `dettato --version --json`（版と `protocol`。Calamo の `omr --version --json` に当たるもの）。
 - **D4 VS Code の Lily# 拡張から呼ぶ。** 録音を選ぶ → `.lys` が開く → 小節を選ぶと原音が鳴る。
+  **録音を `.lys` に変換するメニューは Lily# 本体が持つ**（ユーザー決定、2026-11-14。理由は §5）。Lily# に
+  メニューと原音再生を入れるのと同時に、Dettato の拡張のコマンド（`dettato.transcribe`）を外す（二重に出さない）。
+  それまでは Dettato の拡張が仮に持つ。拡張そのもの（`yotsuda.dettato` 0.1.0）は 2026-11-14 に作った。
 
 ### E. コードの先（M5）
 
@@ -196,6 +200,10 @@ A、B0〜B3、C1、C2、D1 は 2026-11-14 に終わった。D2 の判断材料�
 - **BTC を 2 つ目の耳にするか。** 重みの扱いを BTC の作者（jayg996/BTC-ISMIR19）に issue で尋ねるかどうか。
   尋ねるのはユーザー。答えが出るまで crema 1 つ。数字は HANDOFF の「未決」。
 - **決まったこと（2026-11-14）:** 配る形（D2）は VS Code 拡張に入れる .NET の実行ファイル。
-  拡張を Lily# とは別にするか（Calamo は別の拡張 `yotsuda.calamo`）は D4 で決める。
+  拡張は Lily# とは別（`yotsuda.dettato`。Calamo の `yotsuda.calamo` と同じ形）。
+- **決まったこと（2026-11-14）:** 録音を `.lys` に変換するメニューは Lily# 本体が持つ。Dettato の拡張は読み取り器を運び、
+  場所と版を返すだけにする。理由: 変換の後の作業（プレビュー、`@todo` の表示、小節の原音を鳴らす）がすべて Lily# のもの。
+  Calamo の「Convert Image/PDF to Lily# (.lys)…」と並ぶ。Lily# なしでは `.lys` は描けず鳴らせないので、単独で動く利点がない。
+  代償は、メニューを変えるたびに Lily# のリリースが要ることと、両者の約束を決める必要があること（D3）。移す順は §3 の D3・D4。
 - **名前。** 「Dettato」の重複は Web 検索で見ただけ。Marketplace・GitHub・NuGet・商標は未確認。
 - **リモート。** `https://github.com/yotsuda/Dettato.git` を作って push するのはユーザー。
