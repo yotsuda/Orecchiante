@@ -609,6 +609,42 @@ scratch/d2/spike/out/Spike.exe data/synth/seed1 scratch/d2/beat-this-final0-dyna
 .venv/Scripts/python tools/d2/reader_time.py song.wav ears    # where the reader's time goes (ears: the folder of song.beats and song.npz)
 ```
 
+### In .NET: the ears
+
+What ships is to be a program a VS Code extension carries, as Calamo's is (2026-11-14), so the
+reader is being moved to .NET, a part at a time, each checked against the Python it replaces.
+The first part is both ears (`src/Dettato`, 636 lines, `dettato ears`): a `.wav` to the
+`.beats` and `.npz` that `track_beats.py` and `crema_chords.py` write. It has librosa's
+constant-Q transform (`Cqt.cs`: the filters of an octave over the spectra of frames, the rate
+halved, the octave below; the early halving, the sparse filters and the scaling as librosa 1.0
+has them), a resampler with soxr HQ's pass band but not its samples, pumpp's dB, and the mel
+spectrogram and the peaks of the trial above.
+
+| Against Python (`tools/net_check.py`) | `seed1`, `seed7`, `seed11` | RWC, 100 songs |
+|---|---|---|
+| The chord model's input, above -60 dB | 1.3e-5, 1.4e-5, 1.3e-5 dB from librosa's (worst 0.04) | 8.5e-6 dB (worst 0.16) |
+| The chords' probabilities | 2.5e-6, 3.6e-6, 2.3e-6 from crema's | 2.9e-6 |
+| The likeliest chord the same | 16547/16548, 17922/17922, 14862/14862 frames | 260677/260678 frames |
+| The beats, against torch's | 1 of 2970 moved; one song of `seed7` with another number, the rest of its set the same; 1 of 2419 moved | 5 songs against `ears_onnx.py`: all 1989 the same |
+| Every number of `measure.py table` | the same as `--ears` | the same as `--ears` (`rwc-dev`, `rwc-test`; the bar lines from the fold models) |
+
+The trial's 94 moved beats were its resampler, as said there: with the pass band where soxr has
+it they are 2. One song (3 min 27 s, `RWC_P001`), cold: 4.3 s (0.2 s to start and open the
+models, 0.1 s to load and resample, 3.0 s Beat This!, 0.5 s the two transforms, 0.4 s crema), on
+8 threads; 11.5 MB beside the models. Not looked at: memory (2.4 GB at its most over 100 songs
+in one process), rates other than 44100 Hz (the resampler takes any; no recording here has
+another), and the bar lines of RWC, which need the fold models as ONNX to count.
+
+```
+dotnet build src/Dettato -c Release -o scratch/net/out
+scratch/net/out/dettato.exe ears data/synth/seed1 --out scratch/net/seed1 --models scratch/d2 --cqt
+scratch/d2/venv-onnx/Scripts/python tools/net_check.py data/synth/seed1 scratch/net/seed1 --heard scratch/chords-crema/seed1 --beats scratch/beats-bt/seed1
+.venv/Scripts/python tools/measure.py table seed1 --lines scratch/net/seed1 --heard scratch/net/seed1
+scratch/net/out/dettato.exe ears scratch/real/rwc-p --out scratch/net/rwc-p --models scratch/d2 --cqt     # 9 minutes
+scratch/d2/venv-onnx/Scripts/python tools/net_check.py scratch/real/rwc-p scratch/net/rwc-p --heard scratch/real/chords-crema
+.venv/Scripts/python tools/measure.py table rwc-dev rwc-test --lines scratch/real/beats-bt-folds --heard scratch/net/rwc-p
+```
+
 ### On the songs made here, nothing learnt
 
 

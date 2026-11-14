@@ -3,30 +3,34 @@
 **毎セッションの終わりに書き換える**（追記しない。200 行以内）。方向づけは [ROADMAP.md](ROADMAP.md)、
 数字と使い方は [README](../README.md)、録音の出典は [DATASETS.md](DATASETS.md)。
 
-最終更新: 2026-11-14（D2 の判断材料を測ったセッションの終わり。HEAD は `git log -1` で確かめる）。
+最終更新: 2026-11-14（耳を .NET に移したセッションの終わり。HEAD は `git log -1` で確かめる）。
 
 ## 現在地
 
-D2（配る形）の判断材料を測り終えた。**D2 そのものはユーザーの判断待ち**（下の「未決」の表）。
-読み取りの中身は 1 か所だけ変えた: `--ears` のとき HPSS（和音成分の取り出し）をやめた。
+**D2 は決まった: .NET＋ONNX の実行ファイルを VS Code 拡張に入れて配る**（Calamo と同じ形）。ユーザーの答えは
+「VS code extension」の一言で、(C) .NET と読んだのは Claude（Lily# 拡張が `yotsuda.calamo` の `bin\calamo.exe` を呼ぶ形が先例）。
+移植の 4 段（ROADMAP の D2）のうち **(1) 耳が終わった**。Python の読み取り器と測定の道具は変えていない。
+
+### .NET の耳（`src/Dettato`、636 行、`dettato ears`。README の「In .NET: the ears」。出力は `scratch/net/`）
+
+- wav → `.beats`（Beat This!）と `.npz`（crema の確率）。`track_beats.py`・`crema_chords.py` の出力と同じ形なので、
+  `measure.py table <セット> --lines <フォルダ> --heard <フォルダ>` がそのまま読む。突き合わせは `tools/net_check.py`。
+- **CQT は librosa と 1e-5 dB 以内**（−60 dB より上の平均。最悪 0.16 dB）。crema の確率は 3e-6 以内、最有力のコードは
+  RWC 100 曲 260678 フレーム中 260677 で同じ。`measure.py table` は seed1・7・11、`rwc-dev`、`rwc-test` で全列同じ。
+- **拍は torch とほぼ同じになった**（seed1 で 2970 個中 1 個、seed11 で 2419 個中 1 個、seed7 で 1 曲だけ拍の数が違う）。
+  試作の 94 個のずれは再標本化で、通過帯域を soxr HQ と同じ（0.913〜1.0）にしたら消えた（`Resample.cs`。標本は soxr と同じではない）。
+- 1 曲（RWC_P001、3 分 27 秒）冷たい状態で 4.3 秒（Beat This! 3.0、CQT 2 回 0.5、crema 0.4、起動 0.2）。モデル以外に 11.5 MB。
+- `Cqt.Magnitude` は librosa.cqt の既定値のまま、bins・fmin・hop・標本化を取る。調律は fmin に `2^(tuning / bins_per_octave)` を掛けて渡す。
 
 ### D2 で確かめたこと（README の「Without torch and TensorFlow」。スクリプトは `tools/d2/`、出力は `scratch/d2/`）
 
-- **2 つのモデルは ONNX で同じ答えを出す。** crema（tf2onnx、2.2 MB）: 確率の差 3.3e-6、RWC 100 曲を読み取り器に通して
-  表が全桁同じ。Beat This! `final0`（torch.onnx、82.9 MB）: ロジットの差 8.4e-5、10 曲の拍 4103 個と小節線が同じ、
-  seed1 の `.beats` 24 個がバイト単位で同じ。Beat This! の mel は numpy 40 行で torch と 1.2e-4 以内。
-- **torch も TensorFlow も要らない。** numpy・librosa・soxr・soundfile・onnxruntime の venv 1 つ（450 MB）で同じ数字。
-- **組み立ての時間の 9 割は HPSS だった**（1 曲 10 秒のうち 8〜9 秒）。`--ears` では和音は crema のものなので外した
-  （`use_ears()` が `HARMONIC_FRAMES = 0` にする。特徴量は `scratch/feat-h0/`）。ルート・長短は ±0.1、ベース音は全セットで上がる
-  （`rwc-dev` 63.3 → 64.3%、`rwc-test` 64.3 → 65.0%、seed1 70.4 → 73.4%）。自作の読み取り器は 31 のまま（ドラムで和音が落ちる）。
-- **1 曲（3 分 27 秒、RWC_P001）、各段を別プロセスで冷たい状態から:** これまで 25 秒 → HPSS なしで 18 秒
-  （Beat This! 5.4、crema 9（うち 8 は TensorFlow の起動）、組み立て 3.6）。venv 1 つ＋ONNX で 11 秒（耳 7.3、組み立て 3.6）。
-  1 プロセスにまとめれば 9 秒ほどの見込み（走らせていない）。残る時間の大半は Beat This!（3.2〜4.3 秒）。
+- **2 つのモデルは ONNX で同じ答えを出す**（crema 2.2 MB: 確率の差 3.3e-6。Beat This! `final0` 82.9 MB: 拍と小節線が同じ）。
+  torch も TensorFlow も要らず、numpy・librosa・soxr・soundfile・onnxruntime の venv 1 つ（`scratch/d2/venv-onnx`）で同じ数字。
+- **`--ears` では HPSS を外した**（組み立ての時間の 9 割だった。`use_ears()` が `HARMONIC_FRAMES = 0` にする。特徴量は
+  `scratch/feat-h0/`）。ルート・長短は ±0.1、ベース音は全セットで上がる。自作の読み取り器は 31 のまま（ドラムで和音が落ちる）。
+- **1 曲（RWC_P001）の時間:** Python の venv 3 つで 18 秒、venv 1 つ＋ONNX で 11 秒（耳 7.3、組み立て 3.6）。.NET の耳は 4.3 秒。
 - **onnxruntime のスレッド数は 8 に絞る。** 既定（24 全部）だと Beat This! が 1 曲 10 秒に落ちる。torch は 2.0〜2.4 秒で、ONNX より速い。
-- **.NET の試作（`tools/d2/spike`、260 行、拍の経路だけ）:** wav → 半分の標本化 → mel → ONNX → 拍。プロセス全体で 3.6 秒、
-  モデル以外に 12 MB（Microsoft.ML.OnnxRuntime 1.20.1。Calamo と同じ）。seed1 で小節線 F 96.6 → 96.4%、コードは同じ。
-  拍が torch と違う（24 曲中 4 曲で拍の数、残りで 94 個）のは再標本化の違いで、Python でも soxr を scipy に替えると同じだけ動く。
-- **crema の CQT は標本単位で合わせなくてよい。** librosa の CQT の中の再標本化を替えても（`polyphase`）、RWC の表は全列 ±0.1。
+- `tools/d2/spike` は最初の試作（拍の経路だけ）。`src/Dettato` が置き換えた。README の数字の記録として残してある。
 
 ### 数字（`measure.py all`、2026-11-14 の最後。lysc check 1388/1388、sidecar 1388/1388）
 
@@ -39,8 +43,6 @@ D2（配る形）の判断材料を測り終えた。**D2 そのものはユー�
 | テンポ・拍子 | 46・49 | 47・49 | 93・98 | |
 | 印 → 拾う誤り | 30.4% → 77.8% | 25.9% → 71.0% | 28.2% → 74.4% | 17.3% → 69.9% |
 
-- 印が前回（29.3% → 76.6%、25.7% → 70.1%）から動いたのは、印の 4 つの材料の 1 つ（自作のテンプレートが同じ和音を言うか）が
-  HPSS なしのクロマを聞くようになったため。`SURE_OF` と閾値は選び直していない。
 - 自作の読み取り器（モデルあり）は変えていない: seed1 / 7 / 11 のルート 95.6 / 96.0 / 97.2%、小節線 95.0 / 97.6 / 99.1%。
 - 頭と終わり（`measure.py head`）は前回と同じ: `rwc-dev`・`rwc-test` の `--ears` で最初の小節線 39/50・45/50、最後 24/50・13/50。
 
@@ -56,16 +58,18 @@ D2（配る形）の判断材料を測り終えた。**D2 そのものはユー�
 
 ## 次の一手
 
-**ユーザーが D2 を決める**（「未決」の表）。決まった形で次へ:
+**移植の (2): 読み取り器の特徴量を .NET で作る**（`read_chords.py` の `features()`、`--ears` なので HPSS なし）。
+`dettato features <wav> --out <フォルダ>` が `scratch/feat-h0/*.npz` と同じ 4 つの配列（`oenv`・`chroma`・`bass`・`rms`）を書き、
+`net_check.py` が Python の値と比べ、`measure.py` がそれを読んで表が同じになることを確かめる（`feats()` の読む場所を差し替える引数が要る）。
 
-- **(B) Python＋ONNX に決まったら:** `tools/d2/ears_onnx.py` と `read_chords.py` を 1 つのコマンドにまとめる
-  （`dettato song.wav` → `.lys` と `.dettato.json`）。耳の出力をファイルに書かず渡す、録音を 1 回だけ読む、スレッドは 8。
-  終わり: 1 コマンド・1 プロセスで `measure.py all` と同じ数字、1 曲 10 秒以内。そのまま D3（mp3、エラーの言い方）へ。
-- **(C) .NET に決まったら:** 順に (1) librosa の CQT を移す（crema の入力と 2 つのクロマの共通の土台。Python の値と比べる検査つき）、
-  (2) onset strength・rms・クロマ（調律の推定を含む）、(3) `read_chords.py` の規則（920 行）、(4) `measure.py` が .NET の
-  書いたものを読んで全表が一致。1 項目 1 セッションの見込みで 3〜5 セッション。試作（`tools/d2/spike`）が出発点。
+- 入力は 22050 Hz（`librosa.load(sr=22050)`＝soxr HQ。`Resample.To` で代える）、hop 512。`rms` と `oenv`（`onset_strength`:
+  mel のパワーの dB の、前のフレームとの差の正の部分）は、既定値を librosa 1.0.1 の実装（`.venv/Lib/site-packages/librosa/`）で確かめて書く。
+- クロマ 2 つ: `chroma_cqt`（C2 から 5 オクターブ、C1 から 2 オクターブ）＝`estimate_tuning`（piptrack → pitch_tuning）→
+  36 bins/oct の CQT → `cq_to_chroma` → 正規化。**調律の推定がいちばん重い**（STFT の頂点の放物線補間と、ずれのヒストグラム）。
+- 終わり: 4 つの配列の差の数字と、.NET の特徴量で読んだ `measure.py table seed1 rwc-dev rwc-test --ears` が同じか、違う列とその理由。
 
-D2 を待たずにできる一手: C3（テンポの大きな変化）、D4 の最初の一歩（下の「未確認」の 2 点を Lily# 側で確かめる）。
+その次は (3) 規則（`read()`・`decode()`・`find_meter`・`find_key`・`fold`・`find_form`・`lys()`、920 行）で 2 セッションの見込み。
+移植と関係なくできる一手: C3（テンポの大きな変化）、D4 の最初の一歩（下の「未確認」の 2 点を Lily# 側で確かめる）。
 
 やり残し（急がない）:
 
@@ -121,6 +125,8 @@ D2 を待たずにできる一手: C3（テンポの大きな変化）、D4 の�
 | `scratch/**/chords-btc/`・`chords-cmbtc/`・`chords-cm2e1d/`・`chords-crema+btc/` | `btc_chords.py --probs`・`chordmini_chords.py`・`scratch/b3avg.py` |
 | `scratch/d2/`（`crema-chord.onnx`、`beat-this-final0-*.onnx`、`crema-classes.json`、`venv-onnx/`、`spike/out/`、`out/`、`mel/`） | README の「Without torch and TensorFlow」の末尾 |
 
+| `scratch/net/`（`out/dettato.exe`、`seed1`・`seed7`・`seed11`・`rwc-p` の `.beats`・`.npz`・`.cqt.npy`） | README の「In .NET: the ears」の末尾（.NET SDK 10.0.401。RWC は 9 分） |
+
 `scratch/c1*.py`・`c2*.py`・`b3*.py` は commit の外。`scratch/` の古いスクリプトとログ、`read-all/`・`c1out/`・`c1lys/`・`c2out/`・`cmtest/`、
 `scratch/d2/` の `*.log`・`one*/`・`beats-small/`・`beats-final0/` は消してよい。
 
@@ -158,8 +164,10 @@ D2 を待たずにできる一手: C3（テンポの大きな変化）、D4 の�
 
 ## 分かっている弱点・未確認
 
-- **D2 で確かめていないこと:** .NET で書いたのは拍の経路だけ（CQT・クロマ・規則は見積もり）。1 プロセスにまとめた Python の時間。
-  wav 以外の入力、44100・22050 Hz 以外の標本化。別の CPU での速さ（この PC は 24 コア）。`small0` と半精度。
+- **.NET で確かめていないこと:** 書いたのは耳だけ（特徴量・規則は見積もり）。44100 Hz 以外の録音（`Resample.To` は任意の比を
+  取るが、手元の録音は全部 44100）。RWC の小節線（fold のモデルを ONNX にしていない。`final0` の拍を 5 曲比べただけ）。
+  メモリ（100 曲を 1 プロセスで読むと最大 2.4 GB）。wav 以外の入力。別の CPU での速さ（この PC は 24 コア）。`small0` と半精度。
+- **このセッションでは `measure.py all` を回していない。** 読み取り器も測定も変えていないため。動作確認の 1 コマンドは前回と一致。
 - **D4 の最初に Lily# 側で確かめる 2 点:** `lilysharp/playback` の `Beats` が `partial` の小節にも小節の頭（`A`）を立てるか、
   `lilysharp/placeAt` が弱起に返す小節番号。`lysc layout` は弱起を 1 小節に数えることだけ確認した。
 - 弱起つき・section つきの `.lys` は `lysc check` と `lysc layout` を通しただけ。描いた譜面と鳴り方は目と耳で確かめていない。
@@ -175,19 +183,11 @@ D2 を待たずにできる一手: C3（テンポの大きな変化）、D4 の�
 
 ## 未決（ユーザーの判断待ち）
 
-- **配る形（D2）。** 測った数字での比較（1 曲 3 分半、この PC）:
-
-  | | (A) いまのまま | (B) Python＋ONNX | (C) .NET＋ONNX |
-  |---|---|---|---|
-  | 使う人に要るもの | Python と venv 3 つ（3.7 GB、torch と TensorFlow） | Python と venv 1 つ（450 MB）＋モデル 85 MB | 実行ファイル＋onnxruntime 12 MB＋モデル 85 MB（.NET は lysc と同じ扱い） |
-  | 1 曲の時間 | 18 秒（3 プロセス） | 11 秒（2 プロセス）。1 つにまとめて 9 秒の見込み | 拍の経路 3.6 秒（実測）。全体で 5 秒前後の見込み（残りは未実装） |
-  | 精度 | README の表 | 同じ（実測で全桁一致） | 拍は再標本化の違いで小節線 F −0.2 ほど、コードは ±0.1 の見込み（CQT の感度から） |
-  | 残りの作業 | なし | 1 セッション（1 コマンドにまとめる） | 3〜5 セッション（CQT、特徴量、規則 920 行の移植と突き合わせ） |
-  | Lily#・Calamo との揃い | 揃わない | 揃わない（VS Code 拡張から Python を呼ぶ） | 揃う（Calamo と同じ OnnxRuntime、net10.0） |
-  | 研究を続けやすいか | 続けやすい | 続けやすい（測定の道具と同じ言語） | 規則を変えるたびに 2 か所。Python は測定用に残る |
-
-  私の勧め: **まず (B)**（1 セッションで「1 コマンド・10 秒」になり、M2〜M3 の規則の変更をそのまま続けられる）。
-  規則が落ち着いた時点（M3 の後）で (C) に移す。.NET の試作と CQT の感度の数字は、そのときそのまま使える。
+- **配る形（D2）の読みの確認。** 「VS code extension」を「.NET の実行ファイルを拡張に入れる」と読んで進めている。
+  違う意味（拡張の中の TypeScript で動かす、Python のまま拡張から呼ぶ、D4 を先に、など）なら言ってもらう。
+  .NET の耳は Python 経由でも使える（`.beats` と `.npz` を書く）ので、読みが違っても今回の分は無駄にならない。
+- **Dettato の拡張を Lily# と別にするか。** Calamo は別の拡張（`yotsuda.calamo`）で、Lily# が場所を尋ねて呼ぶ。モデルが 85 MB あるので
+  同じ形が自然だが、決めるのは D4。移植中は規則を変えるたびに Python と .NET の 2 か所になる（Python が正）。
 - **和音のないイントロ・弱起を譜面に書くか。** いまは書かない。書くなら N.C. の小節として。`rwc-dev` で落としている和音なしの小節は 14。
 - **M2 の印の目安（誤りの 8 割・印 3 割以下）をどうするか。** crema で `rwc-test` は「印 26% で 71%」。
   (a) 目安を下げる、(b) 印を 4 割近くまで増やす、(c) BTC を 2 つ目の耳にする。決まるまで閾値は 0.84。
