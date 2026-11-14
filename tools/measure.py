@@ -128,6 +128,14 @@ def feats(wav):
     return f
 
 
+READ = None           # --read: a folder of what `dettato read` wrote, a folder a set (scratch/net/read)
+
+
+def net_reading(wav):
+    """The reading of a recording that dettato.exe wrote, in place of read_chords.py's own."""
+    return json.loads((READ / wav.parent.name / (wav.stem + ".dettato.json")).read_text(encoding="utf-8"))
+
+
 def set_constant(key, value):
     if key.startswith("Q:"):        # the price of a chord quality
         rc.QUALITY_COST[key[2:]] = value
@@ -217,6 +225,8 @@ def run(name, hint=False, verbose=False, write=None, lines=None, labs=None, hear
         try:
             if labs:
                 got = lab_reading(truth, wav, labs, lines or "truth")
+            elif READ:
+                got = net_reading(wav)
             elif lines:
                 given, units, per = bar_lines(truth, wav, lines)
                 got = rc.read(wav, feats(wav), lines=given, units=units, beats=per,
@@ -274,7 +284,9 @@ def doubted(names, ears=False):
     for name in names:
         lines, heard = ears_of(name) if ears else (None, None)
         for truth, wav in songs(name):
-            if ears:
+            if READ:
+                got = net_reading(wav)
+            elif ears:
                 given, units, per = bar_lines(truth, wav, lines)
                 got = rc.read(wav, feats(wav), lines=given, units=units, beats=per,
                               heard=np.load(heard / (wav.stem + ".npz")), why=True)
@@ -294,7 +306,7 @@ def doubted(names, ears=False):
                                  "offered": oroot == true[0] and oquality == true[1],
                                  "offeredFam": oroot == true[0] and sc.FAMILY[oquality] == sc.FAMILY[true[1]],
                                  "song": truth["id"], "symbol": c["symbol"], "true": true, "key": got["key"], "start": c["start"], "end": c["end"],
-                                 **c["why"]})
+                                 **c.get("why", {})})
     return rows
 
 
@@ -321,7 +333,9 @@ def form(names, ears=False, verbose=False):
         sums = {"read": [0, 0, 0, 0], "true": [0, 0, 0, 0]}
         n = 0
         for truth, wav in songs(name):
-            if ears:
+            if READ:
+                got = net_reading(wav)
+            elif ears:
                 given, units, per = bar_lines(truth, wav, lines)
                 got = rc.read(wav, feats(wav), lines=given, units=units, beats=per, heard=np.load(heard / (wav.stem + ".npz")))
             else:
@@ -357,7 +371,9 @@ def head(names, ears=False, verbose=False):
         n = first = last = ups = ups_read = ups_false = 0
         early = late = 0.0
         for truth, wav in songs(name):
-            if ears:
+            if READ:
+                got = net_reading(wav)
+            elif ears:
                 given, units, per = bar_lines(truth, wav, lines)
                 got = rc.read(wav, feats(wav), lines=given, units=units, beats=per, heard=np.load(heard / (wav.stem + ".npz")))
             else:
@@ -564,6 +580,8 @@ def main():
         s.add_argument("--set", action="append", default=[], metavar="NAME=VALUE", help="a constant of read_chords.py, for this run")
         s.add_argument("--net", type=Path, help="read from the features dettato.exe made (dettato features), not librosa's: "
                                                 "a folder with a folder a set of <recording>.feat.npz (scratch/net)")
+        s.add_argument("--read", type=Path, help="with --ears: count the charts dettato.exe wrote (dettato read), not read_chords.py's: "
+                                                 "a folder with a folder a set of <recording>.dettato.json (scratch/net/read)")
         return s
 
     s = reader(sub.add_parser("table", help="read and score: one line a set"))
@@ -607,8 +625,12 @@ def main():
     s = sub.add_parser("make", help="render the sets that are missing")
     s.add_argument("sets", nargs="*", help="default: all of them")
     sub.add_parser("sets", help="list the sets")
+    s = sub.add_parser("check", help="charts already written through lysc check, and the files beside them against docs/SIDECAR.md")
+    s.add_argument("folders", nargs="+", type=Path, help="folders of <name>.lys and <name>.dettato.json")
     args = p.parse_args()
 
+    if args.what == "check":
+        return check([chart for d in args.folders for chart in sorted(d.glob("*.lys"))])
     if args.what == "sets":
         for name, (where, gen, alt, why) in SETS.items():
             made = len(list((ROOT / where).glob("*.wav")))
@@ -621,8 +643,10 @@ def main():
     if args.what == "keys":
         return keys(args.sets, args.verbose)
 
-    global NET
-    NET = args.net
+    global NET, READ
+    NET, READ = args.net, args.read
+    if READ and not getattr(args, "ears", False):
+        sys.exit("--read needs --ears: dettato.exe reads with the models trained on recordings")
     model = None if args.rules else args.model
     if model and not Path(model).exists():
         sys.exit(f"{model} is not there: train it (tools/train_chords.py), or read with --rules")

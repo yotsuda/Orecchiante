@@ -59,7 +59,7 @@ M2 の数字の根拠（2026-11-14、RWC-P 100 曲の最初の測定）:
 
 1 項目がおおよそ 1 セッション。各項目の「終わり」を満たしたら commit し、HANDOFF を書き換える。
 A、B0〜B3、C1、C2、D1 は 2026-11-14 に終わった。D2 の判断材料も同日に測った。
-**D2 は決まった（2026-11-14）: .NET＋ONNX の実行ファイルを VS Code 拡張に入れて配る。次は読み取り器の .NET への移植（D2 の表）。**
+**D2 は終わった（2026-11-14）: 読み取り器は .NET の 1 コマンド（`dettato read`）になり、Python と一字一句同じ譜面を書く。次は D3・D4（HANDOFF）。**
 
 実録音の扱い: RWC-P の **P001〜P050 は見て決める側、P051〜P100 は決めるときに見ない側**。
 変更のたびに 100 曲全部を測って README に載せるが、値を選ぶ・誤りを調べるのは前半だけで行う
@@ -131,13 +131,14 @@ A、B0〜B3、C1、C2、D1 は 2026-11-14 に終わった。D2 の判断材料�
   Lily# の鳴らす n 番目の小節。`tools/sidecar.py` が仕様と、`lysc layout` の小節数との一致を検査し、`measure.py` が書いた
   譜面すべてに掛ける。Lily# のエディタ側で確かめていない 2 点（弱起の拍、`placeAt` の小節番号）は D4 の最初に。
   当初の項目: `.dettato.json` の項目を確定し、Lily# 側と突き合わせる。
-- **D2 配る形（決定、2026-11-14）: .NET＋ONNX の実行ファイルを、VS Code 拡張に入れて配る**（Calamo と同じ形。
+- **D2 配る形（決定・移植とも完了、2026-11-14）: .NET＋ONNX の実行ファイルを、VS Code 拡張に入れて配る**（Calamo と同じ形。
   ユーザーの答えは「VS code extension」の一言で、.NET と読んだのは Claude。違っていたら HANDOFF の「未決」を見て直す）。
   移植は 4 段で、段ごとに Python と突き合わせる（進み具合は HANDOFF）:
   (1) 耳＝拍と CQT と crema（**完了**、`src/Dettato`、README の「In .NET: the ears」）、
   (2) onset strength・rms・2 つのクロマ（調律の推定を含む。**完了**、`Features.cs`、README の「In .NET: what the rules read」）、
-  (3) `read_chords.py` の規則、
-  (4) `measure.py` が .NET の書いた譜面を読んで全表が一致。Python の読み取り器は (4) まで正で、その後は測定用に残る。
+  (3) `read_chords.py` の規則（**完了**、`--ears` の道だけ。`Reader.cs`・`Form.cs`・`Writer.cs`、README の「In .NET: the rules」）、
+  (4) `measure.py` が .NET の書いた譜面を読んで表が一致（**完了**、`measure.py --read`。`.dettato.json` と `.lys` は 268 曲で
+  Python と一字一句同じ、`tools/read_check.py`）。規則を変えるときは Python で試して測り、.NET に写して `read_check.py` で確かめる。
   判断材料（2026-11-14。README の「Without torch and TensorFlow」）:
   2 つのモデルは ONNX で同じ答えを出す。1 曲（3 分半）は 3 つの venv で 18 秒、1 つの venv＋ONNX で 11 秒、
   .NET は拍の経路だけ試作して 3.6 秒。組み立ての時間の 9 割だった HPSS は `--ears` では外した（精度は同じ、ベースは上がる）。

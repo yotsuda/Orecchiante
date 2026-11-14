@@ -11,9 +11,10 @@ beats and bar lines of Beat This!, the chords of crema). On 100 studio recording
 it has the tempo of 93, 93% of the bar lines, the chord's root right 87% of the time and its
 root and family 82%, and it marks 28% of the chords for a look, among them three in four of
 the wrong ones (see [Recordings](#recordings)). A song of three and a half minutes takes 18
-seconds in three Python environments; what a single command would take is
-[measured](#without-torch-and-tensorflow) and not yet decided. The reader with nothing but its own hearing,
-which the work began with, is kept for comparison.
+seconds in three Python environments. The same reader is one program in .NET, `dettato read`
+(`src/Dettato`), which writes the same charts letter for letter and takes 5.5 seconds
+([In .NET: the rules](#in-net-the-rules)); it reads a `.wav` and is not yet in an editor.
+The reader with nothing but its own hearing, which the work began with, is kept for comparison.
 
 Where the work is going, and where it stands: [docs/ROADMAP.md](docs/ROADMAP.md) and
 [docs/HANDOFF.md](docs/HANDOFF.md) (both in Japanese).
@@ -678,6 +679,46 @@ scratch/net/out/dettato.exe features data/synth/seed1 --out scratch/net/seed1
 .venv/Scripts/python tools/net_check.py data/synth/seed1 scratch/net/seed1 --no-cqt --feats scratch/feat-h0
 scratch/net/out/dettato.exe features scratch/real/rwc-p --out scratch/net/rwc-p        # 33 s
 .venv/Scripts/python tools/measure.py table seed1 rwc-dev rwc-test --ears --net scratch/net
+```
+
+### In .NET: the rules
+
+The third part (2026-11-14) is the reader itself: `dettato read` takes a `.wav` and writes the
+`.lys` and the `.dettato.json`, with nothing of Python in between. It is `read_chords.py` as it
+runs with `--ears`, step for step (`Reader.cs`, 532 lines: the bars carried to both ends, the
+search, the two ends and the pickup, the bass note, the marks, the key; `Form.cs`, 213: the
+sections; `Writer.cs`, 145: the two files; 1894 lines in all). The reader with nothing learnt
+and the one with its own model are not moved: they are what the songs made here are measured
+against, and stay in Python. Where numpy's arithmetic is not the plain one it is done numpy's
+way (`Np.cs`: the order of its sums, means in single precision where the features are, Python's
+floor division and its rounding to decimals), so the two can be compared letter for letter.
+
+| Against `read_chords.py` (`tools/read_check.py`) | The songs made here | RWC, 100 songs |
+|---|---|---|
+| `.dettato.json`, letter for letter | the same in 168/168 (`seed1`, `seed7`, `seed11`, `seed21`, `seed31`, `seed41`, `head/seed141`) | the same in 100/100 |
+| `.lys`, but the line that names the program | the same in 168/168 | the same in 100/100 |
+| `measure.py table`, `doubt`, `form` and `head`, counting dettato's charts (`--read`) | the same (`table` on `seed1`, `seed7`, `seed11`; `form` on `seed1`; `head` on `seed41`) | the same (`table` on `rwc-dev` and `rwc-test`; `doubt` and `form` on `rwc-dev`; `head` on `rwc-test`) |
+| `lysc check`, and the files against SIDECAR.md | 168/168, 168/168 | 100/100, 100/100 |
+
+Both read the same beats and probabilities there (`--lines`, `--heard`: for RWC the fold
+models' beats, which only Python has) and the same features (.NET's: Python with `--net`).
+With the two models run inside (`dettato read` alone), `seed1` is the same in 24/24 as from the
+files `dettato ears` writes. One song (3 min 27 s, `RWC_P001`), cold, from the `.wav` to the
+chart: 5.5 s (0.3 s to start and open the models, 0.1 s to load and resample, 0.3 s the
+features, 3.7 s Beat This!, 1.0 s the transforms and crema, 0.1 s the rules), on 8 threads.
+Not done: `--tempo`, the reasons of a mark (`why`, which `measure.py doubt` shows when Python
+reads), any input but a `.wav`. Not looked at: RWC from the `.wav` alone (the model here has
+heard those songs, so its bar lines are not to be counted).
+
+```
+scratch/net/out/dettato.exe read song.wav --out charts --models scratch/d2      # song.lys and song.dettato.json
+.venv/Scripts/python tools/measure.py table seed1 rwc-dev rwc-test --ears --net scratch/net --write scratch/pyread
+scratch/net/out/dettato.exe read data/synth/seed1 --out scratch/net/read/seed1 --lines scratch/beats-bt/seed1 --heard scratch/chords-crema/seed1
+scratch/net/out/dettato.exe read scratch/real/rwc-p --out scratch/net/read/rwc-p --lines scratch/real/beats-bt-folds --heard scratch/real/chords-crema   # 27 s
+py -3.12 tools/read_check.py scratch/pyread/seed1 scratch/net/read/seed1
+py -3.12 tools/read_check.py scratch/pyread/rwc-dev scratch/net/read/rwc-p
+.venv/Scripts/python tools/measure.py table seed1 rwc-dev rwc-test --ears --read scratch/net/read
+.venv/Scripts/python tools/measure.py check scratch/net/read/seed1 scratch/net/read/rwc-p
 ```
 
 ### On the songs made here, nothing learnt
