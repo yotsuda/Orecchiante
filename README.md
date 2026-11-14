@@ -5,9 +5,10 @@ writes editable Lily# text (`.lys`), with the places it is unsure of marked for 
 
 *Dettato* is Italian for dictation, the exercise of writing down music as it is heard.
 
-**Status: a first reader, measured only on songs of its own making.** `tools/read_chords.py`
-writes a chord chart from a recording; no real recording has been counted against a known
-answer yet.
+**Status: a first reader, good on songs of its own making and not yet on recordings.**
+`tools/read_chords.py` writes a chord chart from a recording. On 100 studio recordings of pop
+songs it finds three chord roots in four and two bar lines in three, and marks most of what it
+reads as doubtful (see [Recordings](#recordings)).
 
 Where the work is going, and where it stands: [docs/ROADMAP.md](docs/ROADMAP.md) and
 [docs/HANDOFF.md](docs/HANDOFF.md) (both in Japanese).
@@ -82,8 +83,60 @@ $env:DETTATO_SAMPLES = "<LilySharp>/samples"        # the table of "songs it was
 `measure.py sets` lists the sets and what each is for. One table, or one question, at a time:
 `table seed1 seed7 -v`, `table seed21 --hint`, `table seed1 --rules` (nothing learnt),
 `sweep seed100 TIGHTNESS=300,100`, `doubt seed1 seed7 seed11`, `barlines seed1`, `keys seed1`,
-`beats seed7 s7-005`. `all` takes about three minutes once the features are kept, and last
-passed all 772 charts it wrote through `lysc check` (2026-11-14).
+`beats seed7 s7-005`. `all` takes about eight minutes once the features are kept (the recordings
+below among them), and last passed all 1072 charts it wrote through `lysc check` (2026-11-14).
+
+## Recordings
+
+The 100 songs of the RWC Popular Music Database (studio recordings with singing, a band and a
+mix; CC BY-NC 4.0), with the beats, bar lines and chords annotated for them.
+`tools/rwc_truth.py` writes the annotations as truths; where the recordings and the annotations
+come from, and what is done to the chord labels, is in [docs/DATASETS.md](docs/DATASETS.md).
+Neither is committed. The annotations name no key, so none is counted.
+
+Nothing in either reader was chosen on these songs, and the model has heard none of them
+(2026-11-14, the first time they were read):
+
+| `rwc-p`, 100 songs | nothing learnt | with the model | with the model, told the tempo |
+|---|---|---|---|
+| Tempo (within 4%), songs | 62 | 60 | 64 |
+| Meter, songs | 94 | 94 | 94 |
+| Bar lines (within 70 ms), F | 65.0% | 66.1% | 67.6% |
+| Chord root, by time | 70.5% | 74.7% | 74.8% |
+| Root and family | 49.3% | 63.4% | 63.3% |
+| Root and quality | 31.2% | 44.4% | 44.2% |
+| The bass note too | 30.0% | 41.2% | 41.1% |
+
+Against the songs made here (root 95 to 97%, bar lines 95 to 99%), that is the distance between
+a sound font and a record. Where it goes wrong, with the model:
+
+- **Half bars (29 songs).** The tempo is read twice too fast and every bar is cut in two: 88% of
+  the true bar lines are found, but only 44% of the lines read are true ones. These are the slow
+  songs (62 to 107 beats a minute, all but two), whose chords often change twice a bar: the
+  reader takes the bar to be as long as a chord lasts. Telling it the tempo does not mend it,
+  for `--tempo` allows bars of two beats.
+- **Another tempo (11 songs).** Five are read at half the tempo, four at three quarters, two at
+  about half as fast again.
+- **The right tempo, the lines in the wrong place (18 songs lose a tenth of their lines or more,
+  9 of them nearly all).** In seven the tracked beats sit on the off-beats, so every line is
+  half a beat off; in five the beats are right and the bar begins on the wrong one, one or two
+  beats off. The other six lose them here and there (one is in 5/4, which the reader cannot
+  write). `measure.py barlines rwc-p` lists them.
+- **Sounds the model does not know (66 songs).** It doubts more than half of the half beats, so
+  the bars are left to the templates, and three chords in four are marked: the marks point at
+  nothing. In the 34 songs it does not find strange, the root is right 81% of the time and the
+  family 74%; in the 66, 71% and 57%.
+
+  Of the 14537 chords read, 35.4% are wrong in root or family and 72.9% are marked; 92.9% of
+  the wrong ones are among the marked, and 45.1% of the marked are wrong.
+
+With the tempo right (60 songs), 77% of the bar lines are found and 76% of those read are true.
+
+From here on the first fifty songs (`rwc-dev`) are the ones looked at to choose by, and the
+last fifty (`rwc-test`) are counted and not looked into. As first read, with the model:
+`rwc-dev` tempo 35 of 50, bar lines 68.4%, root 73.5%, root and family 61.7%; `rwc-test` tempo
+25 of 50, bar lines 63.8%, root 75.9%, root and family 64.9%.
+
 
 On three sets of 24 songs (2026-11-14). The reader's constants were chosen on `seed1`, and
 `seed7` was looked at while choosing; `seed11` was made later and not chosen on:

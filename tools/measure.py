@@ -72,16 +72,23 @@ def configure(model):
         rc.use_model(model)
 
 
+PARTS = {"rwc-dev": "rwc-p@1-50", "rwc-test": "rwc-p@51-100"}   # looked at to choose by; not looked at
+
+
 def folder(name):
+    name = PARTS.get(name, name).split("@")[0]
     return ROOT / SETS[name][0] if name in SETS else Path(name)
 
 
 def songs(name):
-    """(truth, recording) for each song of a set."""
+    """(truth, recording) for each song of a set. `set@11-20` is its eleventh to twentieth song."""
     d = folder(name)
     paths = sorted(d.glob("*.truth.json"))
     if not paths:
         sys.exit(f"{name}: no <id>.truth.json in {d}" + (" (measure.py make)" if name in SETS else ""))
+    if "@" in PARTS.get(name, name):
+        first, last = PARTS.get(name, name).split("@")[1].split("-")
+        paths = paths[int(first) - 1:int(last)]
     for path in paths:
         truth = json.loads(path.read_text(encoding="utf-8"))
         yield truth, path.parent / truth["audio"]
@@ -140,7 +147,7 @@ def run(name, hint=False, verbose=False, write=None):
             print(f"{truth['id']} failed: {e}")
             continue
         if write:
-            d = Path(write) / name.replace("/", "-")
+            d = Path(write) / name.replace("/", "-").replace("@", "-")
             d.mkdir(parents=True, exist_ok=True)
             (d / (wav.stem + ".dettato.json")).write_text(json.dumps(got, indent=2) + "\n", encoding="utf-8", newline="\n")
             (d / (wav.stem + ".lys")).write_text(rc.lys(got, wav.stem), encoding="utf-8", newline="\n")
@@ -153,7 +160,7 @@ def run(name, hint=False, verbose=False, write=None):
             print(f"{r['id']:<14} tempo {'ok' if r['tempo'] else 'x' + str(r['tempoRatio']):>6} meter {'ok' if r['meter'] else '--'}"
                   f" key {'  ' if r['key'] is None else 'ok' if r['key'] else '--'} bars {r['barsFound']:>2}/{r['barsTrue']} ({r['barsRead']}) root {r['root']:.0%}"
                   f" fam {r['family']:.0%} qual {r['quality']:.0%}{doubted}{' strange' if got.get('strange') else ''}"
-                  f"  {truth['time']} {truth['tempo']['bpm']} {styles}")
+                  f"  {truth['time']} {truth['tempo']['bpm']} {styles}", flush=True)
     return rows, written
 
 
@@ -224,8 +231,14 @@ def barlines(names, hint):
             beat = bar / per
             rb = np.array([b["start"] for b in got["bars"]])
             ratio = float(np.median(np.diff(rb))) / bar
-            off = np.array([(x - tb[np.argmin(abs(tb - x))]) / beat for x in rb])
-            boff = (((bt - tb[0]) / beat + 0.5) % 1.0) - 0.5      # tracked beats against true beats
+            # where a moment falls in true beats, counted inside its own true bar (a recording's tempo moves)
+            ends = np.append(tb, truth["bars"][-1]["end"])
+            def place(x):
+                i = int(np.clip(np.searchsorted(ends, x, side="right") - 1, 0, len(tb) - 1))
+                return i * per + (x - ends[i]) / (ends[i + 1] - ends[i]) * per
+            inside = bt[(bt >= ends[0]) & (bt < ends[-1])]
+            off = np.array([((place(x) + per / 2) % per) - per / 2 for x in rb])
+            boff = np.array([((place(x) + 0.5) % 1.0) - 0.5 for x in inside])      # tracked beats against true beats
             tracked = period * rc.HOP / rc.SR / beat
             spread = float(np.std(boff))
             if abs(ratio - 1) > 0.1:
@@ -326,6 +339,9 @@ def everything(model, write):
         ("The songs constants are chosen on, with the model", ["seed100", "held/seed101"], model, False, False),
         ("Songs it was not made on, nothing learnt", ["samples"], None, False, True),
         ("Songs it was not made on, with the model", ["samples"], model, False, True),
+        ("Recordings, nothing learnt", ["rwc-p"], None, False, False),
+        ("Recordings, with the model", ["rwc-p"], model, False, False),
+        ("Recordings, with the model, told the tempo", ["rwc-p"], model, True, False),
     ]
     charts = []
     for i, (title, names, m, hint, verbose) in enumerate(plan):
@@ -390,6 +406,8 @@ def main():
         for name, (where, gen, alt, why) in SETS.items():
             made = len(list((ROOT / where).glob("*.wav")))
             print(f"{name:<14} {where:<26} {made:>3} recordings  {why}")
+        for name, part in PARTS.items():
+            print(f"{name:<14} {part}")
         return 0
     if args.what == "make":
         return make(args.sets or list(SETS))
