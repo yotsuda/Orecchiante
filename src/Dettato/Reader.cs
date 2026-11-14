@@ -60,6 +60,7 @@ static class Reader
     const double Chorded = 0.25;            // a bar at either end is in the chart when this much of it sounds a chord
     const double RingOut = 0.2;             // a bar past the last one found and this much quieter than the one before
     public static readonly Dictionary<int, string> Partial = new() { [1] = "4", [2] = "2", [3] = "2.", [4] = "1", [6] = "1." };
+    const double EvenTempo = 0.1;           // the tempo is from the mean of the bars within this share of the middle one
     const double SlowTwo = 1.5;             // a bar of two beats longer than this is a bar of four
     public const double SaidAgain = 0.95;
 
@@ -122,6 +123,14 @@ static class Reader
             if (at < 0) counts.Add((d, 1)); else counts[at] = (d, counts[at].Count + 1);
         }
         int per = counts.MaxBy(c => c.Count).Per;       // the first of the commonest
+        // a first beat counted in the middle of a bar: two short bars that make one whole are one
+        var kept = new List<int> { downs[0] };
+        for (int i = 1; i < downs.Length; i++)
+        {
+            if (i + 1 < downs.Length && downs[i] - kept[^1] < per && downs[i + 1] - kept[^1] == per) i++;
+            kept.Add(downs[i]);
+        }
+        downs = [.. kept];
         double beat = Np.Median(Np.Diff(times));
         int last = downs[^1] + per;
         double end = last < times.Length ? times[last] : Math.Min(times[^1] + beat, times[downs[^1]] + per * beat);
@@ -548,7 +557,10 @@ static class Reader
             c.Name = roots[c.Symbol.Root] + Qualities[c.Symbol.Quality] + (c.Symbol.Bass >= 0 ? "/" + roots[c.Symbol.Bass] : "");
             if (c.Other is { } other) c.OtherName = roots[other.Root] + Qualities[other.Quality];
         }
-        double barSeconds = Np.Median(Np.Diff([.. starts.Select(t => edges[t])])) * HOP / SR;
+        var barGaps = Np.Diff([.. starts.Select(t => edges[t])]);
+        double barSeconds = Np.Median(barGaps) * HOP / SR;
+        // the lines are a beat tracker's, on its grid of 20 ms: the bars about as long as the middle one, together
+        barSeconds = Np.Mean(barGaps.Select(g => g * HOP / SR).Where(g => Math.Abs(g - barSeconds) <= EvenTempo * barSeconds).ToArray());
         return new Chart
         {
             Audio = audio, Duration = Np.Round((n - 1) * HOP / SR, 2),

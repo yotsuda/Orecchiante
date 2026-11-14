@@ -22,7 +22,7 @@ Source and issues: <https://github.com/yotsuda/Dettato>.
 ## What to expect
 
 On 100 recorded pop songs (the RWC Popular Music Database) the reader gets the root of the chord
-right 87% of the time, root and major/minor 82%, and finds 93% of the bar lines. It is a first
+right 87% of the time, root and major/minor 82%, and finds 94% of the bar lines. It is a first
 draft to correct, not a finished chart. Songs whose tempo changes much, and bars without a chord
 at the start of a song, are not handled yet. The numbers and how they were measured are in the
 [repository's README](https://github.com/yotsuda/Dettato#readme).

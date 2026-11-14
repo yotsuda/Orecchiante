@@ -2,6 +2,14 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.2.1
+
+- Where the beat model counts a first beat in the middle of a bar, the two half bars are one bar
+  again (they threw every later bar off by one against the chart as played). On 100 recorded songs
+  the bar lines found rise from 93.4% to 94.2%.
+- The tempo is the mean of the regular bars, not the middle bar on the model's 20 ms grid: 131, not
+  130, for a song at 130.9.
+
 ## 0.2.0
 
 - Reads mp3, m4a, mp4, aac, flac and wma as well as `.wav` (through Windows' own decoders), at any

@@ -87,7 +87,9 @@ CHORDED = 0.25          # a bar before the first chord or after the last is in t
 RING_OUT = 0.2          # ears: a bar past the last one found and this much quieter than the bar before is the ring-out
                         # (rwc-dev and seed1; asking for the same chord too leaves 11 such bars in seed1's 24 songs, this 4)
 PARTIAL = {1: "4", 2: "2", 3: "2.", 4: "1", 6: "1."}   # a pickup of so many quarters, as Lily#'s `partial` takes it
-SLOW_TWO = 1.5         # a bar of two beats longer than this (beats slower than 80 a minute) is a bar of four
+MEND_BARS = True       # ears: two short bars that together have a bar's beats are one bar (the tracker's slip)
+EVEN_TEMPO = 0.1       # the tempo is from the mean of the bars within this share of the middle one (0: the middle one alone)
+SLOW_TWO = 1.5        # a bar of two beats longer than this (beats slower than 80 a minute) is a bar of four
                         # (chosen looking at seed7 and seed11, test sets, 2026-11-14)
 
 MAJOR_PROFILE = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88]
@@ -169,6 +171,14 @@ def lines_of(path):
     if len(downs) < 2:
         raise ValueError("fewer than two bar lines found")
     per = Counter(b - a for a, b in zip(downs, downs[1:])).most_common(1)[0][0]
+    if MEND_BARS:       # a first beat counted in the middle of a bar: two short bars that make one whole are one
+        kept, i = [downs[0]], 1
+        while i < len(downs):
+            if i + 1 < len(downs) and downs[i] - kept[-1] < per and downs[i + 1] - kept[-1] == per:
+                i += 1
+            kept.append(downs[i])
+            i += 1
+        downs = kept
     beat = float(np.median(np.diff(times)))
     last = downs[-1] + per
     end = times[last] if last < len(times) else min(times[-1] + beat, times[downs[-1]] + per * beat)
@@ -805,7 +815,10 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
         if "other" in c:
             c["other"] = roots[c["other"][0]] + c["other"][1]
     bar_seconds = float(np.median(np.diff(lines))) * HOP / SR
-    return {                                        # docs/SIDECAR.md says what each of these is
+    if EVEN_TEMPO and ears:      # the lines are a beat tracker's, on its grid of 20 ms: the bars about as long as the middle one, together
+        gaps = np.diff(lines) * HOP / SR
+        bar_seconds = float(np.mean(gaps[np.abs(gaps - bar_seconds) <= EVEN_TEMPO * bar_seconds]))
+    return {                                      # docs/SIDECAR.md says what each of these is
         "dettato": FORMAT,
         "audio": name,
         "duration": round((len(oenv) - 1) * HOP / SR, 2),

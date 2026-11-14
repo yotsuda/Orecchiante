@@ -284,17 +284,17 @@ crema; the same words hold for BTC, on which the prices and the marks were chose
 ```
 
 Counted on 2026-11-14 (`measure.py table rwc-dev rwc-test rwc-p --ears`; the beats of RWC are
-the fold models', as above):
+the fold models', as above; the first three columns again after "Two half bars are one bar" below):
 
 | | `rwc-dev` (chosen on) | `rwc-test` (counted only) | `rwc-p`, all 100 | crema as it is, `rwc-p` | with BTC's chords, `rwc-p` |
 |---|---|---|---|---|---|
 | Tempo (within 4%), songs | 46 of 50 | 47 of 50 | 93 | 91 | 93 |
 | Meter, songs | 49 of 50 | 49 of 50 | 98 | 96 | 98 |
-| Bar lines (within 70 ms), F | 93.0% | 93.9% | 93.4% | 93.8% | 93.4% |
-| Chord root, by time | 86.4% | 87.3% | 86.8% | 84.4% | 85.9% |
-| Root and family | 82.3% | 82.1% | 82.2% | 79.8% | 80.6% |
-| Root and quality | 68.0% | 69.1% | 68.6% | 66.5% | 67.1% |
-| The bass note too | 64.3% | 65.0% | 64.6% | 61.4% | 62.8% |
+| Bar lines (within 70 ms), F | 93.6% | 94.9% | 94.2% | 93.8% | 93.4% |
+| Chord root, by time | 86.4% | 87.3% | 86.9% | 84.4% | 85.9% |
+| Root and family | 82.3% | 82.2% | 82.2% | 79.8% | 80.6% |
+| Root and quality | 68.0% | 69.2% | 68.6% | 66.5% | 67.1% |
+| The bass note too | 64.4% | 64.9% | 64.7% | 61.4% | 62.8% |
 
 Two points of root and of family come from the rules (a chord lasts whole half beats and
 changes where bars say it may; with BTC's chords, three). The bass note is still this reader's
@@ -317,12 +317,12 @@ are BTC's still: fitted again on crema they catch a point more of `rwc-dev` and 
 
 | The marks, `--ears` | `rwc-dev` | `rwc-test` (counted only) | `rwc-p`, all 100 | with BTC's chords: `rwc-dev` (chosen on), `rwc-test` |
 |---|---|---|---|---|
-| Chords read | 7032 | 6777 | 13809 | 7274, 7042 |
-| Wrong in root or family | 14.9% | 16.0% | 15.5% | 19.0%, 18.0% |
-| Marked | 30.4% | 25.9% | 28.2% | 30.8%, 24.1% |
-| Of the chords wrong in root or family, marked | 77.8% | 71.0% | 74.4% | 79.5%, 63.1% |
-| Of the marked, wrong in root or family | 38.1% | 44.0% | 40.7% | 49.0%, 47.2% |
-| Marked and wrong so: the chord offered has the true root and family | 58.2% | 53.2% | 55.8% | 42.1%, 45.2% |
+| Chords read | 6933 | 6718 | 13651 | 7274, 7042 |
+| Wrong in root or family | 14.8% | 15.9% | 15.3% | 19.0%, 18.0% |
+| Marked | 30.2% | 25.7% | 28.0% | 30.8%, 24.1% |
+| Of the chords wrong in root or family, marked | 77.8% | 70.3% | 73.9% | 79.5%, 63.1% |
+| Of the marked, wrong in root or family | 38.1% | 43.5% | 40.5% | 49.0%, 47.2% |
+| Marked and wrong so: the chord offered has the true root and family | 58.2% | 52.9% | 55.6% | 42.1%, 45.2% |
 
 (The marks of this table are up to a point more than the line alone gives: a chord two playings
 of a section disagree on is marked too, see "What is said again". And they are up to a point more
@@ -784,6 +784,35 @@ scratch/net/out/dettato.exe read mp3/seed1 --out read-mp3/seed1 --models scratch
 py -3.12 tools/kinds_check.py read-wav/seed1 read-mp3/seed1
 .venv/Scripts/python tools/measure.py table seed1 --ears --read read-mp3
 ```
+
+### Two half bars are one bar
+
+A song of the owner's (2026-11-14: Billy Joel's "My Life" as an mp3, the first recording read
+that is not RWC's) showed two things. The beat model counted a first beat in the middle of one
+bar, and the chart had two bars where one is played: every bar after it was one late against the
+chart as Lily# plays it. And the tempo was written 130 where the song is at 130.9: the model's
+beats are on a grid of 20 ms, the middle bar was 1.84 s, the bars together 1.833 s each.
+
+So (`lines_of`, `MEND_BARS`): two bars in a row that are shorter than the song's bar and have its
+beats together are one bar. And (`EVEN_TEMPO`) the tempo is from the mean of the bars within a
+tenth of the middle one. Chosen on `rwc-dev` and the three sets below; `rwc-test` was counted
+after. With `--ears`, before and after:
+
+| | `rwc-dev` | `rwc-test` (counted only) | `rwc-p` | `seed1` | `seed7` | `seed11` |
+|---|---|---|---|---|---|---|
+| Bar lines, F | 93.0 → 93.6% | 93.9 → 94.9% | 93.4 → 94.2% | 96.6 → 96.7% | 90.7 → 90.9% | 94.0 → 93.6% |
+| Root | 86.4 → 86.4% | 87.3 → 87.3% | 86.8 → 86.9% | 95.1 → 95.1% | 93.1 → 93.1% | 94.5 → 94.5% |
+| Tempo, songs | 46 → 46 | 47 → 47 | 93 → 93 | 22 → 22 | 20 → 21 | 21 → 21 |
+| Marked → of the wrong in root or family | 30.2% → 77.8% | 25.7% → 70.3% | 28.0% → 73.9% | | | |
+
+Of the 11503 bars the fold models find in RWC, 373 pairs were such halves. The other sets with
+ears: `seed21` 86.1 → 86.1%, `seed31` 92.6 → 93.5%, `seed41` 91.1 → 90.8%. The bars written of the
+bars played (the sections) are 61.5% and 67.4% on the two halves of RWC (61.9% and 68.3%); the
+first and last bar lines are as they were within one song. Mending only where the song's bar has
+four beats or more was tried and is worse on the songs made here (`seed7` 90.4%). A lone short
+bar stays a bar (it may be the music's own bar of two beats), and is written as long as the rest.
+"My Life" is 152 bars at 131 now, the two times its verse leads into the bridge written alike.
+In .NET the same (`Reader.cs`), letter for letter on the 268 charts.
 
 ### On the songs made here, nothing learnt
 
