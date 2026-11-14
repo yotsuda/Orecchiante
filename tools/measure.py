@@ -6,6 +6,7 @@
     .venv/Scripts/python tools/measure.py table seed1 seed7 -v      # one line a set (-v: a line a song too)
     .venv/Scripts/python tools/measure.py table seed21 --hint       # told each song's true tempo
     .venv/Scripts/python tools/measure.py table seed1 --rules       # the reader with nothing learnt
+    .venv/Scripts/python tools/measure.py table seed1 rwc-dev --ears   # with models trained on recordings
     .venv/Scripts/python tools/measure.py sweep seed100 TIGHTNESS=300,100 Q:maj7=0.02,0.05
     .venv/Scripts/python tools/measure.py doubt seed1 seed7 seed11 --at 0.5,0.7
     .venv/Scripts/python tools/measure.py barlines seed1            # how the bar lines are missed
@@ -61,14 +62,17 @@ SETS = {
 TEST = ["seed1", "seed7", "seed11"]
 TIM = ["tim/seed1", "tim/seed7", "tim/seed11"]
 
-_RULES = {k: getattr(rc, k) for k in ("MODEL", "STAY_COST", "BASS_WEIGHT", "EMIT_SCALE")}
+_RULES = {k: getattr(rc, k) for k in ("MODEL", "STAY_COST", "MID_COST", "ELSE_COST", "BASS_WEIGHT", "EMIT_SCALE")}
 
 
-def configure(model):
-    """The reader with the model at `model`, or (None) with nothing learnt."""
+def configure(model, ears=False):
+    """The reader with the model at `model`, or (None) with nothing learnt; `ears`: with the
+    prices that go with a model trained on recordings (--heard)."""
     for k, v in _RULES.items():
         setattr(rc, k, v)
-    if model:
+    if ears:
+        rc.use_ears()
+    elif model:
         rc.use_model(model)
 
 
@@ -142,22 +146,16 @@ def bar_lines(truth, wav, source):
     folder of <recording>.beats files, a line a beat: its seconds, a tab, its number in the bar."""
     if source == "truth":
         per = {"6/8": 3}.get(truth["time"], int(truth["time"].split("/")[0]))
-        return [b["start"] for b in truth["bars"]] + [truth["bars"][-1]["end"]], 2 * per
-    rows = [line.split() for line in (Path(source) / (wav.stem + ".beats")).read_text().splitlines() if line.strip()]
-    times, numbers = [float(r[0]) for r in rows], [int(float(r[1])) for r in rows]
-    downs = [i for i, n in enumerate(numbers) if n == 1]
-    per = Counter(b - a for a, b in zip(downs, downs[1:])).most_common(1)[0][0]
-    beat = float(np.median(np.diff(times)))
-    last = downs[-1] + per
-    end = times[last] if last < len(times) else min(times[-1] + beat, times[downs[-1]] + per * beat)
-    return [times[i] for i in downs] + ([end] if end > times[downs[-1]] + 0.5 * per * beat else []), 2 * per
+        return [b["start"] for b in truth["bars"]] + [truth["bars"][-1]["end"]], 2 * per, None
+    given, per = rc.lines_of(Path(source) / (wav.stem + ".beats"))
+    return given, 2 * per, per
 
 
 def lab_reading(truth, wav, labs, lines):
     """A reading whose chords are another model's (<recording>.lab: start, end, Harte label), cut
     at bar lines found by other means: what that model is worth, counted as our own is."""
     import rwc_truth
-    given, units = bar_lines(truth, wav, lines)
+    given, units, _ = bar_lines(truth, wav, lines)
     spans = []
     for line in (Path(labs) / (wav.stem + ".lab")).read_text().splitlines():
         start, end, label = line.split()[:3]
@@ -181,16 +179,31 @@ def lab_reading(truth, wav, labs, lines):
             "key": "C major", "bars": bars}
 
 
-def run(name, hint=False, verbose=False, write=None, lines=None, labs=None):
+def ears_of(name):
+    """Where what the models trained on recordings made of a set is kept: (the folder of .beats,
+    the folder of .npz), as tools/track_beats.py and tools/btc_chords.py --probs wrote them (README)."""
+    base = PARTS.get(name, name).split("@")[0]
+    if base == "rwc-p":
+        return ROOT / "scratch" / "real" / "beats-bt-folds", ROOT / "scratch" / "real" / "chords-btc"
+    return ROOT / "scratch" / "beats-bt" / base, ROOT / "scratch" / "chords-btc" / base
+
+
+def run(name, hint=False, verbose=False, write=None, lines=None, labs=None, heard=None, ears=False):
     """Reads and scores a set. Returns each song's numbers, and the charts written."""
     rows, written = [], []
+    if ears:
+        lines, heard = ears_of(name)
+        if not lines.is_dir() or not heard.is_dir():
+            print(f"{name}: no beats in {lines} or no chords in {heard}")
+            return rows, written
     for truth, wav in songs(name):
         try:
             if labs:
                 got = lab_reading(truth, wav, labs, lines or "truth")
             elif lines:
-                given, units = bar_lines(truth, wav, lines)
-                got = rc.read(wav, feats(wav), lines=given, units=units)
+                given, units, per = bar_lines(truth, wav, lines)
+                got = rc.read(wav, feats(wav), lines=given, units=units, beats=per,
+                              heard=np.load(Path(heard) / (wav.stem + ".npz")) if heard else None)
             else:
                 got = rc.read(wav, feats(wav), tempo=truth["tempo"]["bpm"] if hint else None)
             r = sc.score(truth, got)
@@ -206,7 +219,7 @@ def run(name, hint=False, verbose=False, write=None, lines=None, labs=None):
         rows.append(r)
         if verbose:
             chords = [c for bar in got["bars"] for c in bar["chords"]]
-            doubted = f" doubted {sum(c['sure'] < rc.DOUBT for c in chords)}/{len(chords)}" if rc.MODEL is not None and not labs else ""
+            doubted = f" doubted {sum(c['sure'] < rc.DOUBT for c in chords)}/{len(chords)}" if chords and "sure" in chords[0] else ""
             styles = truth.get("band", {}).get("styles", "")
             print(f"{r['id']:<14} tempo {'ok' if r['tempo'] else 'x' + str(r['tempoRatio']):>6} meter {'ok' if r['meter'] else '--'}"
                   f" key {'  ' if r['key'] is None else 'ok' if r['key'] else '--'} bars {r['barsFound']:>2}/{r['barsTrue']} ({r['barsRead']}) root {r['root']:.0%}"
@@ -405,6 +418,13 @@ def everything(model, write):
             rows, written = run(name, hint=hint, verbose=verbose, write=Path(write) / f"{i + 1}" if write else None)
             charts += written
             print(f"{name}: {totals(rows)}", flush=True)
+    print("\n## With ears trained on recordings (Beat This! and BTC)")
+    configure(None, ears=True)
+    for name in TEST + ["seed21", "seed31", "rwc-dev", "rwc-test", "rwc-p"]:
+        rows, written = run(name, ears=True, write=Path(write) / "ears" if write and name != "rwc-p" else None)
+        charts += written
+        if rows:
+            print(f"{name}: {totals(rows)}", flush=True)
     configure(model)
     for title, names in (("The marks, this sound font", TEST), ("The marks, another sound font", TIM)):
         print(f"\n## {title}")
@@ -434,12 +454,19 @@ def main():
     s.add_argument("--check", action="store_true", help="with --write: every chart through lysc check")
     s.add_argument("--chords", help="count another model's chords: a folder of <recording>.lab files (the bar lines: --lines, else the truth's)")
     s.add_argument("--lines", help='bar lines found by other means: "truth", or a folder of <recording>.beats files')
+    s.add_argument("--heard", help="with --lines: chords put together from what a model trained on recordings hears, "
+                                   "a folder of <recording>.npz files (tools/btc_chords.py --probs)")
+    s.add_argument("--ears", action="store_true",
+                   help="--lines and --heard from where the README keeps them for each set (scratch/beats-bt, scratch/chords-btc)")
     s = reader(sub.add_parser("all", help="every table of the README"), sets=None)
     s.add_argument("--write", type=Path, default=ROOT / "scratch" / "read-all", help="where the charts go (default: scratch/read-all)")
     s = reader(sub.add_parser("sweep", help="the table over a grid of constants"), sets=None)
     s.add_argument("sets", help="names or folders, with commas between")
     s.add_argument("grid", nargs="+", metavar="NAME=V1,V2", help="a constant and the values to try (Q:maj7 for a quality's price)")
     s.add_argument("--hint", action="store_true")
+    s.add_argument("--lines", help="as for table")
+    s.add_argument("--heard", help="as for table")
+    s.add_argument("--ears", action="store_true", help="as for table")
     s = reader(sub.add_parser("doubt", help="do the marks point at the wrong chords?"))
     s.add_argument("--at", default=None, help="thresholds with commas between (default: the reader's DOUBT)")
     s = reader(sub.add_parser("barlines", help="how the bar lines are missed, song by song"))
@@ -470,7 +497,10 @@ def main():
     model = None if args.rules else args.model
     if model and not Path(model).exists():
         sys.exit(f"{model} is not there: train it (tools/train_chords.py), or read with --rules")
-    configure(model)
+    heard, ears = getattr(args, "heard", None), getattr(args, "ears", False)
+    if heard and not getattr(args, "lines", None):
+        sys.exit("--heard needs --lines: the model trained on recordings names chords, not bars")
+    configure(model, ears=bool(heard) or ears)
     for item in args.set:
         key, value = item.split("=", 1)
         set_constant(key, ast.literal_eval(value))
@@ -478,7 +508,8 @@ def main():
     if args.what == "table":
         charts = []
         for name in args.sets:
-            rows, written = run(name, hint=args.hint, verbose=args.verbose, write=args.write, lines=args.lines, labs=args.chords)
+            rows, written = run(name, hint=args.hint, verbose=args.verbose, write=args.write, lines=args.lines, labs=args.chords,
+                                heard=heard, ears=ears)
             charts += written
             print(f"{name}: {totals(rows)}", flush=True)
         return check(charts) if args.check and charts else 0
@@ -491,7 +522,7 @@ def main():
             for k, v in zip(grid, combo):
                 set_constant(k, v)
             for name in args.sets.split(","):
-                rows, _ = run(name, hint=args.hint)
+                rows, _ = run(name, hint=args.hint, lines=args.lines, heard=heard, ears=ears)
                 print(dict(zip(grid, combo)), f"{name}: {totals(rows)}", flush=True)
         return 0
     if args.what == "doubt":

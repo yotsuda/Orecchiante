@@ -83,8 +83,9 @@ $env:DETTATO_SAMPLES = "<LilySharp>/samples"        # the table of "songs it was
 `measure.py sets` lists the sets and what each is for. One table, or one question, at a time:
 `table seed1 seed7 -v`, `table seed21 --hint`, `table seed1 --rules` (nothing learnt),
 `sweep seed100 TIGHTNESS=300,100`, `doubt seed1 seed7 seed11`, `barlines seed1`, `keys seed1`,
-`beats seed7 s7-005`. `all` takes about eight minutes once the features are kept (the recordings
-below among them), and last passed all 1072 charts it wrote through `lysc check` (2026-11-14).
+`beats seed7 s7-005`, `table seed1 rwc-dev --ears` (with models trained on recordings, below).
+`all` takes about twelve minutes once the features are kept (the recordings below among them),
+and last passed all 1292 charts it wrote through `lysc check` (2026-11-14).
 
 ## Recordings
 
@@ -151,10 +152,10 @@ same way (2026-11-14):
 
 | `rwc-p`, 100 songs | this reader, with its model | its chords, true bar lines | its chords, Beat This!'s bar lines | BTC's chords, Beat This!'s bar lines | BTC's chords, true bar lines |
 |---|---|---|---|---|---|
-| Tempo (within 4%), songs | 60 | | 91 | 91 | |
-| Meter, songs | 94 | | 96 | 96 | |
+| Tempo (within 4%), songs | 60 | | 93 | 91 | |
+| Meter, songs | 94 | | 98 | 96 | |
 | Bar lines (within 70 ms), F | 66.1% | | 93.8% | 93.8% | |
-| Chord root, by time | 74.7% | 77.3% | 76.6% | 82.6% | 83.1% |
+| Chord root, by time | 74.7% | 77.3% | 76.7% | 82.6% | 83.1% |
 | Root and family | 63.4% | 66.2% | 65.3% | 77.4% | 77.8% |
 | Root and quality | 44.4% | 46.3% | 45.5% | 64.3% | 64.6% |
 | The bass note too | 41.2% | 42.6% | 41.9% | 58.7% | 59.0% |
@@ -163,12 +164,12 @@ So the bar lines were the beat tracker's fault and are mended by a model that ha
 recordings (66% to 94%), and right bar lines do little for this reader's chords (three points): what
 it hears is the limit, and a model that has heard recordings hears eight points more of the
 roots and fourteen of the families. BTC's chords here are as it gives them, frame by frame,
-with none of the reader's rules (a chord changes at a bar line, a doubt is marked). On
+with none of the reader's rules (a chord changes at a bar line, a doubt is marked); in the
+third column the meter is read from Beat This!'s beats as told below. On
 `rwc-test` alone the two together have bar lines 94.4%, root 83.3%, root and family 78.3%.
 
 On the songs made here Beat This!'s bar lines are a little behind the reader's own (F 86 to 96%
-against 89 to 99% on the five sets), and the 6/8 songs come out as two beats in a bar: the
-meter is not yet read from its beats.
+against 89 to 99% on the five sets).
 
 ```
 py -3.12 -m venv .venv-bt
@@ -182,6 +183,61 @@ git clone --depth 1 https://github.com/jayg996/BTC-ISMIR19 scratch/btc
 .venv/Scripts/python tools/measure.py table rwc-p --lines scratch/real/beats-bt-folds
 .venv/Scripts/python tools/measure.py table rwc-p --chords scratch/real/chords-btc --lines scratch/real/beats-bt-folds
 ```
+
+### Their ears, this reader's rules
+
+`read_chords.py --ears` puts a chart together from what those two models hear, and writes the
+`.lys` and the `.dettato.json` as before:
+
+- the bars are Beat This!'s, and so is the meter: the beats it counts in a bar, where two beats
+  are the two dotted quarters of 6/8 when the sound between them falls in threes, and the halves
+  of a bar of four when they are slower than 80 a minute;
+- each bar is cut into half beats, and BTC's probabilities of its 170 chords (`btc_chords.py
+  --probs`: about eleven frames a second) are folded into the reader's 96 and averaged over each;
+- the reader's search then names the chords: a change costs a little at a bar line or its half
+  and more elsewhere. BTC has already smoothed what it says, so the prices are a quarter of what
+  the reader's own model needs; they were chosen on `rwc-dev`.
+
+```
+.venv-bt/Scripts/python tools/track_beats.py song.wav --out ears
+.venv-bt/Scripts/python tools/btc_chords.py scratch/btc song.wav --out ears --probs
+.venv/Scripts/python tools/read_chords.py song.wav --out charts --ears ears
+```
+
+Counted on 2026-11-14 (`measure.py table rwc-dev rwc-test rwc-p --ears`; the beats of RWC are
+the fold models', as above):
+
+| | `rwc-dev` (chosen on) | `rwc-test` (counted only) | `rwc-p`, all 100 | BTC as it is, `rwc-p` |
+|---|---|---|---|---|
+| Tempo (within 4%), songs | 46 of 50 | 47 of 50 | 93 | 91 |
+| Meter, songs | 49 of 50 | 49 of 50 | 98 | 96 |
+| Bar lines (within 70 ms), F | 93.3% | 94.4% | 93.8% | 93.8% |
+| Chord root, by time | 84.8% | 86.4% | 85.6% | 82.6% |
+| Root and family | 79.1% | 81.3% | 80.2% | 77.4% |
+| Root and quality | 65.9% | 67.6% | 66.8% | 64.3% |
+| The bass note too | 61.6% | 62.6% | 62.1% | 58.7% |
+
+Three points of root and of family come from the rules (a chord lasts whole half beats and
+changes where bars say it may). The bass note is still this reader's own hearing, as is the
+doubt it marks, which is not yet calibrated for this model: about one chord in four is marked.
+
+On the songs made here (the beats are those of Beat This!'s model for use, `final0`):
+
+| `--ears` | `seed1` | `seed7` | `seed11` | `seed21` | `seed31` |
+|---|---|---|---|---|---|
+| Tempo, songs of 24 | 22 | 20 | 21 | 18 | 23 |
+| Meter, songs of 24 | 22 | 22 | 22 | 21 | 23 |
+| Bar lines, F | 96.4% | 90.6% | 93.7% | 86.2% | 92.4% |
+| Chord root, by time | 94.5% | 94.3% | 96.8% | 97.2% | 97.5% |
+| Root and family | 91.2% | 91.2% | 94.7% | 94.6% | 93.4% |
+| Root and quality | 77.1% | 73.9% | 82.3% | 79.9% | 79.7% |
+
+Beside the reader with its own model (below), the roots and families are within a point and
+the sevenths (root and quality) are behind by up to eight: the reader's model was made on this
+very sound. The bar lines are behind on four of the five sets (90.6 to 93.7% against 97.2 to
+99.1% on `seed7`, `seed11` and `seed31`), and that is the beat tracker: where it follows a
+song at half its tempo it counts four slow beats to two true bars, and some waltzes it counts
+in four or in two. The rule for two slow beats was chosen looking at `seed7` and `seed11`.
 
 
 On three sets of 24 songs (2026-11-14). The reader's constants were chosen on `seed1`, and

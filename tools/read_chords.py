@@ -20,6 +20,7 @@ This is the line to beat, written to be measured (tools/score_chords.py), not to
 import argparse
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 
 import librosa
@@ -62,6 +63,8 @@ DOUBT = 0.7             # a chord the model is less sure of than this is marked 
 BAR_UNITS = (2, 3, 4, 6, 8, 12, 16)   # a bar, in half beats: the tracker may follow any level
 BAR_SECONDS = (0.9, 4.0)              # bars shorter or longer than this are not tried
 HINT_TOLERANCE = 0.15   # how far from the tempo told a bar's beats may be
+SLOW_TWO = 1.5          # a bar of two beats longer than this (beats slower than 80 a minute) is a bar of four
+                        # (chosen looking at seed7 and seed11, test sets, 2026-11-14)
 
 MAJOR_PROFILE = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88]
 MINOR_PROFILE = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17]
@@ -85,6 +88,57 @@ ROOTS = np.array([root for root, _ in CHORDS])
 COSTS = np.array([QUALITY_COST[quality] for _, quality in CHORDS])
 _KIND = {"": "maj", "7": "maj", "maj7": "maj", "m": "min", "m7": "min", "sus4": "sus", "dim": "dim", "m7(b5)": "dim"}
 SAME = np.array([[a == b and _KIND[p] == _KIND[q] for b, q in CHORDS] for a, p in CHORDS])   # the same root and family
+
+
+# A model trained on recordings (BTC, through tools/btc_chords.py --probs) names 170 chords: 14
+# qualities on each root, then "X" and "N". They are folded into the reader's as tools/rwc_truth.py
+# folds the annotations; augmented chords, X and N have no chord of the reader's.
+EAR_QUALITIES = ["min", "maj", "dim", "aug", "min6", "maj6", "min7", "minmaj7", "maj7", "7", "dim7", "hdim7", "sus2", "sus4"]
+EAR_AS = {"min": "m", "maj": "", "dim": "dim", "min6": "m", "maj6": "", "min7": "m7", "minmaj7": "m", "maj7": "maj7",
+          "7": "7", "dim7": "dim", "hdim7": "m7(b5)", "sus2": "sus4", "sus4": "sus4"}
+FOLD = np.zeros((170, len(CHORDS)))
+for _i in range(168):
+    _q = EAR_AS.get(EAR_QUALITIES[_i % 14])
+    if _q is not None:
+        FOLD[_i, CHORDS.index((_i // 14, _q))] = 1.0
+
+
+def use_ears():
+    """The prices that go with a model trained on recordings and bar lines found by a beat tracker
+    (chosen on rwc-dev, 2026-11-14). That model has already smoothed what it says over the bars
+    around, so a change costs far less than it does for a model that hears one half beat: with
+    this reader's own prices (0.4, 0.5, 1.0) roots are 82.7% right there, with these 84.8%."""
+    global STAY_COST, MID_COST, ELSE_COST, BASS_WEIGHT, EMIT_SCALE
+    STAY_COST, MID_COST, ELSE_COST, BASS_WEIGHT, EMIT_SCALE = 0.1, 0.1, 0.25, 0.0, 0.2
+
+
+def said_in(heard, edges):
+    """What the model trained on recordings says of each unit: the log of its mean probability of
+    each of the reader's chords between one edge (in seconds) and the next. A frame counts for as
+    much of it as lies inside the unit."""
+    p = np.exp(heard["logp"].astype(np.float64)) @ FOLD
+    step = float(heard["step"])
+    run = np.vstack([np.zeros(p.shape[1]), np.cumsum(p, axis=0)])
+    x = np.clip(np.asarray(edges, dtype=float) / step, 0.0, len(p))
+    i = np.minimum(x.astype(int), len(p) - 1)
+    upto = run[i] + (x - i)[:, None] * p[i]
+    width = np.maximum(np.diff(x), 1e-6)
+    return np.log(np.maximum(np.diff(upto, axis=0) / width[:, None], 1e-12))
+
+
+def lines_of(path):
+    """Bar lines found by a beat tracker (tools/track_beats.py: a line a beat, its seconds, a tab,
+    its number in the bar), as `read` takes them: the lines in seconds, and the beats in a bar."""
+    rows = [line.split() for line in Path(path).read_text().splitlines() if line.strip()]
+    times, numbers = [float(r[0]) for r in rows], [int(float(r[1])) for r in rows]
+    downs = [i for i, n in enumerate(numbers) if n == 1]
+    if len(downs) < 2:
+        raise ValueError("fewer than two bar lines found")
+    per = Counter(b - a for a, b in zip(downs, downs[1:])).most_common(1)[0][0]
+    beat = float(np.median(np.diff(times)))
+    last = downs[-1] + per
+    end = times[last] if last < len(times) else min(times[-1] + beat, times[downs[-1]] + per * beat)
+    return [times[i] for i in downs] + ([end] if end > times[downs[-1]] + 0.5 * per * beat else []), per
 
 
 def use_model(path):
@@ -301,24 +355,33 @@ def features(path):
     }
 
 
-def read(path, f=None, tempo=None, lines=None, units=8):
+def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None):
     """The chart of a recording. `tempo`, if told, is about how many beats a minute it has: what
     is heard cannot tell a fast song whose chords last two bars from a slow one, bar by bar.
 
     `lines`, if given, are the bar lines in seconds (the end of the last bar too), found by other
-    means: then only the chords are read, each bar cut into `units` equal parts."""
+    means: then only the chords are read, each bar cut into `units` equal parts. `beats`, if a
+    beat tracker found the lines, is how many beats it counted in a bar, and says the meter:
+    two beats are two quarters or, when the sound between them falls in threes, the two dotted
+    quarters of 6/8. `heard`, if given, is what a model trained on recordings says the chords are
+    (the logp and step of tools/btc_chords.py --probs), in place of this reader's own hearing."""
     name = Path(path).name
     f = f or features(path)
     oenv, chroma, bass, rms = f["oenv"], f["chroma"], f["bass"], f["rms"]
     if lines is not None:
         marks = np.asarray(lines, dtype=float) * SR / HOP + BEAT_LAG
         marks = marks[marks < len(oenv)]
+        if beats:
+            six = beats == 6 or (beats == 2 and find_meter(marks, oenv)[0] != "4/4")
+            if beats == 2 and not six and float(np.median(np.diff(marks))) * HOP / SR > SLOW_TWO:
+                beats = 4       # the tracker counted the halves of a bar of four
+            units = 6 if six or beats == 3 else 2 * beats
         edges = np.concatenate([np.linspace(a, b, units, endpoint=False) for a, b in zip(marks[:-1], marks[1:])]
                                + [marks[-1:]])
         count = len(edges) - 1
     else:
-        beats, period = beat_grid(oenv)
-        edges = half_beats(beats, period)
+        tracked, period = beat_grid(oenv)
+        edges = half_beats(tracked, period)
         loud = np.array([float(over(rms, a, b)[0]) for a, b in zip(edges[:-1], edges[1:])])
         count = len(loud)
         while count > 8 and loud[count - 1] < 0.1 * np.median(loud):  # the ring-out is not music
@@ -328,7 +391,11 @@ def read(path, f=None, tempo=None, lines=None, units=8):
 
     treble = unit(np.array([over(chroma, a, b) for a, b in zip(edges[:-1], edges[1:])]).T)   # (12, units)
     low = unit(np.array([over(bass, a, b) for a, b in zip(edges[:-1], edges[1:])]).T)
-    if MODEL is None:
+    said = None
+    if heard is not None:
+        said = np.maximum(said_in(heard, (edges - BEAT_LAG) * HOP / SR), LOG_FLOOR)
+        emit = EMIT_SCALE * said * seconds[:, None]
+    elif MODEL is None:
         emit = ((TEMPLATES @ treble).T - COSTS) * seconds[:, None]
     else:
         said = np.full((count, len(CHORDS)), LOG_FLOOR)
@@ -380,7 +447,9 @@ def read(path, f=None, tempo=None, lines=None, units=8):
     given = lines is not None
     lines = np.array([edges[t] for t in starts])
     time, tempo_note, tempo_beats = find_meter(lines, oenv)
-    if given and units != 6 and (time, units) != ("4/4", 8):   # the beats in a bar came with the lines
+    if beats:
+        time, tempo_note, tempo_beats = ("6/8", "4.", 2) if six else (f"{beats}/4", "4", beats)
+    elif given and units != 6 and (time, units) != ("4/4", 8):   # the beats in a bar came with the lines
         time, tempo_note, tempo_beats = f"{units // 2}/4", "4", units // 2
     elif given and units == 6 and time == "4/4":
         time, tempo_note, tempo_beats = "3/4", "4", 3
@@ -405,7 +474,7 @@ def read(path, f=None, tempo=None, lines=None, units=8):
                 "symbol": (root, quality, lowest if slash else None),
                 "fit": round(fit, 3),
             }
-            if MODEL is not None:
+            if said is not None:
                 # how sure the model is of it, half beat by half beat, and what else it might be
                 # (of its root and whether it is major or minor: a seventh heard or not is a
                 # smaller doubt, and would mark one chord in four)
@@ -441,7 +510,7 @@ def read(path, f=None, tempo=None, lines=None, units=8):
 def lys(result, title):
     tonic, mode = result["key"].split()
     acc = {"": "", "#": "is", "b": "es"}[tonic[1:]]
-    beats = {"4/4": 4, "3/4": 3, "6/8": 2}[result["time"]]
+    beats = 2 if result["time"] == "6/8" else int(result["time"].split("/")[0])
 
     def slots(bar):
         """The bar as Lily# writes it: a chord on the beat it starts on, '.' where it goes on."""
@@ -487,15 +556,24 @@ def main():
     p.add_argument("--tempo", type=float,
                    help="about how many beats a minute the recording has, if you know: it settles "
                         "whether a chord lasts one bar or two")
+    p.add_argument("--ears", type=Path,
+                   help="read with models trained on recordings: the folder of <name>.beats (tools/track_beats.py) "
+                        "and <name>.npz (tools/btc_chords.py --probs) of the recordings")
     args = p.parse_args()
-    if args.model:
+    if args.ears:
+        use_ears()
+    elif args.model:
         use_model(args.model)
     files = sorted(args.input.glob("*.wav")) if args.input.is_dir() else [args.input]
     args.out.mkdir(parents=True, exist_ok=True)
     failed = 0
     for path in files:
         try:
-            result = read(path, tempo=args.tempo)
+            if args.ears:
+                lines, beats = lines_of(args.ears / (path.stem + ".beats"))
+                result = read(path, lines=lines, beats=beats, heard=np.load(args.ears / (path.stem + ".npz")))
+            else:
+                result = read(path, tempo=args.tempo)
         except Exception as e:  # one recording that cannot be read does not stop the rest
             failed += 1
             print(f"{path.name}: {e}", file=sys.stderr)
@@ -507,7 +585,7 @@ def main():
         doubted = sum(c.get("sure", 1.0) < DOUBT for c in read_chords)
         print(f"{path.name}: {result['key']}, {result['time']}, {result['tempo']['bpm']}, "
               f"{len(result['bars'])} bars"
-              + (f", {doubted} of {len(read_chords)} chords doubted" if MODEL is not None else "")
+              + (f", {doubted} of {len(read_chords)} chords doubted" if MODEL is not None or args.ears else "")
               + (": this is not music the model knows" if doubted > 0.5 * len(read_chords) else ""))
     if failed:
         sys.exit(f"{failed} of {len(files)} recordings were not read")
