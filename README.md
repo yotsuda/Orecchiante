@@ -9,6 +9,9 @@ writes editable Lily# text (`.lys`), with the places it is unsure of marked for 
 writes a chord chart from a recording; no real recording has been counted against a known
 answer yet.
 
+Where the work is going, and where it stands: [docs/ROADMAP.md](docs/ROADMAP.md) and
+[docs/HANDOFF.md](docs/HANDOFF.md) (both in Japanese).
+
 ## First aim: a chord chart
 
 From a recording of a song, read three things and write them as a Lily# `chords` row:
