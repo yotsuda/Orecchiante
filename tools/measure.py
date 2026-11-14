@@ -56,6 +56,7 @@ SETS = {
     "tim/seed7": ("scratch/alt-tim/seed7", ["--seed", "7"], True, "seed7 through another sound font"),
     "tim/seed11": ("scratch/alt-tim/seed11", ["--seed", "11"], True, "seed11 through another sound font"),
     "samples": ("scratch/alt-ood/samples", None, False, "Lily#'s four sample songs: not the generator's making"),
+    "rwc-p": ("scratch/real/rwc-p", "rwc", False, "recordings: RWC Popular Music, 100 songs (tools/rwc_truth.py)"),
 }
 TEST = ["seed1", "seed7", "seed11"]
 TIM = ["tim/seed1", "tim/seed7", "tim/seed11"]
@@ -121,8 +122,9 @@ def totals(rows):
     p, r_ = found / max(read, 1), found / true
     secs = sum(r["seconds"] for r in rows)
     share = lambda k: sum(r[k] * r["seconds"] for r in rows) / secs
-    count = lambda k: sum(r[k] for r in rows)
-    return (f"tempo {count('tempo')}/{n} meter {count('meter')}/{n} key {count('key')}/{n} sig {count('signature')}/{n}"
+    count = lambda k: sum(bool(r[k]) for r in rows)
+    keyed = sum(r["key"] is not None for r in rows)      # a truth may have no key
+    return (f"tempo {count('tempo')}/{n} meter {count('meter')}/{n} key {count('key')}/{keyed} sig {count('signature')}/{keyed}"
             f" | bars F {2 * p * r_ / max(p + r_, 1e-9):.1%} | root {share('root'):.1%} family {share('family'):.1%}"
             f" quality {share('quality'):.1%} bass {share('bass'):.1%}")
 
@@ -149,7 +151,7 @@ def run(name, hint=False, verbose=False, write=None):
             doubted = f" doubted {sum(c['sure'] < rc.DOUBT for c in chords)}/{len(chords)}" if rc.MODEL is not None else ""
             styles = truth.get("band", {}).get("styles", "")
             print(f"{r['id']:<14} tempo {'ok' if r['tempo'] else 'x' + str(r['tempoRatio']):>6} meter {'ok' if r['meter'] else '--'}"
-                  f" key {'ok' if r['key'] else '--'} bars {r['barsFound']:>2}/{r['barsTrue']} ({r['barsRead']}) root {r['root']:.0%}"
+                  f" key {'  ' if r['key'] is None else 'ok' if r['key'] else '--'} bars {r['barsFound']:>2}/{r['barsTrue']} ({r['barsRead']}) root {r['root']:.0%}"
                   f" fam {r['family']:.0%} qual {r['quality']:.0%}{doubted}{' strange' if got.get('strange') else ''}"
                   f"  {truth['time']} {truth['tempo']['bpm']} {styles}")
     return rows, written
@@ -286,6 +288,9 @@ def make(names):
     for name in names:
         where, gen, alt, _ = SETS[name]
         d = ROOT / where
+        if gen == "rwc":
+            print(f"{name}: recordings are not made here: see tools/rwc_truth.py ({len(list(d.glob('*.wav')))} there)")
+            continue
         truths = [json.loads(p.read_text(encoding="utf-8")) for p in d.glob("*.truth.json")]
         want = int(gen[gen.index("--count") + 1]) if gen and "--count" in gen else 24 if gen else 4
         if len(truths) >= want and all((d / t["audio"]).exists() for t in truths):

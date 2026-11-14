@@ -62,8 +62,11 @@ def score(truth, reading):
     out["tempoRatio"] = round(ratio, 2)
     out["tempo"] = abs(ratio - 1) <= 0.04 and reading["tempo"]["note"] == truth["tempo"]["note"]
     out["meter"] = reading["time"] == truth["time"]
-    out["key"] = key_of(reading["key"]) == key_of(truth["key"])
-    out["signature"] = signature_of(reading["key"]) == signature_of(truth["key"])
+    if truth.get("key"):
+        out["key"] = key_of(reading["key"]) == key_of(truth["key"])
+        out["signature"] = signature_of(reading["key"]) == signature_of(truth["key"])
+    else:                                    # a truth with no key (annotated recordings): not counted
+        out["key"] = out["signature"] = None
 
     true_lines = [b["start"] for b in truth["bars"]]
     read_lines = [b["start"] for b in reading["bars"]]
@@ -75,7 +78,8 @@ def score(truth, reading):
             found += 1
     out["barsTrue"], out["barsRead"], out["barsFound"] = len(true_lines), len(read_lines), found
 
-    total = truth["musicSeconds"]
+    # the time whose chord the truth names: all of the music, unless the truth leaves some out
+    total = truth.get("chordSeconds", truth["musicSeconds"])
     shares = {"root": 0.0, "family": 0.0, "quality": 0.0, "bass": 0.0}
     read_chords = chords_of(reading)
     for start, end, (root, quality, bass) in chords_of(truth):
@@ -118,7 +122,7 @@ def main():
     for r in rows:
         tempo = "ok" if r["tempo"] else f"x{r['tempoRatio']}"
         bars = f"{r['barsFound']}/{r['barsTrue']} ({r['barsRead']})"
-        print(f"{r['id']:<8} {tempo:>10} {yes(r['meter']):>5} {yes(r['key']):>4} {bars:>24} "
+        print(f"{r['id']:<8} {tempo:>10} {yes(r['meter']):>5} {'' if r['key'] is None else yes(r['key']):>4} {bars:>24} "
               f"{r['root']:>6.0%} {r['family']:>6.0%} {r['quality']:>7.0%} {r['bass']:>6.0%}")
 
     n = len(rows)
@@ -129,8 +133,9 @@ def main():
     seconds = sum(r["seconds"] for r in rows)
     share = lambda k: sum(r[k] * r["seconds"] for r in rows) / seconds
     print()
+    keyed = [r for r in rows if r["key"] is not None]
     print(f"songs {n}: tempo {sum(r['tempo'] for r in rows)}/{n}, meter {sum(r['meter'] for r in rows)}/{n}, "
-          f"key {sum(r['key'] for r in rows)}/{n}, key signature {sum(r['signature'] for r in rows)}/{n}")
+          f"key {sum(r['key'] for r in keyed)}/{len(keyed)}, key signature {sum(r['signature'] for r in keyed)}/{len(keyed)}")
     print(f"bar lines: precision {precision:.1%}, recall {recall:.1%}, F {f:.1%} ({found} of {true} found, {read} read)")
     print(f"chords, by time: root {share('root'):.1%}, family {share('family'):.1%}, "
           f"quality {share('quality'):.1%}, with the bass {share('bass'):.1%}")
