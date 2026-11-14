@@ -920,6 +920,18 @@ alone fell, 97.7% to 94.7%.
 They need `numpy`, `scipy`, `librosa`, `soundfile` and `scikit-learn` (in `.venv`, not committed).
 They are written to be measured and replaced, not shipped.
 
+## The VS Code extension
+
+`extension/` is the reader as a VS Code extension (`yotsuda.dettato`, Windows x64): `dettato.exe`
+published self-contained, the two models beside it, and one command, **Dettato: Transcribe
+Recording to Lily# Chord Chart (.lys)…**, which reads a `.wav` and opens the chart written beside
+it. The package is 113 MB (the beat model is 83 MB of it).
+
+```
+tools/pack-extension.ps1       # out/extension/dettato-win32-x64-<version>.vsix (the models from scratch/d2)
+tools/deploy-extension.ps1     # packs, and installs it into this PC's VS Code; publishes nothing
+```
+
 ## Siblings
 
 - [Lily#](https://github.com/yotsuda/LilySharp): the notation language, engraver and editor.

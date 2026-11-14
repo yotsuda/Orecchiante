@@ -3,13 +3,16 @@
 **毎セッションの終わりに書き換える**（追記しない。200 行以内）。方向づけは [ROADMAP.md](ROADMAP.md)、
 数字と使い方は [README](../README.md)、録音の出典は [DATASETS.md](DATASETS.md)。
 
-最終更新: 2026-11-14（規則を .NET に移したセッションの終わり。HEAD は `git log -1` で確かめる）。
+最終更新: 2026-11-14（拡張の最初のパッケージを作ってこの PC に入れたセッションの終わり。HEAD は `git log -1` で確かめる）。
 
 ## 現在地
 
 **移植（ROADMAP の D2 の 4 段）は終わった。`dettato read <wav> --out <フォルダ>` が wav から `.lys` と `.dettato.json` を書く**
 （Python なし。RWC_P001 で 5.5 秒）。配る形は .NET＋ONNX の実行ファイルを VS Code 拡張に入れる（Calamo と同じ形。ユーザーの答えは
 「VS code extension」の一言で、.NET と読んだのは Claude）。Python の読み取り器は変えていない（`measure.py` に `--read` と `check` を足しただけ）。
+**拡張 `yotsuda.dettato` 0.1.0 をこの PC の VS Code に入れた**（`extension/`、`tools/deploy-extension.ps1`。113 MB、Lily# とは別の拡張）。
+コマンドは 1 つ（wav を選ぶか右クリック → 隣に `.lys` と `.dettato.json` → 開く。既にある `.lys` は尋ねてから置き換える）。入った
+`dettato.exe` が seed1 の 1 曲で `scratch/net/read` と同じ譜面を書くことは確かめた。**VS Code の中でコマンドを動かすのは未確認**（ユーザーが試す）。
 
 ### .NET の規則（`Reader.cs` 532 行・`Form.cs` 213・`Writer.cs` 145・`Np.cs` 105。README の「In .NET: the rules」。全体で 1894 行）
 
@@ -185,10 +188,7 @@
 
 ## 未決（ユーザーの判断待ち）
 
-- **配る形（D2）の読みの確認。** 「VS code extension」を「.NET の実行ファイルを拡張に入れる」と読んで進めている。
-  違う意味（拡張の中の TypeScript、Python のまま拡張から呼ぶ、D4 を先に、など）なら言ってもらう。.NET の耳と特徴量は Python からも使える。
-- **Dettato の拡張を Lily# と別にするか。** Calamo は別の拡張（`yotsuda.calamo`）で、Lily# が場所を尋ねて呼ぶ。モデルが 85 MB あるので
-  同じ形が自然だが、決めるのは D4。規則は Python と .NET の 2 か所にある（測るのは Python、配るのは .NET）。
+- **拡張のコマンドをどちらに置くか。** いまは Dettato 自身が持つ（Lily# なしで動く）。Calamo は Lily# 側がコマンドを持つ。原音を鳴らす所（D4）は Lily# 側。
 - **和音のないイントロ・弱起を譜面に書くか。** いまは書かない。書くなら N.C. の小節として。`rwc-dev` で落としている和音なしの小節は 14。
 - **M2 の印の目安（誤りの 8 割・印 3 割以下）をどうするか。** crema で `rwc-test` は「印 26% で 71%」。
   (a) 目安を下げる、(b) 印を 4 割近くまで増やす、(c) BTC を 2 つ目の耳にする。決まるまで閾値は 0.84。
