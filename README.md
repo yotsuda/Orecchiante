@@ -83,7 +83,7 @@ $env:DETTATO_SAMPLES = "<LilySharp>/samples"        # the table of "songs it was
 `measure.py sets` lists the sets and what each is for. One table, or one question, at a time:
 `table seed1 seed7 -v`, `table seed21 --hint`, `table seed1 --rules` (nothing learnt),
 `sweep seed100 TIGHTNESS=300,100`, `doubt seed1 seed7 seed11`, `barlines seed1`, `keys seed1`,
-`beats seed7 s7-005`, `table seed1 rwc-dev --ears` (with models trained on recordings, below).
+`beats seed7 s7-005`, `table seed1 rwc-dev --ears` and `doubt rwc-dev --ears` (with models trained on recordings, below).
 `all` takes about twelve minutes once the features are kept (the recordings below among them),
 and last passed all 1292 charts it wrote through `lysc check` (2026-11-14).
 
@@ -218,8 +218,36 @@ the fold models', as above):
 | The bass note too | 61.6% | 62.6% | 62.1% | 58.7% |
 
 Three points of root and of family come from the rules (a chord lasts whole half beats and
-changes where bars say it may). The bass note is still this reader's own hearing, as is the
-doubt it marks, which is not yet calibrated for this model: about one chord in four is marked.
+changes where bars say it may). The bass note is still this reader's own hearing.
+
+**The marks.** BTC is sure of itself more often than it is right, so how likely a chord's root
+and family are right is weighed from four things (`SURE_OF` in `read_chords.py`, five numbers
+chosen on `rwc-dev`): BTC's mean probability of the chord over its half beats; the same in its
+last half beat, which weighs the other way (what BTC says there is already the next chord's);
+whether this reader's own templates name the same root and family; and the first of these over
+the whole song. A chord below 0.84 is marked, which is three chords in ten on `rwc-dev`
+(`measure.py doubt rwc-dev --ears`, counted 2026-11-14, by chords):
+
+| The marks, `--ears` | `rwc-dev` (chosen on) | `rwc-test` (counted only) | `rwc-p`, all 100 |
+|---|---|---|---|
+| Chords read | 7284 | 7049 | 14333 |
+| Wrong in root or family | 19.3% | 18.2% | 18.8% |
+| Marked | 29.9% | 23.2% | 26.6% |
+| Of the chords wrong in root or family, marked | 79.7% | 64.2% | 72.3% |
+| Of the marked, wrong in root or family | 51.4% | 50.3% | 50.9% |
+| Marked and wrong so: the chord offered has the true root and family | 41.5% | 44.1% | 42.6% |
+
+The aim was eight wrong chords in ten among three marked in ten. It is met on the songs the
+numbers were chosen on and not on the others: there the same line marks fewer chords and catches
+fewer. Marking the least sure 30% of each set, whatever line that takes, catches 79.7% and 74.0%
+(by BTC's own probability alone: 75.2% and 71.6%); to catch 80% of `rwc-test`, 38% have to be
+marked. More measures do not help: twenty-seven of them weighed together (the bass, the chords
+before and after, how often the song has the chord, whether the key has it) catch 79.4% of
+`rwc-dev` at 30%, songs held out in tens. The wrong chords it is sure of are mostly ones no
+probability points at: a major chord read minor on the same root (one in four of them), and a
+suspended chord read major (one in ten). On the songs made here the same line marks 7 to 9% of
+the chords and catches 44% (`seed1`, `seed7`, `seed11`) and 61% (`seed21`, `seed31`) of the
+wrong ones: the weights are of recordings.
 
 On the songs made here (the beats are those of Beat This!'s model for use, `final0`):
 

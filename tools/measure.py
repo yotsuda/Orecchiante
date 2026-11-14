@@ -62,7 +62,7 @@ SETS = {
 TEST = ["seed1", "seed7", "seed11"]
 TIM = ["tim/seed1", "tim/seed7", "tim/seed11"]
 
-_RULES = {k: getattr(rc, k) for k in ("MODEL", "STAY_COST", "MID_COST", "ELSE_COST", "BASS_WEIGHT", "EMIT_SCALE")}
+_RULES = {k: getattr(rc, k) for k in ("MODEL", "STAY_COST", "MID_COST", "ELSE_COST", "BASS_WEIGHT", "EMIT_SCALE", "DOUBT")}
 
 
 def configure(model, ears=False):
@@ -247,12 +247,21 @@ def check(charts):
     return bad
 
 
-def doubt(names, thresholds):
-    """Do the marks point at the wrong chords?"""
-    rows = []  # (sure, root and family right, quality right too, the chord offered is the true one)
+def doubted(names, ears=False):
+    """Every chord read in the sets, with what is true where its middle is: dicts of `said` (how
+    sure the reader says it is: what the mark goes by), `fam`
+    (root and family right), `all` (quality right too), `offered` (the chord offered in its place
+    is the true one; `offeredFam`: in root and family), `song`, and the reader's `why`."""
+    rows = []
     for name in names:
+        lines, heard = ears_of(name) if ears else (None, None)
         for truth, wav in songs(name):
-            got = rc.read(wav, feats(wav))
+            if ears:
+                given, units, per = bar_lines(truth, wav, lines)
+                got = rc.read(wav, feats(wav), lines=given, units=units, beats=per,
+                              heard=np.load(heard / (wav.stem + ".npz")), why=True)
+            else:
+                got = rc.read(wav, feats(wav), why=True)
             spans = sc.chords_of(truth)
             for bar in got["bars"]:
                 for c in bar["chords"]:
@@ -263,8 +272,17 @@ def doubt(names, thresholds):
                     root, quality, _ = sc.parse(c["symbol"])
                     oroot, oquality, _ = sc.parse(c["other"])
                     fam = root == true[0] and sc.FAMILY[quality] == sc.FAMILY[true[1]]
-                    rows.append((c["sure"], fam, fam and quality == true[1], oroot == true[0] and oquality == true[1]))
-    a = np.array(rows, dtype=float)
+                    rows.append({"said": c["sure"], "fam": fam, "all": fam and quality == true[1],
+                                 "offered": oroot == true[0] and oquality == true[1],
+                                 "offeredFam": oroot == true[0] and sc.FAMILY[oquality] == sc.FAMILY[true[1]],
+                                 "song": truth["id"], "symbol": c["symbol"], "true": true, "key": got["key"], "start": c["start"],
+                                 **c["why"]})
+    return rows
+
+
+def doubt(names, thresholds, ears=False):
+    """Do the marks point at the wrong chords?"""
+    a = np.array([(r["said"], r["fam"], r["all"], r["offered"], r["offeredFam"]) for r in doubted(names, ears)], dtype=float)
     wrong_f, wrong_q = a[:, 1] == 0, a[:, 2] == 0
     print(f"{len(a)} chords read: {wrong_f.mean():.1%} wrong in root or family, {wrong_q.mean():.1%} wrong in quality too")
     for th in thresholds:
@@ -272,7 +290,8 @@ def doubt(names, thresholds):
         print(f"sure below {th}: {m.mean():.1%} marked | of the wrong in root or family, marked {m[wrong_f].mean():.1%}"
               f" (of the wrong at all {m[wrong_q].mean():.1%}) | of the marked, wrong in root or family {wrong_f[m].mean():.1%},"
               f" wrong at all {wrong_q[m].mean():.1%} | of the unmarked, wrong at all {wrong_q[~m].mean():.1%}"
-              f" | marked and wrong, the chord offered is the true one {a[m & wrong_q, 3].mean():.1%}")
+              f" | marked and wrong, the chord offered is the true one {a[m & wrong_q, 3].mean():.1%}"
+              f" | marked and wrong in root or family, the chord offered has the true ones {a[m & wrong_f, 4].mean():.1%}")
 
 
 def barlines(names, hint):
@@ -425,6 +444,10 @@ def everything(model, write):
         charts += written
         if rows:
             print(f"{name}: {totals(rows)}", flush=True)
+    print("\n## The marks, with ears trained on recordings")
+    for names in (["rwc-dev"], ["rwc-test"], ["rwc-p"], TEST, ["seed21", "seed31"]):
+        print(" ".join(names) + ": ", end="")
+        doubt(names, [rc.DOUBT], ears=True)
     configure(model)
     for title, names in (("The marks, this sound font", TEST), ("The marks, another sound font", TIM)):
         print(f"\n## {title}")
@@ -469,6 +492,7 @@ def main():
     s.add_argument("--ears", action="store_true", help="as for table")
     s = reader(sub.add_parser("doubt", help="do the marks point at the wrong chords?"))
     s.add_argument("--at", default=None, help="thresholds with commas between (default: the reader's DOUBT)")
+    s.add_argument("--ears", action="store_true", help="as for table")
     s = reader(sub.add_parser("barlines", help="how the bar lines are missed, song by song"))
     s.add_argument("--hint", action="store_true")
     s = sub.add_parser("keys", help="the key rule, given the true chords")
@@ -526,9 +550,9 @@ def main():
                 print(dict(zip(grid, combo)), f"{name}: {totals(rows)}", flush=True)
         return 0
     if args.what == "doubt":
-        if rc.MODEL is None:
+        if rc.MODEL is None and not ears:
             sys.exit("the reader with nothing learnt marks nothing")
-        return doubt(args.sets, ast.literal_eval(args.at + ",") if args.at else [rc.DOUBT])
+        return doubt(args.sets, ast.literal_eval(args.at + ",") if args.at else [rc.DOUBT], ears)
     if args.what == "barlines":
         return barlines(args.sets, args.hint)
     if args.what == "beats":

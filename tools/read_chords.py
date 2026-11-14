@@ -60,6 +60,13 @@ LOG_FLOOR = -8.0
 STRANGE = 0.5           # with more of its half beats doubted than this, the bars are not the model's to find
 RULES = {"STAY_COST": STAY_COST, "BASS_WEIGHT": BASS_WEIGHT}   # the prices of the reader with nothing learnt
 DOUBT = 0.7             # a chord the model is less sure of than this is marked for a look
+# With a model trained on recordings (--ears), how likely a chord's root and family are right:
+# the logistic of these weights on (the model's mean probability of it over its half beats, the
+# same in its last half beat, whether this reader's own templates name the same root and family,
+# the mean of the first over the whole song), and a constant. The last half beat weighs the other
+# way: what the model says there is already the next chord's. Chosen on rwc-dev, 2026-11-14.
+SURE_OF = (8.0, -2.0, 0.7, 5.5, -7.5)
+DOUBT_EARS = 0.84       # the mark, with those ears: three chords in ten on rwc-dev
 BAR_UNITS = (2, 3, 4, 6, 8, 12, 16)   # a bar, in half beats: the tracker may follow any level
 BAR_SECONDS = (0.9, 4.0)              # bars shorter or longer than this are not tried
 HINT_TOLERANCE = 0.15   # how far from the tempo told a bar's beats may be
@@ -108,8 +115,9 @@ def use_ears():
     (chosen on rwc-dev, 2026-11-14). That model has already smoothed what it says over the bars
     around, so a change costs far less than it does for a model that hears one half beat: with
     this reader's own prices (0.4, 0.5, 1.0) roots are 82.7% right there, with these 84.8%."""
-    global STAY_COST, MID_COST, ELSE_COST, BASS_WEIGHT, EMIT_SCALE
+    global STAY_COST, MID_COST, ELSE_COST, BASS_WEIGHT, EMIT_SCALE, DOUBT
     STAY_COST, MID_COST, ELSE_COST, BASS_WEIGHT, EMIT_SCALE = 0.1, 0.1, 0.25, 0.0, 0.2
+    DOUBT = DOUBT_EARS
 
 
 def said_in(heard, edges):
@@ -355,7 +363,7 @@ def features(path):
     }
 
 
-def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None):
+def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, why=False):
     """The chart of a recording. `tempo`, if told, is about how many beats a minute it has: what
     is heard cannot tell a fast song whose chords last two bars from a slow one, bar by bar.
 
@@ -366,6 +374,7 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None):
     quarters of 6/8. `heard`, if given, is what a model trained on recordings says the chords are
     (the logp and step of tools/btc_chords.py --probs), in place of this reader's own hearing."""
     name = Path(path).name
+    ears = heard is not None
     f = f or features(path)
     oenv, chroma, bass, rms = f["oenv"], f["chroma"], f["bass"], f["rms"]
     if lines is not None:
@@ -455,7 +464,7 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None):
         time, tempo_note, tempo_beats = "3/4", "4", 3
 
     stamp = lambda frame: round(max(float(frame) - BEAT_LAG, 0.0) * HOP / SR, 4)
-    bars = []
+    bars, weighed = [], []
     for n, (first, after) in enumerate(zip(starts[:-1], starts[1:])):
         chords, t = [], first
         while t < after:
@@ -479,14 +488,43 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None):
                 # (of its root and whether it is major or minor: a seventh heard or not is a
                 # smaller doubt, and would mark one chord in four)
                 same = SAME[path[t][1]]
-                chord["sure"] = round(float(np.exp(said[t:end][:, same]).sum(axis=1).mean()), 3)
+                p = np.exp(said[t:end])
+                mine = p[:, same].sum(axis=1)
+                plain = (TEMPLATES @ treble[:, t:end]).mean(axis=1) - COSTS     # this reader's own hearing
+                chord["sure"] = round(float(mine.mean()), 3)
+                weighed.append((float(mine.mean()), float(mine[-1]), float(same[int(np.argmax(plain))])))
                 mean = np.where(same, -np.inf, said[t:end].mean(axis=0))
                 chord["other"] = CHORDS[int(np.argmax(mean))]
+                if why:
+                    lb = low[:, t:end].mean(axis=1)
+                    chord["why"] = {
+                        "logsure": float(np.log(np.maximum(mine, 1e-4)).mean()),
+                        "entropy": float(-(p * said[t:end]).sum(axis=1).mean()),
+                        "agree": float(same[int(np.argmax(plain))]),
+                        "plaingap": float(plain[same].max() - plain[~same].max()),
+                        "bassroot": float(lb[root]), "basstone": float(lb[tones].sum()), "vbroot": float(vb[root]),
+                        "sure": float(mine.mean()), "low": float(mine.min()),
+                        "root": float(p[:, ROOTS == root].sum(axis=1).mean()),
+                        "next": float(p[:, SAME[int(np.argmax(mean))]].sum(axis=1).mean()),
+                        "none": float(1.0 - min(p.sum(axis=1).mean(), 1.0)),
+                        "units": end - t, "share": (end - t) / length, "seconds": float((b - a) * HOP / SR),
+                        "first": float(mine[0]), "last": float(mine[-1]),
+                        "onbar": float(t == first), "fit": fit, "slash": float(slash),
+                        "kind": _KIND[quality],
+                    }
             chords.append(chord)
             t = end
         bars.append({"bar": n + 1, "start": stamp(edges[first]), "end": stamp(edges[after]), "chords": chords})
 
     read_chords = [c for bar in bars for c in bar["chords"]]
+    if ears and weighed:
+        # A model trained on recordings is sure of itself more often than it is right. How likely
+        # the root and the family are right is weighed from four things (SURE_OF).
+        a_sure, a_last, a_agree, a_song, a_none = SURE_OF
+        song = float(np.mean([w[0] for w in weighed]))
+        for c, (mean_sure, last, agree) in zip(read_chords, weighed):
+            z = a_sure * mean_sure + a_last * last + a_agree * agree + a_song * song + a_none
+            c["sure"] = round(1.0 / (1.0 + float(np.exp(-z))), 3)
     tonic, mode = find_key([(c["end"] - c["start"], c["symbol"][0], c["symbol"][1]) for c in read_chords])
     tonic_name = (MAJOR_KEYS if mode == "major" else MINOR_KEYS)[tonic]
     flats = "b" in tonic_name or (tonic_name == "F" if mode == "major" else tonic_name in FLAT_MINORS)
