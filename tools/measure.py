@@ -105,9 +105,15 @@ def songs(name):
         yield truth, path.parent / truth["audio"]
 
 
+NET = None            # --net: a folder of what `dettato features` wrote, a folder a set (scratch/net)
+
+
 def feats(wav):
     """The features of a recording, kept between runs. Sets that share song names (the same seed
-    through another sound font) are told apart by the folder above the set's."""
+    through another sound font) are told apart by the folder above the set's. With --net, the
+    features are dettato.exe's instead (src/Dettato): <folder>/<the recordings' folder>/<name>.feat.npz."""
+    if NET:
+        return dict(np.load(NET / wav.parent.name / (wav.stem + ".feat.npz")))
     d = ROOT / "scratch" / f"feat-h{rc.HARMONIC_FRAMES}"
     above = wav.parent.parent.name
     kept = d / (("" if above == "synth" else above + "_") + wav.stem + ".npz")
@@ -556,6 +562,8 @@ def main():
         s.add_argument("--model", type=Path, default=MODEL, help="what train_chords.py learnt (default: models/chords.joblib)")
         s.add_argument("--rules", action="store_true", help="the reader with nothing learnt")
         s.add_argument("--set", action="append", default=[], metavar="NAME=VALUE", help="a constant of read_chords.py, for this run")
+        s.add_argument("--net", type=Path, help="read from the features dettato.exe made (dettato features), not librosa's: "
+                                                "a folder with a folder a set of <recording>.feat.npz (scratch/net)")
         return s
 
     s = reader(sub.add_parser("table", help="read and score: one line a set"))
@@ -613,6 +621,8 @@ def main():
     if args.what == "keys":
         return keys(args.sets, args.verbose)
 
+    global NET
+    NET = args.net
     model = None if args.rules else args.model
     if model and not Path(model).exists():
         sys.exit(f"{model} is not there: train it (tools/train_chords.py), or read with --rules")

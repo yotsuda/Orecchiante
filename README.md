@@ -645,6 +645,41 @@ scratch/d2/venv-onnx/Scripts/python tools/net_check.py scratch/real/rwc-p scratc
 .venv/Scripts/python tools/measure.py table rwc-dev rwc-test --lines scratch/real/beats-bt-folds --heard scratch/net/rwc-p
 ```
 
+### In .NET: what the rules read
+
+The second part (2026-11-14) is what the rules read beside the two models: `read_chords.py`'s
+`features()` as `--ears` has it, the recording as it is. `dettato features` writes
+`<name>.feat.npz` with the same four arrays (`Features.cs`, 179 lines; 808 in all): one
+short-time spectrum gives librosa's onset strength (128 mel bands in dB, the rise from frame to
+frame) and its tuning (`piptrack`'s peaks, the commonest distance from a 36th of an octave, in
+single precision where librosa is); the loudness is of the same frames; the two chromas are the
+constant-Q transform already here, moved by the tuning, folded and set to 1 at the loudest.
+`measure.py --net scratch/net` reads from these in place of librosa's.
+
+| Against librosa (`net_check.py --feats`) | `seed1`, `seed7`, `seed11` | RWC, 100 songs |
+|---|---|---|
+| The tuning (hundredths of a 36th of an octave) | the same in 72/72 | the same in 99/100 (`RWC_P059`: +0.01 for 0.00) |
+| Onset strength (its values 1.3 on average) | 1.6e-4, 1.4e-4, 1.5e-4 apart (worst 3.9e-3) | 1.4e-4 (worst 5.0e-3) |
+| Chroma, of 1 | 1.3e-7 apart on `seed1` (worst 2.8e-4) | 6.5e-6 (worst 0.04, in `RWC_P059`) |
+| Bass chroma, of 1 | 4.2e-7 apart on `seed1` (worst 2.0e-3) | 2.4e-5 (worst 0.31 in a quiet frame of `RWC_P059`; 17 of 1017156 frames louder than a tenth of the song's median are over 0.01 apart, all in that song) |
+| Loudness | 8.3e-8 apart of 0.039 | 2.3e-6 of 0.2 (worst 4.4e-4) |
+| Every number of `measure.py table --ears`, and of `doubt` | the same | the same (`rwc-dev`, `rwc-test`) |
+
+The chromas are counted where the recording is not digital silence: there a frame is rounding
+noise over its largest value, in librosa as here, and nothing like it (up to 0.94 apart). The
+loudness and the onset strength are as far apart as the resampler leaves them (not soxr's
+samples). librosa's bass chroma has a frame more than the rest in some songs (14 of the files
+kept here): the recording is brought down to a 32nd of its rate first, the length rounded up.
+This writes the same. One song (`RWC_P001`), cold: 0.43 s in all, where librosa takes 1.2 s
+once warm and 3.0 s the first time.
+
+```
+scratch/net/out/dettato.exe features data/synth/seed1 --out scratch/net/seed1
+.venv/Scripts/python tools/net_check.py data/synth/seed1 scratch/net/seed1 --no-cqt --feats scratch/feat-h0
+scratch/net/out/dettato.exe features scratch/real/rwc-p --out scratch/net/rwc-p        # 33 s
+.venv/Scripts/python tools/measure.py table seed1 rwc-dev rwc-test --ears --net scratch/net
+```
+
 ### On the songs made here, nothing learnt
 
 

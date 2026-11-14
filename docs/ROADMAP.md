@@ -135,7 +135,8 @@ A、B0〜B3、C1、C2、D1 は 2026-11-14 に終わった。D2 の判断材料�
   ユーザーの答えは「VS code extension」の一言で、.NET と読んだのは Claude。違っていたら HANDOFF の「未決」を見て直す）。
   移植は 4 段で、段ごとに Python と突き合わせる（進み具合は HANDOFF）:
   (1) 耳＝拍と CQT と crema（**完了**、`src/Dettato`、README の「In .NET: the ears」）、
-  (2) onset strength・rms・2 つのクロマ（調律の推定を含む）、(3) `read_chords.py` の規則、
+  (2) onset strength・rms・2 つのクロマ（調律の推定を含む。**完了**、`Features.cs`、README の「In .NET: what the rules read」）、
+  (3) `read_chords.py` の規則、
   (4) `measure.py` が .NET の書いた譜面を読んで全表が一致。Python の読み取り器は (4) まで正で、その後は測定用に残る。
   判断材料（2026-11-14。README の「Without torch and TensorFlow」）:
   2 つのモデルは ONNX で同じ答えを出す。1 曲（3 分半）は 3 つの venv で 18 秒、1 つの venv＋ONNX で 11 秒、

@@ -23,6 +23,17 @@ static class Npy
         Write(file, "<f4", shape, MemoryMarshal.AsBytes<float>(values));
     }
 
+    /// <summary>An .npz of float32 arrays (a shape of no numbers is a single value).</summary>
+    public static void WriteFloats(string path, params (string Name, float[] Values, int[] Shape)[] arrays)
+    {
+        using var zip = new ZipArchive(File.Create(path), ZipArchiveMode.Create);
+        foreach (var (name, values, shape) in arrays)
+        {
+            using var entry = zip.CreateEntry(name + ".npy", CompressionLevel.Fastest).Open();
+            Write(entry, "<f4", shape, MemoryMarshal.AsBytes<float>(values));
+        }
+    }
+
     /// <summary>What tools/crema_chords.py writes: logp (float16, frames * chords) and step (seconds a frame).</summary>
     public static void WriteHeard(string path, float[] logp, int frames, int chords, double step)
     {

@@ -14,7 +14,6 @@ import numpy as np
 import soundfile as sf
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "d2"))
-from ears_onnx import hcqt  # noqa: E402
 
 
 def beats_of(path):
@@ -27,6 +26,8 @@ def main():
     p.add_argument("net", type=Path, help="what dettato ears wrote")
     p.add_argument("--heard", type=Path, help="a folder of <name>.npz from tools/crema_chords.py or tools/d2/ears_onnx.py")
     p.add_argument("--beats", type=Path, help="a folder of <name>.beats from tools/track_beats.py")
+    p.add_argument("--feats", type=Path, help="compare <name>.feat.npz (dettato features) with tools/measure.py's features "
+                                              "in this folder (scratch/feat-h0); the tuning with librosa's, found here (.venv)")
     p.add_argument("--songs", type=int)
     p.add_argument("--no-cqt", action="store_true")
     p.add_argument("-v", "--verbose", action="store_true")
@@ -35,9 +36,11 @@ def main():
     files = sorted(args.recordings.glob("*.wav"))[: args.songs]
     loud_gaps, all_gaps, worst_loud, prob_gaps, same, frames = [], [], 0.0, [], 0, 0
     beat_count, beat_moved, beat_songs, line_songs = 0, 0, 0, 0
+    tunings, feat_gaps = [], {"oenv": [], "chroma": [], "bass": [], "rms": []}
     for path in files:
         line = path.stem
         if not args.no_cqt:
+            from ears_onnx import hcqt
             ours = np.load(args.net / (path.stem + ".cqt.npy"))
             signal, rate = sf.read(str(path), dtype="float64")
             theirs = hcqt(signal, rate)[0]
@@ -72,10 +75,36 @@ def main():
                 lines_differ = [n for (_, n) in ours] != [n for (_, n) in theirs]
                 line_songs += lines_differ
                 line += f"; {moved}/{len(ours)} beats moved" + (", bar lines differ" if lines_differ else "")
+        if args.feats:
+            import librosa
+            above = args.recordings.resolve().parent.name
+            theirs = np.load(args.feats / (("" if above == "synth" else above + "_") + path.stem + ".npz"))
+            ours = np.load(args.net / (path.stem + ".feat.npz"))
+            y, _ = librosa.load(path, sr=22050, mono=True)
+            tuning = librosa.estimate_tuning(y=y, sr=22050, bins_per_octave=36)
+            tuned = abs(float(ours["tuning"]) - tuning) < 1e-6
+            tunings.append(tuned)
+            line += f"; tuning {float(ours['tuning']):+.2f}" + ("" if tuned else f" (librosa {tuning:+.2f})")
+            for key in feat_gaps:
+                a, b = ours[key].astype(np.float64), theirs[key].astype(np.float64)
+                if a.shape != b.shape:
+                    sys.exit(f"{path.stem}: {key} {a.shape} here, {b.shape} from librosa")
+                gap = np.abs(a - b)
+                if gap.ndim == 2 and key != "rms":
+                    # A frame of digital silence is rounding noise over its largest value: anything, in both.
+                    sounding = theirs["rms"][0] > 0
+                    gap = gap[:, : len(sounding)][:, sounding[: gap.shape[1]]]
+                feat_gaps[key].append((float(gap.mean()), float(gap.max()), float(np.abs(b).mean())))
+                line += f"; {key} {gap.mean():.1e} apart (worst {gap.max():.1e})"
         if args.verbose:
             print(line)
     n = len(files)
     print(f"{n} recordings")
+    if tunings:
+        print(f"the tuning: the same in {sum(tunings)}/{n}")
+        for key, rows in feat_gaps.items():
+            mean, worst, size = np.mean([r[0] for r in rows]), max(r[1] for r in rows), np.mean([r[2] for r in rows])
+            print(f"{key}: {mean:.1e} apart (worst {worst:.1e}), its values {size:.2g} on average")
     if loud_gaps:
         print(f"the chord model's input: {np.mean(loud_gaps):.1e} dB apart above -60 dB (worst {worst_loud:.2f}), {np.mean(all_gaps):.1e} dB everywhere")
     if prob_gaps:
