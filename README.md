@@ -65,6 +65,26 @@ reading against the truth:
 py tools/score_chords.py data/synth/seed1 scratch/read/seed1
 ```
 
+### Measuring
+
+Every number below is made by `tools/measure.py`, which reads and scores in one process and
+keeps each recording's features between runs (`scratch/feat-h31/`, seconds a song the first time):
+
+```
+$env:DETTATO_LYSC = "<LilySharp>/LilySharp.Cli/bin/Release/net10.0/win-x64/lysc.exe"
+$env:DETTATO_SOUNDFONT_ALT = "<a second .sf2>"      # the tables of "another sound font"
+$env:DETTATO_SAMPLES = "<LilySharp>/samples"        # the table of "songs it was not made on"
+.venv/Scripts/python tools/measure.py make          # renders the sets that are missing (13 sets, 580 songs)
+.venv/Scripts/python tools/train_chords.py data/synth/seed100 --features scratch/feat-h31 --out models/chords.joblib
+.venv/Scripts/python tools/measure.py all           # every table here, and every chart through lysc check
+```
+
+`measure.py sets` lists the sets and what each is for. One table, or one question, at a time:
+`table seed1 seed7 -v`, `table seed21 --hint`, `table seed1 --rules` (nothing learnt),
+`sweep seed100 TIGHTNESS=300,100`, `doubt seed1 seed7 seed11`, `barlines seed1`, `keys seed1`,
+`beats seed7 s7-005`. `all` takes about three minutes once the features are kept, and last
+passed all 772 charts it wrote through `lysc check` (2026-11-14).
+
 On three sets of 24 songs (2026-11-14). The reader's constants were chosen on `seed1`, and
 `seed7` was looked at while choosing; `seed11` was made later and not chosen on:
 
@@ -86,7 +106,8 @@ after that was read half a beat off (16 of the 18 songs that lost bar lines lost
 half beats are now counted through such a slide, so the lines after it stay in step.
 
 Two smaller mends, found on the 200 songs kept for learning (tempo right in 183 of them before,
-193 after; meter 185, then 195):
+193 after; meter 185, then 195, counted when they were made. With the constants of today the
+reader with nothing learnt has 178 and 185 there, the reader with the model 192 and 193):
 
 - The tracker sometimes takes three notes for two (a fast song at two thirds of its tempo). The
   beat half as fast again and the beat a third slower are tried too, and the one on whose half
@@ -250,8 +271,8 @@ seventh is where the reader begins to lose them; the chords hold longer than the
 
 Measuring this found a constant that had outlived its reason. The beat tracker was held three
 times as tight as librosa holds it, chosen on `seed1` before the half-beat slide was mended.
-At librosa's own value the bar lines of nearly every set rose (`seed7` 89.5% to 97.4%, the 200
-songs kept for learning 94.3% to 97.0%, the moving tempo of 5% 67.7% to 80.7%); `seed1`
+At librosa's own value the bar lines of nearly every set rose (`seed7` 89.0% to 97.4%, the 200
+songs kept for learning 94.0% to 96.7%, the moving tempo of 5% 67.7% to 80.7%); `seed1`
 alone fell, 97.7% to 94.7%.
 
 They need `numpy`, `scipy`, `librosa`, `soundfile` and `scikit-learn` (in `.venv`, not committed).
