@@ -56,6 +56,8 @@ CHANGE_GAIN = 0.0       # a change earns this times how much the sound changes t
 MODEL = None
 EMIT_SCALE = 0.1
 LOG_FLOOR = -8.0
+STRANGE = 0.5           # with more of its half beats doubted than this, the bars are not the model's to find
+RULES = {"STAY_COST": STAY_COST, "BASS_WEIGHT": BASS_WEIGHT}   # the prices of the reader with nothing learnt
 DOUBT = 0.7             # a chord the model is less sure of than this is marked for a look
 BAR_UNITS = (2, 3, 4, 6, 8, 12, 16)   # a bar, in half beats: the tracker may follow any level
 BAR_SECONDS = (0.9, 4.0)              # bars shorter or longer than this are not tried
@@ -163,7 +165,7 @@ def over(feature, a, b, how=np.mean):
     return how(feature[:, a:b], axis=1)
 
 
-def decode(emit, bass, change, length):
+def decode(emit, bass, change, length, stay=None, first=None):
     """The best path of (chord, place in a bar of `length` units) and what it is worth.
 
     emit[t, k]: how well chord k fits unit t, times the unit's seconds; bass[t]: the bass chroma
@@ -179,7 +181,10 @@ def decode(emit, bass, change, length):
             heard = np.maximum(heard, bass[max(t - (place - half), 0)][ROOTS])
         return emit[t] + heard
 
+    stay = STAY_COST if stay is None else stay
     worth = np.stack([local(0, place) for place in range(length)])
+    if first is not None:   # the place in the bar the first unit is known to have
+        worth[np.arange(length) != first] = -np.inf
     back = np.zeros((count, length, chords), dtype=np.int16)
     for t in range(1, count):
         new = np.empty_like(worth)
@@ -195,7 +200,7 @@ def decode(emit, bass, change, length):
                 # all of it, and so nearly does a move to the same notes under another name
                 # (C to Am7), or every line would be dodged that way
                 gain = CHANGE_GAIN * change[t] * (1.0 - np.eye(chords))
-                reach = before[:, None] - STAY_COST * ALIKE + gain
+                reach = before[:, None] - stay * ALIKE + gain
                 source = np.argmax(reach, axis=0)
                 new[place] = reach[source, every] + local(t, place)
                 back[t, place] = source
@@ -330,16 +335,30 @@ def read(path, f=None, tempo=None):
         told = [n for n in BAR_UNITS
                 if any(abs(n * unit_seconds * tempo / 60.0 / beats - 1.0) <= HINT_TOLERANCE for beats in (2, 3, 4))]
         lengths = told or BAR_UNITS
-    best = (-np.inf, None, 0)
-    for length in lengths:
-        if not BAR_SECONDS[0] <= length * unit_seconds <= BAR_SECONDS[1] or count < 4 * length:
-            continue
-        total, path = decode(emit, heard, change, length)
-        if total > best[0]:
-            best = (total, path, length)
-    _, path, length = best
-    if path is None:
-        raise ValueError("no bar length fits")
+    def search(emit, heard, stay=None):
+        best = (-np.inf, None, 0)
+        for length in lengths:
+            if not BAR_SECONDS[0] <= length * unit_seconds <= BAR_SECONDS[1] or count < 4 * length:
+                continue
+            total, path = decode(emit, heard, change, length, stay)
+            if total > best[0]:
+                best = (total, path, length)
+        if best[1] is None:
+            raise ValueError("no bar length fits")
+        return best[1], best[2]
+
+    path, length = search(emit, heard)
+    strange = False
+    if MODEL is not None:
+        # Sounds the model does not know: its opinion changes from half beat to half beat and
+        # the bar lines follow it. Then the bars are the ones the templates find, and the model
+        # names the chords inside them.
+        mass = np.array([np.exp(said[t][SAME[k]]).sum() for t, (_, k) in enumerate(path)])
+        strange = float(np.mean(mass < DOUBT)) > STRANGE
+        if strange:
+            plain = ((TEMPLATES @ treble).T - COSTS) * seconds[:, None]
+            ruled, length = search(plain, RULES["BASS_WEIGHT"] * low.T * seconds[:, None], RULES["STAY_COST"])
+            _, path = decode(emit, heard, change, length, first=ruled[0][0])
 
     starts = [t for t, (place, _) in enumerate(path) if place == 0]
     if count - starts[-1] >= length:      # the last bar is whole
@@ -395,6 +414,7 @@ def read(path, f=None, tempo=None):
         "tempo": {"note": tempo_note, "bpm": int(round(60.0 * tempo_beats / bar_seconds))},
         "time": time,
         "key": f"{tonic_name} {mode}",
+        **({"strange": True} if strange else {}),
         "bars": bars,
     }
 

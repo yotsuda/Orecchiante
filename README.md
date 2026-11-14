@@ -179,9 +179,9 @@ marks nothing.
 ### Chords that last two bars
 
 `gen_chords.py --held 0.5` makes half of a song's sections hold each chord for two bars
-(`data/synth/seed21`, 24 songs). Left alone, the reader with the model takes the tempo of 17 of
+(`data/synth/seed21`, 24 songs). Left alone, the reader with the model takes the tempo of 16 of
 them right and reads the faster ones at half their tempo, with bars twice as long; the chords are
-read as well as ever (root 97.8%). What is heard does not settle it: a fast song whose chords
+read as well as ever (root 97.9%). What is heard does not settle it: a fast song whose chords
 last two bars and a slow one whose chords last one sound the same bar by bar. A price on long
 bars was tried and thrown away (it mends these songs and breaks as many of the others).
 
@@ -190,9 +190,9 @@ three or four such beats.
 
 | `seed21`, with the model | left alone | told the tempo |
 |---|---|---|
-| Tempo (within 4%), songs | 17 of 24 | 22 of 24 |
-| Bar lines, F | 90.5% | 96.5% |
-| Chord root, by time | 97.8% | 97.9% |
+| Tempo (within 4%), songs | 16 of 24 | 22 of 24 |
+| Bar lines, F | 89.2% | 96.5% |
+| Chord root, by time | 97.9% | 97.9% |
 
 Told the true tempo, the three sets above read the same or a little better (`seed1`: 24 tempi
 of 24, bar lines 96.7%; `seed7` and `seed11` unchanged).
@@ -206,20 +206,29 @@ piano. They are short (8 to 16 bars, 48 bars in all).
 
 | | what plays | nothing learnt | with the model |
 |---|---|---|---|
-| Amazing Grace | a melody | tempo and all 15 bar lines right; root 20% | twice the tempo; root 23% |
-| Greensleeves | a melody | tempo right, 15 of 16 bar lines; root 12% | twice the tempo; root 6% |
+| Amazing Grace | a melody | tempo and all 15 bar lines right; root 20% | the same; root 39% |
+| Greensleeves | a melody | tempo right, 15 of 16 bar lines; root 12% | the same; root 9% |
 | Morning Light | a melody and a bass | tempo and all 8 bar lines right; root 93%, family 62% | the same; root 93%, family 75% |
-| Harbour Lights | a voice and a piano | tempo and all 9 bar lines right; root 83%, family 83% | read in 6/8, no bar line right; root 80%, family 80% |
+| Harbour Lights | a voice and a piano | tempo and all 9 bar lines right; root 83%, family 83% | the same; root 99%, family 99% |
 
 - A melody alone has no chords in it to hear: naming the chords a tune implies is another
   task (harmonising), which neither reader attempts. Their tempo and bar lines are still found
   by the reader with nothing learnt.
 - With something under the melody the roots are mostly found (80 to 93%), by both readers.
-- The model does worse than the rules on the tempo and the meter here: its opinion changes
-  from half beat to half beat on sounds it does not know, and the bar lines follow it.
-- It says so itself. It doubts 29 of 30, 32 of 36, 8 of 8 and 8 of 12 of the chords it reads in
-  these four songs (2 of 29 in a song of `seed11`), and the reader prints "this is not music
-  the model knows" when it doubts more than half.
+- Left to find the bars itself, the model did worse than the rules here (two songs at twice
+  their tempo, Harbour Lights in 6/8 with no bar line right): its opinion changes from half
+  beat to half beat on sounds it does not know, and the bar lines followed it.
+- But it says so itself: it doubts 19 of 19, 19 of 19, 8 of 8 and 9 of 13 of the chords it reads
+  in these four songs (2 of 29 in a song of `seed11`). So when the model doubts more than half
+  of the half beats, the bars are the ones the templates find and the model only names the
+  chords inside them; that is the column above, and the reader prints "this is not music the
+  model knows". Harbour Lights then comes out all but right, each chord still marked:
+
+  ```
+  Eb | Cm7@todo("or Eb?") | Abmaj7@todo("or Fm7?") Bb7@todo("or Eb?") | Eb |
+  ```
+
+  The songs of its own making read as before, but for one of `seed21`.
 
 ### A tempo that moves
 
