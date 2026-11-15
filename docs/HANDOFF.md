@@ -86,13 +86,15 @@ m4a は Lily# の LSP が Media Foundation で復号する（音を渡す口は�
 1 つずつ確かめていない。3 拍の小節が 1 つ残る）。次の候補: ユーザーがベースで弾く曲・コードの分かっている曲（あれば数字も）、バンド練習の録音
 （`F:\Music\ギャラン☆Do!\`。58 分の 1 本は `scratch/d3/user/long-only/` に譜面がある。曲の切れ目でテンポが変わるので C3 とつながる）。
 
-- **D4 の Dettato 側で残るのは、人の小節線から読み直す入口だけ**（Python は `--lines` の道。.NET の `--lines` は `.beats` を読む。形式 2 の小節の秒を読むのが素直）。
-  形式 2 の中身は Lily# の設計メモ §6 が決まってから。配り直すときは版を 2 か所（`Program.cs`・`extension/package.json`）と CHANGELOG で上げて `tools/deploy-extension.ps1`。
+- **D4 で Dettato 側に作るものは今はない。** 人の小節線から読み直す入口（D4 (3)）は**オーナー決定（2026-11-16、設計メモ §6）で要らなくなった**＝
+  読み直しは単に上書き、Lily# からは頼まない。Lily# は既にある `.lys` の横に `song (Dettato).lys` を書く「Write Beside」も作った（`e29f2463d`。`-o` で `--force` なし＝今の呼び方のまま）。
+  配り直すときは版を 2 か所（`Program.cs`・`extension/package.json`）と CHANGELOG で上げて `tools/deploy-extension.ps1`。
 - **Lily# の依頼（`docs/repro/REQUESTS.md`。セッションの頭に見る）:** **1 は Lily# が作った**（master `da1d1caac`〜`7dd898bf9`、次の版から。
   「Convert Recording to Lily# (.lys)… (Preview)」、Dettato が無ければ入れるよう勧める、鍵 `lilysharp.dettatoAvailable` は Lily# が自分で立てる＝Dettato の拡張は何も立てなくてよい）。
   Dettato 側で確かめて行に書いた（取り決めどおり、テスト 6/6、気づいた 3 点。Lily# が 3 点に返事した）。**Lily# のその版が出たら拡張の `dettato.transcribe` を外して 0.3.0**。
   4 は Lily# が作り中（S1〜S3 済み、次は S4）、`tuning`・`beats` は受け取られた。**5（m4a の `iTunSMPB` を Lily# の `Mp4Lead` に写す）は 2026-11-16 に出した。**
-  入るまで、iTunes の m4a では Dettato の小節が Lily# の鳴らす音より 48 ms 早い（Lily# の m4a 再生は master だけ）。3 は `done` にするのは確かめてから。
+  入るまで、iTunes の m4a では Dettato の小節が Lily# の鳴らす音より 48 ms 早い（Lily# の m4a 再生は master だけ）。
+  **2026-11-16 夜に見た時点で 5 は返事なし**（Lily# の `RecordingDecoder` の最後の変更は `b7d98c03c` のまま）。3 は `done` にするのは確かめてから。
 - 返事を待つ間にできる一手: C3（テンポの大きな変化。範囲のテンポ・人の拍マーカーとつながる）。規則を触るなら「.NET の規則」の手順で。
 
 やり残し（急がない）:
