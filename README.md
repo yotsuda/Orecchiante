@@ -756,10 +756,20 @@ back (`dettato audio`, `tools/heard_check.py`: where the cross-correlation with 
 |---|---|---|
 | mp3, constant bit rate (libmp3lame; 44100, 48000, 22050 Hz, mono) | 1729 samples late (39 ms; 1153 at 22050 Hz) | 0 |
 | mp3, varying bit rate | 577 late (13 ms) | 0 |
-| mp3 with no Xing/Info frame | 577 late | 577 late: nothing says how much |
+| mp3 with no Xing/Info frame | 577 late | 1105 late, as ffmpeg and a browser give it (Windows gives 528 fewer in front) |
 | m4a, mp4 (aac; 44100, 48000 Hz) | 1024 late (23 ms) | 0 |
 | aac (bare ADTS) | 1024 late | 1024 late: nothing says how much |
 | flac, wma, 8-bit wav | 0 | 0 |
+
+Files from elsewhere (the user's library, 2026-11-16): 149 of 150 mp3 picked at random have no
+Xing/Info frame (123 carry iTunes' `iTunSMPB` note, which says 528 in front; neither ffmpeg nor
+Chrome goes by it), and the m4a of iTunes 11 and of the iPhone's Voice Memos have no edit list but
+an `iTunSMPB` note (2112 in front), which ffmpeg goes by. Against ffmpeg's decoding of the same
+file, the reader was 528 samples early on those mp3 (12 ms at 44100 Hz, 33 ms at 16000) and 2112
+late on those m4a (48 ms); now it is 0 on all seven kinds tried (`scratch/d3/user/`, ffmpeg's wav
+beside each as `ref.wav`). Chrome's `decodeAudioData` (what Lily#'s preview plays an mp3 with)
+gave the same first sample as ffmpeg on the four mp3 kinds (`tools/chrome_lag.py <file> <ffmpeg's
+wav>`, headless Chrome through `tools/cdp.mjs`).
 
 The 24 songs of `seed1` as mp3 (192 kbit/s) and m4a (128 kbit/s), read from the file alone with
 the models inside, against the same from the `.wav` (`tools/kinds_check.py`, and `measure.py

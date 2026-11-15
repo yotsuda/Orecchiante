@@ -2,6 +2,16 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.2.2
+
+- The file beside the chart also says the recording's tuning (cents from A = 440 Hz) and the time
+  of each beat in each bar.
+- An mp3 with no Xing/Info frame (as iTunes writes them) and an m4a with iTunes' gapless note but no
+  edit list (iTunes, the iPhone's Voice Memos) are now timed as a browser and ffmpeg play them: the
+  bars were 12 ms early on such an mp3 (33 ms at 16 kHz) and 48 ms late on such an m4a.
+- A recording of an hour reads in less memory (9.6 GB at its peak before, 7.1 GB now, for 58
+  minutes at 48 kHz).
+
 ## 0.2.1
 
 - Where the beat model counts a first beat in the middle of a bar, the two half bars are one bar

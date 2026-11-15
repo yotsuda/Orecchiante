@@ -42,7 +42,7 @@ using System.Text;
 using Dettato;
 using Microsoft.ML.OnnxRuntime;
 
-const string version = "0.2.1";
+const string version = "0.2.2";
 const int protocol = 1;
 const string usage = "usage: dettato <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]\n"
                    + "       dettato --version [--json]\n"
@@ -91,12 +91,19 @@ Chart Read(string file, Action<string>? say = null)
     int seconds = (int)(mono.Length / (double)rate);
     say?.Invoke($"  {seconds / 60}:{seconds % 60:D2} at {rate} Hz");
     if (mono.Length < rate * 5L) throw new InvalidDataException("shorter than 5 seconds");
+    // (an hour's recording is 1.3 GB at its own rate: each array is let go once read, and collected
+    // before the next is made)
     var low = Resample.To(mono, Features.Rate, rate);       // the beat model's rate too
+    double[]? high = heardFrom == null ? Resample.To(mono, Crema.Rate, rate) : null;
+    mono = null!;
+    Collect();
     mel += clock.Elapsed.TotalSeconds; clock.Restart();
     var heard = Features.Of(low);
     cqt += clock.Elapsed.TotalSeconds; clock.Restart();
     say?.Invoke("the beats");
     var (lines, beats) = Reader.LinesOf(linesFrom != null ? File.ReadAllText(Path.Combine(linesFrom, name + ".beats")) : Beats.Lines(beatModel!, low));
+    low = null!;
+    Collect();
     beat += clock.Elapsed.TotalSeconds; clock.Restart();
     say?.Invoke("the chords");
     float[] logp;
@@ -105,7 +112,12 @@ Chart Read(string file, Action<string>? say = null)
     if (heardFrom != null) (logp, frames, step) = Npy.ReadHeard(Path.Combine(heardFrom, name + ".npz"));
     else
     {
-        logp = Crema.LogP(chordModel!, Crema.Input(Resample.To(mono, Crema.Rate, rate), out frames), frames);
+        var input = Crema.Input(high!, out frames);
+        high = null;
+        Collect();
+        logp = Crema.LogP(chordModel!, input, frames);
+        input = null!;
+        Collect();
         for (int i = 0; i < logp.Length; i++) logp[i] = (float)(Half)logp[i];       // as `dettato ears` writes them
     }
     chord += clock.Elapsed.TotalSeconds; clock.Restart();
@@ -288,3 +300,5 @@ Console.WriteLine($"in all, from the start of the process: {started.Elapsed.Tota
 return 0;
 
 bool writeCqt() => args.Contains("--cqt");
+
+static void Collect() => GC.Collect();

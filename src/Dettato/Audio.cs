@@ -23,18 +23,34 @@ static class Audio
             using var reader = new MediaFoundationReader(path, new MediaFoundationReader.MediaFoundationReaderSettings { RequestFloatOutput = true });
             int channels = reader.WaveFormat.Channels, rate = reader.WaveFormat.SampleRate;
             var samples = reader.ToSampleProvider();
-            var mono = new List<double>((int)Math.Min(reader.Length / reader.WaveFormat.BlockAlign, int.MaxValue / 16));
+            // (in pieces, then once into the one array: a recording of an hour is 170 million samples)
+            const int Piece = 1 << 20;
+            var pieces = new List<double[]>();
+            var piece = new double[Piece];
+            int filled = 0;
             var buffer = new float[channels * 16384];
             for (int got; (got = samples.Read(buffer, 0, buffer.Length)) > 0;)
                 for (int i = 0; i + channels <= got; i += channels)
                 {
                     double sum = 0;
                     for (int c = 0; c < channels; c++) sum += buffer[i + c];
-                    mono.Add(sum / channels);
+                    if (filled == Piece) { pieces.Add(piece); piece = new double[Piece]; filled = 0; }
+                    piece[filled++] = sum / channels;
                 }
-            if (mono.Count == 0) throw new InvalidDataException("no sound in it");
-            int lead = Math.Min(Lead(path, rate), mono.Count - 1);
-            return (lead > 0 ? mono.GetRange(lead, mono.Count - lead).ToArray() : mono.ToArray(), rate);
+            pieces.Add(piece);
+            long count = (long)(pieces.Count - 1) * Piece + filled;
+            if (count == 0) throw new InvalidDataException("no sound in it");
+            int lead = (int)Math.Min(Lead(path, rate), count - 1);      // below 0: silence put in front
+            var mono = new double[count - lead];
+            long from = Math.Max(0, lead), to = Math.Max(0, -lead);
+            for (int p = (int)(from / Piece); p < pieces.Count; p++)
+            {
+                long start = (long)p * Piece, end = Math.Min(count, start + Piece), skip = Math.Max(0, from - start);
+                Array.Copy(pieces[p], skip, mono, to, end - start - skip);
+                to += end - start - skip;
+                pieces[p] = null!;
+            }
+            return (mono, rate);
         }
         // (Windows' errors may come without a message: their code then)
         catch (Exception e) when (e is COMException or ArgumentException or InvalidOperationException or NotSupportedException or EndOfStreamException)
@@ -46,6 +62,7 @@ static class Audio
     /// <summary>The samples Windows gives before the recording's own first one. An mp3 or AAC encoder puts some
     /// silence in front, and the file says how much; a player that goes by that (a browser, ffmpeg) starts after
     /// it, Media Foundation does not. The bars' seconds are to be the player's (README: measured on files ffmpeg wrote).
+    /// Below 0: Windows gives that many fewer than the player at the start (they are put back as silence).
     /// 0 where the file does not say, or is not read as expected.</summary>
     static int Lead(string path, int rate)
     {
@@ -64,7 +81,8 @@ static class Audio
 
     /// <summary>An mp3 whose first frame is the encoder's note and not sound: Windows gives that frame as silence
     /// (when it says "Info": a constant bit rate), then the encoder's delay (in LAME's part of the note), then one
-    /// sample more. An mp3 with no note has the delay too, and nothing that says how long: it stays (13 ms of LAME's).</summary>
+    /// sample more. An mp3 with no note (as iTunes writes them) Windows gives 528 samples fewer at the start than
+    /// a browser and ffmpeg do, at 44100 and at 16000 Hz alike (MEASURED 2026-11-16 on the user's files, README).</summary>
     static int Mp3Lead(Stream file)
     {
         var head = new byte[10];
@@ -73,18 +91,29 @@ static class Audio
         if (head[0] == 'I' && head[1] == 'D' && head[2] == '3')     // (the tag's length: four bytes of seven bits)
             at = 10 + (head[6] << 21 | head[7] << 14 | head[8] << 7 | head[9]) + ((head[5] & 0x10) != 0 ? 10 : 0);
         file.Position = at;
-        var b = new byte[8192];
+        var b = new byte[1 << 22];      // (a tag that says a wrong length leaves its picture in front: the frames are looked for past it)
         int got = file.ReadAtLeast(b, b.Length, false);
+        int[] rates = [44100, 48000, 32000];
+        int[] mpeg1 = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320], mpeg2 = [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160];
+        // the length of the layer III frame whose header is at b[i], 0 if none is
+        int Length(int i)
+        {
+            if (i + 4 > got || b[i] != 0xFF || (b[i + 1] & 0xE0) != 0xE0) return 0;
+            int version = b[i + 1] >> 3 & 3, layer = b[i + 1] >> 1 & 3, bits = b[i + 2] >> 4, r = b[i + 2] >> 2 & 3;
+            if (version == 1 || layer != 1 || bits is 0 or 15 || r == 3) return 0;
+            int rate = rates[r] >> (version == 3 ? 0 : version == 2 ? 1 : 2);
+            return (version == 3 ? 144000 * mpeg1[bits] / rate : 72000 * mpeg2[bits] / rate) + (b[i + 2] >> 1 & 1);
+        }
         for (int i = 0; i + 4 < got; i++)
         {
-            if (b[i] != 0xFF || (b[i + 1] & 0xE0) != 0xE0) continue;
-            int version = b[i + 1] >> 3 & 3, layer = b[i + 1] >> 1 & 3;      // 3: MPEG 1; 1: layer III
-            if (version == 1 || layer != 1 || b[i + 2] >> 4 == 15 || (b[i + 2] >> 2 & 3) == 3) continue;
+            int length = Length(i);
+            if (length == 0 || i + length + 4 <= got && Length(i + length) == 0) continue;      // (a frame is followed by a frame)
+            int version = b[i + 1] >> 3 & 3;      // 3: MPEG 1
             bool mono = b[i + 3] >> 6 == 3, crc = (b[i + 1] & 1) == 0;
             int note = i + 4 + (crc ? 2 : 0) + (version == 3 ? (mono ? 17 : 32) : (mono ? 9 : 17));
             if (note + 8 > got) return 0;
             string id = System.Text.Encoding.ASCII.GetString(b, note, 4);
-            if (id is not ("Xing" or "Info")) return 0;         // the first frame is sound
+            if (id is not ("Xing" or "Info")) return -528;      // the first frame is sound
             // (a note that says "Xing", as a file of varying bit rate has, Windows knows and passes over itself)
             int frame = id == "Xing" ? 0 : version == 3 ? 1152 : 576, flags = b[note + 7];
             int lame = note + 8 + ((flags & 1) != 0 ? 4 : 0) + ((flags & 2) != 0 ? 4 : 0) + ((flags & 4) != 0 ? 100 : 0) + ((flags & 8) != 0 ? 4 : 0);
@@ -148,12 +177,29 @@ static class Audio
             if (trak.Type != "trak" || Find(moov, (trak.From, trak.To), "mdia") is not { } mdia) continue;
             if (Find(moov, mdia, "hdlr") is not { } hdlr || System.Text.Encoding.ASCII.GetString(moov, hdlr.From + 8, 4) != "soun") continue;
             // the first sound track is the one Windows plays
-            if (Find(moov, mdia, "mdhd") is not { } mdhd || Find(moov, (trak.From, trak.To), "edts") is not { } edts || Find(moov, edts, "elst") is not { } elst) return 0;
+            if (Find(moov, mdia, "mdhd") is not { } mdhd) return 0;
+            if (Find(moov, (trak.From, trak.To), "edts") is not { } edts || Find(moov, edts, "elst") is not { } elst) return Priming(moov);
             long scale = U32(moov, mdhd.From + (moov[mdhd.From] == 1 ? 20 : 12));
             if (U32(moov, elst.From + 4) < 1 || scale == 0) return 0;
             long begins = moov[elst.From] == 1 ? I64(moov, elst.From + 16) : (int)U32(moov, elst.From + 12);
             return begins > 0 && begins < scale ? (int)Math.Round(begins * (double)rate / scale) : 0;      // (under a second: an encoder's, not a cut)
         }
         return 0;
+    }
+
+    /// <summary>With no edit list, iTunes (and the iPhone's Voice Memos) say the encoder's silence in their own note,
+    /// "iTunSMPB": hex numbers, the second the samples in front (2112 for AAC). ffmpeg goes by it (MEASURED 2026-11-16
+    /// on the user's files, README). 0 when there is none.</summary>
+    static int Priming(byte[] moov)
+    {
+        var name = "iTunSMPB"u8;
+        int at = moov.AsSpan().IndexOf(name);
+        if (at < 0) return 0;
+        int data = moov.AsSpan(at).IndexOf("data"u8);
+        if (data < 0 || data > 64) return 0;
+        int from = at + data + 12, to = from;      // ('data', then 4 bytes of kind and 4 of language, then the text)
+        while (to < moov.Length && to < from + 200 && moov[to] is >= 0x20 and < 0x7F) to++;
+        var fields = System.Text.Encoding.ASCII.GetString(moov, from, to - from).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return fields.Length > 1 && int.TryParse(fields[1], System.Globalization.NumberStyles.HexNumber, null, out int n) && n is > 0 and < 10000 ? n : 0;
     }
 }
