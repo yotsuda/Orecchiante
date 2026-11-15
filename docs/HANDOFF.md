@@ -3,7 +3,19 @@
 **毎セッションの終わりに書き換える**（追記しない。200 行以内）。方向づけは [ROADMAP.md](ROADMAP.md)、
 数字と使い方は [README](../README.md)、録音の出典は [DATASETS.md](DATASETS.md)。
 
-最終更新: 2026-11-14（D3 を作り、ユーザーの 1 曲目（My Life）から小節とテンポを直して、拡張 0.2.1 をこの PC に入れた。HEAD は `git log -1` で確かめる）。
+最終更新: 2026-11-15（コードは変えていない。D4 の形をオーナーと決め直し、Lily# に依頼 4 を出した。HEAD は `git log -1` で確かめる）。
+
+### D4 の形（2026-11-15、オーナーと話して決めた。依頼 4・[便り](repro/lilysharp-requests-2026-11-15-listening.md)）
+
+- **目標は Transcribe!（Seventh String）と同じ体験を Lily# で。** オーナーは長年の利用者で、用途の中心はエレキベースの耳コピ。
+  小節を押すとそこから原音、ループ、再生中に M（小節）・B（拍）・S（セクション）でマーカーを打って後から動かす、範囲のマーカーからテンポ、
+  速度（音高は保つ）、セント単位の音高とオクターブ、**音高と速度の連動（オン・オフ）**、EQ。セント単位は、古いテープの録音が伸びで速度と音高ごとずれるのを戻すため。
+- **人が打った・動かした小節線が正。** 機械の読みを別に残す必要はない（オーナーの問いで確かめた。読み直しは人の線を入力に取ればよく、測定は作業用フォルダでする）。
+  残すのは線ごとの「人が確かめた」印だけ（読み直しで動かさない、確かめていない線を薄く描く）。→ `x.dettato.json` を**人が直してよい形式 2** にする案
+  （形式 1 は「誰も書き換えない」。SIDECAR.md は Lily# の返事を見てから直す）。
+- 連動オンは再標本化だけで済む（伸縮のエンジン不要）。連動オフと音高を保った速度変更にはエンジンが要る（候補と未確認の点は便り §2）。
+- **Dettato が用意するもの:** 復号した音（webview の Chromium は AAC を復号できないはず。未確認）、拍の時刻、調律のずれのセント（`Features` の
+  `tuning` が既に測っている。半音の ±1/2 まで）、人の小節線を受けてコードを読み直す入口。拍とセントは項目を足すだけなので形式 1 のまま足せる。
 
 ## 現在地
 
@@ -22,8 +34,7 @@
 - `dettato --version --json` → 版・`protocol` 1・`commands`・`inputs`（拡張が `bin\dettato.json` から返す）。版は `Program.cs` と `extension/package.json` の 2 か所。
 - **wav 以外は Windows の Media Foundation（NAudio 2.2.1、MIT）で読む。** 復号器は Windows のもので、配るものに入れない。素の wav は `Wav.cs` のまま。
 - **Media Foundation はエンコーダの足す無音を頭に残す**（mp3 CBR 39 ms、VBR 13 ms、AAC 23 ms。ffmpeg やブラウザは取り除く）。`Audio.Lead` が
-  ファイルの記録（mp3 の Xing/Info＋LAME の delay、MP4 の編集リスト）から取り除き、wav とのずれは 0 サンプル。Xing のない mp3 と素の `.aac` は残る。
-  **「Info」（CBR）のフレームは無音として出てくるが、「Xing」（VBR）のフレームは Media Foundation が自分で飛ばす**（測って分かった）。
+  ファイルの記録（mp3 の Xing/Info＋LAME の delay、MP4 の編集リスト）から取り除き、wav とのずれは 0 サンプル。Xing のない mp3 と素の `.aac` は残る。**「Info」（CBR）のフレームは無音で出るが「Xing」（VBR）は Media Foundation が飛ばす**。
 - seed1 を mp3・m4a にして読むと精度は wav と同じ、譜面は同じではない（小節の数が違う曲が 3・5 曲。数字は README）。48000 Hz の wav は同じ譜面。
 - 測る道具: `dettato audio` → `tools/heard_check.py`（頭のずれ）、`tools/kinds_check.py`（譜面どうし）。試した録音は `scratch/d3/`（消してよい）。ffmpeg は PATH にある。
 
@@ -37,12 +48,9 @@
 
 ### .NET の耳と特徴量（`dettato ears`・`dettato features`。README の「In .NET」の最初の 2 節と「Without torch and TensorFlow」）
 
-- 耳: wav → `.beats`（Beat This!）と `.npz`（crema の確率）。CQT は librosa と 1e-5 dB 以内、crema の最有力のコードは RWC 260678 フレーム中
-  260677 で同じ、拍は seed1 で 2970 個中 1 個違う（再標本化の通過帯域を soxr HQ に合わせた。標本は同じではない）。突き合わせは `tools/net_check.py`。
-- 特徴量: wav → `.feat.npz`（`oenv`・`chroma`・`bass`・`rms`・`tuning`）。`measure.py --net scratch/net` が librosa の代わりに読み、表は全列同じ。
-  調律は合成曲 72/72、RWC 99/100 で librosa と同じ（`RWC_P059` だけ +0.01。この曲のクロマが最大 0.04 ずれる）。
-- **librosa のベース用クロマは、曲によって他より 1 フレーム長い**（1/32 に間引くときの切り上げ）。.NET も同じ長さを書き、規則は配列ごとの
-  長さで切る。デジタル無音（rms が 0）のフレームのクロマは丸め誤差の正規化で、librosa とも一致しない（比べるときは除く）。
+- 耳: wav → `.beats`（Beat This!）と `.npz`（crema）、特徴量: wav → `.feat.npz`（`oenv`・`chroma`・`bass`・`rms`・`tuning`）。Python との一致の
+  度合いは README、突き合わせは `tools/net_check.py`。`measure.py --net scratch/net` が librosa の代わりに読み、表は全列同じ。
+- librosa のベース用クロマは曲によって 1 フレーム長い（.NET も同じ長さ、規則は配列ごとに切る）。デジタル無音のフレームのクロマは比べるとき除く。
 - **`--ears` では HPSS を外した**（`use_ears()` が `HARMONIC_FRAMES = 0`。特徴量は `scratch/feat-h0/`）。自作の読み取り器は 31 のまま。
 - **1 曲（RWC_P001、3 分 27 秒）の時間:** Python の venv 3 つで 18 秒、venv 1 つ＋ONNX で 11 秒、`dettato read` で 5.5 秒
   （Beat This! 3.7、CQT と crema 1.0、特徴量 0.3、起動 0.3、規則 0.1）。モデルは crema 2.2 MB、Beat This! `final0` 82.9 MB、ほかに 11.5 MB。
@@ -59,13 +67,10 @@
 | テンポ・拍子 | 46・49 | 47・49 | 93・98 | |
 | 印 → 拾う誤り | 30.2% → 77.8% | 25.7% → 70.3% | 28.0% → 73.9% | 17.5% → 70.2% |
 
-- 自作の読み取り器（モデルあり）は変えていない: seed1 / 7 / 11 のルート 95.6 / 96.0 / 97.2%、小節線 95.0 / 97.6 / 99.1%。
-- 頭と終わり（`measure.py head`）は前回と同じ: `rwc-dev`・`rwc-test` の `--ears` で最初の小節線 39/50・45/50、最後 23/50・13/50。
+- 自作（モデルあり）seed1 / 7 / 11: ルート 95.6 / 96.0 / 97.2%、小節線 95.0 / 97.6 / 99.1%。`measure.py head`（`--ears`）: 最初の小節線 `rwc-dev` 39/50・`rwc-test` 45/50、最後 23/50・13/50。
 
 ### 持ち越す知見（README にないもの）
 
-- `.lys` の小節と録音の対応は「順番」（`bars[]` の n 番目＝Lily# が form を通して鳴らす n 番目。SIDECAR.md）。
-  Lily# 側に「原音を鳴らす」設計はまだない。使えるのは `lilysharp/playback` の `S`・`T` と `Beats` の `A`。
 - 実録音で失っていたのは頭ではなく終わり（Beat This! はドラムが止まる所で拍をやめる）。crema の「コードなし」は両端だけ使う。
   RWC の正解は両端を語らない（弱起なし）。弱起は `"bar": 0, "pickup": 拍数`、section は `Pickup`。
 - ONNX を書き直すとき: 旧式のトレースで書いた直後の torch のモデルは同じプロセスの中で答えが変わる（比べる前に読み直す。
@@ -78,16 +83,20 @@
 「さほど違和感はない」**（ブリッジの C#dim・F#7/C# を 1 つずつ確かめたわけではない）。残る 3 拍の小節が 1 つある。見る所: 読めるか、時間、iTunes などの m4a・ほかのエンコーダの mp3 の頭のずれ（ffmpeg で wav にしたものと
 `heard_check.py` で比べる）、長い録音のメモリ、譜面の出来（コードの分かっている曲なら数字も）。
 
-- その次: D4（VS Code から呼ぶ）。**Lily# 側の返事待ち**（`docs/repro/REQUESTS.md` の 1〜3 は `open` のまま。セッションの頭に見る）。
-  メニューは Lily# 本体へ移す（ユーザー決定。ROADMAP §5）。Lily# にメニューが入ると同時に拡張の `dettato.transcribe` を外す。
-  Lily# がメニューを出す鍵の名前を決めたら、拡張が起動時に立てる（`onStartupFinished`）。下の「未確認」の 2 点が Lily# 側の最初。
-- 返事を待つ間にできる一手: C3（テンポの大きな変化）。規則を触るなら「.NET の規則」の手順で。`--progress json` は Lily# が要ると言ったら。
+- **並行して D4 の Dettato 側（上の「D4 の形」）:** (1) `x.dettato.json` に拍の時刻と調律のセントを足す（形式 1 のまま。`Writer.cs` と
+  `read_chords.py` の両方、`read_check.py` で一致、`sidecar.py` も）、(2) 復号した音を Lily# に渡す口（渡し方は依頼 4 の返事を見て。`dettato audio` が土台）、
+  (3) 人の小節線から読み直す入口（`--lines` の道が Python にある）。形式 2 は Lily# の返事の後。
+- **Lily# の依頼（`docs/repro/REQUESTS.md`。セッションの頭に見る）:** 1 はオーナー決定「メニューは作る。着手は D3 で呼び出しの形が固まってから、固まったら行に書く」
+  → D3 の形（便り §2a）を固まったとして行に書くかをオーナーに確かめてから書く。2 は「今は作らない」のまま、それを広げた 4 が `open`。3 は Lily# で直った（`done` にするのは確かめてから）。
+  Lily# がメニューを出す鍵は `lilysharp.dettatoAvailable`、開発用の環境変数は `LILYSHARP_DETTATO_PATH`（拡張が `onStartupFinished` で立てる。まだ）。
+  メニューが Lily# に入ると同時に拡張の `dettato.transcribe` を外す。
+- 返事を待つ間にできる一手: C3（テンポの大きな変化。範囲のテンポ・人の拍マーカーとつながる）。規則を触るなら「.NET の規則」の手順で。
 
 やり残し（急がない）:
 - **Beat This! の小さい版（`small0`、8 MB）は測れていない**（配布元 cloud.cp.jku.at が 500）。取れたら `track_beats.py --model small0` で
   合成曲、RWC は `final0` と相対比較。時間と大きさの大半が Beat This! なので効く。半精度（fp16）も測っていない。
 - 和音のないイントロの小節（`rwc-dev` の P027）は譜面に入れていない。`fold`・`beat_names`・`lys()` が「和音のない拍」を扱う必要がある（Lily# は `r` で N.C.）。
-- 最後の和音の終わり、小節の中の拍の時刻は `.dettato.json` にない（足すなら形式の番号は上げない）。`check` は `lysc check --batch` で速くなる。
+- 最後の和音の終わりは `.dettato.json` にない（拍は D4 で足す）。`check` は `lysc check --batch` で速くなる。
 - crema の `chord_root`・`chord_bass`・`chord_pitch` は未使用（ベース音は自作のクロマ）。crema＋BTC 用の値段と印の選び直しは BTC が決まってから。
 
 ## 環境（この PC）
@@ -99,21 +108,16 @@
   `scratch/d2/venv-onnx`（numpy、librosa、soxr、soundfile、onnxruntime）が ONNX だけの耳。作り方は README。
   素の `python` は LilyPond 同梱のものを拾うので使わない。標準ライブラリだけの道具は `py -3.12` でもよい。
 - 新しいコンソールごとに最初に設定する（コンソールは 11 分使わないと閉じ、環境変数も消える）:
-  `$env:NUMBA_CACHE_DIR='C:\MyProj\Dettato\scratch\numba'`、
-  `$env:DETTATO_LYSC='C:\MyProj\LilySharp\LilySharp.Cli\bin\Release\net10.0\win-x64\lysc.exe'`。
-  `.venv-bt` を動かすときは `$env:TORCH_HOME='C:\MyProj\Dettato\scratch\torch'`、
-  `$env:TORCHINDUCTOR_CACHE_DIR='C:\MyProj\Dettato\scratch\torchinductor'`、`$env:PYTHONUTF8='1'` も。
+  `$env:NUMBA_CACHE_DIR='C:\MyProj\Dettato\scratch\numba'`、`$env:DETTATO_LYSC='C:\MyProj\LilySharp\LilySharp.Cli\bin\Release\net10.0\win-x64\lysc.exe'`。
+  `.venv-bt` を動かすときは `$env:TORCH_HOME='C:\MyProj\Dettato\scratch\torch'`、`$env:TORCHINDUCTOR_CACHE_DIR='C:\MyProj\Dettato\scratch\torchinductor'`、`$env:PYTHONUTF8='1'` も。
   `make` で `tim/` を作り直すときは `DETTATO_SOUNDFONT_ALT`（`C:\MyProj\omr-compare\minor\venvs\zhaovan\Lib\site-packages\pretty_midi\TimGM6mb.sf2`）、
   `samples` は `DETTATO_SAMPLES`（`C:\MyProj\LilySharp\samples`。場所は未確認）も。
 - 動作確認の 1 コマンド（20 秒）:
-  `.venv\Scripts\python.exe tools\measure.py table seed1 rwc-dev rwc-test --ears`
-  → seed1 ルート 95.1%・小節線 96.7%・ベース 73.4%、`rwc-dev` 86.4% / 82.3% / 93.6%、`rwc-test` 87.3% / 82.2% / 94.9%。
-- 時間の目安: `--ears` の `table` は RWC 50 曲で 7 秒。`all` は 20〜25 分。RWC の特徴量の作り直しは HPSS ありで 20 分、なしで 3 分。
-- 2 分を超える仕事は切り離して走らせ、ログを見に行く。pwsh MCP の 1 回の呼び出しは 115 秒以内に収める:
+  `.venv\Scripts\python.exe tools\measure.py table seed1 rwc-dev rwc-test --ears` → seed1 ルート 95.1%・小節線 96.7%・ベース 73.4%、`rwc-dev` 86.4% / 82.3% / 93.6%、`rwc-test` 87.3% / 82.2% / 94.9%。
+- 時間の目安: `--ears` の `table` は RWC 50 曲で 7 秒。`all` は 20〜25 分。RWC の特徴量の作り直しは HPSS ありで 20 分、なしで 3 分。2 分を超える仕事は切り離して走らせ、ログを見に行く。pwsh MCP の 1 回の呼び出しは 115 秒以内に収める:
   `Start-Process cmd -ArgumentList '/d /s /c "<コマンド> < NUL > scratch\x.log 2>&1"' -WindowStyle Hidden -WorkingDirectory C:\MyProj\Dettato`
   止めるときは `measure.py all` を含む python.exe を止める。速さは裏の仕事が終わってから測る（24 コアでも ONNX と torch は取り合う）。
-- `lysc check <1 枚>` の合否は終了コードと `warning` / `: error`。`lysc <コマンド> --batch <一覧>` なら 1 プロセスで多数を扱える。
-- `C:\MyProj` 全体の再帰検索は固まる。pwsh MCP の `Update-MatchInFile` で書き換えたファイルは、Edit ツールの前に読み直しが要る。
+- `lysc check <1 枚>` の合否は終了コードと `warning` / `: error`。`lysc <コマンド> --batch <一覧>` なら 1 プロセスで多数を扱える。`C:\MyProj` 全体の再帰検索は固まる。pwsh MCP の `Update-MatchInFile` で書き換えたファイルは、Edit ツールの前に読み直しが要る。
 - **README.md などユーザーがプレビューで開いている Markdown は、Edit を 1 回ずつ出す**（並べるとエラーのダイアログが編集の数だけ出る）。
 
 ### commit の外にあるもの（消えたら作り直す）
@@ -144,8 +148,7 @@
 | `rwc-dev`（P001〜P050） | 実録音で見て決める側 | 値段、`SURE_OF`、`DOUBT_EARS`、`SAID_AGAIN`、C1 の定数、HPSS なしはここで決めた |
 | `rwc-test`（P051〜P100） | 実録音で数えるだけの側 | 集計だけを見ている。HPSS なしの集計は、決める前に `rwc-dev` と同時に出た（どちらも同じ向き） |
 
-公開モデルで測るときは、そのモデルが測る曲を学習していないかを先に確かめる。Beat This! は RWC を学習している（`--rwc` で fold のモデル）。
-BTC は README 上は使っていない。ChordMini は使っている。crema は不明。速さと一致だけの測定（D2・D3）は `final0`。精度の数字には使っていない。
+公開モデルで測るときは、そのモデルが測る曲を学習していないかを先に確かめる。Beat This! は RWC を学習している（`--rwc` で fold のモデル）。BTC は README 上は使っていない。ChordMini は使っている。crema は不明。速さと一致だけの測定（D2・D3）は `final0`。精度の数字には使っていない。
 
 ## 捨てた案（試し直さない）
 
@@ -160,9 +163,8 @@ BTC は README 上は使っていない。ChordMini は使っている。crema �
 - crema 用に値段を選び直す、印の式を合わせ直す。印に 3 つ目の耳を足す。`--ears` で値段を高くする、ベースのクロマを足す。
 - 印の確信度の案（BTC、`rwc-dev`）: 半拍ごとの最小値、2 番目との差・比、対数の平均、エントロピー、N・X の確率、コードの長さ、
   ベースがルートか。特徴 27 個・勾配ブースティング。短調への一律の割増。別候補を確率の合計から選ぶ。
-- 小節線を別に探す手法（新奇度、平均クロマ）。自作の読み取り器で HPSS をやめる、NNLS、対数圧縮、`CHANGE_GAIN`、ベースの重み 0.6。
-- 規則だけでコードの重みを詰める。短調の属和音の重みを下げて調を当てる。小節の長さの事前分布、拍の長さの局所中央値。
-- 七の和音の迷いまで印にする（自作モデルで効率が落ちた。`--ears` では未確認）。
+- 小節線を別に探す手法（新奇度、平均クロマ）。自作の読み取り器で HPSS をやめる、NNLS、対数圧縮、`CHANGE_GAIN`、ベースの重み 0.6。規則だけでコードの重みを詰める。
+  短調の属和音の重みを下げて調を当てる。小節の長さの事前分布、拍の長さの局所中央値。七の和音の迷いまで印にする（自作モデルで効率が落ちた。`--ears` では未確認）。
 - 実録音のデータ: Isophonics・McGill Billboard・JAAH は音源なし。Winterreise は歌曲。AAM は合成。GuitarSet（CC BY 4.0）は次の候補。
 
 ## 分かっている弱点・未確認
@@ -174,14 +176,11 @@ BTC は README 上は使っていない。ChordMini は使っている。crema �
   fold のモデルは ONNX にしていない）。規則の一致は「同じ拍・確率・特徴量を与えたとき」で、通しの経路は seed1 の 24 曲だけ。
   拍子が 5/4・7/4 などの曲、`dettato read` が失敗する曲（268 曲に 1 つもなかった。例外の種類を絞って握っている）。
   メモリ（100 曲を 1 プロセスで読むと最大 2.4 GB）。別の CPU での速さ（この PC は 24 コア）。`small0` と半精度。
-- **D4 の最初に Lily# 側で確かめる 2 点:** `lilysharp/playback` の `Beats` が `partial` の小節にも小節の頭（`A`）を立てるか、
-  `lilysharp/placeAt` が弱起に返す小節番号。`lysc layout` は弱起を 1 小節に数えることだけ確認した。
+- **D4 の 2 点は Lily# が答えた（依頼 2 の行）:** `Beats` は弱起に `A` を立てない（n は弱起があれば T 以前の `A` の数、なければ − 1）、
+  `placeAt` は弱起に 0。SIDECAR.md の「Not checked yet」はまだ直していない（形式 2 と一緒に）。
 - 弱起つき・section つきの `.lys` は `lysc check` と `lysc layout` を通しただけ。描いた譜面と鳴り方は目と耳で確かめていない。
-- **Lily# の気づき（報告済み、未対応）:** 和音の行のスロット数は、短い小節（`partial`）でも拍子の拍数で検査される。
 - 旋律だけの弱起に、自作の読み取り器は和音を書く。半拍より短い弱起は消える。弱起は 1・2・3・4・6 拍だけ（`PARTIAL`）。
 - 原因を見ていないもの: `rwc-dev` で最初の小節線が正解と違う 11 曲、`seed41` で外した曲、自作の読み取り器に正解の小節線を与えると実録音のルートが 77.4 → 77.1% に下がること。
-- README の「2 つ目の耳」の印の数字と「下から 30%」は section を入れる前、「What is said again」の本文の数字は C1 の前、
-  「crema as it is」の列は HPSS を外す前に測ったもの（README にその旨）。
 - crema の重みのライセンスの根拠は作者の issue コメント（issue 42。要約で読んだ）とパッケージ同梱。配るときは
   BSD 2-Clause の著作権表示（Copyright (c) 2017, Brian McFee）を同梱する。Beat This! は MIT（コードも重みも）。crema が RWC を聞いているかは不明。
 - crema は合成曲の七の和音に弱い（seed7 で 64.1%）。Beat This! が半分のテンポで追う曲は 2 小節が 1 小節になる（C4）。
@@ -189,6 +188,7 @@ BTC は README 上は使っていない。ChordMini は使っている。crema �
 
 ## 未決（ユーザーの判断待ち）
 
+- **`x.dettato.json` を人が直してよい形式 2 にすること**（オーナーは「人の小節線が正」に同意。形式の中身と、Lily# と Dettato の書き分けは依頼 4 の返事待ち）。
 - **和音のないイントロ・弱起を譜面に書くか。** いまは書かない。書くなら N.C. の小節として。`rwc-dev` で落としている和音なしの小節は 14。
 - **M2 の印の目安（誤りの 8 割・印 3 割以下）をどうするか。** crema で `rwc-test` は「印 26% で 71%」。
   (a) 目安を下げる、(b) 印を 4 割近くまで増やす、(c) BTC を 2 つ目の耳にする。決まるまで閾値は 0.84。
