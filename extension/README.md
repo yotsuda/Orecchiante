@@ -9,15 +9,16 @@ Source and issues: <https://github.com/yotsuda/Dettato>.
 
 ## Use
 
-1. Right-click a recording (`.mp3`, `.m4a`, `.flac`, `.wav`, …) in the Explorer, or run
-   **Dettato: Transcribe Recording to Lily# Chord Chart (.lys)… (Preview)** from the Command
-   Palette and pick one.
+This extension carries the reader; the menu that runs it is the
+[Lily#](https://marketplace.visualstudio.com/items?itemName=yotsuda.lilysharp) extension's.
+Install both.
+
+1. Right-click a recording (`.mp3`, `.m4a`, `.flac`, `.wav`, …) in the Explorer and choose
+   **Convert Recording to Lily# (.lys)… (Preview)**, or run it from the Command Palette.
 2. After some seconds (about five for a three-minute song) `x.lys` opens. It is written beside the
-   recording, with `x.dettato.json` (when each bar begins in the recording) beside it. A chart
-   that is already there is replaced only after you agree.
-3. Correct what it misheard. With the
-   [Lily#](https://marketplace.visualstudio.com/items?itemName=yotsuda.lilysharp) extension the
-   chart is drawn and played as you edit.
+   recording, with `x.dettato.json` (when each bar begins in the recording) beside it.
+3. Correct what it misheard. Lily# draws and plays the chart as you edit, and can play the
+   recording beside it.
 
 ## What to expect
 

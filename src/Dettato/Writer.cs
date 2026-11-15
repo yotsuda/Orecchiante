@@ -55,10 +55,56 @@ static class Writer
             return string.Join(" ", marks);
         }
 
-        IEnumerable<string> Rows(List<List<Bar>> bars, string indent)
+        // The bars of a chords row, four to a line, with their repeat signs (Repeats).
+        IEnumerable<string> Rows(List<Cell> cells, string indent)
         {
-            for (int i = 0; i < bars.Count; i += 4)
-                yield return indent + string.Join(" | ", bars.Skip(i).Take(4).Select(Slots)) + " |";
+            var said = new List<string>();
+            for (int k = 0; k < cells.Count; k++)
+            {
+                var cell = cells[k];
+                string text = (cell.Open && k == 0 ? "|: " : "") + (cell.Ending != 0 ? $"[{cell.Ending}. " : "");
+                string sign = cell.Close ?? "|";
+                if (k + 1 < cells.Count && cells[k + 1].Open) sign = sign == ":|" ? ":|:" : "|:";
+                said.Add(text + Slots(cell.Said) + " " + sign + (cell.Bracket ? " ]" : ""));
+            }
+            for (int i = 0; i < said.Count; i += 4)
+                yield return indent + string.Join(" ", said.Skip(i).Take(4));
+        }
+
+        // `bars`: each a list of the bar each time it is played. As the cells Rows writes, the repeats inside them
+        // (Repeats) written once, every playing of a bar in its one cell.
+        List<Cell> CellsOf(List<List<Bar>> bars, bool signs = true)
+        {
+            var cells = new List<Cell>();
+            var keys = bars.Select(said => string.Join("\u0001", BeatNames(said[0], said[0].Pickup != 0 ? said[0].Pickup : beats))).ToList();
+            int i = 0;
+            foreach (var item in (signs ? Repeats(keys) : []).Append(new Repeat(false, bars.Count, 0, 0)))
+            {
+                for (int j = i; j < item.At; j++) cells.Add(new Cell(bars[j]));
+                if (item.At == bars.Count) break;
+                if (!item.Volta)
+                {
+                    for (int m = 0; m < item.Length; m++)
+                        cells.Add(new Cell([.. Enumerable.Range(0, item.Times).SelectMany(t => bars[item.At + t * item.Length + m])])
+                        {
+                            Open = m == 0,
+                            Close = m == item.Length - 1 ? (item.Times == 2 ? ":|" : $":|*{item.Times}") : null,
+                        });
+                    i = item.At + item.Times * item.Length;
+                }
+                else
+                {
+                    int body = item.Length, ending = item.Times;
+                    for (int m = 0; m < body; m++)
+                        cells.Add(new Cell([.. bars[item.At + m], .. bars[item.At + body + ending + m]]) { Open = m == 0 });
+                    for (int m = 0; m < ending; m++)
+                        cells.Add(new Cell(bars[item.At + body + m]) { Ending = m == 0 ? 1 : 0, Close = m == ending - 1 ? ":|" : null });
+                    for (int m = 0; m < ending; m++)
+                        cells.Add(new Cell(bars[item.At + 2 * body + ending + m]) { Ending = m == 0 ? 2 : 0, Bracket = m == ending - 1 });
+                    i = item.At + 2 * (body + ending);
+                }
+            }
+            return cells;
         }
 
         var lines = new List<string>
@@ -74,7 +120,7 @@ static class Writer
         if (chart.Form.Distinct().Count() == chart.Form.Count && pickup == 0)   // nothing is said twice: the chart is the bars in their order
         {
             lines.Add("chords harmony {");
-            lines.AddRange(Rows([.. chart.Bars.Select(bar => new List<Bar> { bar })], "  "));
+            lines.AddRange(Rows(CellsOf([.. chart.Bars.Select(bar => new List<Bar> { bar })]), "  "));
             lines.AddRange(["}", "", "score { chords harmony }", ""]);
             return string.Join("\n", lines);
         }
@@ -90,16 +136,161 @@ static class Writer
             if (bar.BarOfSection > of.Count) of.Add([]);
             of[bar.BarOfSection - 1].Add(bar);
         }
+        // A short section the form always plays a few times running repeats in its own chords; the form says it once.
+        var runs = new Dictionary<string, HashSet<int>>();
+        foreach (var (name, times) in RunsOf(chart.Form))
+        {
+            if (!runs.TryGetValue(name, out var set)) runs[name] = set = [];
+            set.Add(times);
+        }
+        var again = runs.Where(r => r.Key != "Pickup" && r.Value.Count == 1 && r.Value.Min() > 1 && sections[r.Key].Count <= RepeatSection)
+            .ToDictionary(r => r.Key, r => r.Value.First());
+        var form = RunsOf(chart.Form).SelectMany(r => Enumerable.Repeat(r.Name, again.ContainsKey(r.Name) ? 1 : r.Times)).ToList();
+        // Sections said again in the form repeat there; the bars of any other repeat inside its chords.
+        // (Repeats do not nest: a section the form repeats has no signs of its own.)
+        var (saidForm, repeated) = FormWithRepeats(form, [.. again.Keys, "Pickup"]);
         foreach (string name in names)
         {
+            List<Cell> cells;
+            if (again.TryGetValue(name, out int times))
+            {
+                cells = CellsOf(sections[name], signs: false);
+                cells[0].Open = true;
+                cells[^1].Close = times == 2 ? ":|" : $":|*{times}";
+            }
+            else cells = CellsOf(sections[name], signs: name != "Pickup" && !repeated.Contains(name));
             lines.Add($"section {name} {{");
             if (name == "Pickup") lines.Add($"  partial {(chart.Time == "6/8" ? "4." : Reader.Partial[pickup])}");
             lines.Add("  chords harmony {");
-            lines.AddRange(Rows(sections[name], "    "));
+            lines.AddRange(Rows(cells, "    "));
             lines.AddRange(["  }", "}", ""]);
         }
-        lines.AddRange(["form { " + string.Join(" ", chart.Form) + " }", "", "score { chords harmony }", ""]);
+        lines.AddRange(["form { " + saidForm + " }", "", "score { chords harmony }", ""]);
         return string.Join("\n", lines);
+    }
+
+    /// <summary>A section of at most this many bars that the form always plays twice or more running repeats inside its
+    /// own chords; a longer one, or one also played once, repeats in the form.</summary>
+    const int RepeatSection = 4;
+
+    /// <summary>A bar of a chords row as written: every playing of it, and the signs at it. Open: a repeat begins at
+    /// it; Ending: it begins that ending; Close: the sign after it (null: a bar line); Bracket: an ending ends after it.</summary>
+    sealed class Cell(List<Bar> said)
+    {
+        public List<Bar> Said = said;
+        public bool Open, Bracket;
+        public int Ending;
+        public string? Close;
+    }
+
+    /// <summary>A repeat inside a row: the bars from At said Times times running (a run of Length bars), or, Volta,
+    /// Length bars (the body), Times bars, the body again and other Times bars.</summary>
+    readonly record struct Repeat(bool Volta, int At, int Length, int Times);
+
+    /// <summary>[(name, how many times running)] along a list.</summary>
+    static List<(string Name, int Times)> RunsOf(List<string> names)
+    {
+        var runs = new List<(string Name, int Times)>();
+        foreach (string name in names)
+            if (runs.Count > 0 && runs[^1].Name == name) runs[^1] = (name, runs[^1].Times + 1);
+            else runs.Add((name, 1));
+        return runs;
+    }
+
+    /// <summary>The repeats to write inside a run of bars, from the chord on each beat of each (one key a bar), left
+    /// to right and apart, as tools/read_chords.py's repeats_in: what repeats is two bars or more and not one chord
+    /// held; the one that saves the most bars is taken first, a run before a volta that saves as many; a repeat does
+    /// not begin right where one with endings or played more than twice ends.</summary>
+    static List<Repeat> Repeats(List<string> keys)
+    {
+        int n = keys.Count, i = 0;
+        var found = new List<Repeat>();
+        bool after = false;
+        bool Same(int a, int b, int length) { for (int k = 0; k < length; k++) if (keys[a + k] != keys[b + k]) return false; return true; }
+        while (i < n)
+        {
+            (int Saved, Repeat Item, int Takes)? best = null;
+            for (int length = 2; !after && length <= (n - i) / 2; length++)
+            {
+                if (keys.Skip(i).Take(length).Distinct().Count() == 1) continue;
+                int times = 1;
+                while (i + (times + 1) * length <= n && Same(i, i + times * length, length)) times++;
+                if (times > 1 && (best is null || (times - 1) * length > best.Value.Saved))
+                    best = ((times - 1) * length, new Repeat(false, i, length, times), times * length);
+            }
+            for (int body = 2; !after && body <= (n - i) / 2; body++)
+            {
+                if (keys.Skip(i).Take(body).Distinct().Count() == 1) continue;
+                for (int ending = 1; ending <= 2; ending++)
+                {
+                    int end = i + 2 * (body + ending);
+                    if (end <= n && Same(i, i + body + ending, body) && !Same(i + body, end - ending, ending)
+                        && (best is null || body > best.Value.Saved))
+                        best = (body, new Repeat(true, i, body, ending), 2 * (body + ending));
+                }
+            }
+            if (best is null)
+            {
+                after = false;
+                i++;
+                continue;
+            }
+            found.Add(best.Value.Item);
+            i += best.Value.Takes;
+            after = best.Value.Item.Volta || best.Value.Item.Times > 2;
+        }
+        return found;
+    }
+
+    /// <summary>The form with repeat signs where sections come again running, as tools/read_chords.py's
+    /// form_with_repeats: a run of sections said again (|: A B :|, |: A :|*3), or a section followed by a different
+    /// section each time (|: A [1. B] :| [2. C]). Sections in `unsigned` are written as they come. Returns the form as
+    /// written, and the sections inside its repeats.</summary>
+    static (string Form, HashSet<string> Inside) FormWithRepeats(List<string> form, HashSet<string> unsigned)
+    {
+        int n = form.Count, i = 0;
+        var said = new List<string>();
+        var inside = new HashSet<string>();
+        while (i < n)
+        {
+            (int Saved, string Words, int Takes)? best = null;
+            for (int length = 1; length <= (n - i) / 2; length++)
+            {
+                var unit = form.GetRange(i, length);
+                if (unit.Any(unsigned.Contains)) break;
+                int times = 1;
+                while (i + (times + 1) * length <= n && form.GetRange(i + times * length, length).SequenceEqual(unit)) times++;
+                if (times > 1 && (best is null || (times - 1) * length > best.Value.Saved))
+                    best = ((times - 1) * length, "|: " + string.Join(" ", unit) + (times == 2 ? " :|" : $" :|*{times}"), times * length);
+            }
+            if (!unsigned.Contains(form[i]))
+            {
+                int j = i;
+                var endings = new List<string>();
+                while (j + 1 < n && form[j] == form[i] && form[j + 1] != form[i] && !unsigned.Contains(form[j + 1]) && !endings.Contains(form[j + 1]))
+                {
+                    endings.Add(form[j + 1]);
+                    j += 2;
+                }
+                if (endings.Count > 1 && (best is null || endings.Count - 1 > best.Value.Saved))
+                {
+                    string words = string.Join(" ", endings.Select((e, k) => $"[{k + 1}. {e}]" + (k < endings.Count - 1 ? " :|" : "")));
+                    best = (endings.Count - 1, $"|: {form[i]} {words}", j - i);
+                }
+            }
+            if (best is null)
+            {
+                said.Add(form[i]);
+                i++;
+            }
+            else
+            {
+                said.Add(best.Value.Words);
+                inside.UnionWith(form.GetRange(i, best.Value.Takes));
+                i += best.Value.Takes;
+            }
+        }
+        return (string.Join(" ", said), inside);
     }
 
     /// <summary>As Python's json.dumps(result, indent=2) writes read_chords.py's result, and a line's end.</summary>

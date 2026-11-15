@@ -2,7 +2,7 @@
   "name": "dettato",
   "displayName": "Dettato Chord Chart Transcriber",
   "description": "Reads a recording into an editable Lily# (.lys) chord chart: tempo, meter, key, bar lines and the chord of every bar, with the uncertain places marked. Open source (Apache-2.0). Runs locally on Windows; no cloud.",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "publisher": "yotsuda",
   "icon": "icon.png",
   "author": "Yoshifumi Tsuda",
@@ -30,22 +30,5 @@
     "lilysharp"
   ],
   "main": "./extension.js",
-  "contributes": {
-    "commands": [
-      {
-        "command": "dettato.transcribe",
-        "title": "Transcribe Recording to Lily# Chord Chart (.lys)… (Preview)",
-        "category": "Dettato"
-      }
-    ],
-    "menus": {
-      "explorer/context": [
-        {
-          "command": "dettato.transcribe",
-          "when": "resourceExtname =~ /^\\.(wav|mp3|m4a|mp4|aac|flac|wma)$/i && isWindows",
-          "group": "navigation@90"
-        }
-      ]
-    }
-  }
+  "activationEvents": []
 }

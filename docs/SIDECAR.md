@@ -52,7 +52,7 @@ comes"; an mp3 with no such note and a bare `.aac` keep theirs, 13 and 23 ms as 
 | Item | | What it is |
 |---|---|---|
 | `dettato` | always | The format's number: 1. |
-| `audio` | always | The recording's file name. It is in the folder of this file; no path. (`dettato <recording> -o <elsewhere>/x.lys` writes this file elsewhere too: the recording is then to be brought beside it.) |
+| `audio` | always | The recording, as found from the folder of this file: its file name when it is beside this file (as `dettato <recording>` writes it); when the chart was written elsewhere (`-o`), the way there from this file's folder, folders parted by `/` (`../Music/x.mp3`), or the whole path when the two are on different drives (`F:/Music/x.mp3`). (Before 2026-11-16, 0.3.0: always the file name alone. The owner chose the way to it over copying the recording beside the chart, 2026-11-16.) |
 | `duration` | always | The recording's length in seconds, right to within 0.03 s. |
 | `tempo` | always | `note` is the beat, `"4"` or (in 6/8) `"4."`; `bpm` is how many of them a minute, a whole number, from the median bar. The chart's `tempo` line. |
 | `time` | always | The meter: `"4/4"`, `"3/4"`, `"2/4"`, `"6/8"`, or another number of quarters. One for the whole recording. |
@@ -96,12 +96,20 @@ seconds, `fit` and `sure` are each playing's own.
 ## The chart and the file
 
 - **The n-th bar Lily# plays is `bars[n]`** (from 0; a pickup is a bar). Lily# plays a chart
-  through its `form`, so a bar written once in a section played three times is three bars of
-  `bars`. `tools/sidecar.py` counts the bars Lily# lays out of each chart (`lysc layout`) against
-  the length of `bars`: the same for all 1388 charts `measure.py all` wrote on 2026-11-14, charts
-  in sections and charts with a pickup among them.
+  through its `form` and its repeat signs, so a bar written once in a section played three times,
+  or once between `|:` and `:|`, is a bar of `bars` each time it is played. `tools/sidecar.py`
+  counts the bars Lily# plays of each chart (from the end of `lysc midi`'s last note: the pickup's
+  beats, then whole bars) against the length of `bars`.
 - The chart is written in sections when a section is played twice or there is a pickup; otherwise
   as one row of bars with no `section` and no `form`. The file names sections either way.
+- **Repeat signs (2026-11-16, the owner's wish): sections the form plays again running repeat in
+  the `form`** (`|: A :|`, `|: A B :|`, `|: A :|*3`, `|: A [1. B] :| [2. C]`); **a few bars said
+  again running inside a section repeat in its `chords`** (`|: C | G :|`, `|: C | G | [1. Am :|
+  [2. F | ]`: two bars or more, not one chord held, endings of one or two bars). A section of four
+  bars or fewer that the form always plays the same number of times running repeats in its own
+  `chords`, and the form names it once. Repeats do not nest: a section the form repeats has no
+  signs of its own. Only the chart has signs; `form` and `bars` in the file are as played. Each bar
+  written once between signs is marked from all its playings (the next point).
 - A chord of the chart is marked `@todo("or X?")` when the mean `sure` of that chord in that bar,
   over the playings of the bar, is below `doubt`; `X` is the `other` of the least sure of them.
 - In a pickup of several chords that Lily# cannot write a chord a beat (three beats in 4/4), the

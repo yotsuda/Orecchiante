@@ -8,8 +8,9 @@ What is checked of a file: every item is there and is what the specification say
 numbered in the order they are played and follow one another in time; the chords of a bar fill it;
 the sections and the form say the same as the bars do.
 
-What is checked against the chart (<name>.lys beside the file, through `lysc layout`; DETTATO_LYSC
-names lysc): Lily# plays as many bars as the file has. The n-th bar Lily# plays is the n-th of
+What is checked against the chart (<name>.lys beside the file, through `lysc midi`; DETTATO_LYSC
+names lysc): Lily# plays as many bars as the file has, its repeats played (a chart may write a bar
+once between repeat signs that is played twice). The n-th bar Lily# plays is the n-th of
 `bars`: that is how an editor finds the seconds of the bar the caret is in.
 
 Only the Python standard library is used.
@@ -38,8 +39,8 @@ def faults(doc):
     number = lambda v: isinstance(v, (int, float)) and not isinstance(v, bool)
     if doc.get("dettato") != FORMAT:
         return [f'"dettato" is {doc.get("dettato")!r}: this checks format {FORMAT}']
-    if not isinstance(doc.get("audio"), str) or not doc["audio"] or "/" in doc["audio"] or "\\" in doc["audio"]:
-        wrong('"audio" is not a file name')
+    if not isinstance(doc.get("audio"), str) or not doc["audio"] or "\\" in doc["audio"] or doc["audio"].endswith("/"):
+        wrong('"audio" is not a file name, or a way to one parted by "/"')
     if not number(doc.get("duration")) or doc["duration"] <= 0:
         wrong('"duration" is not a length in seconds')
     tempo = doc.get("tempo")
@@ -140,31 +141,76 @@ def faults(doc):
     return said
 
 
+def midi_end(path):
+    """(ticks a quarter note, the tick the last note ends at) of a standard MIDI file."""
+    data = Path(path).read_bytes()
+    if data[:4] != b"MThd":
+        raise ValueError("not a MIDI file")
+    quarter = int.from_bytes(data[12:14], "big")
+    pos, last = 8 + int.from_bytes(data[4:8], "big"), 0
+
+    def number(body, i):                # a variable-length quantity: (its value, where the next byte is)
+        value = 0
+        while True:
+            value, i = (value << 7) | (body[i] & 0x7F), i + 1
+            if body[i - 1] < 0x80:
+                return value, i
+
+    while pos + 8 <= len(data):
+        size = int.from_bytes(data[pos + 4:pos + 8], "big")
+        body, kind, pos = data[pos + 8:pos + 8 + size], data[pos:pos + 4], pos + 8 + size
+        if kind != b"MTrk":
+            continue
+        i, tick, status = 0, 0, 0
+        while i < len(body):
+            delta, i = number(body, i)
+            tick += delta
+            if body[i] == 0xFF:         # a meta event
+                length, i = number(body, i + 2)
+                i += length
+            elif body[i] in (0xF0, 0xF7):
+                length, i = number(body, i + 1)
+                i += length
+            else:
+                if body[i] & 0x80:
+                    status, i = body[i], i + 1
+                high = status & 0xF0
+                event, i = body[i:i + (1 if high in (0xC0, 0xD0) else 2)], i + (1 if high in (0xC0, 0xD0) else 2)
+                if high == 0x80 or (high == 0x90 and event[1] == 0):
+                    last = max(last, tick)
+    return quarter, last
+
+
 def lysc_bars(charts):
-    """How many bars Lily# plays of each chart (a pickup is one of them): {chart: bars}, through
-    `lysc layout --batch`, a few processes at once. A chart Lily# cannot lay out is not in it."""
+    """How many bars Lily# plays of each chart, its repeats played (a pickup is one of them):
+    {chart: bars}. `charts`: {chart: (its time, its pickup's beats or 0)}. Through `lysc midi
+    --batch`, a few processes at once: the bars are as many as the chords last, the pickup's beats
+    and then whole bars. A chart Lily# cannot play is not in it."""
     lysc = os.environ.get("DETTATO_LYSC", "lysc")
-    charts = [Path(c).resolve() for c in charts]
-    workers = max(1, min(os.cpu_count() or 4, 8, len(charts) // 20 or 1))
-    jobs = []
-    with tempfile.TemporaryDirectory() as d:
-        for w in range(workers):
-            listed = Path(d) / f"{w}.txt"
-            listed.write_text("".join(f"{c}\n" for c in charts[w::workers]), encoding="utf-8")
-            jobs.append(subprocess.Popen([lysc, "layout", "--batch", str(listed)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                         stdin=subprocess.DEVNULL, text=True, encoding="utf-8"))
-        outputs = [job.communicate()[0] for job in jobs]
+    listed = [(Path(c).resolve(), told) for c, told in charts.items()]
+    workers = max(1, min(os.cpu_count() or 4, 8, len(listed) // 20 or 1))
     found = {}
-    for w, out in enumerate(outputs):
-        mine, chart = charts[w::workers], None
-        for line in out.splitlines():
-            head = re.match(r"^\[(\d+)/\d+\] ", line)
-            if head:
-                chart = mine[int(head.group(1)) - 1]
-                continue
-            counted = re.search(r"systems?, (\d+) bars?\b", line)
-            if counted and chart is not None:
-                found[chart] = found.get(chart, 0) + int(counted.group(1))
+    with tempfile.TemporaryDirectory() as d:
+        jobs = []
+        for w in range(workers):
+            batch = Path(d) / f"{w}.txt"
+            batch.write_text("".join(f"{c}\t{d}\\{w}-{k}\n" for k, (c, _) in enumerate(listed[w::workers])), encoding="utf-8")
+            jobs.append(subprocess.Popen([lysc, "midi", "--batch", str(batch)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                         stdin=subprocess.DEVNULL))
+        for job in jobs:
+            job.wait()
+        for w in range(workers):
+            for k, (chart, (time, pickup)) in enumerate(listed[w::workers]):
+                played = Path(d) / f"{w}-{k}" / (chart.stem + ".mid")
+                if not played.exists():
+                    continue
+                quarter, last = midi_end(played)
+                top, under = (int(x) for x in time.split("/"))
+                bar = quarter * 4 * top / under
+                beat = bar / (2 if time == "6/8" else top)
+                whole = (last - pickup * beat) / bar
+                if abs(whole - round(whole)) < 0.01:
+                    found[chart] = round(whole) + (1 if pickup else 0)
     return found
 
 
@@ -177,10 +223,11 @@ def check(files, lysc=True):
     told = "the specification"
     if lysc:
         there = {f: c.resolve() for f, c in charts.items() if c.exists()}
-        played = lysc_bars(list(there.values()))
+        played = lysc_bars({chart: (docs[f].get("time") or "4/4", (docs[f].get("bars") or [{}])[0].get("pickup") or 0)
+                            for f, chart in there.items()})
         for f, chart in there.items():
             if chart not in played:
-                wrong[f].append(f"lysc layout says nothing of {chart.name}")
+                wrong[f].append(f"lysc midi does not play {chart.name} in whole bars")
             elif played[chart] != len(docs[f].get("bars") or []):
                 wrong[f].append(f"Lily# plays {played[chart]} bars of {chart.name}, and the file has {len(docs[f]['bars'])}")
         told += f", and {len(there)} of them the bars Lily# plays"

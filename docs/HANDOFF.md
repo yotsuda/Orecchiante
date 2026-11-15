@@ -3,7 +3,20 @@
 **毎セッションの終わりに書き換える**（追記しない。200 行以内）。方向づけは [ROADMAP.md](ROADMAP.md)、
 数字と使い方は [README](../README.md)、録音の出典は [DATASETS.md](DATASETS.md)。
 
-最終更新: 2026-11-16 夜（ユーザーの音楽フォルダの録音で、頭のずれとメモリを直した。拡張 0.2.2。HEAD は `git log -1` で確かめる）。
+最終更新: 2026-11-16 夜（譜面に繰り返し記号を書く・拡張の Transcribe コマンドを外した。拡張 0.3.0。HEAD は `git log -1` で確かめる）。
+
+### 繰り返し記号（2026-11-16、オーナーの希望。README の「What is said again」の末尾・SIDECAR.md「The chart and the file」）
+
+- **オーナーの決めた分け方: 小さな繰り返し（数小節・1 番 2 番かっこ）は chords{} の中、大きなセクションの繰り返しは form{} の中。**
+- 書き手だけ（`read_chords.py` の `lys()`・`repeats_in`・`form_with_repeats`、`Writer.cs` の `CellsOf`・`Repeats`・`FormWithRepeats`）。`.dettato.json` も数字も同じ。
+  規則は SIDECAR.md。form が先に取る（入れ子は Lily# の誤り）。`sidecar.py` は `lysc midi --batch` の最後の音から演奏の小節数を数える（`lysc layout` は書いた小節）。
+- 268 曲で Python と .NET が一字一句同じ、`lysc check`・sidecar 268/268。記号は RWC 97/100、合成曲 148/168。RWC_P010 を png で見た。
+  **オーナーはまだ見ていない**（本体 2 小節の 1・2 番かっこが続く曲がある。多ければ本体の最小を上げる）。D.S.・Coda は使っていない。
+
+### 書き出し先と `audio`（2026-11-16、オーナーの希望。依頼 6）
+
+- **Lily# に毎回フォルダ選択のダイアログを依頼（6）**。名前なしで開く案は「将来の案」として添えただけ。**オーナー決定: 別のフォルダでは録音をコピーせず `audio` が場所を指す**
+  （`Program.cs`。`/` 区切りの相対パス、ドライブ違いは絶対パス、隣はファイル名。`dettato read` は不変）。**今の Lily# は `/` を含む `audio` を読まない**（`recordingCore.ts:159`）。
 
 ### D4 の形（2026-11-15、オーナーと話して決めた。依頼 4・[便り](repro/lilysharp-requests-2026-11-15-listening.md)）
 
@@ -12,16 +25,15 @@ m4a は Lily# の LSP が Media Foundation で復号する（音を渡す口は�
 
 - **目標は Transcribe!（Seventh String）と同じ体験を Lily# で**（オーナーは長年の利用者、用途の中心はエレキベースの耳コピ）。
 - **人が打った・動かした小節線が正。** 機械の読みは別に残さない。残すのは線ごとの「人が確かめた」印だけ → `x.dettato.json` を**人が直してよい形式 2** に。
-- **Dettato が用意するもの:** 拍の時刻と調律のセント（2026-11-16 に入れた。`tuning` は 12 分割で数え直した整数セント、`beats` は小節の等分。SIDECAR.md・README）、
-  人の小節線を受けてコードを読み直す入口（まだ）。
+- **Dettato が用意するもの:** 拍の時刻と調律のセント（2026-11-16 に入れた。`tuning` は 12 分割の整数セント、`beats` は小節の等分）。読み直しの入口は要らなくなった（次の一手）。
 
 ## 現在地
 
 **`dettato <録音> [-o <x.lys>] [--force]` が、mp3・m4a・mp4・aac・flac・wma・wav から `.lys` と `.dettato.json` を録音の隣に書く**
 （Python なし。RWC_P001 の mp3 で 6.3 秒）。配る形は .NET＋ONNX の実行ファイルを VS Code 拡張に入れる（Calamo と同じ形）。
-**拡張 `yotsuda.dettato` 0.2.2 をこの PC の VS Code に入れた**（`extension/`、`tools/deploy-extension.ps1`。113 MB、Lily# とは別の拡張。0.2.2 で `tuning`・`beats` と下の頭のずれ・メモリの直しが入った）。
-コマンドは 1 つ（録音を選ぶか右クリック → 隣に `.lys` と `.dettato.json` → 開く）。**VS Code の中で動くことはユーザーが確かめた（0.2.0、My Life の mp3）。**
-**その 1 曲から直したこと（README の「Two half bars are one bar」）:** 半端な小節 2 つを 1 小節に戻す（`MEND_BARS`）、テンポは揃った小節の平均（`EVEN_TEMPO`）。
+**拡張 `yotsuda.dettato` 0.3.0 をこの PC の VS Code に入れた**（`extension/`、`tools/deploy-extension.ps1`。113 MB、Lily# とは別の拡張）。
+**コマンドはない**: メニューは Lily# の「Convert Recording to Lily# (.lys)… (Preview)」で、Lily# が `ext.activate()` で `{path, version, protocol, inputs}` を受け取る。
+0.3.0 で繰り返し記号と `audio` の相対パスが入った。**VS Code の中で動くことはユーザーが確かめた（0.2.0、My Life の mp3。0.3.0 は Lily# のメニューからはまだ）。**
 
 ### コマンドと入力（D3。`Program.cs`・`Audio.cs`。README の「A recording as it comes」、Lily# 向けは便りの §2a）
 
@@ -31,12 +43,9 @@ m4a は Lily# の LSP が Media Foundation で復号する（音を渡す口は�
 - **wav 以外は Windows の Media Foundation（NAudio 2.2.1、MIT）で読む。** 復号器は Windows のもので、配るものに入れない。素の wav は `Wav.cs` のまま。
 - **Media Foundation はエンコーダの足す無音を頭に残す**（ffmpeg やブラウザは取り除く）。`Audio.Lead` がファイルの記録（Xing/Info＋LAME の delay、MP4 の編集リスト）
   から取り除く。素の `.aac` は残る。**「Info」（CBR）のフレームは無音で出るが「Xing」（VBR）は Media Foundation が飛ばす**。
-- **ユーザーの音楽フォルダ（`F:\Music`、mp3 19597・m4a 350）で測った（2026-11-16）:** mp3 は 150 曲中 149 曲が Xing/Info なし（iTunes 製、123 曲が `iTunSMPB` を持つ）、
-  多くに絵（1 MB を超えるものも、ID3 の長さが違うものも）。m4a は iTunes 11・ボイスメモが編集リストなしで `iTunSMPB`（2112）。ffmpeg の wav と比べて Dettato は
-  その mp3 で 528 標本早く、その m4a で 2112 遅かった → **合わせる相手は再生する側**（Lily# の mp3 はブラウザ＝Chrome の `decodeAudioData` は ffmpeg と同じ最初の標本、
-  m4a は Lily# の LSP が `Audio.cs` を写した Media Foundation）。`Mp3Lead` は Xing/Info なしで −528（頭に無音を足す）、`Mp4Lead` は編集リストなしで `Priming()`。
-  7 種すべて ffmpeg と 0 標本（`scratch/d3/user/<種類>/`、`ref.wav` が ffmpeg。測り方は `heard_check.py <フォルダ> ref.wav`）。**Lily# の `Mp4Lead` にも写してもらう（依頼 5）**。
-  Chrome で測る道具は `tools/chrome_lag.py`（＋`tools/cdp.mjs`。ヘッドレスの Chrome を CDP で動かす。`--dump-dom` は非同期の復号を待たない）。
+- **ユーザーの音楽フォルダ（`F:\Music`）で測った（2026-11-16、README の「A recording as it comes」の末尾）:** mp3 はほぼ Xing/Info なし（iTunes 製）、m4a は編集リストなしで `iTunSMPB`。
+  **合わせる相手は再生する側**（Lily# の mp3 は Chrome の `decodeAudioData`＝ffmpeg と同じ、m4a は Lily# の LSP の Media Foundation）。`Mp3Lead` は Xing/Info なしで −528、
+  `Mp4Lead` は編集リストなしで `Priming()`。7 種すべて ffmpeg と 0 標本（`scratch/d3/user/<種類>/`、`heard_check.py <フォルダ> ref.wav`）。Chrome は `tools/chrome_lag.py`＋`tools/cdp.mjs`。
 - **長い録音: 58 分（48 kHz、バンド練習の mp3）は読める。** 1500 小節、Calamo が CPU を使っていない時で 74〜81 秒（Beat This! が 60 秒）。メモリのピークは 9.6 → 7.1 GB
   （`Audio.Read` を 1 本の配列に、`Program.Read` で使い終えた配列を手放して `GC.Collect`。出力は前と一字一句同じ、seed1 を wav から通しで読んでも同じ）。
   残る大きい所: `Features.Of` の +1.2 GB（全体の STFT を持つらしい）、Beat This! の段の +1.2 GB（未調査）。
@@ -53,15 +62,11 @@ m4a は Lily# の LSP が Media Foundation で復号する（音を渡す口は�
 
 ### .NET の耳と特徴量（`dettato ears`・`dettato features`。README の「In .NET」の最初の 2 節と「Without torch and TensorFlow」）
 
-- 耳: wav → `.beats`（Beat This!）と `.npz`（crema）、特徴量: wav → `.feat.npz`（`oenv`・`chroma`・`bass`・`rms`・`tuning`）。Python との一致の
-  度合いは README、突き合わせは `tools/net_check.py`。`measure.py --net scratch/net` が librosa の代わりに読み、表は全列同じ。
-- librosa のベース用クロマは曲によって 1 フレーム長い（.NET も同じ長さ、規則は配列ごとに切る）。デジタル無音のフレームのクロマは比べるとき除く。
-- **`--ears` では HPSS を外した**（`use_ears()` が `HARMONIC_FRAMES = 0`。特徴量は `scratch/feat-h0/`）。自作の読み取り器は 31 のまま。
-- **1 曲（RWC_P001、3 分 27 秒）の時間:** Python の venv 3 つで 18 秒、venv 1 つ＋ONNX で 11 秒、`dettato read` で 5.5 秒
-  （Beat This! 3.7、CQT と crema 1.0、特徴量 0.3、起動 0.3、規則 0.1）。モデルは crema 2.2 MB、Beat This! `final0` 82.9 MB、ほかに 11.5 MB。
-- **onnxruntime のスレッド数は 8 に絞る。** 既定（24 全部）だと Beat This! が 1 曲 10 秒に落ちる。torch は 2.0〜2.4 秒で、ONNX より速い。
+- 耳: wav → `.beats`（Beat This!）と `.npz`（crema）、特徴量: wav → `.feat.npz`。突き合わせは `tools/net_check.py`、`measure.py --net scratch/net` で表は全列同じ。
+- **`--ears` では HPSS を外した**（`use_ears()` が `HARMONIC_FRAMES = 0`。特徴量は `scratch/feat-h0/`）。1 曲 3 分半で `dettato read` 5.5 秒（Beat This! 3.7）。
+- **onnxruntime のスレッド数は 8 に絞る**（既定の 24 だと Beat This! が 1 曲 10 秒）。
 
-### 数字（`measure.py all`、2026-11-14 の最後。lysc check 1388/1388、sidecar 1388/1388）
+### 数字（`measure.py all`、2026-11-16 の繰り返し記号の後も同じ。lysc check 1388/1388、sidecar 1388/1388＝演奏の小節数で）
 
 | `--ears`（crema） | `rwc-dev`（選ぶ側） | `rwc-test`（数えるだけ） | `rwc-p` | seed1 / 7 / 11 |
 |---|---|---|---|---|
@@ -81,7 +86,8 @@ m4a は Lily# の LSP が Media Foundation で復号する（音を渡す口は�
 
 ## 次の一手
 
-**ユーザーの録音で、譜面の出来を聴いてもらう。** 読めるか・時間・頭のずれ・長い録音は 2026-11-16 に機械で見た（上の「コマンドと入力」）。
+**まず繰り返し記号の譜面をオーナーに見てもらう**（0.3.0 を入れた。細かい 1・2 番かっこが多すぎないか。上の「繰り返し記号」）。
+**それから、ユーザーの録音で譜面の出来を聴いてもらう。** 読めるか・時間・頭のずれ・長い録音は 2026-11-16 に機械で見た（上の「コマンドと入力」）。
 残るのは耳で聴く所で、ユーザーの手が要る。1 曲目の My Life（`scratch/d3/mylife/`）は 0.2.1 で「さほど違和感はない」（ブリッジの C#dim・F#7/C# は
 1 つずつ確かめていない。3 拍の小節が 1 つ残る）。次の候補: ユーザーがベースで弾く曲・コードの分かっている曲（あれば数字も）、バンド練習の録音
 （`F:\Music\ギャラン☆Do!\`。58 分の 1 本は `scratch/d3/user/long-only/` に譜面がある。曲の切れ目でテンポが変わるので C3 とつながる）。
@@ -91,7 +97,8 @@ m4a は Lily# の LSP が Media Foundation で復号する（音を渡す口は�
   配り直すときは版を 2 か所（`Program.cs`・`extension/package.json`）と CHANGELOG で上げて `tools/deploy-extension.ps1`。
 - **Lily# の依頼（`docs/repro/REQUESTS.md`。セッションの頭に見る）:** **1 は Lily# が作った**（master `da1d1caac`〜`7dd898bf9`、次の版から。
   「Convert Recording to Lily# (.lys)… (Preview)」、Dettato が無ければ入れるよう勧める、鍵 `lilysharp.dettatoAvailable` は Lily# が自分で立てる＝Dettato の拡張は何も立てなくてよい）。
-  Dettato 側で確かめて行に書いた（取り決めどおり、テスト 6/6、気づいた 3 点。Lily# が 3 点に返事した）。**Lily# のその版が出たら拡張の `dettato.transcribe` を外して 0.3.0**。
+  Dettato 側で確かめて行に書いた（取り決めどおり、テスト 6/6、気づいた 3 点。Lily# が 3 点に返事した）。**オーナーの指示で拡張の `dettato.transcribe` を外した（0.3.0、1 は `done`）。**
+  6（保存先のダイアログ・`audio` の相対パスを読む）は 2026-11-16 に出した。
   4 は Lily# が作り中（S1〜S3 済み、次は S4）、`tuning`・`beats` は受け取られた。**5（m4a の `iTunSMPB` を Lily# の `Mp4Lead` に写す）は 2026-11-16 に出した。**
   入るまで、iTunes の m4a では Dettato の小節が Lily# の鳴らす音より 48 ms 早い（Lily# の m4a 再生は master だけ）。
   **2026-11-16 夜に見た時点で 5 は返事なし**（Lily# の `RecordingDecoder` の最後の変更は `b7d98c03c` のまま）。3 は `done` にするのは確かめてから。
@@ -175,13 +182,9 @@ m4a は Lily# の LSP が Media Foundation で復号する（音を渡す口は�
 ## 分かっている弱点・未確認
 
 - **セントの `tuning`:** librosa との一致は `seed1` の 24 曲だけ。伸びたテープ、±50 セントを超えるずれ、曲の途中で音高が動く録音は見ていない（RWC は −9〜+4）。
-- **.NET で確かめていないこと:** `RWC_P059` の調律が 0.01 ずれる理由（再標本化か単精度の FFT か、切り分けていない。表には出ない）。
-  **入力（D3）:** ユーザーのフォルダにない種類（編集リストと `iTunSMPB` が両方ある m4a はどちらが勝つか未確認、いまは編集リストが先）、動画つきの mp4、
-  `iTunSMPB` の終わりの埋め草（m4a で 416〜960 標本長い。譜面には効かない）、VS Code の Chromium の mp3 の頭（Chrome だけ測った）、メモリの少ない PC で 1 時間の録音、
-  実録音を mp3 にしたときの精度（1 曲だけ）、Windows 10 や N エディション。RWC を wav から通しで読んだ数字（`final0` は RWC を学習済み、fold のモデルは ONNX にしていない）。
-  規則の一致は「同じ拍・確率・特徴量を与えたとき」で、通しの経路は seed1 の 24 曲だけ。拍子が 5/4・7/4 などの曲、`dettato read` が失敗する曲（268 曲に 1 つもなかった）。
-  別の CPU での速さ（この PC は 24 コア）。`small0` と半精度。
-- 弱起つき・section つきの `.lys` は `lysc check` と `lysc layout` を通しただけ。描いた譜面と鳴り方は目と耳で確かめていない。
+- **.NET:** `RWC_P059` の調律が 0.01 ずれる理由。**入力:** 編集リストと `iTunSMPB` が両方ある m4a（いまは編集リストが先）、動画つき mp4、VS Code の Chromium の mp3 の頭、
+  メモリの少ない PC で 1 時間、実録音の mp3 の精度（1 曲だけ）、Windows 10・N エディション、RWC を wav から通し、5/4・7/4、別の CPU の速さ、`small0`。通しの規則一致は seed1 だけ。
+- 弱起つき・section つき・繰り返し記号つきの `.lys` は `lysc check` と小節数だけ（png は RWC_P010 を 1 枚）。鳴り方は耳で確かめていない。
 - 旋律だけの弱起に、自作の読み取り器は和音を書く。半拍より短い弱起は消える。弱起は 1・2・3・4・6 拍だけ（`PARTIAL`）。
 - 原因を見ていないもの: `rwc-dev` で最初の小節線が正解と違う 11 曲、`seed41` で外した曲、自作の読み取り器に正解の小節線を与えると実録音のルートが 77.4 → 77.1% に下がること。
 - crema の重みのライセンスの根拠は作者の issue コメント（issue 42）とパッケージ同梱。配るときは BSD 2-Clause の表示（Copyright (c) 2017, Brian McFee）を同梱。Beat This! は MIT。
@@ -196,7 +199,7 @@ m4a は Lily# の LSP が Media Foundation で復号する（音を渡す口は�
   (a) 目安を下げる、(b) 印を 4 割近くまで増やす、(c) BTC を 2 つ目の耳にする。決まるまで閾値は 0.84。
 - **BTC を 2 つ目の耳として配るか。** 入れると `rwc-test` でルート 87.3% → 88.7%・長短 82.1% → 83.8%。
   条件は BTC の作者が重みの扱いを明言すること。jayg996/BTC-ISMIR19 に issue で尋ねるのはユーザー（尋ねていない）。
-- **section の書き方。** 細切れ（1 曲 10 セクション）が読みにくければ、条件を緩めるか、section を書かない指定を足す。
+- **section の書き方。** 細切れ（1 曲 10 セクション）が読みにくければ条件を緩める。繰り返し記号の細かさもオーナーが見てから。
 - **値段・印の式・`SAID_AGAIN`・C1 の定数・HPSS なしは `rwc-dev`（CC BY-NC 4.0）で選んだ。** 少数の定数の選択で、モデルの学習では
   ないつもりだが、「RWC を学習に使わない」の線のどちら側と見るかはユーザーの判断。
 - 使いたい曲の種類が RWC-P と違うなら、その種類の曲を数曲（Chord Tracker の結果があればそれも）。名前の重複の確認、push（ROADMAP §5）。

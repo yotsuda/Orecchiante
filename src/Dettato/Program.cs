@@ -42,7 +42,7 @@ using System.Text;
 using Dettato;
 using Microsoft.ML.OnnxRuntime;
 
-const string version = "0.2.2";
+const string version = "0.3.0";
 const int protocol = 1;
 const string usage = "usage: dettato <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]\n"
                    + "       dettato --version [--json]\n"
@@ -168,6 +168,9 @@ if (args[0] is not ("read" or "ears" or "features" or "audio"))
         try { Open(modelsAt, threads, true, true); }
         catch (Exception e) { return Fail(3, $"the models did not open ({e.Message.Trim()})"); }
         var chart = Read(recording, Console.Error.WriteLine);
+        // The recording as the chart finds it: its file name beside the chart, else the way there from the chart's
+        // folder ('/' between folders; the whole path when they are on different drives). SIDECAR.md, `audio`.
+        chart.Audio = Path.GetRelativePath(Path.GetDirectoryName(chartPath)!, Path.GetFullPath(recording)).Replace('\\', '/');
         lys = Writer.Lys(chart, Path.GetFileNameWithoutExtension(recording));
         json = Writer.Json(chart);
         int marks = lys.Split("@todo").Length - 1;

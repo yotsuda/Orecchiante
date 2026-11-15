@@ -439,6 +439,29 @@ playing as a second ear), and it was measured on `rwc-dev` before the sections w
 The model reads a passage the same way each time it comes, wrong alike; what differs between
 two playings is mostly the music.
 
+**Repeat signs (2026-11-16, the owner's wish).** What comes again right away is written with
+Lily#'s repeat signs, at two levels: sections in the `form`, a few bars inside a section's
+`chords` (the rules are in [SIDECAR.md](docs/SIDECAR.md), "The chart and the file"):
+
+```
+section C {
+  chords harmony {
+    |: C | C | Bb | [1. Bb :|
+    [2. C | ]
+  }
+}
+...
+form { A |: B :| C |: D :| E }
+```
+
+Only the chart changes: the `.dettato.json` and every number above are as before, and Lily#
+plays each chart as many bars as the file has (`tools/sidecar.py` now counts them from `lysc
+midi`, the repeats played). Of the charts `--ears` writes, signs are in 97 of the 100 RWC songs
+and in 148 of the 168 songs made here (the seven sets `read_check.py` compares). A passage that
+comes again later, not right away (a verse after a chorus), is a section the form names again, as
+before. Charts still come in about ten sections; a section a bar or two long between two that
+come again breaks a run the signs could have written.
+
 ### How a chart begins and ends
 
 A recording does not begin on its first bar line and end on its last. Both readers now settle
@@ -733,7 +756,7 @@ The command a user calls (2026-11-14, D3), and Lily# when it has the menu:
 
 ```
 dettato song.mp3                    # song.lys and song.dettato.json beside it
-dettato song.mp3 -o charts/x.lys    # there, with x.dettato.json; --force writes over a chart
+dettato song.mp3 -o charts/x.lys    # there, with x.dettato.json ("audio": "../song.mp3"); --force writes over a chart
 dettato --version --json            # {"version":"0.2.0","protocol":1,"commands":["read"],"inputs":["wav","mp3","m4a","mp4","aac","flac","wma"]}
 ```
 

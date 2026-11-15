@@ -2,6 +2,18 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.3.0
+
+- The command "Transcribe Recording to Lily# Chord Chart (.lys)…" is gone: the Lily# extension
+  has the menu now ("Convert Recording to Lily# (.lys)…"), and this extension carries the reader
+  it runs.
+- The chart writes repeat signs where something comes again right away: sections in the `form`
+  (`|: A :|`, `|: A [1. B] :| [2. C]`), a few bars inside a section's chords (`|: C | G :|`,
+  `|: C | G | [1. Am :| [2. F | ]`). The file beside it is unchanged; Lily# plays the chart bar for
+  bar as before.
+- A chart written in another folder than the recording's (`-o`) names the recording by the way to
+  it (`../Music/x.mp3`, or the whole path on another drive), not by its file name alone.
+
 ## 0.2.2
 
 - The file beside the chart also says the recording's tuning (cents from A = 440 Hz) and the time
