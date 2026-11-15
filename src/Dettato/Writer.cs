@@ -112,6 +112,7 @@ static class Writer
         s.Append($"  \"tempo\": {{\n    \"note\": {Quoted(chart.TempoNote)},\n    \"bpm\": {chart.Bpm}\n  }},\n");
         s.Append($"  \"time\": {Quoted(chart.Time)},\n");
         s.Append($"  \"key\": {Quoted(chart.Key)},\n");
+        if (chart.Tuning is int tuning) s.Append($"  \"tuning\": {tuning},\n");
         if (chart.Doubt is double doubt) s.Append($"  \"doubt\": {Np.Repr(doubt)},\n");
         s.Append(chart.Form.Count == 0 ? "  \"form\": [],\n"
             : "  \"form\": [\n" + string.Join(",\n", chart.Form.Select(name => "    " + Quoted(name))) + "\n  ],\n");
@@ -121,7 +122,9 @@ static class Writer
             var b = new StringBuilder("    {\n");
             b.Append($"      \"bar\": {bar.Number},\n");
             if (bar.Pickup != 0) b.Append($"      \"pickup\": {bar.Pickup},\n");
-            b.Append($"      \"start\": {Np.Repr(bar.Start)},\n      \"end\": {Np.Repr(bar.End)},\n      \"chords\": [\n");
+            b.Append($"      \"start\": {Np.Repr(bar.Start)},\n      \"end\": {Np.Repr(bar.End)},\n");
+            b.Append("      \"beats\": [\n" + string.Join(",\n", bar.Beats.Select(t => "        " + Np.Repr(t))) + "\n      ],\n");
+            b.Append("      \"chords\": [\n");
             b.Append(string.Join(",\n", bar.Chords.Select(c =>
             {
                 string chord = $"        {{\n          \"start\": {Np.Repr(c.Start)},\n          \"end\": {Np.Repr(c.End)},\n"

@@ -5,7 +5,8 @@ corrects, and `<name>.dettato.json`, which says **where in the recording every b
 is**. An editor reads it to play the recording's own bar while the bar is being corrected; the
 measuring tools read it to count a reading against the truth.
 
-This is format **1** (2026-11-14). `tools/read_chords.py` writes it, `tools/sidecar.py` checks a
+This is format **1** (2026-11-14; `tuning` and the bars' `beats` added 2026-11-16, for listening
+to the recording beside the chart in Lily#). `dettato` and `tools/read_chords.py` write it, `tools/sidecar.py` checks a
 file against this page and against the chart beside it, and `tools/measure.py` runs that check on
 every chart it writes.
 
@@ -19,15 +20,18 @@ every chart it writes.
   "tempo": { "note": "4", "bpm": 117 },
   "time": "4/4",
   "key": "F# major",
+  "tuning": -12,
   "doubt": 0.84,
   "form": ["Pickup", "A", "B", "A", "C"],
   "bars": [
     { "bar": 0, "pickup": 3, "start": 0.355, "end": 1.9,
+      "beats": [0.355, 0.87, 1.38],
       "section": "Pickup", "barOfSection": 1,
       "chords": [
         { "start": 0.355, "end": 1.9, "symbol": "C#7", "fit": 0.955, "sure": 0.973, "other": "F#" }
       ] },
     { "bar": 1, "start": 1.9, "end": 3.96,
+      "beats": [1.9, 2.42, 2.94, 3.44],
       "section": "A", "barOfSection": 1,
       "chords": [
         { "start": 1.9, "end": 3.96, "symbol": "F#/A#", "fit": 0.802, "sure": 0.981, "other": "C#" }
@@ -53,6 +57,7 @@ comes"; an mp3 with no such note and a bare `.aac` keep theirs, 13 and 23 ms as 
 | `tempo` | always | `note` is the beat, `"4"` or (in 6/8) `"4."`; `bpm` is how many of them a minute, a whole number, from the median bar. The chart's `tempo` line. |
 | `time` | always | The meter: `"4/4"`, `"3/4"`, `"2/4"`, `"6/8"`, or another number of quarters. One for the whole recording. |
 | `key` | always | `"<tonic> major"` or `"<tonic> minor"`, the tonic a letter with `#` or `b`. It is what the chords are spelled by. |
+| `tuning` | when measured | How far the recording's pitches are from A = 440 Hz, in whole cents, -50 to 49: -12 is 12 cents flat. The commonest distance of its louder spectral peaks from a semitone (librosa's `estimate_tuning`, 12 bins to the octave). Half a semitone is as far as it can tell: 70 cents sharp reads as -30. For an old tape run fast or slow, the editor turns the pitch by this to bring it back. `dettato` always writes it (2026-11-16 on); `read_chords.py` from features made before then does not. |
 | `strange` | when true | The reader's own model did not know the sound, and the bar lines are the rules' (the reader without `--ears` only). |
 | `doubt` | with `sure` | A chord whose `sure` is below this is doubted. |
 | `form` | always | The names of the sections in the order they are played. `"Pickup"` is first when the first bar is a pickup. |
@@ -65,6 +70,7 @@ comes"; an mp3 with no such note and a bare `.aac` keep theirs, 13 and 23 ms as 
 | `bar` | always | Its number: 1, 2, 3 … in the order played; a pickup is 0. |
 | `pickup` | a pickup | How many beats (of `tempo.note`) the short bar has. Only the first bar may have it. |
 | `start`, `end` | always | Its first bar line and the next. A bar begins where the bar before it ends. |
+| `beats` | always (2026-11-16 on) | Where each of its beats (of `tempo.note`) begins: as many as the meter has (two in 6/8), or as `pickup` says; the first is `start`, all before `end`. The bar cut evenly: the beat tracker's own beats inside a bar are no nearer the beats annotated in RWC (2026-11-16: within 70 ms of one, 96.2% of both on `rwc-dev`, 94.3% of both on `rwc-test`). Here so that an editor has one place to read beats from, and a person's beats (format 2) one place to go. |
 | `section` | always | The section it is a bar of. |
 | `barOfSection` | always | Which bar of that section, from 1. |
 | `chords` | always | Its chords, one after the other; they fill the bar. Never empty. |
@@ -114,8 +120,10 @@ every time the form plays them, and `Beats` marks the first beat of each bar (`A
    the score go together in a straight line; from one bar to the next they do not (the tempo of
    a recording moves, the chart's does not).
 
-Not checked yet (it is D4's first step): that `Beats` gives a `partial` bar an accented beat of
-its own, and what bar number `lilysharp/placeAt` gives a pickup.
+Lily# measured the two points this leans on (its reply to request 2, 2026-11-14): `Beats` gives
+a `partial` bar no accented beat of its own (the first `A` is the line at the pickup's end), so
+`n` is the number of `A` at or before `T` when there is a pickup, and that number less one when
+there is none; `lilysharp/placeAt` gives a pickup bar 0, as `"bar": 0` here.
 
 ### After the chart is corrected
 
@@ -129,7 +137,6 @@ The file is the reading as it was written; nothing rewrites it.
 
 ## What is not in it
 
-- The beats inside a bar (only its two lines).
 - Where the last chord stops ringing.
 - Bars with no chord: an intro of drums alone, a pickup of melody alone, silence, a count-in. The
   chart begins at the first bar that sounds a chord and ends at the last.

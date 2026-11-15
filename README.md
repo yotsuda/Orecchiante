@@ -30,8 +30,9 @@ From a recording of a song, read three things and write them as a Lily# `chords`
 A chord the reader doubts is marked on its symbol (`@todo`), as
 [Calamo](https://github.com/yotsuda/Calamo) marks a note it doubts. Beside the `.lys`, a file holds
 where each bar is in the recording, so an editor can play that bar of the original while it is
-corrected: `<name>.dettato.json`, every bar played in the order Lily# plays it, with its seconds
-and its chords. [docs/SIDECAR.md](docs/SIDECAR.md) is its specification, and
+corrected: `<name>.dettato.json`, every bar played in the order Lily# plays it, with its seconds,
+its beats and its chords, and how many cents the recording is off A = 440 Hz (an old tape run
+fast or slow). [docs/SIDECAR.md](docs/SIDECAR.md) is its specification, and
 `py tools/sidecar.py <folder>` checks files against it and against the charts beside them (Lily#
 must play as many bars as the file has).
 
@@ -655,11 +656,16 @@ short-time spectrum gives librosa's onset strength (128 mel bands in dB, the ris
 frame) and its tuning (`piptrack`'s peaks, the commonest distance from a 36th of an octave, in
 single precision where librosa is); the loudness is of the same frames; the two chromas are the
 constant-Q transform already here, moved by the tuning, folded and set to 1 at the loudest.
-`measure.py --net scratch/net` reads from these in place of librosa's.
+The same peaks placed among the semitones (12 to the octave) are the `cents` the file beside a
+chart says as `tuning` (2026-11-16): a 36th of an octave is a third of a semitone, so that tuning
+cannot tell 30 cents sharp from 3 flat. `RWC_P001` turned by ffmpeg 30, −20 and 45 cents reads
+29, −21 and 44 where it reads −1 as it is. `measure.py --net scratch/net` reads from these in
+place of librosa's.
 
 | Against librosa (`net_check.py --feats`) | `seed1`, `seed7`, `seed11` | RWC, 100 songs |
 |---|---|---|
 | The tuning (hundredths of a 36th of an octave) | the same in 72/72 | the same in 99/100 (`RWC_P059`: +0.01 for 0.00) |
+| The tuning in cents | the same in 24/24 on `seed1` | not compared |
 | Onset strength (its values 1.3 on average) | 1.6e-4, 1.4e-4, 1.5e-4 apart (worst 3.9e-3) | 1.4e-4 (worst 5.0e-3) |
 | Chroma, of 1 | 1.3e-7 apart on `seed1` (worst 2.8e-4) | 6.5e-6 (worst 0.04, in `RWC_P059`) |
 | Bass chroma, of 1 | 4.2e-7 apart on `seed1` (worst 2.0e-3) | 2.4e-5 (worst 0.31 in a quiet frame of `RWC_P059`; 17 of 1017156 frames louder than a tenth of the song's median are over 0.01 apart, all in that song) |

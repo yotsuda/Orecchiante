@@ -51,6 +51,8 @@ def faults(doc):
         wrong("the tempo counts dotted quarters in 6/8 and quarters elsewhere")
     if not isinstance(doc.get("key"), str) or not KEY.match(doc["key"]):
         wrong('"key" is not "<tonic> major" or "<tonic> minor"')
+    if "tuning" in doc and not (isinstance(doc["tuning"], int) and -50 <= doc["tuning"] < 50):
+        wrong('"tuning" is not a whole number of cents from -50 to 49')
     if "strange" in doc and doc["strange"] is not True:
         wrong('"strange" is there only when true')
     bars, form = doc.get("bars"), doc.get("form")
@@ -85,6 +87,13 @@ def faults(doc):
             wrong(f"{at}: it begins at {bar['start']}, and the bar before ends at {bars[i - 1]['end']}")
         if number(doc.get("duration")) and bar["start"] >= doc["duration"]:
             wrong(f"{at}: it begins after the recording ends")
+        if "beats" in bar:      # not in files written before 2026-11-16
+            ticks, many = bar["beats"], bar.get("pickup") or beats
+            if (not isinstance(ticks, list) or not ticks or not all(number(t) for t in ticks)
+                    or (many is not None and len(ticks) != many)):
+                wrong(f'{at}: "beats" is not the {many} beats of the bar')
+            elif abs(ticks[0] - bar["start"]) > JOIN or any(b <= a for a, b in zip(ticks, ticks[1:])) or ticks[-1] >= bar["end"]:
+                wrong(f'{at}: "beats" do not go from its start up to its end, one after the other')
         chords = bar.get("chords")
         if not isinstance(chords, list) or not chords:
             wrong(f"{at}: no chord")

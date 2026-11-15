@@ -224,7 +224,7 @@ if (args[0] == "features")
         Npy.WriteFloats(Path.Combine(output, Path.GetFileNameWithoutExtension(file) + ".feat.npz"),
             ("oenv", heard.Onsets, [heard.Onsets.Length]), ("chroma", heard.Chroma, [12, heard.Chroma.Length / 12]),
             ("bass", heard.Bass, [12, heard.Bass.Length / 12]), ("rms", heard.Loudness, [1, heard.Loudness.Length]),
-            ("tuning", [(float)heard.Tuning], []));
+            ("tuning", [(float)heard.Tuning], []), ("cents", [(float)heard.Cents], []));
         cqt += clock.Elapsed.TotalSeconds;
     }
     Console.WriteLine($"{n} songs, {audio / n:F0} s of audio each; a song: load {load / n:F2} s, to 22050 Hz {mel / n:F2} s, "

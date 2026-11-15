@@ -18,6 +18,7 @@ sealed class Bar
 {
     public int Number, Pickup, BarOfSection;    // Pickup: the beats of a short bar before the first (0: a whole bar)
     public double Start, End;
+    public List<double> Beats = [];             // where each of its beats begins, the first at Start
     public List<Chord> Chords = [];
     public string? Section;
 }
@@ -29,6 +30,7 @@ sealed class Chart
     public double Duration;
     public int Bpm;
     public double? Doubt;
+    public int? Tuning;                         // in cents from A = 440 Hz
     public List<string> Form = [];
     public List<Bar> Bars = [];
 }
@@ -137,6 +139,16 @@ static class Reader
         var lines = downs.Select(i => times[i]).ToList();
         if (end > times[downs[^1]] + 0.5 * per * beat) lines.Add(end);
         return (lines, per);
+    }
+
+    /// <summary>Where the <paramref name="n"/> beats of a bar begin: the bar cut evenly, the first at its line. (The beat
+    /// tracker's own beats inside the bar are no nearer RWC's annotated beats.)</summary>
+    static List<double> BeatsOf(double start, double end, int n)
+    {
+        double each = (end - start) / n;
+        var beats = new List<double> { start };
+        for (int i = 1; i < n; i++) beats.Add(Np.Round(start + i * each, 4));
+        return beats;
     }
 
     /// <summary>Do a bar's onsets fall in fours? The bars are laid over each other in 24 steps: quarters and eighths
@@ -541,6 +553,7 @@ static class Reader
             double z = SureOf[0] * weighed[i].Mean + SureOf[1] * weighed[i].Last + SureOf[2] * weighed[i].Agree + SureOf[3] * song + SureOf[4];
             read[i].Sure = Np.Round(1.0 / (1.0 + Math.Exp(-z)), 3);
         }
+        foreach (var bar in bars) bar.Beats = BeatsOf(bar.Start, bar.End, bar.Pickup != 0 ? bar.Pickup : tempoBeats);
         var form = Form.Fold([.. bars.Where(bar => bar.Pickup == 0)], tempoBeats, SaidAgain, Doubt);
         if (bars[0].Pickup != 0)        // a section of its own: Lily# lets only the first one open short
         {
@@ -565,7 +578,7 @@ static class Reader
         {
             Audio = audio, Duration = Np.Round((n - 1) * HOP / SR, 2),
             TempoNote = six ? "4." : "4", Bpm = (int)Math.Round(60.0 * tempoBeats / barSeconds),
-            Time = time, Key = $"{tonicName} {(major ? "major" : "minor")}",
+            Time = time, Key = $"{tonicName} {(major ? "major" : "minor")}", Tuning = (int)f.Cents,
             Doubt = read.Any(c => c.Sure != null) ? Doubt : null, Form = form, Bars = bars,
         };
     }

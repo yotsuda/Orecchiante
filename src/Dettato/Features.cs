@@ -12,14 +12,16 @@ static class Features
     /// <summary>The chromas are [pitch class * frames + frame], frames a twelfth of their length, the loudest pitch
     /// class of a frame at 1. A chroma may have a frame more than the rest, as librosa's has: its recording is
     /// brought down in rate first (to a 32nd for the bass), the length rounded up.</summary>
-    public sealed record Heard(float[] Onsets, float[] Chroma, float[] Bass, float[] Loudness, double Tuning);
+    /// <param name="Cents">How far the recording is from A = 440 Hz, in cents (-50 .. 49): the same pitches as
+    /// <paramref name="Tuning"/>'s, placed among the semitones.</param>
+    public sealed record Heard(float[] Onsets, float[] Chroma, float[] Bass, float[] Loudness, double Tuning, double Cents);
 
     /// <param name="y">The recording at 22050 Hz.</param>
     public static Heard Of(double[] y)
     {
         var spectra = Spectra(y, out var loudness);
-        double tuning = Tuning(spectra);
-        return new Heard(Onsets(spectra), Chroma(y, C2, 5, tuning), Chroma(y, C1, 2, tuning), loudness, tuning);
+        var (tuning, semitones) = Tuning(spectra);
+        return new Heard(Onsets(spectra), Chroma(y, C2, 5, tuning), Chroma(y, C1, 2, tuning), loudness, tuning, Math.Round(100 * semitones));
     }
 
     /// <summary>librosa.stft with its defaults (frames of 2048 under a Hann window, centred every 512 samples, zeros
@@ -121,8 +123,9 @@ static class Features
     /// of A = 440 Hz, in bins (-0.5 .. 0.49, by hundredths). The pitches are the peaks of each spectrum between
     /// 150 and 4000 Hz over a tenth of its highest (piptrack), each placed by the parabola through its neighbours;
     /// of the louder half of them, the commonest distance from a bin (pitch_tuning). In single precision where
-    /// librosa is, so that a pitch falls on the same side of a hundredth.</summary>
-    static double Tuning(float[][] spectra)
+    /// librosa is, so that a pitch falls on the same side of a hundredth. And the same of 12 bins to the octave: in
+    /// semitones (-0.5 .. 0.49), what a tape run fast or slow is off by (36 bins cannot tell 20 cents sharp from 13 flat).</summary>
+    static (double Bins, double Semitones) Tuning(float[][] spectra)
     {
         const double lowest = 150, highest = 4000;
         double binHz = (double)Rate / Size;
@@ -142,19 +145,24 @@ static class Features
             }
         });
         var peaks = found.SelectMany(list => list).ToArray();
-        if (peaks.Length == 0) return 0;
+        if (peaks.Length == 0) return (0, 0);
         var mags = peaks.Select(p => p.Mag).Order().ToArray();
         float median = mags.Length % 2 == 1 ? mags[mags.Length / 2] : (mags[mags.Length / 2 - 1] + mags[mags.Length / 2]) / 2;
+        var loud = peaks.Where(p => p.Mag >= median).Select(p => p.Pitch).ToArray();
+        return (Commonest(loud, PerOctave), Commonest(loud, 12));
+    }
 
+    /// <summary>librosa.pitch_tuning: of the pitches, the commonest distance from a bin, by hundredths of a bin.</summary>
+    static double Commonest(float[] pitches, int perOctave)
+    {
         const int hundredths = 100;
         var edges = new double[hundredths + 1];
         for (int i = 0; i < hundredths; i++) edges[i] = i * (1.0 / hundredths) + -0.5;
         edges[hundredths] = 0.5;
         var counts = new int[hundredths];
-        foreach (var (pitch, mag) in peaks)
+        foreach (float pitch in pitches)
         {
-            if (!(mag >= median)) continue;
-            float bins = PerOctave * MathF.Log2(pitch / (440f / 16));
+            float bins = perOctave * MathF.Log2(pitch / (440f / 16));
             float off = bins - MathF.Floor(bins);
             if (off >= 0.5f) off -= 1f;
             int i = Math.Clamp((int)((off + 0.5) * hundredths), 0, hundredths - 1);

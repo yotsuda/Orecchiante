@@ -82,9 +82,11 @@ def main():
             ours = np.load(args.net / (path.stem + ".feat.npz"))
             y, _ = librosa.load(path, sr=22050, mono=True)
             tuning = librosa.estimate_tuning(y=y, sr=22050, bins_per_octave=36)
-            tuned = abs(float(ours["tuning"]) - tuning) < 1e-6
+            cents = round(100 * float(librosa.estimate_tuning(y=y, sr=22050, bins_per_octave=12)))
+            tuned = abs(float(ours["tuning"]) - tuning) < 1e-6 and float(ours["cents"]) == cents
             tunings.append(tuned)
-            line += f"; tuning {float(ours['tuning']):+.2f}" + ("" if tuned else f" (librosa {tuning:+.2f})")
+            line += (f"; tuning {float(ours['tuning']):+.2f}, {float(ours['cents']):+.0f} cents"
+                     + ("" if tuned else f" (librosa {tuning:+.2f}, {cents:+d} cents)"))
             for key in feat_gaps:
                 a, b = ours[key].astype(np.float64), theirs[key].astype(np.float64)
                 if a.shape != b.shape:
@@ -101,7 +103,7 @@ def main():
     n = len(files)
     print(f"{n} recordings")
     if tunings:
-        print(f"the tuning: the same in {sum(tunings)}/{n}")
+        print(f"the tuning (in bins of 36 to the octave, and in cents): the same in {sum(tunings)}/{n}")
         for key, rows in feat_gaps.items():
             mean, worst, size = np.mean([r[0] for r in rows]), max(r[1] for r in rows), np.mean([r[2] for r in rows])
             print(f"{key}: {mean:.1e} apart (worst {worst:.1e}), its values {size:.2g} on average")
