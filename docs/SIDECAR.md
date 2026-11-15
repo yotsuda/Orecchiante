@@ -96,20 +96,22 @@ seconds, `fit` and `sure` are each playing's own.
 ## The chart and the file
 
 - **The n-th bar Lily# plays is `bars[n]`** (from 0; a pickup is a bar). Lily# plays a chart
-  through its `form` and its repeat signs, so a bar written once in a section played three times,
-  or once between `|:` and `:|`, is a bar of `bars` each time it is played. `tools/sidecar.py`
+  through its `form` and the form's repeat signs, so a bar written once in a section played three
+  times is a bar of `bars` each time it is played. `tools/sidecar.py`
   counts the bars Lily# plays of each chart (from the end of `lysc midi`'s last note: the pickup's
   beats, then whole bars) against the length of `bars`.
 - The chart is written in sections when a section is played twice or there is a pickup; otherwise
   as one row of bars with no `section` and no `form`. The file names sections either way.
-- **Repeat signs (2026-11-16, the owner's wish): sections the form plays again running repeat in
-  the `form`** (`|: A :|`, `|: A B :|`, `|: A :|*3`, `|: A [1. B] :| [2. C]`); **a few bars said
-  again running inside a section repeat in its `chords`** (`|: C | G :|`, `|: C | G | [1. Am :|
-  [2. F | ]`: two bars or more, not one chord held, endings of one or two bars). A section of four
-  bars or fewer that the form always plays the same number of times running repeats in its own
-  `chords`, and the form names it once. Repeats do not nest: a section the form repeats has no
-  signs of its own. Only the chart has signs; `form` and `bars` in the file are as played. Each bar
-  written once between signs is marked from all its playings (the next point).
+- **Repeat signs are in the chart's `form` only (2026-11-16, the owner's wish: the form alone
+  shows how the song goes)**: sections played again running are `|: A :|`, `|: A B :|`,
+  `|: A :|*3`, and a section followed by a different section each time is `|: A [1. B] :| [2. C]`
+  (one section in each ending). The bars inside a section are written out. The file's `form`
+  stays as played (`["A", "A", "B"]` for `|: A :| B`).
+- **Sections of six bars or fewer that come one after the other are one section** (2026-11-16, the
+  owner's wish: four and four make eight, also the same four twice; four beside eight stay). So
+  `section` and `barOfSection` name the joined sections.
+- **Each line of the chart's page is four bars of one section**: `break` after every four bars
+  and at the end of each section (not in the pickup, which goes on with the first line).
 - A chord of the chart is marked `@todo("or X?")` when the mean `sure` of that chord in that bar,
   over the playings of the bar, is below `doubt`; `X` is the `other` of the least sure of them.
 - In a pickup of several chords that Lily# cannot write a chord a beat (three beats in 4/4), the

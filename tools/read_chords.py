@@ -396,6 +396,9 @@ def find_key(chords):
 
 SECTION_BARS = 4        # the shortest run of bars that is a section for being said again
 SAID_AGAIN = 0.95       # runs of bars are one section when this share of their beats have the same root and quality
+SHORT_SECTION = 6       # two sections running of at most this many bars are one: a chart in sections of four bars
+                        # or two is hard to read (the owner, 2026-11-16: four and eight may stand side by side, four
+                        # and four may not). 0: as found.
 
 
 def fold(bars, beats, alike):
@@ -480,7 +483,8 @@ def find_form(keys, alike=1.0):
     Two runs of bars are the same section when `alike` of their beats have the same chord. The
     run whose saying again saves the most bars becomes a section, the longer run if two save as
     many; then the same among the bars left, until nothing is said twice. What is left between
-    sections is a section said once. Two sections that only ever come one after the other are one.
+    sections is a section said once. Two sections that only ever come one after the other are one,
+    and so are sections of SHORT_SECTION bars or fewer that come one after the other.
     """
     n = len(keys)
     ids = {}
@@ -547,6 +551,18 @@ def find_form(keys, alike=1.0):
                 merged.append(played[i])
                 i += 1
         played = merged
+    if SHORT_SECTION:                           # short sections running are one: until it is longer, or the next is not short
+        # (a short section played twice running too: four bars said twice are eight written out, the owner, 2026-11-16)
+        joined, i = [], 0
+        while i < len(played):
+            start, bars, group = played[i][0], played[i][1], (played[i][2],)
+            while bars <= SHORT_SECTION and i + 1 < len(played) and played[i + 1][1] <= SHORT_SECTION:
+                i += 1
+                bars += played[i][1]
+                group += (played[i][2],)
+            joined.append((start, bars, group))
+            i += 1
+        played = joined
     names = {}
     for _, _, s in played:
         if s not in names:
@@ -877,42 +893,11 @@ def lys(result, title):
             return f"{marks[0]} {marks[half]}"
         return " ".join(marks)
 
-    def rows(cells, indent):
-        """The bars of a chords row, four to a line, with their repeat signs (repeats_in)."""
-        out = []
-        for k, cell in enumerate(cells):
-            text = ("|: " if cell["open"] and k == 0 else "") + (f"[{cell['ending']}. " if cell["ending"] else "")
-            sign = cell["close"] or "|"
-            if k + 1 < len(cells) and cells[k + 1]["open"]:
-                sign = ":|:" if sign == ":|" else "|:"
-            out.append(text + slots(cell["said"]) + " " + sign + (" ]" if cell["bracket"] else ""))
-        return [indent + " ".join(out[i:i + 4]) for i in range(0, len(out), 4)]
-
-    def cells_of(bars, signs=True):
-        """`bars`: each a list of the bar each time it is played. As the cells rows() writes, the
-        repeats inside them (repeats_in) written once, every playing of a bar in its one cell."""
-        cells = []
-        keys = [tuple(beat_names(said[0], said[0].get("pickup") or beats)) for said in bars]
-        plain = lambda said, **k: {"said": said, "open": False, "ending": None, "close": None, "bracket": False, **k}
-        i = 0
-        for item in (repeats_in(keys) if signs else []) + [("end", len(bars))]:
-            cells += [plain(bars[j]) for j in range(i, item[1])]
-            if item[0] == "run":
-                _, at, length, times = item
-                for m in range(length):
-                    cells.append(plain([bar for t in range(times) for bar in bars[at + t * length + m]], open=m == 0,
-                                       close=(":|" if times == 2 else f":|*{times}") if m == length - 1 else None))
-                i = at + times * length
-            elif item[0] == "volta":
-                _, at, body, ending = item
-                for m in range(body):
-                    cells.append(plain(bars[at + m] + bars[at + body + ending + m], open=m == 0))
-                for m in range(ending):
-                    cells.append(plain(bars[at + body + m], ending=1 if m == 0 else None, close=":|" if m == ending - 1 else None))
-                for m in range(ending):
-                    cells.append(plain(bars[at + 2 * body + ending + m], ending=2 if m == 0 else None, bracket=m == ending - 1))
-                i = at + 2 * (body + ending)
-        return cells
+    def rows(bars, indent, breaks=True):
+        """Four bars a line, and a line of the page each (`break`: after every four bars and where a
+        section ends, so that a section begins a line; the owner, 2026-11-16)."""
+        end = " break |" if breaks else " |"
+        return [f"{indent}{' | '.join(slots(said) for said in bars[i:i + 4])}{end}" for i in range(0, len(bars), 4)]
 
     head = [
         f"// read from {result['audio']} by tools/read_chords.py",
@@ -925,7 +910,7 @@ def lys(result, title):
     form = result.get("form") or []
     short = result["bars"][0].get("pickup")
     if len(set(form)) == len(form) and not short:   # nothing is said twice: the chart is the bars in their order
-        return "\n".join(head + ["chords harmony {", *rows(cells_of([[bar] for bar in result["bars"]]), "  "), "}", "",
+        return "\n".join(head + ["chords harmony {", *rows([[bar] for bar in result["bars"]], "  "), "}", "",
                                  "score { chords harmony }", ""])
     sections = {}                       # name: its bars, each a list of the bar each time the section is played
     for bar in result["bars"]:
@@ -933,109 +918,34 @@ def lys(result, title):
         if bar["barOfSection"] > len(of):
             of.append([])
         of[bar["barOfSection"] - 1].append(bar)
-    # A short section the form always plays a few times running repeats in its own chords; the form says it once.
-    runs = {}
-    for name, times in runs_of(form):
-        runs.setdefault(name, set()).add(times)
-    again = {name: next(iter(t)) for name, t in runs.items()
-             if name != "Pickup" and len(t) == 1 and min(t) > 1 and len(sections[name]) <= REPEAT_SECTION}
-    form = [name for name, times in runs_of(form) for _ in range(1 if name in again else times)]
-    # Sections said again in the form repeat there; the bars of any other repeat inside its chords.
-    # (Repeats do not nest: a section the form repeats has no signs of its own.)
-    said_form, repeated = form_with_repeats(form, set(again) | {"Pickup"})
-    cells = {}
-    for name, bars in sections.items():
-        if name in again:
-            cells[name] = cells_of(bars, signs=False)
-            cells[name][0]["open"] = True
-            cells[name][-1]["close"] = ":|" if again[name] == 2 else f":|*{again[name]}"
-        else:
-            cells[name] = cells_of(bars, signs=name != "Pickup" and name not in repeated)
     body = []
     for name, bars in sections.items():
         partial = [f"  partial {'4.' if result['time'] == '6/8' else PARTIAL[short]}"] if name == "Pickup" else []
-        body += [f"section {name} {{", *partial, "  chords harmony {", *rows(cells[name], "    "), "  }", "}", ""]
-    return "\n".join(head + body + ["form { " + said_form + " }", "", "score { chords harmony }", ""])
+        body += [f"section {name} {{", *partial, "  chords harmony {", *rows(bars, "    ", name != "Pickup"), "  }", "}", ""]
+    # Repeat signs only in the form, so that the form alone shows how the song goes (the owner, 2026-11-16).
+    return "\n".join(head + body + ["form { " + form_with_repeats(form) + " }", "", "score { chords harmony }", ""])
 
 
-REPEAT_SECTION = 4      # a section of at most this many bars that the form always plays twice or more running
-                        # repeats inside its own chords; a longer one, or one also played once, repeats in the form
-
-
-def runs_of(names):
-    """[(name, how many times running)] along a list."""
-    out = []
-    for name in names:
-        if out and out[-1][0] == name:
-            out[-1] = (name, out[-1][1] + 1)
-        else:
-            out.append((name, 1))
-    return out
-
-
-def repeats_in(keys):
-    """The repeats to write inside a run of bars, from the chord on each beat of each (`keys`, one
-    tuple a bar), left to right and apart:
-      ("run", first bar, length, times): the bars from the first said `times` times running
-         (|: ... :|, or :|*times);
-      ("volta", first bar, body, ending): `body` bars, `ending` bars, the body again, other `ending`
-         bars (|: ... [1. ... :| [2. ... ]).
-    What repeats is two bars or more and not one chord held; the one that saves the most bars is
-    taken first, a run before a volta that saves as many. A repeat does not begin right where one
-    with endings or played more than twice ends: the two signs would share a bar line."""
-    n, i, found, after = len(keys), 0, [], False
-    while i < n:
-        best = None                     # (bars saved, the repeat, the bars it takes)
-        for length in range(2, (n - i) // 2 + 1) if not after else ():
-            unit = keys[i:i + length]
-            if len(set(unit)) == 1:
-                continue
-            times = 1
-            while keys[i + times * length:i + (times + 1) * length] == unit:
-                times += 1
-            if times > 1 and (best is None or (times - 1) * length > best[0]):
-                best = ((times - 1) * length, ("run", i, length, times), times * length)
-        for body in range(2, (n - i) // 2 + 1) if not after else ():
-            unit = keys[i:i + body]
-            if len(set(unit)) == 1:
-                continue
-            for ending in (1, 2):
-                end = i + 2 * (body + ending)
-                if end <= n and keys[i + body + ending:end - ending] == unit \
-                        and keys[i + body:i + body + ending] != keys[end - ending:end] and (best is None or body > best[0]):
-                    best = (body, ("volta", i, body, ending), 2 * (body + ending))
-        if best is None:
-            after = False
-            i += 1
-            continue
-        found.append(best[1])
-        i += best[2]
-        after = best[1][0] == "volta" or best[1][3] > 2
-    return found
-
-
-def form_with_repeats(form, unsigned):
+def form_with_repeats(form):
     """The form with repeat signs where sections come again running: a run of sections said again
     (|: A B :|, |: A :|*3), or a section followed by a different section each time (|: A [1. B] :|
-    [2. C]). Sections in `unsigned` (with repeats of their own, the pickup) are written as they
-    come: repeats do not nest. The one that saves the most sections' playings is taken first.
-    Returns the form as written, and the sections inside its repeats."""
-    n, i, out, inside = len(form), 0, [], set()
+    [2. C]). The pickup is written as it comes. The one that saves the most sections' playings is
+    taken first."""
+    n, i, out = len(form), 0, []
     while i < n:
         best = None                     # (sections saved, words, sections it takes)
         for length in range(1, (n - i) // 2 + 1):
             unit = form[i:i + length]
-            if any(name in unsigned for name in unit):
+            if "Pickup" in unit:
                 break
             times = 1
             while form[i + times * length:i + (times + 1) * length] == unit:
                 times += 1
             if times > 1 and (best is None or (times - 1) * length > best[0]):
                 best = ((times - 1) * length, "|: " + " ".join(unit) + (" :|" if times == 2 else f" :|*{times}"), times * length)
-        if form[i] not in unsigned:
+        if form[i] != "Pickup":
             j, endings = i, []
-            while j + 1 < n and form[j] == form[i] and form[j + 1] != form[i] and form[j + 1] not in unsigned \
-                    and form[j + 1] not in endings:
+            while j + 1 < n and form[j] == form[i] and form[j + 1] != form[i] and form[j + 1] not in endings:
                 endings.append(form[j + 1])
                 j += 2
             if len(endings) > 1 and (best is None or len(endings) - 1 > best[0]):
@@ -1046,9 +956,9 @@ def form_with_repeats(form, unsigned):
             i += 1
         else:
             out.append(best[1])
-            inside.update(form[i:i + best[2]])
             i += best[2]
-    return " ".join(out), inside
+    return " ".join(out)
+
 
 
 def main():

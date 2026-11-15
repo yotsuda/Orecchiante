@@ -3,15 +3,18 @@
 **毎セッションの終わりに書き換える**（追記しない。200 行以内）。方向づけは [ROADMAP.md](ROADMAP.md)、
 数字と使い方は [README](../README.md)、録音の出典は [DATASETS.md](DATASETS.md)。
 
-最終更新: 2026-11-16 夜（譜面に繰り返し記号を書く・拡張の Transcribe コマンドを外した。拡張 0.3.0。HEAD は `git log -1` で確かめる）。
+最終更新: 2026-11-16 夜（短い section をまとめ、繰り返し記号を form に書く・拡張の Transcribe コマンドを外した。拡張 0.3.0。HEAD は `git log -1` で確かめる）。
 
-### 繰り返し記号（2026-11-16、オーナーの希望。README の「What is said again」の末尾・SIDECAR.md「The chart and the file」）
+### 短い section と繰り返し記号（2026-11-16、オーナーの希望。README の「What is said again」の末尾・SIDECAR.md「The chart and the file」）
 
-- **オーナーの決めた分け方: 小さな繰り返し（数小節・1 番 2 番かっこ）は chords{} の中、大きなセクションの繰り返しは form{} の中。**
-- 書き手だけ（`read_chords.py` の `lys()`・`repeats_in`・`form_with_repeats`、`Writer.cs` の `CellsOf`・`Repeats`・`FormWithRepeats`）。`.dettato.json` も数字も同じ。
-  規則は SIDECAR.md。form が先に取る（入れ子は Lily# の誤り）。`sidecar.py` は `lysc midi --batch` の最後の音から演奏の小節数を数える（`lysc layout` は書いた小節）。
-- 268 曲で Python と .NET が一字一句同じ、`lysc check`・sidecar 268/268。記号は RWC 97/100、合成曲 148/168。RWC_P010 を png で見た。
-  **オーナーはまだ見ていない**（本体 2 小節の 1・2 番かっこが続く曲がある。多ければ本体の最小を上げる）。D.S.・Coda は使っていない。
+- **6 小節以下の section が続いたら 1 つにまとめる**（`SHORT_SECTION`／`ShortSection`。`find_form` の最後。4＋4 は 8、同じ 4 小節が 2 回でも 8 に＝書き出す。4 と 8 はそのまま）。
+  `section`・`barOfSection`・`form` が変わり、ベースまでの率が少し動く（数字の表）。
+- **繰り返し記号は form だけ**（オーナー:「form だけで全体の流れが把握できる方が良い」）。`|: A :|`・`|: A B :|`・`:|*N`・`|: A [1. B] :| [2. C]`。
+  section の中は書き出す。`form_with_repeats`／`FormWithRepeats`。`sidecar.py` は `lysc midi --batch` から演奏の小節数を数える。
+- **改行: 4 小節ごとと section の終わりに `break`**（section は必ず行の頭から。弱起の section には書かない）。オーナー:「セクションの直前で改行しないと」。
+- **捨てた案（同じ日に試して戻した）:** chords の中の `|: … :|`・1 番 2 番、4 小節の section の 2 回を `|: A :|`（オーナー: 8 小節を書き出す方が使いやすい）。
+- 268 曲で Python と .NET が一字一句同じ、`lysc check`・sidecar 268/268。記号は RWC 55/100、合成曲 79/168。My Life は
+  `form { A B |: C [1. D] :| [2. E] F |: C [1. D] :| [2. G] H C I J K }`（K は 2 小節）。png で見た。**この形はオーナーがまだ見ていない。**
 
 ### 書き出し先と `audio`（2026-11-16、オーナーの希望。依頼 6）
 
@@ -20,12 +23,8 @@
 
 ### D4 の形（2026-11-15、オーナーと話して決めた。依頼 4・[便り](repro/lilysharp-requests-2026-11-15-listening.md)）
 
-**Lily# の設計メモ `C:\MyProj\LilySharp\docs\recording-design.md`（セッションの頭に読む）:** 紐づけは隣のファイル（形式 2）だけ、`.lys` には何も書かない。
-m4a は Lily# の LSP が Media Foundation で復号する（音を渡す口は要らない）。形式 2 の項目と書き手の取り合いは設計メモ §6 で未決。
-
-- **目標は Transcribe!（Seventh String）と同じ体験を Lily# で**（オーナーは長年の利用者、用途の中心はエレキベースの耳コピ）。
-- **人が打った・動かした小節線が正。** 機械の読みは別に残さない。残すのは線ごとの「人が確かめた」印だけ → `x.dettato.json` を**人が直してよい形式 2** に。
-- **Dettato が用意するもの:** 拍の時刻と調律のセント（2026-11-16 に入れた。`tuning` は 12 分割の整数セント、`beats` は小節の等分）。読み直しの入口は要らなくなった（次の一手）。
+**Lily# の設計メモ `C:\MyProj\LilySharp\docs\recording-design.md`（セッションの頭に読む）:** 紐づけは隣のファイル（形式 2）だけ、m4a は Lily# の LSP が復号。
+**目標は Transcribe! と同じ体験を Lily# で**（用途の中心はエレキベースの耳コピ）。**人が打った小節線が正**（形式 2）。Dettato は `tuning`・`beats` を入れた（読み直しの入口は不要）。
 
 ## 現在地
 
@@ -66,13 +65,13 @@ m4a は Lily# の LSP が Media Foundation で復号する（音を渡す口は�
 - **`--ears` では HPSS を外した**（`use_ears()` が `HARMONIC_FRAMES = 0`。特徴量は `scratch/feat-h0/`）。1 曲 3 分半で `dettato read` 5.5 秒（Beat This! 3.7）。
 - **onnxruntime のスレッド数は 8 に絞る**（既定の 24 だと Beat This! が 1 曲 10 秒）。
 
-### 数字（`measure.py all`、2026-11-16 の繰り返し記号の後も同じ。lysc check 1388/1388、sidecar 1388/1388＝演奏の小節数で）
+### 数字（`measure.py all`、2026-11-16 の短い section をまとめた後。ベースだけ 0.3 ポイントまで動いた。lysc check 1388/1388、sidecar 1388/1388＝演奏の小節数で）
 
 | `--ears`（crema） | `rwc-dev`（選ぶ側） | `rwc-test`（数えるだけ） | `rwc-p` | seed1 / 7 / 11 |
 |---|---|---|---|---|
 | ルート | 86.4% | 87.3% | 86.9% | 95.1 / 93.1 / 94.5% |
 | ルート＋長短 | 82.3% | 82.2% | 82.2% | 91.6 / 88.4 / 92.4% |
-| ベース音まで | 64.4% | 64.9% | 64.7% | 73.4 / 58.5 / 73.5% |
+| ベース音まで | 64.1% | 64.9% | 64.5% | 73.6 / 58.6 / 73.8% |
 | 小節線 F | 93.6% | 94.9% | 94.2% | 96.7 / 90.9 / 93.6% |
 | テンポ・拍子 | 46・49 | 47・49 | 93・98 | |
 | 印 → 拾う誤り | 30.2% → 77.8% | 25.7% → 70.3% | 28.0% → 73.9% | 17.5% → 70.2% |
@@ -86,7 +85,7 @@ m4a は Lily# の LSP が Media Foundation で復号する（音を渡す口は�
 
 ## 次の一手
 
-**まず繰り返し記号の譜面をオーナーに見てもらう**（0.3.0 を入れた。細かい 1・2 番かっこが多すぎないか。上の「繰り返し記号」）。
+**まず短い section をまとめた形と form の繰り返し記号をオーナーに見てもらう**（0.3.0 を入れ直す。上の「短い section と繰り返し記号」）。
 **それから、ユーザーの録音で譜面の出来を聴いてもらう。** 読めるか・時間・頭のずれ・長い録音は 2026-11-16 に機械で見た（上の「コマンドと入力」）。
 残るのは耳で聴く所で、ユーザーの手が要る。1 曲目の My Life（`scratch/d3/mylife/`）は 0.2.1 で「さほど違和感はない」（ブリッジの C#dim・F#7/C# は
 1 つずつ確かめていない。3 拍の小節が 1 つ残る）。次の候補: ユーザーがベースで弾く曲・コードの分かっている曲（あれば数字も）、バンド練習の録音
@@ -120,15 +119,14 @@ m4a は Lily# の LSP が Media Foundation で復号する（音を渡す口は�
 - 新しいコンソールごとに最初に設定する（コンソールは 11 分使わないと閉じ、環境変数も消える）:
   `$env:NUMBA_CACHE_DIR='C:\MyProj\Dettato\scratch\numba'`、`$env:DETTATO_LYSC='C:\MyProj\LilySharp\LilySharp.Cli\bin\Release\net10.0\win-x64\lysc.exe'`。
   `.venv-bt` を動かすときは `$env:TORCH_HOME='C:\MyProj\Dettato\scratch\torch'`、`$env:TORCHINDUCTOR_CACHE_DIR='C:\MyProj\Dettato\scratch\torchinductor'`、`$env:PYTHONUTF8='1'` も。
-  `make` で `tim/` を作り直すときは `DETTATO_SOUNDFONT_ALT`（`C:\MyProj\omr-compare\minor\venvs\zhaovan\Lib\site-packages\pretty_midi\TimGM6mb.sf2`）、
-  `samples` は `DETTATO_SAMPLES`（`C:\MyProj\LilySharp\samples`。場所は未確認）も。
+  `make` の `tim/` は `DETTATO_SOUNDFONT_ALT`（`C:\MyProj\omr-compare\minor\venvs\zhaovan\Lib\site-packages\pretty_midi\TimGM6mb.sf2`）、`samples` は `DETTATO_SAMPLES` も。
 - 動作確認の 1 コマンド（20 秒）:
-  `.venv\Scripts\python.exe tools\measure.py table seed1 rwc-dev rwc-test --ears` → seed1 ルート 95.1%・小節線 96.7%・ベース 73.4%、`rwc-dev` 86.4% / 82.3% / 93.6%、`rwc-test` 87.3% / 82.2% / 94.9%。
+  `.venv\Scripts\python.exe tools\measure.py table seed1 rwc-dev rwc-test --ears` → seed1 ルート 95.1%・小節線 96.7%・ベース 73.6%、`rwc-dev` 86.4% / 82.3% / 93.6%、`rwc-test` 87.3% / 82.2% / 94.9%。
 - 時間の目安: `--ears` の `table` は RWC 50 曲で 7 秒。`all` は 20〜25 分。RWC の特徴量の作り直しは HPSS ありで 20 分、なしで 3 分。2 分を超える仕事は切り離して走らせ、ログを見に行く。pwsh MCP の 1 回の呼び出しは 115 秒以内に収める:
   `Start-Process cmd -ArgumentList '/d /s /c "<コマンド> < NUL > scratch\x.log 2>&1"' -WindowStyle Hidden -WorkingDirectory C:\MyProj\Dettato`
   止めるときは `measure.py all` を含む python.exe を止める。速さは裏の仕事が終わってから測る（24 コアでも ONNX と torch は取り合う）。
-- `lysc check <1 枚>` の合否は終了コードと `warning` / `: error`。`lysc <コマンド> --batch <一覧>` なら 1 プロセスで多数を扱える。`C:\MyProj` 全体の再帰検索は固まる。pwsh MCP の `Update-MatchInFile` で書き換えたファイルは、Edit ツールの前に読み直しが要る。
-- **README.md などユーザーがプレビューで開いている Markdown は、Edit を 1 回ずつ出す**（並べるとエラーのダイアログが編集の数だけ出る）。
+- `lysc check` の合否は終了コードと `warning` / `: error`、`--batch <一覧>` で多数。`C:\MyProj` 全体の再帰検索は固まる。pwsh で書き換えたファイルは Edit の前に読み直す。
+  **プレビューで開いている Markdown は Edit を 1 回ずつ出す**。dettato の通しは `--models scratch\d2`（`scratch/net/out` にモデルはない）。
 
 ### commit の外にあるもの（消えたら作り直す）
 
@@ -146,7 +144,7 @@ m4a は Lily# の LSP が Media Foundation で復号する（音を渡す口は�
 | `scratch/net/`（`out/dettato.exe`、`seed1`・`seed7`・`seed11`・`rwc-p` の `.beats`・`.npz`・`.cqt.npy`・`.feat.npz`、ほかの合成曲 4 セットの `.feat.npz`） | README の「In .NET」の各節の末尾（.NET SDK 10.0.401。RWC は耳 9 分、特徴量 33 秒） |
 | `scratch/net/read/<セット>/`（.NET の譜面。`head/seed141` は `seed141`）、`scratch/pyread/<セット>/`（比べる相手の Python の譜面） | README の「In .NET: the rules」の末尾（RWC 100 曲で 27 秒） |
 
-`scratch/c1*.py`・`c2*.py`・`b3*.py` は commit の外（残す）。消してよい: `scratch/` のほかの古いスクリプトとログ、`read-all/`・`c1out/`・`c1lys/`・`c2out/`・`cmtest/`・`net/one/`、`scratch/d2/` の `*.log`・`one*/`・`beats-*/`。
+`scratch/c1*.py`・`c2*.py`・`b3*.py` は残す。ほかの古いスクリプトとログ、`scratch/d3/` は消してよい。
 
 ## セットの扱い
 
@@ -163,18 +161,15 @@ m4a は Lily# の LSP が Media Foundation で復号する（音を渡す口は�
 ## 捨てた案（試し直さない）
 
 - **D2:** onnxruntime を既定のスレッド数で走らせる（24 コアで Beat This! が 2.5 倍遅い）。`--ears` で HPSS を残す。
-- **D4:** 小節の `beats` に Beat This! の拍を使う（小節の中の拍が拍子の数か倍数で、等分から 1/4 拍以内のとき）。RWC の拍の注釈から 70 ms 以内が
-  等分と同じ（`rwc-dev` 96.2%・`rwc-test` 94.3%）、35 ms 以内は 0.2 ポイント下。拍が 20 ms の格子にあり、RWC は小節の中で揺れない。テンポの揺れる録音では未確認。
+- **D4:** 小節の `beats` に Beat This! の拍を使う（RWC の拍の注釈に等分より近くない。テンポの揺れる録音では未確認）。
 - **C1:** 鳴り終わりを「前と同じ和音で、かつ静か」で見分ける。`--ears` の無音を自作と同じ「中央値の 1/10」で見る。
   crema の N だけで無音を見る。弱起の中の和音を拍ごとに書く（Lily# が警告する）。
 - **繰り返しの照合で誤りを直す・印を付ける**（C2）: 読みの多数決、確率の平均、「相手がいない小節に印」。正解の対でも +2 ポイントまで。
 - 小節を戻すのを 4 拍以上の曲だけにする（合成曲で悪化、seed7 90.4%）。section をルート＋長短だけで同じとみなす、`SAID_AGAIN` 0.90 以下、完全一致だけ。
 - **自作の拍追跡と合成曲だけのコードモデルを実録音向けに磨くこと。** 公開モデルが素の出力で上回る。
-- **コードモデルの候補で外したもの:** madmom（CC BY-NC-SA）。Jiang ほか・omnizart（重みの明記なし、確率を出さない）。
-  BACHI（楽譜からの認識）。ChordMini（BTC の派生で RWC を学習）。
+- **コードモデルの候補で外したもの:** madmom（CC BY-NC-SA）、Jiang ほか・omnizart（重みの明記なし）、BACHI、ChordMini（RWC を学習）。
 - crema 用に値段を選び直す、印の式を合わせ直す。印に 3 つ目の耳を足す。`--ears` で値段を高くする、ベースのクロマを足す。
-- 印の確信度の案（BTC、`rwc-dev`）: 半拍ごとの最小値、2 番目との差・比、対数の平均、エントロピー、N・X の確率、コードの長さ、
-  ベースがルートか。特徴 27 個・勾配ブースティング。短調への一律の割増。別候補を確率の合計から選ぶ。
+- 印の確信度の案（BTC、`rwc-dev`）: 半拍ごとの最小値、2 番目との差・比、エントロピー、特徴 27 個の勾配ブースティングなど（README）。
 - 小節線を別に探す手法（新奇度、平均クロマ）。自作の読み取り器で HPSS をやめる、NNLS、対数圧縮、`CHANGE_GAIN`、ベースの重み 0.6。規則だけでコードの重みを詰める。
   短調の属和音の重みを下げて調を当てる。小節の長さの事前分布、拍の長さの局所中央値。七の和音の迷いまで印にする（自作モデルで効率が落ちた。`--ears` では未確認）。
 - 実録音のデータ: Isophonics・McGill Billboard・JAAH は音源なし。Winterreise は歌曲。AAM は合成。GuitarSet（CC BY 4.0）は次の候補。
@@ -199,7 +194,7 @@ m4a は Lily# の LSP が Media Foundation で復号する（音を渡す口は�
   (a) 目安を下げる、(b) 印を 4 割近くまで増やす、(c) BTC を 2 つ目の耳にする。決まるまで閾値は 0.84。
 - **BTC を 2 つ目の耳として配るか。** 入れると `rwc-test` でルート 87.3% → 88.7%・長短 82.1% → 83.8%。
   条件は BTC の作者が重みの扱いを明言すること。jayg996/BTC-ISMIR19 に issue で尋ねるのはユーザー（尋ねていない）。
-- **section の書き方。** 細切れ（1 曲 10 セクション）が読みにくければ条件を緩める。繰り返し記号の細かさもオーナーが見てから。
+- **section の書き方。** 6 小節以下が続かないようにした（上）。さらに減らすか（6 を 8 に、単独の短い section も隣へ）はオーナーが見てから。
 - **値段・印の式・`SAID_AGAIN`・C1 の定数・HPSS なしは `rwc-dev`（CC BY-NC 4.0）で選んだ。** 少数の定数の選択で、モデルの学習では
   ないつもりだが、「RWC を学習に使わない」の線のどちら側と見るかはユーザーの判断。
 - 使いたい曲の種類が RWC-P と違うなら、その種類の曲を数曲（Chord Tracker の結果があればそれも）。名前の重複の確認、push（ROADMAP §5）。

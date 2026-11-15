@@ -5,6 +5,7 @@ namespace Dettato;
 static class Form
 {
     const int SectionBars = 4;      // the shortest run of bars that is a section for being said again
+    const int ShortSection = 6;     // two sections running of at most this many bars are one (the owner, 2026-11-16)
 
     /// <summary>A count a key, in the order the keys came (Python's Counter): the first of the largest wins.</summary>
     sealed class Tally<T> where T : notnull
@@ -206,6 +207,26 @@ static class Form
                 else merged.Add(played[i]);
             }
             played = merged;
+        }
+        if (ShortSection > 0)                   // short sections running are one (find_form's last step)
+        {
+            // (a short section played twice running too: four bars said twice are eight written out)
+            var groups = new Dictionary<string, int>();
+            var joined = new List<(int First, int Bars, int Section)>();
+            for (int i = 0; i < played.Count; i++)
+            {
+                var (start, bars, s) = played[i];
+                string group = s.ToString();
+                while (bars <= ShortSection && i + 1 < played.Count && played[i + 1].Bars <= ShortSection)
+                {
+                    i++;
+                    bars += played[i].Bars;
+                    group += "," + played[i].Section;
+                }
+                if (!groups.TryGetValue(group, out int id)) groups[group] = id = groups.Count;
+                joined.Add((start, bars, id));
+            }
+            played = joined;
         }
         var names = new Dictionary<int, string>();
         foreach (var (_, _, s) in played)

@@ -295,7 +295,7 @@ the fold models', as above; the first three columns again after "Two half bars a
 | Chord root, by time | 86.4% | 87.3% | 86.9% | 84.4% | 85.9% |
 | Root and family | 82.3% | 82.2% | 82.2% | 79.8% | 80.6% |
 | Root and quality | 68.0% | 69.2% | 68.6% | 66.5% | 67.1% |
-| The bass note too | 64.4% | 64.9% | 64.7% | 61.4% | 62.8% |
+| The bass note too | 64.1% | 64.9% | 64.5% | 61.4% | 62.8% |
 
 Two points of root and of family come from the rules (a chord lasts whole half beats and
 changes where bars say it may; with BTC's chords, three). The bass note is still this reader's
@@ -381,7 +381,8 @@ form { A B C D A C E }
 - Two runs of four bars or more are one section when 95 beats in 100 of them have the same root
   and quality. The run whose saying again saves the most bars is taken first, then the same
   among the bars left; what lies between is a section said once; two sections that only ever
-  come one after the other are one.
+  come one after the other are one, and so are sections of six bars or fewer that come one after
+  the other (2026-11-16, below).
 - Every playing of a section then says the same: on each beat, the chord the playings are surest
   of together. Where they differed in root or family the chord is marked, and the chord offered
   is the other reading.
@@ -395,12 +396,18 @@ would give):
 
 | The sections, `--ears` | `rwc-dev` (chosen on) | `rwc-test` (counted only) | `seed1`, `seed7`, `seed11` |
 |---|---|---|---|
-| Bars written, of the bars played | 61.9% | 68.3% | 69.0%, 68.6%, 69.5% |
-| The same, of the truth's chords | 69.5% | 76.4% | 54.6%, 54.5%, 53.7% |
-| Sections a song (of them a bar or two long) | 11.5 (2.3) | 9.0 (1.8) | 3.8 (0.7), 3.4 (0.8), 3.3 (0.6) |
-| The same, of the truth's chords | 9.2 (1.5) | 7.5 (1.5) | 2.1 (0.0), 2.0 (0.0), 2.0 (0.0) |
+| Bars written, of the bars played | 80.1% | 81.0% | 84.4%, 74.4%, 82.1% |
+| The same, of the truth's chords | 80.9% | 85.1% | 57.1%, 55.0%, 58.6% |
+| Sections a song (of them a bar or two long) | 10.6 (0.6) | 8.2 (0.4) | 3.3 (0.2), 2.9 (0.5), 3.0 (0.2) |
+| The same, of the truth's chords | 8.7 (0.6) | 6.9 (0.5) | 2.1 (0.0), 2.0 (0.0), 2.0 (0.0) |
 
-So a chart of a recording is a third shorter. The 95 in 100 was chosen on `rwc-dev`, where the
+(The table as counted after 2026-11-16, when short sections running became one: more bars are
+written, for a section joined of two is said again only where both come again together; before,
+62% and 68% of the bars of `rwc-dev` and `rwc-test` were written, in 11.5 and 9.0 sections a
+song, 2.3 and 1.8 of them a bar or two long. The chords are read as well, the bass notes within
+three tenths of a point: `rwc-dev` 64.4% to 64.1%, `rwc-test` 64.9% both.)
+
+So a chart of a recording was a third shorter (a fifth since 2026-11-16). The 95 in 100 was chosen on `rwc-dev`, where the
 chords read as well with the sections as without (as counted then, before the two ends of a chart were read as told below: root 86.0%, root and family 81.8%, root and
 quality 67.7%, both ways); on `rwc-test` they cost a tenth of a point of the roots and the
 families and two tenths of the qualities, and on the songs made here the reader with its own
@@ -439,28 +446,36 @@ playing as a second ear), and it was measured on `rwc-dev` before the sections w
 The model reads a passage the same way each time it comes, wrong alike; what differs between
 two playings is mostly the music.
 
-**Repeat signs (2026-11-16, the owner's wish).** What comes again right away is written with
-Lily#'s repeat signs, at two levels: sections in the `form`, a few bars inside a section's
-`chords` (the rules are in [SIDECAR.md](docs/SIDECAR.md), "The chart and the file"):
+**Short sections and repeat signs (2026-11-16, the owner's wishes).** A form of sections four
+bars long or less, one after another, is hard to follow (`A B C D B E D F G H D B E D I G J D K`
+for one song). So **sections of six bars or fewer that come one after the other are one section**
+(four and four make eight, also when they are the same four bars twice: eight written out read
+better than `|: A :|` of four; four beside eight stay as they are). **Sections the form plays
+again right away repeat in the form**, so that the form alone shows how the song goes; the bars
+inside a section are written out. **And each line of the page is four bars of one section**
+(`break` after every four bars and where a section ends: a section begins a line):
 
 ```
-section C {
+section A {
   chords harmony {
-    |: C | C | Bb | [1. Bb :|
-    [2. C | ]
+    D | D | D | D@todo("or Dsus4?") break |
+    D | D | D | D break |
   }
 }
 ...
-form { A |: B :| C |: D :| E }
+form { A B |: C [1. D] :| [2. E] F |: C [1. D] :| [2. G] H C I J K }
 ```
 
-Only the chart changes: the `.dettato.json` and every number above are as before, and Lily#
-plays each chart as many bars as the file has (`tools/sidecar.py` now counts them from `lysc
-midi`, the repeats played). Of the charts `--ears` writes, signs are in 97 of the 100 RWC songs
-and in 148 of the 168 songs made here (the seven sets `read_check.py` compares). A passage that
-comes again later, not right away (a verse after a chorus), is a section the form names again, as
-before. Charts still come in about ten sections; a section a bar or two long between two that
-come again breaks a run the signs could have written.
+That is `|: A :|`, `|: A B :|`, `|: A :|*3`, or `|: A [1. B] :| [2. C]` with one section in each
+ending (the rules: [SIDECAR.md](docs/SIDECAR.md), "The chart and the file"). The bars in
+`.dettato.json` are as played, and Lily# plays each chart as many bars as the file has
+(`tools/sidecar.py` counts them from `lysc midi`, the repeats played). Of the charts `--ears`
+writes, signs are in 55 of the 100 RWC songs and in 79 of the 168 songs made here (the seven
+sets `read_check.py` compares). A passage that comes again later, not right away (a verse after
+a chorus), is a section the form names again, as before. Tried first and taken back the same
+day: signs inside a section's chords too (`|: C | G :|`, `|: C | G | [1. Am :| [2. F | ]`), and a
+short section said twice running as `|: A :|`; the owner would rather see every repeat in the
+form, and four bars said twice written out.
 
 ### How a chart begins and ends
 
