@@ -73,8 +73,7 @@
 ### 持ち越す知見（README にないもの）
 
 - 実録音で失っていたのは頭ではなく終わり（Beat This! はドラムが止まる所で拍をやめる）。crema の「コードなし」は両端だけ使う。RWC の正解は両端を語らない。
-- ONNX を書き直すとき: 旧式のトレースで書いた直後の torch のモデルは同じプロセスの中で答えが変わる（比べる前に読み直す。
-  `bt_onnx.py` はそうしている）。dynamo の書き出しは絵文字を出すので `PYTHONUTF8=1` が要る。
+- ONNX を書き直すとき: 旧式のトレース直後の torch のモデルは同じプロセスで答えが変わる（比べる前に読み直す）。dynamo は `PYTHONUTF8=1` が要る。
 
 ## 次の一手
 
@@ -85,9 +84,10 @@
 
 - **D4 の Dettato 側で残るのは、人の小節線から読み直す入口だけ**（Python は `--lines` の道。.NET の `--lines` は `.beats` を読む。形式 2 の小節の秒を読むのが素直）。
   形式 2 の中身は Lily# の設計メモ §6 が決まってから。拡張の `dettato.exe` は 0.2.1 のまま（2 項目なし。配り直すときは版を 2 か所で上げて `tools/deploy-extension.ps1`）。
-- **Lily# の依頼（`docs/repro/REQUESTS.md`。セッションの頭に見る）:** 1 は「固まったら行に書く」→ D3 の形（便り §2a）を固まったとして書くかをオーナーに
-  確かめてから（2026-11-16 にも訊いた）。4 は Lily# が設計中（`question`）、行に Dettato の 2 項目を書いた。3 は `done` にするのは確かめてから。
-  鍵は `lilysharp.dettatoAvailable`、環境変数は `LILYSHARP_DETTATO_PATH`（拡張が立てる。まだ）。メニューが Lily# に入ったら拡張の `dettato.transcribe` を外す。
+- **Lily# の依頼（`docs/repro/REQUESTS.md`。セッションの頭に見る）:** **1 は Lily# が作った**（master `da1d1caac`〜`7dd898bf9`、次の版から。
+  「Convert Recording to Lily# (.lys)… (Preview)」、Dettato が無ければ入れるよう勧める、鍵 `lilysharp.dettatoAvailable` は Lily# が自分で立てる＝Dettato の拡張は何も立てなくてよい）。
+  Dettato 側で確かめて行に書いた（取り決めどおり、テスト 6/6、気づいた 3 点）。**Lily# のその版が出たら拡張の `dettato.transcribe` を外して 0.3.0**。
+  4 は Lily# が作り中（S1〜S3 済み）、行に Dettato の 2 項目を書いた。3 は `done` にするのは確かめてから。
 - 返事を待つ間にできる一手: C3（テンポの大きな変化。範囲のテンポ・人の拍マーカーとつながる）。規則を触るなら「.NET の規則」の手順で。
 
 やり残し（急がない）:
