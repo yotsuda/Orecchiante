@@ -11,7 +11,7 @@
   `section`・`barOfSection`・`form` が変わり、ベースまでの率が少し動く（数字の表）。
 - **繰り返し記号は form だけ**（オーナー:「form だけで全体の流れが把握できる方が良い」）。`|: A :|`・`|: A B :|`・`:|*N`・`|: A [1. B] :| [2. C]`。
   section の中は書き出す。`form_with_repeats`／`FormWithRepeats`。`sidecar.py` は `lysc midi --batch` から演奏の小節数を数える。
-- **改行: 4 小節ごとと section の終わりに `break`**（section は必ず行の頭から。弱起の section には書かない）。オーナー:「セクションの直前で改行しないと」。
+- **改行: 4 小節ごとと section の終わりに `break`**（section は必ず行の頭から。弱起には書かない）。余り 1 は前の行と 5、余り 2 は 3・3（`line_sizes`／`LineSizes`）。
 - **捨てた案（同じ日に試して戻した）:** chords の中の `|: … :|`・1 番 2 番、4 小節の section の 2 回を `|: A :|`（オーナー: 8 小節を書き出す方が使いやすい）。
 - 268 曲で Python と .NET が一字一句同じ、`lysc check`・sidecar 268/268。記号は RWC 55/100、合成曲 79/168。My Life は
   `form { A B |: C [1. D] :| [2. E] F |: C [1. D] :| [2. G] H C I J K }`（K は 2 小節）。png で見た。**この形はオーナーがまだ見ていない。**

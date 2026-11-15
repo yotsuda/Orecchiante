@@ -9,7 +9,7 @@ Notable changes to Dettato are recorded here, newest first.
   it runs.
 - Fewer, longer sections: sections of six bars or fewer that come one after the other are one
   (four and four make eight).
-- Four bars a line, and every section begins a line.
+- Four bars a line (a last bar alone joins the line before, four and two are three and three), and every section begins a line.
 - The form writes repeat signs where sections come again right away (`|: A :|`,
   `|: A [1. B] :| [2. C]`), so that it shows how the song goes. Lily# plays the chart bar for bar
   as before.

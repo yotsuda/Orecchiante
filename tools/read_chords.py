@@ -897,7 +897,11 @@ def lys(result, title):
         """Four bars a line, and a line of the page each (`break`: after every four bars and where a
         section ends, so that a section begins a line; the owner, 2026-11-16)."""
         end = " break |" if breaks else " |"
-        return [f"{indent}{' | '.join(slots(said) for said in bars[i:i + 4])}{end}" for i in range(0, len(bars), 4)]
+        out, i = [], 0
+        for size in line_sizes(len(bars)):
+            out.append(f"{indent}{' | '.join(slots(said) for said in bars[i:i + size])}{end}")
+            i += size
+        return out
 
     head = [
         f"// read from {result['audio']} by tools/read_chords.py",
@@ -924,6 +928,20 @@ def lys(result, title):
         body += [f"section {name} {{", *partial, "  chords harmony {", *rows(bars, "    ", name != "Pickup"), "  }", "}", ""]
     # Repeat signs only in the form, so that the form alone shows how the song goes (the owner, 2026-11-16).
     return "\n".join(head + body + ["form { " + form_with_repeats(form) + " }", "", "score { chords harmony }", ""])
+
+
+def line_sizes(bars):
+    """How many bars each line of a section has: four, but a last line of one bar goes on the line
+    before (five), and four and two are three and three (the owner, 2026-11-16)."""
+    sizes = [4] * (bars // 4)
+    left = bars % 4
+    if left == 1 and sizes:
+        sizes[-1] = 5
+    elif left == 2 and sizes:
+        sizes[-1:] = [3, 3]
+    elif left:
+        sizes.append(left)
+    return sizes
 
 
 def form_with_repeats(form):

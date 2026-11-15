@@ -111,7 +111,9 @@ seconds, `fit` and `sure` are each playing's own.
   owner's wish: four and four make eight, also the same four twice; four beside eight stay). So
   `section` and `barOfSection` name the joined sections.
 - **Each line of the chart's page is four bars of one section**: `break` after every four bars
-  and at the end of each section (not in the pickup, which goes on with the first line).
+  and at the end of each section (not in the pickup, which goes on with the first line). A last
+  line of one bar joins the line before (five), and four and two are three and three (`line_sizes`:
+  9 bars are 4 5, 10 are 4 3 3, 6 are 3 3).
 - A chord of the chart is marked `@todo("or X?")` when the mean `sure` of that chord in that bar,
   over the playings of the bar, is below `doubt`; `X` is the `other` of the least sure of them.
 - In a pickup of several chords that Lily# cannot write a chord a beat (three beats in 4/4), the

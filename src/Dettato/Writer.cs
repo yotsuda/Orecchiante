@@ -59,8 +59,12 @@ static class Writer
         // a section begins a line; the owner, 2026-11-16). The pickup goes on with the first line.
         IEnumerable<string> Rows(List<List<Bar>> bars, string indent, bool breaks = true)
         {
-            for (int i = 0; i < bars.Count; i += 4)
-                yield return indent + string.Join(" | ", bars.Skip(i).Take(4).Select(Slots)) + (breaks ? " break |" : " |");
+            int i = 0;
+            foreach (int size in LineSizes(bars.Count))
+            {
+                yield return indent + string.Join(" | ", bars.Skip(i).Take(size).Select(Slots)) + (breaks ? " break |" : " |");
+                i += size;
+            }
         }
 
         var lines = new List<string>
@@ -103,6 +107,18 @@ static class Writer
         // Repeat signs only in the form, so that the form alone shows how the song goes (the owner, 2026-11-16).
         lines.AddRange(["form { " + FormWithRepeats(chart.Form) + " }", "", "score { chords harmony }", ""]);
         return string.Join("\n", lines);
+    }
+
+    /// <summary>How many bars each line of a section has, as tools/read_chords.py's line_sizes: four, but a last line of
+    /// one bar goes on the line before (five), and four and two are three and three.</summary>
+    static List<int> LineSizes(int bars)
+    {
+        var sizes = Enumerable.Repeat(4, bars / 4).ToList();
+        int left = bars % 4;
+        if (left == 1 && sizes.Count > 0) sizes[^1] = 5;
+        else if (left == 2 && sizes.Count > 0) { sizes[^1] = 3; sizes.Add(3); }
+        else if (left > 0) sizes.Add(left);
+        return sizes;
     }
 
     /// <summary>The form with repeat signs where sections come again running, as tools/read_chords.py's

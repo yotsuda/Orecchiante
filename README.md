@@ -453,7 +453,8 @@ for one song). So **sections of six bars or fewer that come one after the other 
 better than `|: A :|` of four; four beside eight stay as they are). **Sections the form plays
 again right away repeat in the form**, so that the form alone shows how the song goes; the bars
 inside a section are written out. **And each line of the page is four bars of one section**
-(`break` after every four bars and where a section ends: a section begins a line):
+(`break` after every four bars and where a section ends: a section begins a line; a last bar
+alone joins the line before, and four and two bars are three and three):
 
 ```
 section A {
