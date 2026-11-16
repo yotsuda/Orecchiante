@@ -200,7 +200,7 @@ def lab_reading(truth, wav, labs, lines):
             "key": "C major", "bars": bars}
 
 
-EARS = "crema"        # the chord model --ears takes its chords from: scratch/chords-<this> (README: which model)
+EARS = "crema+btc"    # the chord model --ears takes its chords from: scratch/chords-<this> (README: which model; two ears since 2026-11-16, tools/two_ears.py)
 
 
 def ears_of(name):
@@ -593,9 +593,9 @@ def main():
     s.add_argument("--lines", help='bar lines found by other means: "truth", or a folder of <recording>.beats files')
     s.add_argument("--heard", help="with --lines: chords put together from what a model trained on recordings hears, "
                                    "a folder of <recording>.npz files (tools/btc_chords.py --probs)")
-    s.add_argument("--ears", nargs="?", const="crema", metavar="MODEL",
+    s.add_argument("--ears", nargs="?", const="crema+btc", metavar="MODEL",
                    help="--lines and --heard from where the README keeps them for each set (scratch/beats-bt, "
-                        "scratch/chords-crema); with a name, another chord model's (btc: scratch/chords-btc)")
+                        "scratch/chords-crema+btc: the two ears, tools/two_ears.py); with a name, another chord model's (crema, btc)")
     s = reader(sub.add_parser("all", help="every table of the README"), sets=None)
     s.add_argument("--write", type=Path, default=ROOT / "scratch" / "read-all", help="where the charts go (default: scratch/read-all)")
     s = reader(sub.add_parser("sweep", help="the table over a grid of constants"), sets=None)
@@ -604,15 +604,15 @@ def main():
     s.add_argument("--hint", action="store_true")
     s.add_argument("--lines", help="as for table")
     s.add_argument("--heard", help="as for table")
-    s.add_argument("--ears", nargs="?", const="crema", metavar="MODEL", help="as for table")
+    s.add_argument("--ears", nargs="?", const="crema+btc", metavar="MODEL", help="as for table")
     s = reader(sub.add_parser("doubt", help="do the marks point at the wrong chords?"))
     s.add_argument("--at", default=None, help="thresholds with commas between (default: the reader's DOUBT)")
-    s.add_argument("--ears", nargs="?", const="crema", metavar="MODEL", help="as for table")
+    s.add_argument("--ears", nargs="?", const="crema+btc", metavar="MODEL", help="as for table")
     s = reader(sub.add_parser("form", help="how much shorter the sections make a chart"))
-    s.add_argument("--ears", nargs="?", const="crema", metavar="MODEL", help="as for table")
+    s.add_argument("--ears", nargs="?", const="crema+btc", metavar="MODEL", help="as for table")
     s.add_argument("-v", "--verbose", action="store_true", help="a song's forms, read and true")
     s = reader(sub.add_parser("head", help="how a chart begins and ends: the first and last bar lines, pickups, chords read in silence"))
-    s.add_argument("--ears", nargs="?", const="crema", metavar="MODEL", help="as for table")
+    s.add_argument("--ears", nargs="?", const="crema+btc", metavar="MODEL", help="as for table")
     s.add_argument("-v", "--verbose", action="store_true", help="a line a song")
     s = reader(sub.add_parser("barlines", help="how the bar lines are missed, song by song"))
     s.add_argument("--hint", action="store_true")

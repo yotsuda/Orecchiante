@@ -228,7 +228,7 @@ ones chosen for BTC, and for crema other prices are within 0.3 of a point on `rw
 | The same: root and family | 88.4 to 93.1% | 91.0 to 94.8% | 90.7 to 95.4% | 88.9 to 93.3% | 91.2 to 95.1% |
 | The same: root and quality | 64.1 to 74.6% | 73.9 to 82.4% | 75.5 to 83.5% | 70.8 to 81.8% | 71.2 to 80.6% |
 
-**crema is the one the reader uses.** It is the only one whose author has said the weights are
+**crema was the one the reader used (until 0.4.0: below, the two ears).** It is the only one whose author has said the weights are
 under the licence of the code; it is the smallest; and on recordings it reads the roots and the
 families as well as any of the others. What it gives up is the sevenths on the songs made here
 (three to ten points behind BTC), and up to two and a half points of their roots. The numbers on RWC are not all
@@ -236,9 +236,30 @@ alike in worth: ChordMini's models learnt from RWC Pop songs (which ones is not 
 what crema learnt from is not written down, so RWC may be among it; only BTC is known not to
 have heard these songs, and only the songs made here are new to all four.
 
-Two ears are better than one, and that is kept for the day BTC's authors say what its weights
-may be used for (they have not been asked). Averaging crema's probabilities with BTC's reads
-`rwc-test` at 88.4% and 83.5%. And a second ear tells where the first is wrong: weighing in the
+**Since 2026-11-16 (0.4.0) the reader has two ears: crema and BTC, their probabilities averaged**
+(the owner's decision). BTC's repository is under MIT and its weights are in it; its authors say
+nothing else of them and answer no issues (one reply, in 2020, of twelve), while others already
+ship it in their apps. So it is carried under that license, with the notice
+(`extension/THIRD-PARTY-NOTICES.md`). As ONNX (`tools/d2/btc_onnx.py`: 13 MB, log p within 2e-5 of
+torch's, the same chord in 11750 frames of 11750) and in .NET (`Btc.cs`: BTC's own feature, ten
+seconds at a time, through the same `Cqt.Magnitude`; `Btc.Average`, as `tools/two_ears.py`), with
+the rules as they were:
+
+| `--ears`, crema → crema and BTC | `rwc-dev` (chosen on) | `rwc-test` (counted only) | `seed1` / `seed7` / `seed11` |
+|---|---|---|---|
+| Root | 86.4 → 87.3% | 87.3 → 88.8% | 95.1 → 95.5 / 93.1 → 94.4 / 94.5 → 96.7% |
+| Root and family | 82.2 → 82.9% | 82.2 → 83.9% | 91.6 → 92.4 / 88.4 → 90.9 / 92.3 → 94.3% |
+| Root and quality | 67.9 → 69.3% | 69.2 → 71.2% | 74.6 → 78.1 / 64.3 → 71.0 / 74.5 → 80.7% |
+| The bass note too | 64.1 → 65.0% | 64.9 → 66.5% | 73.6 → 76.9 / 58.7 → 65.1 / 73.8 → 80.1% |
+| Marked → of the wrong in root or family caught (`rwc-dev`, `rwc-test`, `seed1` together) | 26.9% → 73.3%, now 30.9% → 79.5% | | |
+
+The other sets made here go up as well (`seed21` root 94.8 → 97.0%, `seed41` quality 72.4 →
+78.5%), but for `seed31`'s family (93.1 → 92.6%). Read inside dettato (its own CQT and models)
+against Python's files: `seed1` the same numbers, `.lys` 22 of 24 the same (the `sure` of a few
+chords differs in the third decimal); RWC with the fold models' beats, the same numbers but for
+`rwc-test`'s quality, 71.3%. A song's chords take 0.8 s instead of 0.35.
+
+(Before: averaging crema's probabilities with BTC's read `rwc-test` at 88.4% and 83.5%.) And a second ear tells where the first is wrong: weighing in the
 second model's probability of the chord read, the least sure 30% of `rwc-test` hold 77.4% of the
 wrong chords instead of 75.2% (crema first, BTC second; 79.0% instead of 74.2% the other way
 round; weights fitted on `rwc-dev`; counted before the reader wrote sections, below), and a
@@ -286,17 +307,18 @@ crema; the same words hold for BTC, on which the prices and the marks were chose
 
 Counted on 2026-11-14 (`measure.py table rwc-dev rwc-test rwc-p --ears`; the beats of RWC are
 the fold models', as above; the first three columns again after "Two half bars are one bar" below,
-their tempo row after "The tempo to a tenth", and their bar lines after "A bar of 0.08 s"):
+their tempo row after "The tempo to a tenth", their bar lines after "A bar of 0.08 s", and their chords with the two ears
+since 0.4.0, "Which model hears the chords"):
 
 | | `rwc-dev` (chosen on) | `rwc-test` (counted only) | `rwc-p`, all 100 | crema as it is, `rwc-p` | with BTC's chords, `rwc-p` |
 |---|---|---|---|---|---|
 | Tempo (within 4%), songs | 47 of 50 | 47 of 50 | 94 | 91 | 93 |
 | Meter, songs | 49 of 50 | 49 of 50 | 98 | 96 | 98 |
 | Bar lines (within 70 ms), F | 93.7% | 95.0% | 94.3% | 93.8% | 93.4% |
-| Chord root, by time | 86.4% | 87.3% | 86.9% | 84.4% | 85.9% |
-| Root and family | 82.2% | 82.2% | 82.2% | 79.8% | 80.6% |
-| Root and quality | 67.9% | 69.2% | 68.6% | 66.5% | 67.1% |
-| The bass note too | 64.1% | 64.9% | 64.5% | 61.4% | 62.8% |
+| Chord root, by time | 87.3% | 88.8% | 88.1% | 84.4% | 85.9% |
+| Root and family | 82.9% | 83.9% | 83.4% | 79.8% | 80.6% |
+| Root and quality | 69.3% | 71.2% | 70.3% | 66.5% | 67.1% |
+| The bass note too | 65.0% | 66.5% | 65.8% | 61.4% | 62.8% |
 
 Two points of root and of family come from the rules (a chord lasts whole half beats and
 changes where bars say it may; with BTC's chords, three). The bass note is still this reader's
@@ -319,12 +341,12 @@ are BTC's still: fitted again on crema they catch a point more of `rwc-dev` and 
 
 | The marks, `--ears` | `rwc-dev` | `rwc-test` (counted only) | `rwc-p`, all 100 | with BTC's chords: `rwc-dev` (chosen on), `rwc-test` |
 |---|---|---|---|---|
-| Chords read | 6893 | 6697 | 13590 | 7274, 7042 |
-| Wrong in root or family | 14.6% | 15.9% | 15.2% | 19.0%, 18.0% |
-| Marked | 29.7% | 25.3% | 27.6% | 30.8%, 24.1% |
-| Of the chords wrong in root or family, marked | 77.5% | 69.6% | 73.4% | 79.5%, 63.1% |
-| Of the marked, wrong in root or family | 38.1% | 43.5% | 40.6% | 49.0%, 47.2% |
-| Marked and wrong so: the chord offered has the true root and family | 57.2% | 52.6% | 55.0% | 42.1%, 45.2% |
+| Chords read | 6911 | 6724 | 13635 | 7274, 7042 |
+| Wrong in root or family | 13.9% | 14.6% | 14.2% | 19.0%, 18.0% |
+| Marked | 35.2% | 28.7% | 32.0% | 30.8%, 24.1% |
+| Of the chords wrong in root or family, marked | 86.4% | 72.8% | 79.5% | 79.5%, 63.1% |
+| Of the marked, wrong in root or family | 34.0% | 37.1% | 35.3% | 49.0%, 47.2% |
+| Marked and wrong so: the chord offered has the true root and family | 54.7% | 49.3% | 52.2% | 42.1%, 45.2% |
 
 (The marks of this table are up to a point more than the line alone gives: a chord two playings
 of a section disagree on is marked too, see "What is said again". And they are up to a point more
@@ -672,6 +694,9 @@ recording that is not a `.wav`.
 .venv-crema/Scripts/python tools/d2/crema_classes.py                               # the order of its 170 chords
 $env:PYTHONUTF8 = "1"
 .venv-bt/Scripts/python tools/d2/bt_onnx.py scratch/real/rwc-p --songs 10 --how dynamo   # scratch/d2/beat-this-final0-dynamo.onnx
+.venv-bt/Scripts/python tools/d2/btc_onnx.py scratch/btc scratch/real/rwc-p --songs 5   # scratch/d2/btc-large-voca.onnx (the second ear)
+.venv-bt/Scripts/python tools/btc_chords.py scratch/btc data/synth/seed41 --out scratch/chords-btc/seed41 --probs   # BTC's for a set
+py -3.12 tools/two_ears.py scratch/chords-crema/seed41 scratch/chords-btc/seed41 --out scratch/chords-crema+btc/seed41   # what --ears reads
 .venv-bt/Scripts/python tools/d2/bt_mel.py data/synth/seed1 --out scratch/d2/mel/seed1   # torch's mel, to compare with
 py -3.12 -m venv scratch/d2/venv-onnx
 scratch/d2/venv-onnx/Scripts/python -m pip install numpy librosa soxr soundfile onnxruntime
@@ -714,10 +739,10 @@ another), and the bar lines of RWC, which need the fold models as ONNX to count.
 ```
 dotnet build src/Dettato -c Release -o scratch/net/out
 scratch/net/out/dettato.exe ears data/synth/seed1 --out scratch/net/seed1 --models scratch/d2 --cqt
-scratch/d2/venv-onnx/Scripts/python tools/net_check.py data/synth/seed1 scratch/net/seed1 --heard scratch/chords-crema/seed1 --beats scratch/beats-bt/seed1
+scratch/d2/venv-onnx/Scripts/python tools/net_check.py data/synth/seed1 scratch/net/seed1 --heard scratch/chords-crema+btc/seed1 --beats scratch/beats-bt/seed1
 .venv/Scripts/python tools/measure.py table seed1 --lines scratch/net/seed1 --heard scratch/net/seed1
 scratch/net/out/dettato.exe ears scratch/real/rwc-p --out scratch/net/rwc-p --models scratch/d2 --cqt     # 9 minutes
-scratch/d2/venv-onnx/Scripts/python tools/net_check.py scratch/real/rwc-p scratch/net/rwc-p --heard scratch/real/chords-crema
+scratch/d2/venv-onnx/Scripts/python tools/net_check.py scratch/real/rwc-p scratch/net/rwc-p --heard scratch/real/chords-crema+btc
 .venv/Scripts/python tools/measure.py table rwc-dev rwc-test --lines scratch/real/beats-bt-folds --heard scratch/net/rwc-p
 ```
 
@@ -793,8 +818,8 @@ heard those songs, so its bar lines are not to be counted).
 ```
 scratch/net/out/dettato.exe read song.wav --out charts --models scratch/d2      # song.lys and song.dettato.json
 .venv/Scripts/python tools/measure.py table seed1 rwc-dev rwc-test --ears --net scratch/net --write scratch/pyread
-scratch/net/out/dettato.exe read data/synth/seed1 --out scratch/net/read/seed1 --lines scratch/beats-bt/seed1 --heard scratch/chords-crema/seed1
-scratch/net/out/dettato.exe read scratch/real/rwc-p --out scratch/net/read/rwc-p --lines scratch/real/beats-bt-folds --heard scratch/real/chords-crema   # 27 s
+scratch/net/out/dettato.exe read data/synth/seed1 --out scratch/net/read/seed1 --lines scratch/beats-bt/seed1 --heard scratch/chords-crema+btc/seed1
+scratch/net/out/dettato.exe read scratch/real/rwc-p --out scratch/net/read/rwc-p --lines scratch/real/beats-bt-folds --heard scratch/real/chords-crema+btc   # 27 s
 py -3.12 tools/read_check.py scratch/pyread/seed1 scratch/net/read/seed1
 py -3.12 tools/read_check.py scratch/pyread/rwc-dev scratch/net/read/rwc-p
 .venv/Scripts/python tools/measure.py table seed1 rwc-dev rwc-test --ears --read scratch/net/read

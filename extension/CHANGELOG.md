@@ -2,6 +2,12 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.4.0
+
+- Two ears for the chords: BTC (MIT) now listens beside crema, and their probabilities are
+  averaged. On the RWC songs counted only, roots 87.3% → 88.8% and root and family 82.2% → 83.9%;
+  sevenths read much better on the songs made here. The extension is 13 MB larger.
+
 ## 0.3.5
 
 - A bar far shorter than the rest (a quarter of the middle one or less: the beat model marking one

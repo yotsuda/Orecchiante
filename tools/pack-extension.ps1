@@ -1,16 +1,16 @@
 param(
     [string]$Out = "$PSScriptRoot\..\out\extension",   # the staging folder and the .vsix
-    [string]$Models = "$PSScriptRoot\..\scratch\d2"    # where the two .onnx are (README: how they are made)
+    [string]$Models = "$PSScriptRoot\..\scratch\d2"    # where the three .onnx are (README: how they are made)
 )
 # The reader as a VS Code extension (docs/ROADMAP.md, D2 and D4; the shape is Calamo's): dettato.exe
-# published self-contained for win-x64 into extension/bin, the two models beside it (where the program
+# published self-contained for win-x64 into extension/bin, the three models beside it (where the program
 # looks for them), its `dettato --version --json` (bin/dettato.json, which extension.js hands to Lily#),
 # the licenses of what is bundled, and `vsce package --target win32-x64`.
 # Packages only: it publishes nothing. The icon and the LICENSE are the repository's own (one copy of each).
 $ErrorActionPreference = 'Stop'
 $root = Resolve-Path "$PSScriptRoot\.."
 $ext = "$root\extension"
-$onnx = 'beat-this-final0-dynamo.onnx', 'crema-chord.onnx'
+$onnx = 'beat-this-final0-dynamo.onnx', 'crema-chord.onnx', 'btc-large-voca.onnx'
 foreach ($name in $onnx) {
     if (-not (Test-Path "$Models\$name")) { throw "$name is not in ${Models}: pass -Models <folder>" }
 }

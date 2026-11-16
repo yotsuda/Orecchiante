@@ -62,9 +62,38 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+## BTC
+
+`bin/btc-large-voca.onnx` — says which chord is sounding, with crema (their probabilities are averaged). It is
+the large-vocabulary model of BTC (`test/btc_model_large_voca.pt`), written out as ONNX with the mean and the
+deviation saved beside its weights, unchanged otherwise. <https://github.com/jayg996/BTC-ISMIR19>
+The weights are in the repository, which is under the license below; its authors say nothing else about them.
+
+MIT License
+
+Copyright (c) 2019 Jonggwon Park
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 ## ONNX Runtime
 
-`bin/onnxruntime.dll`, `bin/Microsoft.ML.OnnxRuntime.dll` — runs the two models.
+`bin/onnxruntime.dll`, `bin/Microsoft.ML.OnnxRuntime.dll` — runs the three models.
 <https://github.com/microsoft/onnxruntime>
 
 Copyright (c) Microsoft Corporation, under the MIT License. Its license and its own third-party
