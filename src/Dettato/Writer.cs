@@ -123,7 +123,7 @@ static class Writer
 
     /// <summary>The form with repeat signs where sections come again running, as tools/read_chords.py's
     /// form_with_repeats: a run of sections said again (|: A B :|, |: A :|*3), or a section followed by a different
-    /// section each time (|: A [1. B] :| [2. C]). The pickup is written as it comes.</summary>
+    /// section each time (|: A [1. B] :| [2. C], |: B C B [1. D] :| [2. E]). The pickup is written as it comes.</summary>
     static string FormWithRepeats(List<string> form)
     {
         int n = form.Count, i = 0;
@@ -140,19 +140,21 @@ static class Writer
                 if (times > 1 && (best is null || (times - 1) * length > best.Value.Saved))
                     best = ((times - 1) * length, "|: " + string.Join(" ", unit) + (times == 2 ? " :|" : $" :|*{times}"), times * length);
             }
-            if (form[i] != "Pickup")
+            for (int length = 1; length <= (n - i) / 2; length++)   // a body of `length` sections, a different section after it each time
             {
+                var body = form.GetRange(i, length);
+                if (body.Contains("Pickup")) break;
                 int j = i;
                 var endings = new List<string>();
-                while (j + 1 < n && form[j] == form[i] && form[j + 1] != form[i] && !endings.Contains(form[j + 1]))
+                while (j + length < n && form.GetRange(j, length).SequenceEqual(body) && form[j + length] != body[0] && !endings.Contains(form[j + length]))
                 {
-                    endings.Add(form[j + 1]);
-                    j += 2;
+                    endings.Add(form[j + length]);
+                    j += length + 1;
                 }
-                if (endings.Count > 1 && (best is null || endings.Count - 1 > best.Value.Saved))
+                if (endings.Count > 1 && (best is null || (endings.Count - 1) * length > best.Value.Saved))
                 {
                     string words = string.Join(" ", endings.Select((e, k) => $"[{k + 1}. {e}]" + (k < endings.Count - 1 ? " :|" : "")));
-                    best = (endings.Count - 1, $"|: {form[i]} {words}", j - i);
+                    best = ((endings.Count - 1) * length, $"|: {string.Join(" ", body)} {words}", j - i);
                 }
             }
             if (best is null)

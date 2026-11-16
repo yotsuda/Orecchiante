@@ -469,14 +469,14 @@ section A {
   }
 }
 ...
-form { A |: B [1. C] :| [2. D] |: B [1. C] :| [2. E] :| [3. F] }
+form { A |: B C B [1. D] :| [2. E] B F }
 ```
 
 That is `|: A :|`, `|: A B :|`, `|: A :|*3`, or `|: A [1. B] :| [2. C]` with one section in each
-ending (the rules: [SIDECAR.md](docs/SIDECAR.md), "The chart and the file"). The bars in
+ending and a body of one section or more (`|: B C B [1. D] :| [2. E]`) (the rules: [SIDECAR.md](docs/SIDECAR.md), "The chart and the file"). The bars in
 `.dettato.json` are as played, and Lily# plays each chart as many bars as the file has
 (`tools/sidecar.py` counts them from `lysc midi`, the repeats played). Of the charts `--ears`
-writes, signs are in 73 of the 100 RWC songs and in 79 of the 168 songs made here (the seven
+writes, signs are in 76 of the 100 RWC songs and in 79 of the 168 songs made here (the seven
 sets `read_check.py` compares). A passage that comes again later, not right away (a verse after
 a chorus), is a section the form names again, as before. Tried first and taken back the same
 day: signs inside a section's chords too (`|: C | G :|`, `|: C | G | [1. Am :| [2. F | ]`), and a

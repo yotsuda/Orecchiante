@@ -15,8 +15,8 @@
   section の中は書き出す。`form_with_repeats`／`FormWithRepeats`。`sidecar.py` は `lysc midi --batch` から演奏の小節数を数える。
 - **改行: 4 小節ごとと section の終わりに `break`**（section は必ず行の頭から。弱起には書かない）。余り 1 は前の行と 5、余り 2 は 3・3（`line_sizes`／`LineSizes`）。
 - **捨てた案（同じ日に試して戻した）:** chords の中の `|: … :|`・1 番 2 番、4 小節の section の 2 回を `|: A :|`（オーナー: 8 小節を書き出す方が使いやすい）。
-- 268 曲で Python と .NET が一字一句同じ、`lysc check`・sidecar 268/268。記号は RWC 73/100、合成曲 79/168。My Life は
-  `form { A |: B [1. C] :| [2. D] |: B [1. C] :| [2. E] :| [3. F] }`（16・14・8・16・16・18 小節）。png で見た。**この形はオーナーがまだ見ていない。**
+- 268 曲で Python と .NET が一字一句同じ、`lysc check`・sidecar 268/268。記号は RWC 76/100、合成曲 79/168。My Life は
+  `form { A |: B C B [1. D] :| [2. E] B F }`（オーナーの案から。本体は複数の section でもよい）。png で見た。**この形はオーナーがまだ見ていない。**
 
 ### 書き出し先と `audio`（2026-11-16、オーナーの希望。依頼 6）
 

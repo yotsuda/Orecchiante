@@ -105,7 +105,7 @@ seconds, `fit` and `sure` are each playing's own.
 - **Repeat signs are in the chart's `form` only (2026-11-16, the owner's wish: the form alone
   shows how the song goes)**: sections played again running are `|: A :|`, `|: A B :|`,
   `|: A :|*3`, and a section followed by a different section each time is `|: A [1. B] :| [2. C]`
-  (one section in each ending). The bars inside a section are written out. The file's `form`
+  (one section in each ending; the body may be several sections, `|: B C B [1. D] :| [2. E]`). The bars inside a section are written out. The file's `form`
   stays as played (`["A", "A", "B"]` for `|: A :| B`).
 - **Sections of six bars or fewer that come one after the other are one section** (2026-11-16, the
   owner's wish: four and four make eight, also the same four twice; four beside eight stay). So

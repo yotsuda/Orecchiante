@@ -991,8 +991,8 @@ def line_sizes(bars):
 
 def form_with_repeats(form):
     """The form with repeat signs where sections come again running: a run of sections said again
-    (|: A B :|, |: A :|*3), or a section followed by a different section each time (|: A [1. B] :|
-    [2. C]). The pickup is written as it comes. The one that saves the most sections' playings is
+    (|: A B :|, |: A :|*3), or sections followed by a different section each time (|: A [1. B] :|
+    [2. C], |: B C B [1. D] :| [2. E]). The pickup is written as it comes. The one that saves the most sections' playings is
     taken first."""
     n, i, out = len(form), 0, []
     while i < n:
@@ -1006,14 +1006,18 @@ def form_with_repeats(form):
                 times += 1
             if times > 1 and (best is None or (times - 1) * length > best[0]):
                 best = ((times - 1) * length, "|: " + " ".join(unit) + (" :|" if times == 2 else f" :|*{times}"), times * length)
-        if form[i] != "Pickup":
+        for length in range(1, (n - i) // 2 + 1):   # a body of `length` sections, a different section after it each time
+            body = form[i:i + length]
+            if "Pickup" in body:
+                break
             j, endings = i, []
-            while j + 1 < n and form[j] == form[i] and form[j + 1] != form[i] and form[j + 1] not in endings:
-                endings.append(form[j + 1])
-                j += 2
-            if len(endings) > 1 and (best is None or len(endings) - 1 > best[0]):
+            while j + length < n and form[j:j + length] == body and form[j + length] != body[0] \
+                    and form[j + length] not in endings:
+                endings.append(form[j + length])
+                j += length + 1
+            if len(endings) > 1 and (best is None or (len(endings) - 1) * length > best[0]):
                 words = " ".join(f"[{k + 1}. {e}]" + (" :|" if k < len(endings) - 1 else "") for k, e in enumerate(endings))
-                best = (len(endings) - 1, f"|: {form[i]} {words}", j - i)
+                best = ((len(endings) - 1) * length, f"|: {' '.join(body)} {words}", j - i)
         if best is None:
             out.append(form[i])
             i += 1

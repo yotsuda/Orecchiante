@@ -12,7 +12,7 @@ Notable changes to Dettato are recorded here, newest first.
   to 32 bars; a longer one is cut at a turn of the music or every eight bars.
 - Four bars a line (a last bar alone joins the line before, four and two are three and three), and every section begins a line.
 - The form writes repeat signs where sections come again right away (`|: A :|`,
-  `|: A [1. B] :| [2. C]`), so that it shows how the song goes. Lily# plays the chart bar for bar
+  `|: A [1. B] :| [2. C]`, `|: B C B [1. D] :| [2. E]`), so that it shows how the song goes. Lily# plays the chart bar for bar
   as before.
 - A chart written in another folder than the recording's (`-o`) names the recording by the way to
   it (`../Music/x.mp3`, or the whole path on another drive), not by its file name alone.
