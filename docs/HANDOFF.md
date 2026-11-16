@@ -88,12 +88,11 @@
   オーナーの 2 曲は同じ。原因は 7.8 秒の区間の端。道具は `scratch/sec/ov_cmp.py <A> <B>`（section の頭の差と最寄りの AIST）・`ov_edges.py`。歌は `scratch/net/voice-ov0/`（消してよい）。
 - **次:** (1) 歌の中の境目（AIST の verse A→B）。手がかり候補: 旋律の音域・歌の密度・ドラムの型。
   (2) 速くする手が要るなら: 重なりを 4 分の 1 より小さく（8 分の 1 など、同じ道具で測る。未測定）、空いた PC で測り直す、蒸留した小さなモデル（学習の音源はオーナーが決める）。
-- **Lily# 依頼 15（拍が 1 秒 2.37 ms 遅れる、My Life）: 同じファイルを `tools/beat_phase.py` で測ると伸びはない**（傾き −0.02 ms/秒）。Lab の計器（中身 1 バイトで読めない）の標本化率を見てほしいと返事した（`docs/repro/dettato-reply-2026-11-16-beat-drift.md`）。Lily# の答え待ち。
 - **糸の M64 は rit ではなく 6 拍の小節**（オーナー。4＋2 拍、M65 に `time 2/4`）。手がかりは Beat This! の downbeat の値: G の小節の頭が今の組み方で平均 2.3、2 拍ずらすと 3.5（`scratch/sec/downs.py`、`.venv-bt`）。
   案: 2 拍ずつ組む所で向きを downbeat の値で選び、入れ替わる所に 2 拍の小節（値段つき）。要るもの: `.beats` に 3 列目（downbeat の値）＝`track_beats.py` と `Beats.cs`、全セットの拍の作り直し。未着手。
   書き方は **Lily# 依頼 13（コードの行の中の `time 2/4`）＝Lily# master `91187cf45` で fixed**（小節の頭だけ。次の `time` か section の終わりまで効く。次の section は見出しの拍子に戻る）。
   **オーナーは Lily# を手元に入れた＝行の中の `time 2/4` で書いてよい**（手元の lysc で通ることを確かめた。2026-11-16）。
-- Lily# 依頼 11（小節数が違っても少ない方まで鳴らす）は Lily# master `184efc304` で fixed。オーナーの版で確かめたら `done`。
+- Lily# 依頼 11（小節数が違っても少ない方まで鳴らす）は Lily# master `184efc304` で fixed。オーナーの版で確かめたら `done`。依頼 15（拍の伸び）は Lily# の計器の誤りで closed（Dettato の拍は伸びていない）。
 
 **それから、ユーザーの録音で聴いてもらう**: ベースで弾く曲・バンド練習（`F:\Music\ギャラン☆Do!\`、58 分は `scratch/d3/user/long-only/`、曲ごとにテンポが変わる＝C3）。
 - **D4 で Dettato 側に作るものは今はない**（読み直しは単に上書き＝オーナー決定、設計メモ §6）。配り直すときは版を 2 か所（`Program.cs`・`extension/package.json`）と CHANGELOG で上げて `tools/deploy-extension.ps1`。
@@ -105,8 +104,7 @@
 
 やり残し（急がない）:
 - **Beat This! の `small0`（8 MB）と半精度は測れていない**（配布元 cloud.cp.jku.at が 500）。取れたら `track_beats.py --model small0` で `final0` と比べる。
-- 和音のないイントロの小節（`rwc-dev` の P027）は譜面に入れていない。`fold`・`beat_names`・`lys()` が「和音のない拍」を扱う必要がある（Lily# は `r` で N.C.）。
-- 最後の和音の終わりは `.dettato.json` にない。`check` は `lysc check --batch` で速くなる。crema の `chord_root`・`chord_bass`・`chord_pitch` は未使用。
+- 和音のないイントロの小節（`rwc-dev` の P027）は譜面に入れていない。`fold`・`beat_names`・`lys()` が「和音のない拍」を扱う必要がある（Lily# は `r` で N.C.）。最後の和音の終わりは `.dettato.json` にない。`check` は `lysc check --batch` で速くなる。crema の `chord_root`・`chord_bass`・`chord_pitch` は未使用。
 
 ## 環境（この PC）
 
