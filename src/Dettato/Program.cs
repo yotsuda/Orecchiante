@@ -42,7 +42,7 @@ using System.Text;
 using Dettato;
 using Microsoft.ML.OnnxRuntime;
 
-const string version = "0.3.1";
+const string version = "0.3.2";
 const int protocol = 1;
 const string usage = "usage: dettato <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]\n"
                    + "       dettato --version [--json]\n"
@@ -171,7 +171,7 @@ if (args[0] is not ("read" or "ears" or "features" or "audio"))
         // The recording as the chart finds it: its file name beside the chart, else the way there from the chart's
         // folder ('/' between folders; the whole path when they are on different drives). SIDECAR.md, `audio`.
         chart.Audio = Path.GetRelativePath(Path.GetDirectoryName(chartPath)!, Path.GetFullPath(recording)).Replace('\\', '/');
-        lys = Writer.Lys(chart, Path.GetFileNameWithoutExtension(recording));
+        lys = Writer.Lys(chart, Path.GetFileNameWithoutExtension(recording), Lysc.Shape);
         json = Writer.Json(chart);
         int marks = lys.Split("@todo").Length - 1;
         Console.Error.WriteLine($"  {chart.Bars.Count} bars in {chart.Time} at {chart.BpmText}, {chart.Key}; {marks} {(marks == 1 ? "chord" : "chords")} marked @todo");

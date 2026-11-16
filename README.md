@@ -790,6 +790,12 @@ not read, a chart already there without `--force`); 3 the reader itself (a model
 The two files are written at the end, under other names first: a reading stopped half-way leaves
 nothing. The models are beside the program, or where `--models` says.
 
+When `LILYSHARP_LYSC_PATH` names Lily#'s `lysc` (Lily#'s Convert Recording sets it, 2026-11-16),
+the first chord of the chart is written with its guitar shape, `D(xx0232)`, so that its diagram
+shows: the shape Lily#'s editor offers first, as `lysc shape D` says it (`Lysc.cs`, `lysc_shape`;
+nothing of Lily#'s shapes is kept here). Without the variable, or with a `lysc` that does not know
+`shape`, the name alone, as before. `dettato read` and the measuring never ask.
+
 A plain `.wav` (16 or 24 bit, float) is read by the program itself, as before; every other kind
 by Windows' Media Foundation, through NAudio (MIT), so no decoder is carried. Media Foundation
 leaves in front the silence an encoder adds, which a browser or ffmpeg takes out; so does the

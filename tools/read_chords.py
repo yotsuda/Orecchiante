@@ -25,6 +25,8 @@ This is the line to beat, written to be measured (tools/score_chords.py), not to
 """
 import argparse
 import json
+import os
+import subprocess
 import sys
 from collections import Counter
 from pathlib import Path
@@ -915,11 +917,33 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
     }
 
 
-def lys(result, title):
+def lysc_shape(name):
+    """The guitar shape Lily#'s editor writes first for a chord name (`lysc shape D` -> "D\txx0232"), when Lily#
+    says where its lysc is (LILYSHARP_LYSC_PATH, Lily# REQUESTS 9); else None. As Lysc.cs."""
+    lysc = os.environ.get("LILYSHARP_LYSC_PATH")
+    if not lysc or not os.path.isfile(lysc):
+        return None
+    try:
+        done = subprocess.run([lysc, "shape", name], capture_output=True, text=True, encoding="utf-8", timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if done.returncode != 0:
+        return None
+    for line in done.stdout.split("\n"):
+        parts = line.rstrip("\r").split("\t")
+        if len(parts) == 2 and parts[0] == name:
+            return parts[1] or None
+    return None
+
+
+def lys(result, title, shape_of=None):
+    """The chart. `shape_of`: a chord name's guitar shape (lysc_shape), or None: the first chord is written with it,
+    so that its diagram shows (the owner, 2026-11-16)."""
     tonic, mode = result["key"].split()
     acc = {"": "", "#": "is", "b": "es"}[tonic[1:]]
     beats = 2 if result["time"] == "6/8" else int(result["time"].split("/")[0])
     noted = []                          # the note on the diagrams is written yet
+    shaped = []                         # the first chord has been given its shape
 
     def slots(said):
         """A bar as Lily# writes it: a chord on the beat it starts on, '.' where it goes on.
@@ -938,6 +962,11 @@ def lys(result, title):
             if heard and sum(c["sure"] for c in heard) / len(heard) < DOUBT:
                 doubts[name] = min(heard, key=lambda c: c["sure"])["other"]
         marks = [f'{m}@todo("or {doubts[m]}?")' if m in doubts else m for m in marks]
+        if shape_of and not shaped:
+            shaped.append(True)
+            shape = shape_of(names[0])
+            if shape:
+                marks[0] = f"{names[0]}({shape})" + marks[0][len(names[0]):]
         if all(m == "." for m in marks[1:]):
             return marks[0]
         half = beats // 2
@@ -1073,7 +1102,7 @@ def main():
             continue
         (args.out / (path.stem + ".dettato.json")).write_text(
             json.dumps(result, indent=2) + "\n", encoding="utf-8", newline="\n")
-        (args.out / (path.stem + ".lys")).write_text(lys(result, path.stem), encoding="utf-8", newline="\n")
+        (args.out / (path.stem + ".lys")).write_text(lys(result, path.stem, lysc_shape), encoding="utf-8", newline="\n")
         read_chords = [c for bar in result["bars"] for c in bar["chords"]]
         doubted = sum(c.get("sure", 1.0) < DOUBT for c in read_chords)
         print(f"{path.name}: {result['key']}, {result['time']}, {result['tempo']['bpm']}, "

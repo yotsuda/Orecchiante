@@ -2,6 +2,13 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.3.2
+
+- The first chord of the chart is written with its guitar shape (`D(xx0232)`), so that its
+  diagram shows: the shape Lily#'s editor offers first, asked of Lily#'s own `lysc shape` when
+  Lily# says where lysc is (`LILYSHARP_LYSC_PATH`, set by its Convert Recording). Without it, the
+  chord name alone, as before.
+
 ## 0.3.1
 
 - The tempo is written to a tenth (`tempo 4 = 131.8`; a whole number stays bare), in the chart

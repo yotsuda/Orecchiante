@@ -21,8 +21,11 @@ static class Writer
         return names;
     }
 
-    public static string Lys(Chart chart, string title)
+    /// <param name="shapeOf">The guitar shape of a chord name (Lily#'s default, `lysc shape`), or null for none: the
+    /// first chord of the chart is written with it, so that its diagram shows (the owner, 2026-11-16).</param>
+    public static string Lys(Chart chart, string title, Func<string, string?>? shapeOf = null)
     {
+        bool shaped = shapeOf == null;
         string[] key = chart.Key.Split(' ');
         string tonic = key[0], mode = key[1];
         string accidental = tonic[1..] switch { "#" => "is", "b" => "es", _ => "" };
@@ -50,6 +53,11 @@ static class Writer
                 if (sum / heard.Count < doubt) doubts[name] = heard.MinBy(c => c.Sure!.Value)!.OtherName!;
             }
             marks = [.. marks.Select(m => doubts.TryGetValue(m, out string? other) ? $"{m}@todo(\"or {other}?\")" : m)];
+            if (!shaped)
+            {
+                shaped = true;
+                if (shapeOf!(names[0]) is { Length: > 0 } shape) marks[0] = names[0] + $"({shape})" + marks[0][names[0].Length..];
+            }
             if (marks.Skip(1).All(m => m == ".")) return marks[0];
             int half = beats / 2;
             if (brief == 0 && beats % 2 == 0 && marks.Where((m, i) => i != 0 && i != half).All(m => m == "."))
