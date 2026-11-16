@@ -3,15 +3,12 @@
 **毎セッションの終わりに書き換える**（追記しない。200 行以内）。方向づけは [ROADMAP.md](ROADMAP.md)、
 数字と使い方は [README](../README.md)、録音の出典は [DATASETS.md](DATASETS.md)。
 
-最終更新: 2026-11-16 深夜（0.5.0: 意味で切る section を既定に、.NET にも写して入れた。その前に AIST の構造の注釈で測り、句を 4 小節に。その前の同日: 半分の小節を組む＝拡張 0.4.1。その前の同日: テンポを小数 1 桁に、lysc のシェイプ、2 番カッコ、短い section の名前を隠す、0.08 秒の小節、2 つ目の耳 BTC。HEAD は `git log -1` で確かめる）。
+最終更新: 2026-11-17 未明（0.6.0: 歌のモデル（Demucs）を .NET に入れ、歌の出入りで section を切る。依頼 15 に返事。その前に 0.5.0: 意味で切る section を既定に。その前の 11-16: 半分の小節、テンポの小数、2 つ目の耳 BTC など。HEAD は `git log -1` で確かめる）。
 
-### 同日に入れたもの（詳しくは README と git の履歴）
-- **2 つ目の耳 BTC（0.4.0、オーナー決定）:** crema と BTC の確率を平均（`Btc.cs`・`tools/two_ears.py`、ONNX 13 MB を同梱）。`rwc-test` ルート 87.3 → 88.8%。`measure.py --ears` の既定は `crema+btc`。
-- **0.08 秒の小節（0.3.5、依頼 10）:** 中央値の 1/4 未満の小節は短い方の隣と 1 つに（`TINY_BAR`）。**半分の小節（0.4.1、README「Half bars」）:** `HALF_BARS`（中央値の 0.35〜0.7）・`pair_halves`／`PairHalves`。
-  半分に挟まれた 1 小節は拍で 2 つに、奇数個の余りの置き場は調で選ぶ（偶数個まで調に任せるのは捨てた）。糸は 89 → 71 小節。**半分のテンポで読んでいた RWC の 4 曲（P050・P095・P034・P038）では悪くなる。**
-- テンポは小数 1 桁（`TENTH_TEMPO`。「拍の総数 ÷ 全長」は捨てた）。`.lys` に font と diagram の注記、最初のコードに `lysc shape` のシェイプ（`LILYSHARP_LYSC_PATH`）。
-- **0.5.0（オーナー了承）: section は意味で切るのが既定**（下の「section」）。前の分け方（`find_form`・`fold`・`lead_off`・`name_sections`・繰り返し記号）は Python の `--old-sections` だけに残し、.NET からは消した。
-  改行は 4 小節ごと（`line_sizes`）、0.4.2 から `| break`。
+### 11-16 に入れたもの（詳しくは README と git の履歴）
+- **2 つ目の耳 BTC（0.4.0）**: crema と BTC の確率を平均（`Btc.cs`・`tools/two_ears.py`）。**0.08 秒の小節（0.3.5）**: `TINY_BAR`。テンポは小数 1 桁（`TENTH_TEMPO`）。最初のコードに `lysc shape`。
+- **半分の小節（0.4.1、README「Half bars」）**: `HALF_BARS`・`pair_halves`／`PairHalves`。糸は 89 → 71 小節。**半分のテンポで読んでいた RWC の 4 曲（P050・P095・P034・P038）では悪くなる。**
+- **0.5.0: section は意味で切るのが既定**。前の分け方は Python の `--old-sections` だけに残し、.NET からは消した。改行は 4 小節ごと、0.4.2 から `| break`。
 
 ### D4 の形（2026-11-15、オーナーと話して決めた。依頼 4・[便り](repro/lilysharp-requests-2026-11-15-listening.md)）
 **Lily# の設計メモ `C:\MyProj\LilySharp\docs\recording-design.md`（セッションの頭に読む）:** 紐づけは隣のファイル（形式 2）だけ、m4a は Lily# の LSP が復号。
@@ -21,7 +18,7 @@
 
 **`dettato <録音> [-o <x.lys>] [--force]` が、mp3・m4a・mp4・aac・flac・wma・wav から `.lys` と `.dettato.json` を録音の隣に書く**
 （Python なし。RWC_P001 の mp3 で 6.3 秒）。配る形は .NET＋ONNX の実行ファイルを VS Code 拡張に入れる（Calamo と同じ形）。
-**拡張 `yotsuda.dettato` 0.5.0 をこの PC の VS Code に入れた**（0.5.0: 意味で切る section、声なし。`--version --json` で 0.5.0 を確かめた）（`extension/`、`tools/deploy-extension.ps1`。113 MB、Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
+**拡張 `yotsuda.dettato` 0.6.0 をこの PC の VS Code に入れた**（0.6.0: 歌を聞いて section を切る。入った版で My Life の mp3 を読んで確かめた）（`extension/`、`tools/deploy-extension.ps1`。.vsix 171 MB、Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
 「Convert Recording to Lily# (.lys)… (Preview)」で、Lily# が `ext.activate()` で `{path, version, protocol, inputs}` を受け取る。**VS Code の中で動くことはユーザーが確かめた（0.2.0。0.3.x は Lily# のメニューからはまだ）。**
 
 ### コマンドと入力（D3。`Program.cs`・`Audio.cs`。README の「A recording as it comes」、Lily# 向けは便りの §2a）
@@ -75,19 +72,22 @@
 
 ## 次の一手
 
-**section（意味で切る。0.5.0 で既定、.NET にも。オーナー: 調や曲調が変わる所・歌が入る所・ソロで切りたい）**
+**section（意味で切る。0.5.0 で既定、0.6.0 で歌も .NET に。オーナー: 調や曲調が変わる所・歌が入る所・ソロで切りたい）**
 - オーナーが手で分けた 2 曲: 糸（`scratch/ito/ito-one.lys`: 1・9・17・21・28・32・40・44・51・59）、My Life（`scratch/sec/phrase/mylife-owner.lys`: 1・9・17・31・39・53・69・83・91・105・121・129・135・151）。
-  声ありで 2 曲とも全部、余分なしで出す（糸は終わり 67 が増えるだけ）。**声なし（＝今配っている .NET）では糸が 9 つ中 5 つを落とす**（21〜40 が 1 つの D）、My Life は 129 だけ。
-  確かめは `scratch/sec/try.py [定数=値 …]`（`NOVOICE=1` で声なし）と `tools/aist_sections.py rwc-dev`（20 秒）。**規則を触ったら必ず両方を見る**。.NET に写したら `read_check.py`。
-- 仕組み（README「Sections by meaning」）: 歌の出入り（Demucs の `<name>.voc.npy`、Python の `--voice` だけ）・調号 2 つ以上・6 dB で塊に切り、丸ごと別の所で鳴る塊の頭と終わり、長い塊の中は 4 小節の句（`PHRASE_BARS`）の格子で
-  「同じ句 2 回の終わり」「V→I」「別の所でも始まる句（そこの 2/3 以上で前の小節が違う＝`BEGIN_SHARE`）」で切る。名前は再演なら A2。fold はしない。.NET は `Form.Turns`・`Form.Phrases`。
-- AIST の構造の注釈（ラベルが変わる境目、3 秒以内の F）: 前の分け方 `rwc-dev` 38.1%・`rwc-test` 34.5%、声なし 45.8・48.1%、声あり 65.2・60.7%（句と `BEGIN_SHARE` は dev とオーナーの 2 曲で選んだ）。
-  取れるのは歌の出入り（9 割）、取れないのは歌の中（verse→verse 49%・chorus→chorus 48%）。歌の終わりの線は 1 小節遅れが多い（38 対 早い 10、原因は未確認）。
-- **次:** (1) **オーナーに 0.5.0 を実物で見てもらう**（Lily# の変換メニュー → VS Code の Reload Window）。声なしで section が長すぎる所がどう見えるか。
-  (2) 声を配るか（Demucs そのまま、または蒸留した小さなモデル。3 分半で 43 秒）。決まれば `.NET` に歌の出入り（`voice_turns`・`phrase_sections` の `sings` の所）を写す。
-  (3) 歌の中の境目（AIST の verse A→B）。手がかり候補: 旋律の音域・歌の密度・ドラムの型。歌の終わりの 1 小節遅れの原因。
-- 歌: Demucs（`scratch/sep/venv`、htdemucs）で `rwc-dev`・`rwc-test` の 100 曲を分離済み（`scratch/sep/out/htdemucs/`）。小節の歌あり／なし dev 96.3%・test 95.0%、歌の入りと終わり 1 小節以内 94.0%・94.7%（`scratch/sep/count.py`。線は dev で選んだ）。
-  3 分半で 43 秒（8 スレッド）。配る形（(a) Demucs をそのまま・(b) 蒸留した小さなモデル。(b) は学習の音源をオーナーが決める）は未決。
+  **0.6.0（.NET の歌）で 2 曲とも全部、余分なしで出す**（糸は終わり 67 が増えるだけ。入った拡張の通しの読みでも同じ）。声なしだと糸は 9 つ中 5 つを落とす。
+  確かめは `scratch/sec/try.py [定数=値 …]`（`VOICEDIR=scratch/net/voice/sec` で .NET の歌、`NOVOICE=1` で声なし）と `tools/aist_sections.py rwc-dev`（既定で .NET の歌）。**規則を触ったら必ず両方を見る**。
+- 仕組み（README「Sections by meaning」「The voice in .NET」）: 歌の出入り・調号 2 つ以上・6 dB で塊に切り、丸ごと別の所で鳴る塊の頭と終わり、長い塊の中は 4 小節の句（`PHRASE_BARS`）の格子で
+  「同じ句 2 回の終わり」「V→I」「別の所でも始まる句（`BEGIN_SHARE`）」で切る。名前は再演なら A2。fold はしない。.NET は `Form.Turns`・`Form.Phrases`・`Form.VoiceTurns`。
+- **歌（0.6.0、オーナー了承）:** `Voice.cs` が Demucs（htdemucs、MIT）の ONNX（`tools/d2/demucs_onnx.py`。STFT と逆 STFT は外、行列積だけ int8＝85 MB）を 7.8 秒ずつ、ずらしなし・モノラルを両チャンネルで回す。
+  torch と RWC_P001 で 0.8% 差。歌の判定は torch（ステレオ）と同じ水準（dev 96.4・test 95.6%）。AIST 3 秒以内の F: dev 64.3%・test 60.2%（torch 65.2・60.7）。歌のない曲は `VOICE_FLOOR`（0.05）で歌なし。
+  **Python と .NET は同じ `.voc.npy` で RWC 100 曲が一字一句同じ**（`measure.py … --voice scratch/net/voice`、`dettato read … --voice <folder>`）。合成曲の突き合わせは `--voice none`（268 曲一致）。
+  Python の `phrase_sections` は歌の線を小さい順に回すようにした（前は集合の順。オーナーの 2 曲は同じ）。
+- **重い:** 通しで RWC_P001（3 分 27 秒）49.6 秒、My Life 81.6 秒（0.5.0 は 6 秒ほど）。ほとんどが分離。どれも Calamo が 6〜12 コアを使っている中の数字＝空いた PC では測れていない。
+- AIST の構造の注釈で取れるのは歌の出入り（9 割）、取れないのは歌の中（verse→verse 49%・chorus→chorus 48%）。歌の終わりの線は 1 小節遅れが多い（原因は未確認）。
+- **次:** (1) **オーナーに 0.6.0 を実物で見てもらう**（Reload Window）。待ち時間が許せるか。
+  (2) 速くするなら: 空いた PC で測る → 重なり 0.25 を 0 に（区間が 3/4、torch と比べて判定と AIST を測り直す）、蒸留した小さなモデル（学習の音源はオーナーが決める）。
+  (3) 歌の中の境目（AIST の verse A→B）。手がかり候補: 旋律の音域・歌の密度・ドラムの型。
+- **Lily# 依頼 15（拍が 1 秒 2.37 ms 遅れる、My Life）: 同じファイルを `tools/beat_phase.py` で測ると伸びはない**（傾き −0.02 ms/秒）。Lab の計器（中身 1 バイトで読めない）の標本化率を見てほしいと返事した（`docs/repro/dettato-reply-2026-11-16-beat-drift.md`）。Lily# の答え待ち。
 - **糸の M64 は rit ではなく 6 拍の小節**（オーナー。4＋2 拍、M65 に `time 2/4`）。手がかりは Beat This! の downbeat の値: G の小節の頭が今の組み方で平均 2.3、2 拍ずらすと 3.5（`scratch/sec/downs.py`、`.venv-bt`）。
   案: 2 拍ずつ組む所で向きを downbeat の値で選び、入れ替わる所に 2 拍の小節（値段つき）。要るもの: `.beats` に 3 列目（downbeat の値）＝`track_beats.py` と `Beats.cs`、全セットの拍の作り直し。未着手。
   書き方は **Lily# 依頼 13（コードの行の中の `time 2/4`）＝Lily# master `91187cf45` で fixed**（小節の頭だけ。次の `time` か section の終わりまで効く。次の section は見出しの拍子に戻る）。
@@ -135,7 +135,8 @@
 | `models/chords.joblib` | `train_chords.py data\synth\seed100 --features scratch\feat-h31 --out models\chords.joblib` |
 | `scratch/feat-h31/*.npz`（自作の読み取り器用）、`scratch/feat-h0/*.npz`（`--ears` 用。実録音は `real_RWC_P*.npz`） | `measure.py` が初回に作る |
 | `scratch/real/rwc-p/`（wav 100 個と truth）、`rwc-annotations/`、`rwc-annotations-archive/`（AIST の構造）、`RWC-P.zip`（3.79 GB） | DATASETS.md の手順 |
-| `scratch/sep/venv`、`scratch/sep/out/htdemucs/*.voc.npy`（RWC 100 曲の歌の大きさ） | Demucs（htdemucs）で分離。RWC 100 曲で 2 時間ほど（`scratch/sep/song.py`） |
+| `scratch/sep/venv`（demucs 4.1.0・onnx・onnxruntime）、`scratch/sep/out/htdemucs/*.voc.npy`（torch・ステレオ・ずらしあり、比べる相手） | `scratch/sep/song.py` |
+| `scratch/d2/htdemucs-core.onnx`・`htdemucs-mm8.onnx`、`scratch/net/voice/<セット>/*.voc.npy`（.NET の歌、RWC 100 曲・seed1 の 7 曲・`sec`＝オーナーの 2 曲） | `tools/d2/demucs_onnx.py`、`dettato ears`（RWC は Calamo と取り合って 92 分） |
 | `scratch/real/beat_this_annotations/`、`scratch/btc/`・`scratch/chordmini/`（clone）、`.venv-bt/`、`.venv-crema/` | README |
 | `scratch/real/beats-bt-folds/*.beats`、`scratch/beats-bt/<セット>/`（合成曲 7 セットを `final0` で） | `track_beats.py`（README） |
 | `scratch/real/chords-crema/`、`scratch/chords-crema/<セット>/` | `crema_chords.py <セットのフォルダ> --out <ここ>` |
