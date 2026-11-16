@@ -3,19 +3,12 @@
 **毎セッションの終わりに書き換える**（追記しない。200 行以内）。方向づけは [ROADMAP.md](ROADMAP.md)、
 数字と使い方は [README](../README.md)、録音の出典は [DATASETS.md](DATASETS.md)。
 
-最終更新: 2026-11-16 夜（半分の小節を組む＝拡張 0.4.1。その前の同日: テンポを小数 1 桁に、lysc のシェイプ、2 番カッコ、短い section の名前を隠す、0.08 秒の小節、2 つ目の耳 BTC。HEAD は `git log -1` で確かめる）。
+最終更新: 2026-11-16 深夜（意味で切る section を AIST の構造の注釈で測り、句を 4 小節に。その前の同日: 半分の小節を組む＝拡張 0.4.1。その前の同日: テンポを小数 1 桁に、lysc のシェイプ、2 番カッコ、短い section の名前を隠す、0.08 秒の小節、2 つ目の耳 BTC。HEAD は `git log -1` で確かめる）。
 
-### 2 つ目の耳 BTC（2026-11-16、オーナー決定。0.4.0。README「Which model hears the chords」の末尾・ROADMAP §5）
-- crema と BTC の確率を平均（`Btc.cs`・`tools/two_ears.py`。ONNX は `tools/d2/btc_onnx.py` → `scratch/d2/btc-large-voca.onnx`、13 MB、拡張に同梱）。`rwc-test` ルート 87.3 → 88.8%・長短 82.2 → 83.9%。`measure.py --ears` の既定は `crema+btc`。
-
-### 0.08 秒の小節と半分の小節（2026-11-16、Lily# 依頼 10・オーナーの報告・糸。README「A bar of 0.08 s」）
-- **入れた（0.3.5）:** 拍追跡の小節線で、中央値の 1/4 未満の小節は短い方の隣と 1 つに（`TINY_BAR`／`TinyBar`）。小節線 F が全セットで上がった。
-- **入れた（0.4.1、オーナー了承。README「Half bars」）: 半分の小節**（Beat This! が途中で倍の速さの拍を取る。オーナー: 糸は市販譜で 60〜70）。`HALF_BARS`（中央値の 0.35〜0.7）・`pair_halves`／`PairHalves`。
-  半分に挟まれた 1 小節は拍で 2 つに切る（糸の 9 小節目＝半小節ずれの原因だった）→ 続く半分を 2 つずつ。偶数個は頭から、奇数個は余りの置き場（頭か終わり）を調で選ぶ（`key_heard`＝耳のフレームごとの最尤和音で `find_key`。
-  線の後の 1 拍の主和音 ×（1＋線の前の 1 拍の属和音））。偶数個まで調に任せると糸の 58・59 が `C | G D/F#` に割れたのでやめた。糸は 89 → 71 小節、全部 3.6〜5.0 秒（`scratch/ito/ito041.lys`）。
-  RWC で 15 曲・合成曲で 5 曲の小節線が変わる。**半分のテンポで読んでいた RWC の 4 曲（P050・P095・P034・P038）では本当の小節をまとめて悪くなる**（長さだけでは見分けられない）。
-
-### 同日のほかの変更（詳しくは README と git の履歴）
+### 同日に入れたもの（詳しくは README と git の履歴）
+- **2 つ目の耳 BTC（0.4.0、オーナー決定）:** crema と BTC の確率を平均（`Btc.cs`・`tools/two_ears.py`、ONNX 13 MB を同梱）。`rwc-test` ルート 87.3 → 88.8%。`measure.py --ears` の既定は `crema+btc`。
+- **0.08 秒の小節（0.3.5、依頼 10）:** 中央値の 1/4 未満の小節は短い方の隣と 1 つに（`TINY_BAR`）。**半分の小節（0.4.1、README「Half bars」）:** `HALF_BARS`（中央値の 0.35〜0.7）・`pair_halves`／`PairHalves`。
+  半分に挟まれた 1 小節は拍で 2 つに、奇数個の余りの置き場は調で選ぶ（偶数個まで調に任せるのは捨てた）。糸は 89 → 71 小節。**半分のテンポで読んでいた RWC の 4 曲（P050・P095・P034・P038）では悪くなる。**
 - テンポは小数 1 桁（`TENTH_TEMPO`。「拍の総数 ÷ 全長」は捨てた）。`.lys` に font と diagram の注記、最初のコードに `lysc shape` のシェイプ（`LILYSHARP_LYSC_PATH`）。
 - 今の既定の section（`find_form`・`fold`）: 6 小節以下は続けてまとめ（`SHORT_SECTION`）、一度きりは 32 小節まで（`LONG_SECTION`）、繰り返し記号は form だけ、2 番カッコ（`lead_off`）、
   3 小節未満は名前を隠す（`~B_1`）。改行は 4 小節ごと（`line_sizes`）、0.4.2 から `| break`。**意味で切る `--phrase` に置き換える見込み**（下の「作業中」）。
@@ -81,16 +74,18 @@
 
 ## 次の一手
 
-**作業中（2026-11-16 夜。Python の試作は commit 済みで既定オフ＝`PHRASE_SECTIONS = False`、オンにして試す）: 意味で切る section**（オーナー: 調や曲調が変わる所・歌が入る所・ソロで切りたい）。
-- オーナーが糸を手で分けた（`scratch/ito/ito-one.lys`: Intro 1–8・A 9–16・B 17–20・C 21–27・Inter 28–31・A2 32–39・B2 40–43・C2 44–50・Solo 51–58・C3 59–）。**繰り返し記号は要らないかも**（オーナー）。
-  My Life も（`scratch/sec/phrase/mylife-owner.lys`: 1・9 リフ・17 歌・31 リフ・39 歌・53 ブリッジ・69 サビ（歌と同じコード）・83 リフ・91 歌・105 ブリッジ・121 楽器の歌・129・135 リフ×2・151）。
-  **`--phrase` で 2 曲ともオーナーの境目を全部、余分なしで出す**（糸は手で分けていない終わり 67 が増えるだけ。`scratch/sec/try.py`）。
-- 試作 `PHRASE_SECTIONS`（`phrase_sections`・`turns_of`・`voice_turns`）: 歌の出入り（Demucs、`--voice <folder>` の `<name>.voc.npy`）・調号の変化（2 つ以上）・6 dB の音量で塊に切り、塊の中は句（約 15 秒＝糸 4 小節・My Life 8 小節）の格子で
-  「同じ句 2 回の終わり」か「V→I が小節線をまたぐ」所で切る（句とその繰り返しの間では切らない）。名前は前の section の再演なら A2・A3。fold（繰り返しのコードをそろえる）はしない。
-  加えて（My Life）: 線で囲まれた塊が別の所で丸ごと鳴れば、そこの頭と終わりも境目（より長い塊のかけらは手本にしない・別の塊の途中では切らない・続けて鳴れば 1 つ）。
-  調の線は、曲の別の所でも始まる並びが 1 小節前から始まるならそこへ（リフは D の小節から）。歌の線の近くの調の線は、そういう頭なら残す（135 のリフ、歌は 138 まで）。
-  **糸はオーナーの分け方と一致**（+67 から終わり）。My Life はまだ粗い（39–54・55–83・91–120: 句の格子が 2 小節ずれる）。`rwc-dev` ルート 87.3 → 87.4%（fold をやめた分）。.NET は未移植。材料は `scratch/sec/`（`turns.py`・`dbg3.py`・`starts.py`）。
-- 歌: Demucs（`scratch/sep/venv`、htdemucs）で `rwc-dev` 50 曲、小節の歌あり／なし 96.3%・歌の入りと終わり 94.0% を 1 小節以内（`scratch/sep/count.py`。線は dev で選んだ）。`rwc-test` は裏で分離中（`scratch/sep/test.log`）。
+**作業中: 意味で切る section（`--phrase`。Python の試作は commit 済みで既定オフ＝`PHRASE_SECTIONS = False`）**（オーナー: 調や曲調が変わる所・歌が入る所・ソロで切りたい）。
+- オーナーが手で分けた 2 曲: 糸（`scratch/ito/ito-one.lys`: 1・9・17・21・28・32・40・44・51・59）、My Life（`scratch/sec/phrase/mylife-owner.lys`: 1・9・17・31・39・53・69・83・91・105・121・129・135・151）。
+  **`--phrase` は 2 曲とも全部、余分なしで出す**（糸は終わり 67 が増えるだけ）。確かめは `scratch/sec/try.py [定数=値 …]`（`NOVOICE=1` で声なし）。**規則を触ったら必ずこれと下の AIST の両方を見る。**
+- 仕組み（README「Sections by meaning」）: 歌の出入り（Demucs の `<name>.voc.npy`、`--voice`）・調号 2 つ以上・6 dB で塊に切り、丸ごと別の所で鳴る塊の頭と終わり、長い塊の中は 4 小節の句の格子で
+  「同じ句 2 回の終わり」「V→I」「別の所でも始まる句（そこの 2/3 以上で前の小節が違う＝`BEGIN_SHARE`）」で切る。名前は再演なら A2。fold はしない（`rwc-dev` ルート 87.3 → 87.4%）。
+- **2026-11-16 深夜: AIST の構造の注釈（`rwc-annotations-archive`、DATASETS.md）で測れるようにした**（`tools/aist_sections.py rwc-dev`、20 秒。ラベルが変わる境目、3 秒以内の F）:
+  既定の section `rwc-dev` 38.1%・`rwc-test` 34.5%、`--phrase` 声なし 45.8・48.1%、**声あり 56.0 → 65.2%・60.7%**（句を 15 秒 → 4 小節 `PHRASE_BARS`、`BEGIN_SHARE` 0.67。どちらも dev とオーナーの 2 曲で選んだ）。
+  取れるのは歌の出入り（9 割）、取れないのは歌の中（verse→verse 49%・chorus→chorus 48%）。歌の終わりの線は 1 小節遅れが多い（38 対 早い 10、原因は未確認）。調の線を外すと RWC は +0.7 だが My Life が崩れる。
+- **次:** (1) `--phrase` を既定にするかをオーナーに聞く（声なしでも既定より上、名前の付け方・繰り返し記号なし・fold なしが変わる）。
+  (2) 既定にするなら .NET に写す（`phrase_sections`・`turns_of`・`always_begins`。声の入力は Demucs の配り方が決まるまでなし＝声なしの道）。`read_check.py` で全セット一致。
+  (3) 歌の中の境目（AIST の verse A→B）。手がかり候補: 旋律の音域・歌の密度・ドラムの型。歌の終わりの 1 小節遅れの原因。
+- 歌: Demucs（`scratch/sep/venv`、htdemucs）で `rwc-dev`・`rwc-test` の 100 曲を分離済み（`scratch/sep/out/htdemucs/`）。小節の歌あり／なし dev 96.3%・test 95.0%、歌の入りと終わり 1 小節以内 94.0%・94.7%（`scratch/sep/count.py`。線は dev で選んだ）。
   3 分半で 43 秒（8 スレッド）。配る形（(a) Demucs をそのまま・(b) 蒸留した小さなモデル。(b) は学習の音源をオーナーが決める）は未決。
 - **糸の M64 は rit ではなく 6 拍の小節**（オーナー。4＋2 拍、M65 に `time 2/4`）。手がかりは Beat This! の downbeat の値: G の小節の頭が今の組み方で平均 2.3、2 拍ずらすと 3.5（`scratch/sec/downs.py`、`.venv-bt`）。
   案: 2 拍ずつ組む所で向きを downbeat の値で選び、入れ替わる所に 2 拍の小節（値段つき）。要るもの: `.beats` に 3 列目（downbeat の値）＝`track_beats.py` と `Beats.cs`、全セットの拍の作り直し。未着手。
@@ -138,7 +133,8 @@
 | 合成曲のセット 15 個（`data/synth/seed*` の wav、`scratch/alt-*`） | `measure.py make`（`measure.py sets` が一覧） |
 | `models/chords.joblib` | `train_chords.py data\synth\seed100 --features scratch\feat-h31 --out models\chords.joblib` |
 | `scratch/feat-h31/*.npz`（自作の読み取り器用）、`scratch/feat-h0/*.npz`（`--ears` 用。実録音は `real_RWC_P*.npz`） | `measure.py` が初回に作る |
-| `scratch/real/rwc-p/`（wav 100 個と truth）、`rwc-annotations/`、`RWC-P.zip`（3.79 GB） | DATASETS.md の手順 |
+| `scratch/real/rwc-p/`（wav 100 個と truth）、`rwc-annotations/`、`rwc-annotations-archive/`（AIST の構造）、`RWC-P.zip`（3.79 GB） | DATASETS.md の手順 |
+| `scratch/sep/venv`、`scratch/sep/out/htdemucs/*.voc.npy`（RWC 100 曲の歌の大きさ） | Demucs（htdemucs）で分離。RWC 100 曲で 2 時間ほど（`scratch/sep/song.py`） |
 | `scratch/real/beat_this_annotations/`、`scratch/btc/`・`scratch/chordmini/`（clone）、`.venv-bt/`、`.venv-crema/` | README |
 | `scratch/real/beats-bt-folds/*.beats`、`scratch/beats-bt/<セット>/`（合成曲 7 セットを `final0` で） | `track_beats.py`（README） |
 | `scratch/real/chords-crema/`、`scratch/chords-crema/<セット>/` | `crema_chords.py <セットのフォルダ> --out <ここ>` |
@@ -165,6 +161,8 @@
 
 - **D2:** onnxruntime を既定のスレッド数で走らせる（24 コアで Beat This! が 2.5 倍遅い）。`--ears` で HPSS を残す。
 - **半分の小節:** 頭から 2 つずつ組む（糸で半小節ずれ）。偶数個の並びも調で組み始めを選ぶ（糸の 58・59 が割れた）。
+- **意味で切る section:** 「別の所で前の小節が違って始まる」所を 1 か所でもあれば切る（AIST 65.8% だが My Life の歌を 4 小節ごとに割る）。歌の終わりで、最後の小節の後半が歌っていなければ線を 1 小節前に（効かない）。
+  句を秒で決める（10・11・15 秒。糸と RWC を両立する幅がない）。`VOICE_SHARE`・`VOICE_GAP` を動かす（オーナーの 2 曲が崩れる）。
 - **D4:** 小節の `beats` に Beat This! の拍を使う（RWC の拍の注釈に等分より近くない。テンポの揺れる録音では未確認）。
 - **C1:** 鳴り終わりを「前と同じ和音で、かつ静か」で見分ける。`--ears` の無音を自作と同じ「中央値の 1/10」で見る。
   crema の N だけで無音を見る。弱起の中の和音を拍ごとに書く（Lily# が警告する）。
