@@ -915,7 +915,7 @@ def lys(result, title):
     short = result["bars"][0].get("pickup")
     if len(set(form)) == len(form) and not short:   # nothing is said twice: the chart is the bars in their order
         return "\n".join(head + ["chords harmony {", *rows([[bar] for bar in result["bars"]], "  "), "}", "",
-                                 "score { chords harmony }", ""])
+                                 "score {", "  chords harmony", "}", ""])
     sections = {}                       # name: its bars, each a list of the bar each time the section is played
     for bar in result["bars"]:
         of = sections.setdefault(bar["section"], [])
@@ -927,7 +927,7 @@ def lys(result, title):
         partial = [f"  partial {'4.' if result['time'] == '6/8' else PARTIAL[short]}"] if name == "Pickup" else []
         body += [f"section {name} {{", *partial, "  chords harmony {", *rows(bars, "    ", name != "Pickup"), "  }", "}", ""]
     # Repeat signs only in the form, so that the form alone shows how the song goes (the owner, 2026-11-16).
-    return "\n".join(head + body + ["form { " + form_with_repeats(form) + " }", "", "score { chords harmony }", ""])
+    return "\n".join(head + body + ["form { " + form_with_repeats(form) + " }", "", "score {", "  chords harmony", "}", ""])
 
 
 def line_sizes(bars):

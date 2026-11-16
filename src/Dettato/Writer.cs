@@ -81,7 +81,7 @@ static class Writer
         {
             lines.Add("chords harmony {");
             lines.AddRange(Rows([.. chart.Bars.Select(bar => new List<Bar> { bar })], "  "));
-            lines.AddRange(["}", "", "score { chords harmony }", ""]);
+            lines.AddRange(["}", "", "score {", "  chords harmony", "}", ""]);
             return string.Join("\n", lines);
         }
         var names = new List<string>();
@@ -105,7 +105,7 @@ static class Writer
             lines.AddRange(["  }", "}", ""]);
         }
         // Repeat signs only in the form, so that the form alone shows how the song goes (the owner, 2026-11-16).
-        lines.AddRange(["form { " + FormWithRepeats(chart.Form) + " }", "", "score { chords harmony }", ""]);
+        lines.AddRange(["form { " + FormWithRepeats(chart.Form) + " }", "", "score {", "  chords harmony", "}", ""]);
         return string.Join("\n", lines);
     }
 
