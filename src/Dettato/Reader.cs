@@ -67,6 +67,7 @@ static class Reader
     const bool LeadOff = true;              // the second ending: a section played once opens with what a short section is elsewhere
     const double EvenTempo = 0.1;          // the tempo is from the mean of the bars within this share of the middle one
     const double TinyBar = 0.25;            // a bar shorter than this share of the middle one is not a bar (糸: 0.08 s)
+    static readonly (double Lo, double Hi) HalfBars = (0.35, 0.7);   // bars this share of the middle one are halves (PairHalves)
     const double SlowTwo = 1.5;            // a bar of two beats longer than this is a bar of four
     public const double SaidAgain = 0.95;
 
@@ -113,8 +114,9 @@ static class Reader
     }
 
     /// <summary>Bar lines found by a beat tracker (a line a beat: its seconds, a tab, its number in the bar): the
-    /// lines in seconds, the end of the last bar too, and the beats in a bar.</summary>
-    public static (List<double> Lines, int Beats) LinesOf(string text)
+    /// lines in seconds, the end of the last bar too, and the beats in a bar. With what the chord model says
+    /// (<paramref name="logp"/>), bars half as long as the rest are paired (PairHalves).</summary>
+    public static (List<double> Lines, int Beats) LinesOf(string text, float[]? logp = null, int frames = 0, double step = 0)
     {
         var rows = text.Split('\n').Select(line => line.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)).Where(r => r.Length > 0).ToArray();
         var inv = System.Globalization.CultureInfo.InvariantCulture;
@@ -149,6 +151,7 @@ static class Reader
             if (k < 0) break;
             list.RemoveAt(k == 0 ? 1 : k == s.Count - 1 || s[k - 1] <= s[k + 1] ? k : k + 1);
         }
+        if (logp != null && list.Count > 3) list = PairHalves(times, list, logp, frames, step);
         downs = [.. list];
         double beat = Np.Median(Np.Diff(times));
         int last = downs[^1] + per;
@@ -156,6 +159,94 @@ static class Reader
         var lines = downs.Select(i => times[i]).ToList();
         if (end > times[downs[^1]] + 0.5 * per * beat) lines.Add(end);
         return (lines, per);
+    }
+
+    /// <summary>The key of what the chord model says, before any reading: FindKey on the likeliest chord of each
+    /// frame that names one (read_chords.py's key_heard).</summary>
+    static (int Tonic, bool Major)? KeyHeard(float[] logp, int frames, double step)
+    {
+        int width = logp.Length / frames;
+        var chords = new List<(double Seconds, int Root, int Quality)>();
+        var e = new double[width];
+        var row = new double[Chords];
+        for (int t = 0; t < frames; t++)
+        {
+            for (int i = 0; i < width; i++) e[i] = Math.Exp(logp[t * width + i]);
+            int best = 0;
+            for (int k = 0; k < Chords; k++)
+            {
+                double sum = 0;
+                foreach (int i in EarsOf[k]) sum += e[i];
+                row[k] = sum;
+                if (sum > row[best]) best = k;
+            }
+            if (!(Np.Sum(row) > 0.5)) continue;
+            int root = best % 12, quality = best / 12;
+            if (chords.Count > 0 && chords[^1].Root == root && chords[^1].Quality == quality)
+                chords[^1] = (chords[^1].Seconds + step, root, quality);
+            else chords.Add((step, root, quality));
+        }
+        return chords.Count > 0 ? FindKey(chords) : null;
+    }
+
+    /// <summary>Bars half as long as the rest, one after the other, are the halves of bars: the tracker took the beats
+    /// twice as fast for a while (糸). Two by two they are one bar: an even run from its first, as the whole bars
+    /// around it hold their lines; an odd one has a half left over, at its first or its last, where the key says (the
+    /// bar lines are where the home chord comes, the more so after its dominant). A whole bar between two halves is
+    /// two halves, cut at its beat nearest the middle. As read_chords.py's pair_halves.</summary>
+    static List<int> PairHalves(double[] times, List<int> downs, float[] logp, int frames, double step)
+    {
+        double lo = HalfBars.Lo, hi = HalfBars.Hi;
+        var lengths = Enumerable.Range(0, downs.Count - 1).Select(k => times[downs[k + 1]] - times[downs[k]]).ToList();
+        double middle = Np.Median(lengths);
+        double Span(int k) => times[downs[k + 1]] - times[downs[k]];
+        bool Half(double x) => lo * middle <= x && x < hi * middle;
+        for (int k = 1; k < downs.Count - 2; k++)
+        {
+            int a = downs[k], b = downs[k + 1];
+            if (Half(Span(k)) || !Half(Span(k - 1)) || !Half(Span(k + 1)) || b - a < 2) continue;
+            double mid = (times[a] + times[b]) / 2;
+            int cut = a + 1;
+            for (int i = a + 2; i < b; i++) if (Math.Abs(times[i] - mid) < Math.Abs(times[cut] - mid)) cut = i;
+            if (Half(times[cut] - times[a]) && Half(times[b] - times[cut])) downs.Insert(k + 1, cut);
+        }
+        var key = KeyHeard(logp, frames, step);
+        if (key is not var (tonic, major)) return downs;
+        int homeKind = major ? 0 : 1, fifth = (tonic + 7) % 12;
+        var gone = new HashSet<int>();
+        int r = 0;
+        while (r < downs.Count - 1)
+        {
+            if (!Half(Span(r))) { r++; continue; }
+            int end = r;
+            while (end + 1 < downs.Count - 1 && Half(Span(end + 1))) end++;
+            int n = end - r + 1;
+            if (n >= 2)
+            {
+                bool odd = false;
+                if (n % 2 == 1)
+                {
+                    double beat = (times[downs[end + 1]] - times[downs[r]]) / n / 2;
+                    var s = new double[n + 1];
+                    for (int j = 0; j <= n; j++)
+                    {
+                        double t = times[downs[r + j]];
+                        var said = SaidIn(logp, frames, step, [t - beat, t, t + beat], EarsOf);
+                        double home = 0, dominant = 0;
+                        for (int k = 0; k < Chords; k++)
+                        {
+                            if (k % 12 == tonic && Kind[k / 12] == homeKind) home += Math.Exp(said[1][k]);
+                            if (k % 12 == fifth && Kind[k / 12] is 0 or 2) dominant += Math.Exp(said[0][k]);
+                        }
+                        s[j] = home * (1.0 + dominant);
+                    }
+                    odd = Np.Mean(s.Where((_, j) => j % 2 == 1).ToArray()) > Np.Mean(s.Where((_, j) => j % 2 == 0).ToArray());
+                }
+                for (int j = 1; j < n; j++) if (j % 2 == (odd ? 0 : 1)) gone.Add(downs[r + j]);
+            }
+            r = end + 1;
+        }
+        return [.. downs.Where(d => !gone.Contains(d))];
     }
 
     /// <summary>Where the <paramref name="n"/> beats of a bar begin: the bar cut evenly, the first at its line. (The beat

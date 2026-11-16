@@ -42,7 +42,7 @@ using System.Text;
 using Dettato;
 using Microsoft.ML.OnnxRuntime;
 
-const string version = "0.4.0";
+const string version = "0.4.1";
 const int protocol = 1;
 const string usage = "usage: dettato <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]\n"
                    + "       dettato --version [--json]\n"
@@ -112,7 +112,7 @@ Chart Read(string file, Action<string>? say = null)
     var heard = Features.Of(low);
     cqt += clock.Elapsed.TotalSeconds; clock.Restart();
     say?.Invoke("the beats");
-    var (lines, beats) = Reader.LinesOf(linesFrom != null ? File.ReadAllText(Path.Combine(linesFrom, name + ".beats")) : Beats.Lines(beatModel!, low));
+    string tracked = linesFrom != null ? File.ReadAllText(Path.Combine(linesFrom, name + ".beats")) : Beats.Lines(beatModel!, low);
     beat += clock.Elapsed.TotalSeconds; clock.Restart();
     say?.Invoke("the chords");
     float[] logp;
@@ -124,6 +124,7 @@ Chart Read(string file, Action<string>? say = null)
     low = null!;
     Collect();
     chord += clock.Elapsed.TotalSeconds; clock.Restart();
+    var (lines, beats) = Reader.LinesOf(tracked, logp, frames, step);    // the halves of bars are paired as the key heard says
     var chart = Reader.Read(Path.GetFileName(file), heard, lines, beats, logp, frames, step);
     rules += clock.Elapsed.TotalSeconds;
     return chart;

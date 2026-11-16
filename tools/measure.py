@@ -161,14 +161,15 @@ def totals(rows):
             f" quality {share('quality'):.1%} bass {share('bass'):.1%}")
 
 
-def bar_lines(truth, wav, source):
+def bar_lines(truth, wav, source, heard=None):
     """Bar lines found by other means, as read_chords.read takes them: (seconds, parts of a bar).
     `source` is "truth" (the true lines: what the chords are worth when the bars are right) or a
-    folder of <recording>.beats files, a line a beat: its seconds, a tab, its number in the bar."""
+    folder of <recording>.beats files, a line a beat: its seconds, a tab, its number in the bar.
+    `heard`, the ears' chords (a loaded <recording>.npz), lets the halves of bars be paired."""
     if source == "truth":
         per = {"6/8": 3}.get(truth["time"], int(truth["time"].split("/")[0]))
         return [b["start"] for b in truth["bars"] if not b.get("pickup")] + [truth["bars"][-1]["end"]], 2 * per, None
-    given, per = rc.lines_of(Path(source) / (wav.stem + ".beats"))
+    given, per = rc.lines_of(Path(source) / (wav.stem + ".beats"), heard)
     return given, 2 * per, per
 
 
@@ -228,9 +229,9 @@ def run(name, hint=False, verbose=False, write=None, lines=None, labs=None, hear
             elif READ:
                 got = net_reading(wav)
             elif lines:
-                given, units, per = bar_lines(truth, wav, lines)
-                got = rc.read(wav, feats(wav), lines=given, units=units, beats=per,
-                              heard=np.load(Path(heard) / (wav.stem + ".npz")) if heard else None)
+                said = np.load(Path(heard) / (wav.stem + ".npz")) if heard else None
+                given, units, per = bar_lines(truth, wav, lines, said)
+                got = rc.read(wav, feats(wav), lines=given, units=units, beats=per, heard=said)
             else:
                 got = rc.read(wav, feats(wav), tempo=truth["tempo"]["bpm"] if hint else None)
             r = sc.score(truth, got)
@@ -287,9 +288,9 @@ def doubted(names, ears=False):
             if READ:
                 got = net_reading(wav)
             elif ears:
-                given, units, per = bar_lines(truth, wav, lines)
-                got = rc.read(wav, feats(wav), lines=given, units=units, beats=per,
-                              heard=np.load(heard / (wav.stem + ".npz")), why=True)
+                said = np.load(heard / (wav.stem + ".npz"))
+                given, units, per = bar_lines(truth, wav, lines, said)
+                got = rc.read(wav, feats(wav), lines=given, units=units, beats=per, heard=said, why=True)
             else:
                 got = rc.read(wav, feats(wav), why=True)
             spans = sc.chords_of(truth)
@@ -336,8 +337,9 @@ def form(names, ears=False, verbose=False):
             if READ:
                 got = net_reading(wav)
             elif ears:
-                given, units, per = bar_lines(truth, wav, lines)
-                got = rc.read(wav, feats(wav), lines=given, units=units, beats=per, heard=np.load(heard / (wav.stem + ".npz")))
+                said = np.load(heard / (wav.stem + ".npz"))
+                given, units, per = bar_lines(truth, wav, lines, said)
+                got = rc.read(wav, feats(wav), lines=given, units=units, beats=per, heard=said)
             else:
                 got = rc.read(wav, feats(wav))
             per_bar = 2 if truth["time"] == "6/8" else int(truth["time"].split("/")[0])
@@ -374,8 +376,9 @@ def head(names, ears=False, verbose=False):
             if READ:
                 got = net_reading(wav)
             elif ears:
-                given, units, per = bar_lines(truth, wav, lines)
-                got = rc.read(wav, feats(wav), lines=given, units=units, beats=per, heard=np.load(heard / (wav.stem + ".npz")))
+                said = np.load(heard / (wav.stem + ".npz"))
+                given, units, per = bar_lines(truth, wav, lines, said)
+                got = rc.read(wav, feats(wav), lines=given, units=units, beats=per, heard=said)
             else:
                 got = rc.read(wav, feats(wav))
             tb, rb = ([b for b in d["bars"] if not b.get("pickup")] for d in (truth, got))

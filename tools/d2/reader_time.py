@@ -33,7 +33,8 @@ ears = sys.argv[2]
 from pathlib import Path
 stem = Path(path).stem
 clock = time.perf_counter()
-lines, beats = rc.lines_of(Path(ears) / (stem + ".beats"))
-result = rc.read(path, f=f, lines=lines, beats=beats, heard=np.load(Path(ears) / (stem + ".npz")))
+heard = np.load(Path(ears) / (stem + ".npz"))
+lines, beats = rc.lines_of(Path(ears) / (stem + ".beats"), heard)
+result = rc.read(path, f=f, lines=lines, beats=beats, heard=heard)
 text = rc.lys(result, stem)
 print(f"putting the chart together (read and lys), features given: {time.perf_counter() - clock:.2f} s; SR {rc.SR}, HOP {rc.HOP}")

@@ -91,6 +91,7 @@ RING_OUT = 0.2          # ears: a bar past the last one found and this much quie
 PARTIAL = {1: "4", 2: "2", 3: "2.", 4: "1", 6: "1."}   # a pickup of so many quarters, as Lily#'s `partial` takes it
 MEND_BARS = True       # ears: two short bars that together have a bar's beats are one bar (the tracker's slip)
 TINY_BAR = 0.25        # ears: a bar shorter than this share of the middle one is not a bar (糸: 0.08 s, Lily# REQUESTS 10)
+HALF_BARS = (0.35, 0.7)  # ears: bars this share of the middle one are halves, paired as the key says (pair_halves). None: as found
 EVEN_TEMPO = 0.1       # the tempo is from the mean of the bars within this share of the middle one (0: the middle one alone)
 DIAGRAM_NOTE = "// Shift+Ctrl+Up/Down on a chord name shows its guitar chord diagram"   # above the first chords (the owner, 2026-11-16)
 TENTH_TEMPO = True    # ears: the tempo to a tenth, a whole number when it is one (Lily# writes `tempo 4 = 131.8`, 2026-11-16)
@@ -167,9 +168,77 @@ def said_in(heard, edges, fold=FOLD):
     return np.log(np.maximum(np.diff(upto, axis=0) / width[:, None], 1e-12))
 
 
-def lines_of(path):
+def key_heard(heard):
+    """The key of what the ears say, before any reading: find_key on the likeliest chord of each frame that names one."""
+    p = np.exp(heard["logp"].astype(np.float64)) @ FOLD
+    step, best, named = float(heard["step"]), p.argmax(axis=1), p.sum(axis=1) > 0.5
+    chords = []
+    for i, n in zip(best, named):
+        if not n:
+            continue
+        if chords and chords[-1][1:] == CHORDS[i]:
+            chords[-1] = (chords[-1][0] + step,) + CHORDS[i]
+        else:
+            chords.append((step,) + CHORDS[i])
+    return find_key(chords) if chords else None
+
+
+def pair_halves(times, downs, heard):
+    """Bars half as long as the rest, one after the other, are the halves of bars: the tracker took
+    the beats twice as fast for a while (糸: 36 bars of 2 s among bars of 3.8 s, Lily# REQUESTS 10).
+    Two by two they are one bar. Which half begins a bar is what the key says: the bar lines are
+    where the home chord comes, the more so after its dominant (the owner, 2026-11-16). A whole bar
+    between two halves is two halves (the tracker slipped there), cut at its beat nearest the middle."""
+    lo, hi = HALF_BARS
+    middle = float(np.median([times[b] - times[a] for a, b in zip(downs, downs[1:])]))
+    span = lambda k: times[downs[k + 1]] - times[downs[k]]
+    half = lambda x: lo * middle <= x < hi * middle
+    k = 1
+    while k < len(downs) - 2:
+        a, b = downs[k], downs[k + 1]
+        if not half(span(k)) and half(span(k - 1)) and half(span(k + 1)) and b - a >= 2:
+            cut = min(range(a + 1, b), key=lambda i: abs(times[i] - (times[a] + times[b]) / 2))
+            if half(times[cut] - times[a]) and half(times[b] - times[cut]):
+                downs.insert(k + 1, cut)
+        k += 1
+    key = key_heard(heard)
+    if key is None:
+        return downs
+    tonic, mode = key
+    p = np.exp(heard["logp"].astype(np.float64)) @ FOLD
+    home = np.array([r == tonic and _KIND[q] == ("maj" if mode == "major" else "min") for r, q in CHORDS])
+    fifth = np.array([r == (tonic + 7) % 12 and _KIND[q] in ("maj", "sus") for r, q in CHORDS])
+
+    def worth(t, beat):
+        """How much a bar line at `t` seconds sounds like one: the home chord in the beat after it,
+        times two after its dominant in the beat before."""
+        before, after = np.exp(said_in(heard, [t - beat, t, t + beat]))
+        return float(after[home].sum()) * (1.0 + float(before[fifth].sum()))
+
+    gone, k = set(), 0
+    while k < len(downs) - 1:
+        if not half(span(k)):
+            k += 1
+            continue
+        e = k
+        while e + 1 < len(downs) - 1 and half(span(e + 1)):
+            e += 1
+        n = e - k + 1
+        if n >= 2:
+            odd = False         # an even run lies between whole bars that hold their lines: paired from its first
+            if n % 2:           # an odd one has a half left over, at its first or its last: the key says which
+                beat = (times[downs[e + 1]] - times[downs[k]]) / n / 2
+                s = [worth(times[downs[k + j]], beat) for j in range(n + 1)]
+                odd = float(np.mean(s[1::2])) > float(np.mean(s[0::2]))
+            gone |= {downs[k + j] for j in range(1, n) if j % 2 == (0 if odd else 1)}
+        k = e + 1
+    return [d for d in downs if d not in gone]
+
+
+def lines_of(path, heard=None):
     """Bar lines found by a beat tracker (tools/track_beats.py: a line a beat, its seconds, a tab,
-    its number in the bar), as `read` takes them: the lines in seconds, and the beats in a bar."""
+    its number in the bar), as `read` takes them: the lines in seconds, and the beats in a bar.
+    With `heard` (the ears' chords), bars half as long as the rest are paired (pair_halves)."""
     rows = [line.split() for line in Path(path).read_text().splitlines() if line.strip()]
     times, numbers = [float(r[0]) for r in rows], [int(float(r[1])) for r in rows]
     downs = [i for i, n in enumerate(numbers) if n == 1]
@@ -193,6 +262,8 @@ def lines_of(path):
             if k is None:
                 break
             del downs[1 if k == 0 else k if k == len(s) - 1 or s[k - 1] <= s[k + 1] else k + 1]
+    if HALF_BARS and heard is not None and len(downs) > 3:
+        downs = pair_halves(times, downs, heard)
     beat = float(np.median(np.diff(times)))
     last = downs[-1] + per
     end = times[last] if last < len(times) else min(times[-1] + beat, times[downs[-1]] + per * beat)
@@ -1165,8 +1236,9 @@ def main():
     for path in files:
         try:
             if args.ears:
-                lines, beats = lines_of(args.ears / (path.stem + ".beats"))
-                result = read(path, lines=lines, beats=beats, heard=np.load(args.ears / (path.stem + ".npz")))
+                heard = np.load(args.ears / (path.stem + ".npz"))
+                lines, beats = lines_of(args.ears / (path.stem + ".beats"), heard)
+                result = read(path, lines=lines, beats=beats, heard=heard)
             else:
                 result = read(path, tempo=args.tempo)
         except Exception as e:  # one recording that cannot be read does not stop the rest

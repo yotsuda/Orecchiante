@@ -2,6 +2,13 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.4.1
+
+- Bars half as long as the rest, one after the other (the beat model counting twice as fast for a
+  while), are paired into whole bars. An even run is paired from its first; an odd one leaves a half
+  over at its first or its last, where the key says (the home chord on the bar line, after its
+  dominant). A whole bar between two halves is cut into two first. 糸: 89 → 71 bars, all of 3.6 to 5 s.
+
 ## 0.4.0
 
 - Two ears for the chords: BTC (MIT) now listens beside crema, and their probabilities are
