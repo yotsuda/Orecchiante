@@ -484,6 +484,30 @@ day: signs inside a section's chords too (`|: C | G :|`, `|: C | G | [1. Am :| [
 short section said twice running as `|: A :|`; the owner would rather see every repeat in the
 form, and four bars said twice written out.
 
+**The second ending, and a section of one bar (2026-11-16, the owner on 糸).** In 糸 (Bank Band)
+a section of seven bars was followed once by one bar (`Dsus4 D`) and once by a long section that
+opened with one bar of `D`: the phrase is eight bars both times, and the long section's own phrase
+begins a bar later. So (`lead_off`, `Form.LeadOff`): where a section is followed once by a short
+section played once (k bars, six or fewer) and another time by a longer section played once whose
+k-th bar ends on the root the short one ends on, those k bars become a section of their own, the
+second ending: `A |: B [1. C] :| [2. D] E F`, E beginning on its phrase's first bar. And a section
+of one bar goes on the line before (no `break` between them):
+
+```
+    Em | Bm7 | Am7 |
+  ...
+    Dsus4@todo("or C?") D |
+  ...
+    D@todo("or Dsus4?") break |
+  ...
+    Em | Bm7 | Cmaj7 | G D/F# break |
+```
+
+The forms of 22 of the 268 charts change (17 of RWC's 100); the chords and every number stay as
+they were (only sections played once are cut). Of the songs made here, 7 cuts are new in 5 songs:
+6 fall on the true start of a section, the seventh at the end of a song, where the truth says
+nothing (`scratch/lead_count.py`, `scratch/lead_truth.py`). RWC's sections are not annotated here.
+
 ### How a chart begins and ends
 
 A recording does not begin on its first bar line and end on its last. Both readers now settle

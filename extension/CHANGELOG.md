@@ -2,6 +2,13 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.3.3
+
+- The second ending: where a section is followed once by a short section and another time by a
+  longer one that opens the same way, its opening bars become a section of their own
+  (`|: B [1. C] :| [2. D] E`), so that the next section begins where its phrase does.
+- A section of one bar goes on the line before it.
+
 ## 0.3.2
 
 - The first chord of the chart is written with its guitar shape (`D(xx0232)`), so that its

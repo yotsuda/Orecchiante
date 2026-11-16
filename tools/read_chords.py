@@ -403,7 +403,8 @@ SAID_AGAIN = 0.95       # runs of bars are one section when this share of their 
 SHORT_SECTION = 6       # two sections running of at most this many bars are one: a chart in sections of four bars
                         # or two is hard to read (the owner, 2026-11-16: four and eight may stand side by side, four
                         # and four may not). 0: as found.
-LONG_SECTION = 32       # sections played once, one after the other, are one section up to this many bars, and a
+LEAD_OFF = True         # the second ending: a section played once opens with what a short section is elsewhere (lead_off)
+LONG_SECTION = 32      # sections played once, one after the other, are one section up to this many bars, and a
                         # longer run is cut into even sections no longer (the owner, 2026-11-16). 0: as found.
 
 
@@ -468,6 +469,43 @@ def fold(bars, beats, alike):
                         c = next(c for c in bar["chords"] if c["start"] <= at < c["end"])
                         c["sure"], c["other"] = min(c["sure"], round(DOUBT - 0.001, 3)), other
     return form
+
+
+def lead_off(bars):
+    """The second ending (the owner, 2026-11-16, on 糸): where a section X is followed once by a short
+    section played once, C of k bars, and another time by a longer section played once, D, whose
+    k-th bar ends on the root C ends on, those k bars of D are the phrase X began, as C is: they
+    become a section of their own, and D begins where its phrase does. Then the sections are named
+    again in the order they come. Chords are (root, quality, bass) here. Returns the form."""
+    played = []                         # [section, first bar, bars] for each section played
+    for i, bar in enumerate(bars):
+        if bar["barOfSection"] == 1:
+            played.append([bar["section"], i, 0])
+        played[-1][2] += 1
+    count = Counter(p[0] for p in played)
+    for n in range(1, len(played)):
+        name, first, length = played[n]
+        if name == "Pickup" or count[name] > 1:
+            continue
+        ending = next((played[m + 1] for m in range(len(played) - 1) if m + 1 != n and played[m][0] == played[n - 1][0]
+                       and count[played[m + 1][0]] == 1 and played[m + 1][2] <= SHORT_SECTION), None)
+        if ending is None or ending[2] >= length:
+            continue
+        k = ending[2]
+        if bars[ending[1] + k - 1]["chords"][-1]["symbol"][0] != bars[first + k - 1]["chords"][-1]["symbol"][0]:
+            continue
+        for b in range(first, first + k):
+            bars[b]["section"] = (name, "lead")
+        for b in range(first + k, first + length):
+            bars[b]["barOfSection"] -= k
+    names = {"Pickup": "Pickup"}
+    for bar in bars:
+        if bar["section"] not in names:
+            k = len(names) - 1
+            names[bar["section"]] = chr(ord("A") + k) if k < 26 else f"S{k + 1}"
+    for bar in bars:
+        bar["section"] = names[bar["section"]]
+    return [bar["section"] for bar in bars if bar["barOfSection"] == 1]
 
 
 def cut_long(total, found):
@@ -886,6 +924,8 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
         form = ["Pickup"] + form
     read_chords = [c for bar in bars for c in bar["chords"]]
     tonic, mode = find_key([(c["end"] - c["start"], c["symbol"][0], c["symbol"][1]) for c in read_chords])
+    if LEAD_OFF:
+        form = lead_off(bars)
     tonic_name = (MAJOR_KEYS if mode == "major" else MINOR_KEYS)[tonic]
     flats = "b" in tonic_name or (tonic_name == "F" if mode == "major" else tonic_name in FLAT_MINORS)
     roots = FLAT_ROOTS if flats else SHARP_ROOTS
@@ -974,15 +1014,17 @@ def lys(result, title, shape_of=None):
             return f"{marks[0]} {marks[half]}"
         return " ".join(marks)
 
-    def rows(bars, indent, breaks=True):
+    def rows(bars, indent, breaks=True, last=True):
         """Four bars a line, and a line of the page each (`break`: after every four bars and where a
-        section ends, so that a section begins a line; the owner, 2026-11-16)."""
-        end = " break |" if breaks else " |"
+        section ends, so that a section begins a line; the owner, 2026-11-16). `last`: False when the
+        section's last line goes on into the next section, a section of one bar (the owner, 2026-11-16)."""
         out, i = [], 0
         if not noted:                   # the first chords of the chart: how to see a chord's diagram
             noted.append(True)
             out.append(f"{indent}{DIAGRAM_NOTE}")
-        for size in line_sizes(len(bars)):
+        sizes = line_sizes(len(bars))
+        for k, size in enumerate(sizes):
+            end = " break |" if breaks and (last or k < len(sizes) - 1) else " |"
             out.append(f"{indent}{' | '.join(slots(said) for said in bars[i:i + size])}{end}")
             i += size
         return out
@@ -1009,10 +1051,11 @@ def lys(result, title, shape_of=None):
         if bar["barOfSection"] > len(of):
             of.append([])
         of[bar["barOfSection"] - 1].append(bar)
-    body = []
-    for name, bars in sections.items():
+    body, written = [], list(sections.items())
+    for w, (name, bars) in enumerate(written):
         partial = [f"  partial {'4.' if result['time'] == '6/8' else PARTIAL[short]}"] if name == "Pickup" else []
-        body += [f"section {name} {{", *partial, "  chords harmony {", *rows(bars, "    ", name != "Pickup"), "  }", "}", ""]
+        last = w + 1 == len(written) or len(written[w + 1][1]) > 1      # a section of one bar goes on the line before
+        body += [f"section {name} {{", *partial, "  chords harmony {", *rows(bars, "    ", name != "Pickup", last), "  }", "}", ""]
     # Repeat signs only in the form, so that the form alone shows how the song goes (the owner, 2026-11-16).
     return "\n".join(head + body + ["form { " + form_with_repeats(form) + " }", "", "score {", "  chords harmony", "}", ""])
 

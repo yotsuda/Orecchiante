@@ -64,7 +64,8 @@ static class Reader
     const double Chorded = 0.25;            // a bar at either end is in the chart when this much of it sounds a chord
     const double RingOut = 0.2;             // a bar past the last one found and this much quieter than the one before
     public static readonly Dictionary<int, string> Partial = new() { [1] = "4", [2] = "2", [3] = "2.", [4] = "1", [6] = "1." };
-    const double EvenTempo = 0.1;           // the tempo is from the mean of the bars within this share of the middle one
+    const bool LeadOff = true;              // the second ending: a section played once opens with what a short section is elsewhere
+    const double EvenTempo = 0.1;          // the tempo is from the mean of the bars within this share of the middle one
     const double SlowTwo = 1.5;             // a bar of two beats longer than this is a bar of four
     public const double SaidAgain = 0.95;
 
@@ -564,6 +565,7 @@ static class Reader
         }
         read = [.. bars.SelectMany(bar => bar.Chords)];
         var (tonic, major) = FindKey([.. read.Select(c => (c.End - c.Start, c.Symbol.Root, c.Symbol.Quality))]);
+        if (LeadOff) form = Form.LeadOff(bars);
         string tonicName = (major ? MajorKeys : MinorKeys)[tonic];
         bool flats = tonicName.Contains('b') || (major ? tonicName == "F" : FlatMinors.Contains(tonicName));
         var roots = flats ? FlatRoots : SharpRoots;

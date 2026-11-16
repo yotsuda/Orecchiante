@@ -273,6 +273,44 @@ static class Form
         return ([.. played.Select(p => names[p.Section])], [.. places]);
     }
 
+    /// <summary>As tools/read_chords.py's lead_off, the second ending (the owner, 2026-11-16, on 糸): where a section X is
+    /// followed once by a short section played once, C of k bars, and another time by a longer section played once, D,
+    /// whose k-th bar ends on the root C ends on, those k bars of D become a section of their own, and D begins where
+    /// its phrase does. Then the sections are named again in the order they come. Returns the form.</summary>
+    public static List<string> LeadOff(List<Bar> bars)
+    {
+        var played = new List<(string Name, int First, int Length)>();
+        for (int i = 0; i < bars.Count; i++)
+        {
+            if (bars[i].BarOfSection == 1) played.Add((bars[i].Section!, i, 0));
+            played[^1] = played[^1] with { Length = played[^1].Length + 1 };
+        }
+        var count = new Dictionary<string, int>();
+        foreach (var p in played) count[p.Name] = count.GetValueOrDefault(p.Name) + 1;
+        for (int n = 1; n < played.Count; n++)
+        {
+            var (name, first, length) = played[n];
+            if (name == "Pickup" || count[name] > 1) continue;
+            int m = Enumerable.Range(0, played.Count - 1).FirstOrDefault(m => m + 1 != n && played[m].Name == played[n - 1].Name
+                && count[played[m + 1].Name] == 1 && played[m + 1].Length <= ShortSection, -1);
+            if (m < 0 || played[m + 1].Length >= length) continue;
+            var ending = played[m + 1];
+            int k = ending.Length;
+            if (bars[ending.First + k - 1].Chords[^1].Symbol.Root != bars[first + k - 1].Chords[^1].Symbol.Root) continue;
+            for (int b = first; b < first + k; b++) bars[b].Section = name + "\0lead";
+            for (int b = first + k; b < first + length; b++) bars[b].BarOfSection -= k;
+        }
+        var names = new Dictionary<string, string> { ["Pickup"] = "Pickup" };
+        foreach (var bar in bars)
+            if (!names.ContainsKey(bar.Section!))
+            {
+                int k = names.Count - 1;
+                names[bar.Section!] = k < 26 ? ((char)('A' + k)).ToString() : $"S{k + 1}";
+            }
+        foreach (var bar in bars) bar.Section = names[bar.Section!];
+        return [.. bars.Where(bar => bar.BarOfSection == 1).Select(bar => bar.Section!)];
+    }
+
     /// <summary>Where a run of `total` bars played once is cut into sections, as tools/read_chords.py's cut_long: whole
     /// when LongSection bars or fewer; else at the sections `found` there or every eight bars from the run's start. Of
     /// the ways that keep each within LongSection: the fewest sections, then the fewest cuts at no section found, then

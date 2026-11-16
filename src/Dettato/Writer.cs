@@ -68,7 +68,8 @@ static class Writer
         // Four bars a line, and a line of the page each (`break`: after every four bars and where a section ends, so that
         // a section begins a line; the owner, 2026-11-16). The pickup goes on with the first line.
         bool noted = false;     // the note on the diagrams, above the first chords of the chart (the owner, 2026-11-16)
-        IEnumerable<string> Rows(List<List<Bar>> bars, string indent, bool breaks = true)
+        // `last`: false when the section's last line goes on into the next section, a section of one bar (the owner, 2026-11-16).
+        IEnumerable<string> Rows(List<List<Bar>> bars, string indent, bool breaks = true, bool last = true)
         {
             if (!noted)
             {
@@ -76,10 +77,12 @@ static class Writer
                 yield return indent + DiagramNote;
             }
             int i = 0;
-            foreach (int size in LineSizes(bars.Count))
+            var sizes = LineSizes(bars.Count);
+            for (int k = 0; k < sizes.Count; k++)
             {
-                yield return indent + string.Join(" | ", bars.Skip(i).Take(size).Select(Slots)) + (breaks ? " break |" : " |");
-                i += size;
+                bool brk = breaks && (last || k < sizes.Count - 1);
+                yield return indent + string.Join(" | ", bars.Skip(i).Take(sizes[k]).Select(Slots)) + (brk ? " break |" : " |");
+                i += sizes[k];
             }
         }
 
@@ -115,12 +118,14 @@ static class Writer
             if (bar.BarOfSection > of.Count) of.Add([]);
             of[bar.BarOfSection - 1].Add(bar);
         }
-        foreach (string name in names)
+        for (int w = 0; w < names.Count; w++)
         {
+            string name = names[w];
+            bool last = w + 1 == names.Count || sections[names[w + 1]].Count > 1;     // a section of one bar goes on the line before
             lines.Add($"section {name} {{");
             if (name == "Pickup") lines.Add($"  partial {(chart.Time == "6/8" ? "4." : Reader.Partial[pickup])}");
             lines.Add("  chords harmony {");
-            lines.AddRange(Rows(sections[name], "    ", name != "Pickup"));
+            lines.AddRange(Rows(sections[name], "    ", name != "Pickup", last));
             lines.AddRange(["  }", "}", ""]);
         }
         // Repeat signs only in the form, so that the form alone shows how the song goes (the owner, 2026-11-16).
