@@ -146,8 +146,12 @@ The file is the reading as it was written; nothing rewrites it.
 
 - Changing a chord, a mark, the key or the title leaves the bars where they are: the file holds.
 - **Adding or taking out a bar, or changing the form, moves every bar after it.** An editor can
-  tell: Lily# then plays a different number of bars than `bars` has. It should say so and not play
-  a bar that may be the wrong one. Lining the two up again is not built.
+  tell: Lily# then plays a different number of bars than `bars` has. It should say so, and still
+  play the recording with the chart as far as the shorter of the two goes, the n-th bar played with
+  the n-th of `bars` (the owner, 2026-11-16: a chart being cut into sections or mended bar by bar is
+  still to be heard to its end; before 2026-11-16 this said not to play at all). The bars after the
+  one added or taken out are then a bar off, which the person is in the middle of putting right.
+  Lining the two up again is not built.
 - `symbol`, `sure` and `other` are the reader's, not the corrected chart's.
 
 ## What is not in it
