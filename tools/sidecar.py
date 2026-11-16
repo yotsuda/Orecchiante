@@ -44,8 +44,9 @@ def faults(doc):
     if not number(doc.get("duration")) or doc["duration"] <= 0:
         wrong('"duration" is not a length in seconds')
     tempo = doc.get("tempo")
-    if not isinstance(tempo, dict) or tempo.get("note") not in ("4", "4.") or not isinstance(tempo.get("bpm"), int) or tempo["bpm"] <= 0:
-        wrong('"tempo" is not {"note": "4" or "4.", "bpm": a whole number}')
+    if not isinstance(tempo, dict) or tempo.get("note") not in ("4", "4.") or not number(tempo.get("bpm")) or tempo["bpm"] <= 0 \
+            or round(tempo["bpm"], 1) != tempo["bpm"]:
+        wrong('"tempo" is not {"note": "4" or "4.", "bpm": a number to a tenth}')
     if not isinstance(doc.get("time"), str) or not TIME.match(doc["time"]):
         wrong('"time" is not a meter')
     elif isinstance(tempo, dict) and (tempo.get("note") == "4.") != (doc["time"] == "6/8"):

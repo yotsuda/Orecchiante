@@ -28,8 +28,10 @@ sealed class Chart
 {
     public string Audio = "", TempoNote = "4", Time = "4/4", Key = "C major";
     public double Duration;
-    public int Bpm;
+    public double Bpm;                          // to a tenth (Lily# writes `tempo 4 = 131.8`)
     public double? Doubt;
+    /// <summary>The tempo as Python's json and f-string write it: a whole number bare, else its repr.</summary>
+    public string BpmText => Bpm == Math.Floor(Bpm) ? ((long)Bpm).ToString(System.Globalization.CultureInfo.InvariantCulture) : Np.Repr(Bpm);
     public int? Tuning;                         // in cents from A = 440 Hz
     public List<string> Form = [];
     public List<Bar> Bars = [];
@@ -577,7 +579,7 @@ static class Reader
         return new Chart
         {
             Audio = audio, Duration = Np.Round((n - 1) * HOP / SR, 2),
-            TempoNote = six ? "4." : "4", Bpm = (int)Math.Round(60.0 * tempoBeats / barSeconds),
+            TempoNote = six ? "4." : "4", Bpm = Np.Round(60.0 * tempoBeats / barSeconds, 1),
             Time = time, Key = $"{tonicName} {(major ? "major" : "minor")}", Tuning = (int)f.Cents,
             Doubt = read.Any(c => c.Sure != null) ? Doubt : null, Form = form, Bars = bars,
         };

@@ -6,6 +6,8 @@ namespace Dettato;
 /// (.dettato.json, docs/SIDECAR.md). As tools/read_chords.py writes them, to the letter.</summary>
 static class Writer
 {
+    const string DiagramNote = "// Shift+Ctrl+Up/Down on a chord name shows its guitar chord diagram";
+
     /// <summary>The chord on each beat of a bar: what the chart writes of it.</summary>
     static string[] BeatNames(Bar bar, int beats)
     {
@@ -57,8 +59,14 @@ static class Writer
 
         // Four bars a line, and a line of the page each (`break`: after every four bars and where a section ends, so that
         // a section begins a line; the owner, 2026-11-16). The pickup goes on with the first line.
+        bool noted = false;     // the note on the diagrams, above the first chords of the chart (the owner, 2026-11-16)
         IEnumerable<string> Rows(List<List<Bar>> bars, string indent, bool breaks = true)
         {
+            if (!noted)
+            {
+                noted = true;
+                yield return indent + DiagramNote;
+            }
             int i = 0;
             foreach (int size in LineSizes(bars.Count))
             {
@@ -71,9 +79,11 @@ static class Writer
         {
             $"// read from {chart.Audio} by dettato",
             $"title \"{title}\"",
-            $"tempo {chart.TempoNote} = {chart.Bpm}",
+            $"tempo {chart.TempoNote} = {chart.BpmText}",
             $"time {chart.Time}",
             $"key {char.ToLowerInvariant(tonic[0])}{accidental} {mode}",
+            "// Shift+Ctrl+Up/Down on the font name switches the font",
+            "fonts { music \"Petaluma\" }",
             "",
         };
         int pickup = chart.Bars[0].Pickup;
@@ -179,7 +189,7 @@ static class Writer
         s.Append("{\n  \"dettato\": 1,\n");
         s.Append($"  \"audio\": {Quoted(chart.Audio)},\n");
         s.Append($"  \"duration\": {Np.Repr(chart.Duration)},\n");
-        s.Append($"  \"tempo\": {{\n    \"note\": {Quoted(chart.TempoNote)},\n    \"bpm\": {chart.Bpm}\n  }},\n");
+        s.Append($"  \"tempo\": {{\n    \"note\": {Quoted(chart.TempoNote)},\n    \"bpm\": {chart.BpmText}\n  }},\n");
         s.Append($"  \"time\": {Quoted(chart.Time)},\n");
         s.Append($"  \"key\": {Quoted(chart.Key)},\n");
         if (chart.Tuning is int tuning) s.Append($"  \"tuning\": {tuning},\n");

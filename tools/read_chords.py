@@ -89,6 +89,8 @@ RING_OUT = 0.2          # ears: a bar past the last one found and this much quie
 PARTIAL = {1: "4", 2: "2", 3: "2.", 4: "1", 6: "1."}   # a pickup of so many quarters, as Lily#'s `partial` takes it
 MEND_BARS = True       # ears: two short bars that together have a bar's beats are one bar (the tracker's slip)
 EVEN_TEMPO = 0.1       # the tempo is from the mean of the bars within this share of the middle one (0: the middle one alone)
+DIAGRAM_NOTE = "// Shift+Ctrl+Up/Down on a chord name shows its guitar chord diagram"   # above the first chords (the owner, 2026-11-16)
+TENTH_TEMPO = True    # ears: the tempo to a tenth, a whole number when it is one (Lily# writes `tempo 4 = 131.8`, 2026-11-16)
 SLOW_TWO = 1.5        # a bar of two beats longer than this (beats slower than 80 a minute) is a bar of four
                         # (chosen looking at seed7 and seed11, test sets, 2026-11-14)
 
@@ -894,11 +896,15 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
     if EVEN_TEMPO and ears:      # the lines are a beat tracker's, on its grid of 20 ms: the bars about as long as the middle one, together
         gaps = np.diff(lines) * HOP / SR
         bar_seconds = float(np.mean(gaps[np.abs(gaps - bar_seconds) <= EVEN_TEMPO * bar_seconds]))
+    bpm = int(round(60.0 * tempo_beats / bar_seconds))
+    if TENTH_TEMPO and ears:
+        bpm = round(60.0 * tempo_beats / bar_seconds, 1)
+        bpm = int(bpm) if bpm == int(bpm) else bpm
     return {                                      # docs/SIDECAR.md says what each of these is
         "dettato": FORMAT,
         "audio": name,
         "duration": round((len(oenv) - 1) * HOP / SR, 2),
-        "tempo": {"note": tempo_note, "bpm": int(round(60.0 * tempo_beats / bar_seconds))},
+        "tempo": {"note": tempo_note, "bpm": bpm},
         "time": time,
         "key": f"{tonic_name} {mode}",
         **({"tuning": int(f["cents"])} if "cents" in f else {}),
@@ -913,6 +919,7 @@ def lys(result, title):
     tonic, mode = result["key"].split()
     acc = {"": "", "#": "is", "b": "es"}[tonic[1:]]
     beats = 2 if result["time"] == "6/8" else int(result["time"].split("/")[0])
+    noted = []                          # the note on the diagrams is written yet
 
     def slots(said):
         """A bar as Lily# writes it: a chord on the beat it starts on, '.' where it goes on.
@@ -943,6 +950,9 @@ def lys(result, title):
         section ends, so that a section begins a line; the owner, 2026-11-16)."""
         end = " break |" if breaks else " |"
         out, i = [], 0
+        if not noted:                   # the first chords of the chart: how to see a chord's diagram
+            noted.append(True)
+            out.append(f"{indent}{DIAGRAM_NOTE}")
         for size in line_sizes(len(bars)):
             out.append(f"{indent}{' | '.join(slots(said) for said in bars[i:i + size])}{end}")
             i += size
@@ -954,6 +964,8 @@ def lys(result, title):
         f"tempo {result['tempo']['note']} = {result['tempo']['bpm']}",
         f"time {result['time']}",
         f"key {tonic[0].lower()}{acc} {mode}",
+        "// Shift+Ctrl+Up/Down on the font name switches the font",
+        'fonts { music "Petaluma" }',
         "",
     ]
     form = result.get("form") or []

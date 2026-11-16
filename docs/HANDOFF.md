@@ -3,25 +3,30 @@
 **毎セッションの終わりに書き換える**（追記しない。200 行以内）。方向づけは [ROADMAP.md](ROADMAP.md)、
 数字と使い方は [README](../README.md)、録音の出典は [DATASETS.md](DATASETS.md)。
 
-最終更新: 2026-11-16 夜（短い section をまとめ、繰り返し記号を form に書く・拡張の Transcribe コマンドを外した。拡張 0.3.0。HEAD は `git log -1` で確かめる）。
+最終更新: 2026-11-16 昼（テンポを小数 1 桁に・Lily# に `warpFit` を依頼 8。拡張 0.3.1。HEAD は `git log -1` で確かめる）。
+
+### テンポを小数 1 桁に（2026-11-16、Lily# の依頼 7・オーナー了承。README「The tempo to a tenth」）
+- Lily# が `tempo 4 = 131.8` を書けるようになり、録音は「書いたテンポ」の速さで鳴るようになった（Lily# `c74d132ee` の `warpFit`＝録音の全長 ÷ 楽譜の全長）。
+- **Dettato は数の出し方を変えず、丸めを小数 1 桁に**（`TENTH_TEMPO`・`Chart.BpmText`。整数なら `131` のまま）。`rwc-dev` テンポ 46 → 47、ほかは不変。268 曲で Python と一字一句同じ。
+- **捨てた案: 「拍の総数 ÷ 全長」（`warpFit` が 1 になる数）。** 読み違えた小節に引きずられ、テンポの合う曲が 172 中 −17、58 分の練習録音で 104.1（曲は 128〜154）。
+  代わりに **Lily# へ依頼 8: `warpFit` を小節ごとの比の中央値に**（2% 超のずれ 35 → 3 曲、練習録音 1.26 → 0.994 倍。Dettato の小節の秒で数え、Lily# では鳴らしていない）。
+- **同じ版で `.lys` に 3 行**（オーナーの指示、`lys()`・`Writer.cs`）: `key` の下に `// Shift+Ctrl+Up/Down on the font name switches the font` と `fonts { music "Petaluma" }`、
+  最初のコードの行の上に `// Shift+Ctrl+Up/Down on a chord name shows its guitar chord diagram`（`DIAGRAM_NOTE`）。**最初のコードにシェイプ（`D(xx0232)`）を付けるのは依頼 9 待ち**
+  （オーナー:「コードの重複は避けたい」＝表や規則を Dettato に写さず lysc の口で既定を取る。LilySharp.Core を呼んで 1152 通りを出す道具は `scratch/shapes/`）。
 
 ### 短い section と繰り返し記号（2026-11-16、オーナーの希望。README の「What is said again」の末尾・SIDECAR.md「The chart and the file」）
-
-- **6 小節以下の section が続いたら 1 つにまとめる**（`SHORT_SECTION`／`ShortSection`。`find_form` の最後。4＋4 は 8、同じ 4 小節が 2 回でも 8 に＝書き出す。4 と 8 はそのまま）。
-  `section`・`barOfSection`・`form` が変わり、ベースまでの率が少し動く（数字の表）。
+- **6 小節以下の section が続いたら 1 つにまとめる**（`SHORT_SECTION`／`ShortSection`。`find_form` の最後。4＋4 は 8、同じ 4 小節が 2 回でも 8 に。4 と 8 はそのまま）。
 - **一度きりの section が続いたら 32 小節まで 1 つ、32 を超える所（繰り返す section も）は分ける**（`LONG_SECTION`、`cut_long`／`CutLong`）。
   切る所は見つけた section の境目か 8 の倍数だけ（オーナー: 等分は良くない）。少ない数→境目で切る→偏りが少ない、の順。17〜31 小節を文脈で分けるかは未決。
 - **繰り返し記号は form だけ**（オーナー:「form だけで全体の流れが把握できる方が良い」）。`|: A :|`・`|: A B :|`・`:|*N`・`|: A [1. B] :| [2. C]`。
   section の中は書き出す。`form_with_repeats`／`FormWithRepeats`。`sidecar.py` は `lysc midi --batch` から演奏の小節数を数える。
 - **改行: 4 小節ごとと section の終わりに `break`**（section は必ず行の頭から。弱起には書かない）。余り 1 は前の行と 5、余り 2 は 3・3（`line_sizes`／`LineSizes`）。
-- **捨てた案（同じ日に試して戻した）:** chords の中の `|: … :|`・1 番 2 番、4 小節の section の 2 回を `|: A :|`（オーナー: 8 小節を書き出す方が使いやすい）。
-- 268 曲で Python と .NET が一字一句同じ、`lysc check`・sidecar 268/268。記号は RWC 76/100、合成曲 79/168。My Life は
-  `form { A |: B C B [1. D] :| [2. E] B F }`（オーナーの案から。本体は複数の section でもよい）。png で見た。**この形はオーナーがまだ見ていない。**
+- **捨てた案:** chords の中の `|: … :|`・1 番 2 番、4 小節の section の 2 回を `|: A :|`（オーナー: 8 小節を書き出す方が使いやすい）。
+- 記号は RWC 76/100、合成曲 79/168。My Life は `form { A |: B C B [1. D] :| [2. E] B F }`。png で見た。**この形はオーナーがまだ見ていない。**
 
 ### 書き出し先と `audio`（2026-11-16、オーナーの希望。依頼 6）
-
-- **Lily# に毎回フォルダ選択のダイアログを依頼（6）**。名前なしで開く案は「将来の案」として添えただけ。**オーナー決定: 別のフォルダでは録音をコピーせず `audio` が場所を指す**
-  （`Program.cs`。`/` 区切りの相対パス、ドライブ違いは絶対パス、隣はファイル名。`dettato read` は不変）。**今の Lily# は `/` を含む `audio` を読まない**（`recordingCore.ts:159`）。
+- **Lily# に毎回フォルダ選択のダイアログを依頼（6）。オーナー決定: 別のフォルダでは録音をコピーせず `audio` が場所を指す**（`Program.cs`。`/` 区切りの相対パス、
+  ドライブ違いは絶対パス、隣はファイル名）。**今の Lily# は `/` を含む `audio` を読まない**（`recordingCore.ts:159`）。
 
 ### D4 の形（2026-11-15、オーナーと話して決めた。依頼 4・[便り](repro/lilysharp-requests-2026-11-15-listening.md)）
 
@@ -32,9 +37,8 @@
 
 **`dettato <録音> [-o <x.lys>] [--force]` が、mp3・m4a・mp4・aac・flac・wma・wav から `.lys` と `.dettato.json` を録音の隣に書く**
 （Python なし。RWC_P001 の mp3 で 6.3 秒）。配る形は .NET＋ONNX の実行ファイルを VS Code 拡張に入れる（Calamo と同じ形）。
-**拡張 `yotsuda.dettato` 0.3.0 をこの PC の VS Code に入れた**（`extension/`、`tools/deploy-extension.ps1`。113 MB、Lily# とは別の拡張）。
-**コマンドはない**: メニューは Lily# の「Convert Recording to Lily# (.lys)… (Preview)」で、Lily# が `ext.activate()` で `{path, version, protocol, inputs}` を受け取る。
-0.3.0 で繰り返し記号と `audio` の相対パスが入った。**VS Code の中で動くことはユーザーが確かめた（0.2.0、My Life の mp3。0.3.0 は Lily# のメニューからはまだ）。**
+**拡張 `yotsuda.dettato` 0.3.1 をこの PC の VS Code に入れた**（`extension/`、`tools/deploy-extension.ps1`。113 MB、Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
+「Convert Recording to Lily# (.lys)… (Preview)」で、Lily# が `ext.activate()` で `{path, version, protocol, inputs}` を受け取る。**VS Code の中で動くことはユーザーが確かめた（0.2.0。0.3.x は Lily# のメニューからはまだ）。**
 
 ### コマンドと入力（D3。`Program.cs`・`Audio.cs`。README の「A recording as it comes」、Lily# 向けは便りの §2a）
 
@@ -67,7 +71,7 @@
 - **`--ears` では HPSS を外した**（`use_ears()` が `HARMONIC_FRAMES = 0`。特徴量は `scratch/feat-h0/`）。1 曲 3 分半で `dettato read` 5.5 秒（Beat This! 3.7）。
 - **onnxruntime のスレッド数は 8 に絞る**（既定の 24 だと Beat This! が 1 曲 10 秒）。
 
-### 数字（`measure.py all`、2026-11-16 の短い section をまとめた後。ベースだけ 0.3 ポイントまで動いた。lysc check 1388/1388、sidecar 1388/1388＝演奏の小節数で）
+### 数字（`measure.py all`、2026-11-16 のテンポ小数 1 桁の後。テンポの列だけ動いた。その前の短い section をまとめた後でベースだけ 0.3 ポイントまで動いた。lysc check 1388/1388、sidecar 1388/1388＝演奏の小節数で）
 
 | `--ears`（crema） | `rwc-dev`（選ぶ側） | `rwc-test`（数えるだけ） | `rwc-p` | seed1 / 7 / 11 |
 |---|---|---|---|---|
@@ -75,7 +79,7 @@
 | ルート＋長短 | 82.3% | 82.2% | 82.2% | 91.6 / 88.4 / 92.4% |
 | ベース音まで | 64.1% | 64.9% | 64.5% | 73.6 / 58.6 / 73.8% |
 | 小節線 F | 93.6% | 94.9% | 94.2% | 96.7 / 90.9 / 93.6% |
-| テンポ・拍子 | 46・49 | 47・49 | 93・98 | |
+| テンポ・拍子 | 47・49 | 47・49 | 94・98 | |
 | 印 → 拾う誤り | 30.2% → 77.8% | 25.7% → 70.3% | 28.0% → 73.9% | 17.5% → 70.2% |
 
 - 自作（モデルあり）seed1 / 7 / 11: ルート 95.6 / 96.0 / 97.2%、小節線 95.0 / 97.6 / 99.1%。`measure.py head`（`--ears`）: 最初の小節線 `rwc-dev` 39/50・`rwc-test` 45/50、最後 23/50・13/50。
@@ -87,18 +91,16 @@
 
 ## 次の一手
 
-**まず短い section をまとめた形と form の繰り返し記号をオーナーに見てもらう**（0.3.0 を入れ直す。上の「短い section と繰り返し記号」）。
-**それから、ユーザーの録音で譜面の出来を聴いてもらう。** 読めるか・時間・頭のずれ・長い録音は 2026-11-16 に機械で見た（上の「コマンドと入力」）。
-残るのは耳で聴く所で、ユーザーの手が要る。1 曲目の My Life（`scratch/d3/mylife/`）は 0.2.1 で「さほど違和感はない」（ブリッジの C#dim・F#7/C# は
-1 つずつ確かめていない。3 拍の小節が 1 つ残る）。次の候補: ユーザーがベースで弾く曲・コードの分かっている曲（あれば数字も）、バンド練習の録音
-（`F:\Music\ギャラン☆Do!\`。58 分の 1 本は `scratch/d3/user/long-only/` に譜面がある。曲の切れ目でテンポが変わるので C3 とつながる）。
+**まず短い section をまとめた形と form の繰り返し記号をオーナーに見てもらう**（0.3.1 を入れた。上の「短い section と繰り返し記号」）。
+**それから、ユーザーの録音で譜面の出来を聴いてもらう**（耳で聴く所。機械で見られる所は 2026-11-16 に見た）。My Life（`scratch/d3/mylife/`）は 0.2.1 で
+「さほど違和感はない」（ブリッジの C#dim・F#7/C# は未確認、3 拍の小節が 1 つ）。次の候補: ユーザーがベースで弾く曲・コードの分かっている曲、
+バンド練習（`F:\Music\ギャラン☆Do!\`。58 分の譜面は `scratch/d3/user/long-only/`。テンポが曲ごとに変わる＝C3）。
 
-- **D4 で Dettato 側に作るものは今はない。** 人の小節線から読み直す入口（D4 (3)）は**オーナー決定（2026-11-16、設計メモ §6）で要らなくなった**＝
-  読み直しは単に上書き、Lily# からは頼まない。Lily# は既にある `.lys` の横に `song (Dettato).lys` を書く「Write Beside」も作った（`e29f2463d`。`-o` で `--force` なし＝今の呼び方のまま）。
+- **D4 で Dettato 側に作るものは今はない**（読み直しは単に上書き＝オーナー決定、設計メモ §6。Lily# の「Write Beside」は今の呼び方のまま通る）。
   配り直すときは版を 2 か所（`Program.cs`・`extension/package.json`）と CHANGELOG で上げて `tools/deploy-extension.ps1`。
-- **Lily# の依頼（`docs/repro/REQUESTS.md`。セッションの頭に見る）:** 1 は Lily# が作り（「Convert Recording to Lily# (.lys)… (Preview)」、鍵は Lily# が立てる）、
-  **オーナーの指示で拡張の `dettato.transcribe` を外した（0.3.0、1 は `done`）。** 4 は Lily# が作り中（S1〜S3 済み、次は S4）、`tuning`・`beats` は受け取られた。
-  **5（m4a の `iTunSMPB` を Lily# の `Mp4Lead` に）は返事なし**（入るまで iTunes の m4a で 48 ms 早い）。6（保存先のダイアログ・`audio` の相対パス）は 2026-11-16 に出した。3 は確かめてから `done`。
+- **Lily# の依頼（`docs/repro/REQUESTS.md`。セッションの頭に見る）:** 1 は `done`。4 は Lily# が作り中（S1〜S3 済み、次は S4）。
+  **5（m4a の `iTunSMPB`）は `fixed`＝実物の m4a で確かめてから `done`。** 7（小数のテンポ。Lily# が 6 と書いたのを振り直した）は 0.3.1 で入れた。
+  **6（保存先のダイアログ・`audio` の相対パス）・8（`warpFit`）・9（既定のシェイプの lysc の口）は返事待ち**。9 が入ったら最初のコードにシェイプを付ける。3 は確かめてから `done`。
 - 返事を待つ間にできる一手: C3（テンポの大きな変化。範囲のテンポ・人の拍マーカーとつながる）。規則を触るなら「.NET の規則」の手順で。
 
 やり残し（急がない）:

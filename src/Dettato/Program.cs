@@ -42,7 +42,7 @@ using System.Text;
 using Dettato;
 using Microsoft.ML.OnnxRuntime;
 
-const string version = "0.3.0";
+const string version = "0.3.1";
 const int protocol = 1;
 const string usage = "usage: dettato <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]\n"
                    + "       dettato --version [--json]\n"
@@ -174,7 +174,7 @@ if (args[0] is not ("read" or "ears" or "features" or "audio"))
         lys = Writer.Lys(chart, Path.GetFileNameWithoutExtension(recording));
         json = Writer.Json(chart);
         int marks = lys.Split("@todo").Length - 1;
-        Console.Error.WriteLine($"  {chart.Bars.Count} bars in {chart.Time} at {chart.Bpm}, {chart.Key}; {marks} {(marks == 1 ? "chord" : "chords")} marked @todo");
+        Console.Error.WriteLine($"  {chart.Bars.Count} bars in {chart.Time} at {chart.BpmText}, {chart.Key}; {marks} {(marks == 1 ? "chord" : "chords")} marked @todo");
     }
     catch (Exception e) when (Unread(e))
     {

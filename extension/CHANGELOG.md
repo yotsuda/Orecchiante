@@ -2,6 +2,14 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.3.1
+
+- The tempo is written to a tenth (`tempo 4 = 131.8`; a whole number stays bare), in the chart
+  and in the file beside it, so that Lily# plays the recording at the pace the chart says.
+- The chart opens in the Petaluma music font (`fonts { music "Petaluma" }`, under the key), with a
+  note that Shift+Ctrl+Up/Down on the font's name switches it.
+- A note above the first chords: Shift+Ctrl+Up/Down on a chord name shows its guitar chord diagram.
+
 ## 0.3.0
 
 - The command "Transcribe Recording to Lily# Chord Chart (.lys)…" is gone: the Lily# extension

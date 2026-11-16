@@ -285,11 +285,12 @@ crema; the same words hold for BTC, on which the prices and the marks were chose
 ```
 
 Counted on 2026-11-14 (`measure.py table rwc-dev rwc-test rwc-p --ears`; the beats of RWC are
-the fold models', as above; the first three columns again after "Two half bars are one bar" below):
+the fold models', as above; the first three columns again after "Two half bars are one bar" below,
+and their tempo row after "The tempo to a tenth"):
 
 | | `rwc-dev` (chosen on) | `rwc-test` (counted only) | `rwc-p`, all 100 | crema as it is, `rwc-p` | with BTC's chords, `rwc-p` |
 |---|---|---|---|---|---|
-| Tempo (within 4%), songs | 46 of 50 | 47 of 50 | 93 | 91 | 93 |
+| Tempo (within 4%), songs | 47 of 50 | 47 of 50 | 94 | 91 | 93 |
 | Meter, songs | 49 of 50 | 49 of 50 | 98 | 96 | 98 |
 | Bar lines (within 70 ms), F | 93.6% | 94.9% | 94.2% | 93.8% | 93.4% |
 | Chord root, by time | 86.4% | 87.3% | 86.9% | 84.4% | 85.9% |
@@ -873,6 +874,26 @@ four beats or more was tried and is worse on the songs made here (`seed7` 90.4%)
 bar stays a bar (it may be the music's own bar of two beats), and is written as long as the rest.
 "My Life" is 152 bars at 131 now, the two times its verse leads into the bridge written alike.
 In .NET the same (`Reader.cs`), letter for letter on the 268 charts.
+
+### The tempo to a tenth
+
+Lily# takes a tempo with a fraction (`tempo 4 = 131.8`, printed "♩ ≈ 132"), and with a recording
+its preview plays the recording at the pace the chart's tempo says (Lily#, 2026-11-16). So
+(`TENTH_TEMPO`, 0.3.1) the tempo is written to a tenth: the number that was rounded to a whole
+one before (the mean of the bars within a tenth of the middle one); a whole number stays bare. "My Life" stays at 131 (131.0). With `--ears`, songs whose tempo is
+within 4% of the true one: `rwc-dev` 46 → 47, `rwc-test` 47 → 47, the songs made here (`seed1`,
+`seed7`, `seed11`) the same; nothing else moves. 28 of RWC's 100 charts have a fraction (the rest
+are songs at a whole tempo, read so).
+
+Tried and not taken: the written bars' beats over their span, the number that makes the score and
+the recording exactly as long. It follows every bar read wrong (two bars read as one, a last bar
+cut short, a meter read wrong): the songs at the right tempo went `rwc-dev` 46 → 40, `rwc-test`
+47 → 44, `seed1`/`seed7`/`seed11` 22/21/21 → 19/17/20, and a 58-minute band practice (rests and
+talk between songs) read 104.1 where its songs are at 128 to 154. Lily# is asked instead to set the
+recording's pace from the bars one by one (`docs/repro/REQUESTS.md`, 8): on these charts the pace is
+then more than 2% off in 3 of 172 songs (at most 2.7%), against 35 (at most 39%) with the span; the
+band practice 0.994 against 1.26 (`scratch/fit.py`, `scratch/user_fit.py`: counted on the bar
+seconds the charts give, not played in Lily#).
 
 ### On the songs made here, nothing learnt
 
