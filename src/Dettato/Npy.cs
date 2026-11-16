@@ -57,9 +57,23 @@ static class Npy
         return (logp, shape[0], step);
     }
 
+    /// <summary>A float32 .npy of any shape (the vocals' loudness, `dettato ears` and scratch/sep/song.py), flat.</summary>
+    public static float[] ReadFloats(string path)
+    {
+        using var file = File.OpenRead(path);
+        var (type, _, data) = Read(file);
+        if (type != "<f4") throw new InvalidDataException($"{path} is {type}, not float32");
+        return MemoryMarshal.Cast<byte, float>(data).ToArray();
+    }
+
     static (string Type, int[] Shape, byte[] Data) Read(ZipArchiveEntry entry)
     {
         using var stream = entry.Open();
+        return Read(stream);
+    }
+
+    static (string Type, int[] Shape, byte[] Data) Read(Stream stream)
+    {
         using var all = new MemoryStream();
         stream.CopyTo(all);
         var bytes = all.ToArray();

@@ -16,17 +16,19 @@
 //
 // And for measuring, on one recording or a folder of them, each part to a file:
 //
-//   dettato read <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--lines <folder>] [--heard <folder>]
+//   dettato read <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--lines <folder>] [--heard <folder>] [--voice <folder>|none]
 //
 // the same reading into a folder, written over whatever is there. --lines and --heard take the beats and the
 // chords' probabilities from folders of <name>.beats and <name>.npz, as the two commands below and the tools in
-// Python write them, in place of running the models (to compare with read_chords.py: tools/read_check.py).
+// Python write them, in place of running the models (to compare with read_chords.py: tools/read_check.py); --voice
+// the vocals' loudness from <name>.voc.npy (none: no singing heard, as read_chords.py without --voice).
 //
 //   dettato ears <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--cqt]
 //
-// writes <name>.beats (as tools/track_beats.py does) and <name>.npz (as tools/crema_chords.py does);
+// writes <name>.beats (as tools/track_beats.py does), <name>.npz (as tools/crema_chords.py does) and <name>.voc.npy
+// (the vocals' loudness every 10 ms, as scratch/sep/song.py does with Demucs in torch);
 // with --cqt, also <name>.cqt.npy, what the chord model was given. The models are beat-this-final0-dynamo.onnx
-// crema-chord.onnx and btc-large-voca.onnx (README: how they are made), beside the program unless --models says where.
+// crema-chord.onnx, btc-large-voca.onnx and htdemucs-mm8.onnx (README: how they are made), beside the program unless --models says where.
 //
 //   dettato features <a recording or a folder of them> --out <folder>
 //
@@ -42,11 +44,11 @@ using System.Text;
 using Dettato;
 using Microsoft.ML.OnnxRuntime;
 
-const string version = "0.5.0";
+const string version = "0.6.0";
 const int protocol = 1;
 const string usage = "usage: dettato <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]\n"
                    + "       dettato --version [--json]\n"
-                   + "       dettato read <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--lines <folder>] [--heard <folder>]\n"
+                   + "       dettato read <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--lines <folder>] [--heard <folder>] [--voice <folder>|none]\n"
                    + "       dettato ears <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--cqt]\n"
                    + "       dettato features <a recording or a folder of them> --out <folder>\n"
                    + "       dettato audio <a recording or a folder of them> --out <folder>";
@@ -66,19 +68,20 @@ if (args.Length == 0 || args[0] is "-h" or "--help" or "-?" or "/?")
 }
 
 var started = Stopwatch.StartNew();
-double load = 0, mel = 0, beat = 0, cqt = 0, chord = 0, audio = 0, rules = 0;
-InferenceSession? beatModel = null, chordModel = null, btcModel = null;
-string? linesFrom = null, heardFrom = null;
+double load = 0, mel = 0, beat = 0, cqt = 0, chord = 0, sing = 0, audio = 0, rules = 0;
+InferenceSession? beatModel = null, chordModel = null, btcModel = null, voiceModel = null;
+string? linesFrom = null, heardFrom = null, voiceFrom = null;     // voiceFrom "none": no singing heard
 
 int Fail(int code, string why) { Console.Error.WriteLine("dettato: " + why); return code; }
 
-void Open(string models, int threads, bool beats, bool chords)
+void Open(string models, int threads, bool beats, bool chords, bool voice)
 {
     // With every core, Beat This! is 2.5 times slower on 24 of them (README).
     var options = new SessionOptions { IntraOpNumThreads = threads };
     if (beats) beatModel = new InferenceSession(Path.Combine(models, "beat-this-final0-dynamo.onnx"), options);
     if (chords) chordModel = new InferenceSession(Path.Combine(models, "crema-chord.onnx"), options);
     if (chords) btcModel = new InferenceSession(Path.Combine(models, "btc-large-voca.onnx"), options);    // the second ear
+    if (voice) voiceModel = new InferenceSession(Path.Combine(models, Voice.Model), options);
 }
 
 // The chords as the two ears hear them together (Btc.Average): crema at 44100 Hz, BTC at 22050 Hz.
@@ -105,7 +108,7 @@ Chart Read(string file, Action<string>? say = null)
     // (an hour's recording is 1.3 GB at its own rate: each array is let go once read, and collected
     // before the next is made)
     var low = Resample.To(mono, Features.Rate, rate);       // the beat model's rate too
-    double[]? high = heardFrom == null ? Resample.To(mono, Crema.Rate, rate) : null;
+    double[]? high = heardFrom == null || voiceFrom == null ? Resample.To(mono, Crema.Rate, rate) : null;
     mono = null!;
     Collect();
     mel += clock.Elapsed.TotalSeconds; clock.Restart();
@@ -120,12 +123,17 @@ Chart Read(string file, Action<string>? say = null)
     double step = Crema.Step;
     if (heardFrom != null) (logp, frames, step) = Npy.ReadHeard(Path.Combine(heardFrom, name + ".npz"));
     else logp = Heard(high!, low, out frames);       // in half precision, as `dettato ears` writes them
+    chord += clock.Elapsed.TotalSeconds; clock.Restart();
+    say?.Invoke("the singing");
+    float[]? voice = voiceFrom == "none" ? null
+        : voiceFrom != null ? (File.Exists(Path.Combine(voiceFrom, name + ".voc.npy")) ? Npy.ReadFloats(Path.Combine(voiceFrom, name + ".voc.npy")) : null)
+        : Voice.Loudness(voiceModel!, high!, Voice.Parallel);
     high = null;
     low = null!;
     Collect();
-    chord += clock.Elapsed.TotalSeconds; clock.Restart();
+    sing += clock.Elapsed.TotalSeconds; clock.Restart();
     var (lines, beats) = Reader.LinesOf(tracked, logp, frames, step);    // the halves of bars are paired as the key heard says
-    var chart = Reader.Read(Path.GetFileName(file), heard, lines, beats, logp, frames, step);
+    var chart = Reader.Read(Path.GetFileName(file), heard, lines, beats, logp, frames, step, voice);
     rules += clock.Elapsed.TotalSeconds;
     return chart;
 }
@@ -167,9 +175,9 @@ if (args[0] is not ("read" or "ears" or "features" or "audio"))
     try
     {
         modelsAt ??= AppContext.BaseDirectory;
-        foreach (var model in new[] { "beat-this-final0-dynamo.onnx", "crema-chord.onnx", "btc-large-voca.onnx" })
+        foreach (var model in new[] { "beat-this-final0-dynamo.onnx", "crema-chord.onnx", "btc-large-voca.onnx", Voice.Model })
             if (!File.Exists(Path.Combine(modelsAt, model))) return Fail(3, $"the model {model} is not in {Path.GetFullPath(modelsAt)} (--models <folder>)");
-        try { Open(modelsAt, threads, true, true); }
+        try { Open(modelsAt, threads, true, true, true); }
         catch (Exception e) { return Fail(3, $"the models did not open ({e.Message.Trim()})"); }
         var chart = Read(recording, Console.Error.WriteLine);
         // The recording as the chart finds it: its file name beside the chart, else the way there from the chart's
@@ -252,8 +260,8 @@ if (args[0] == "features")
     return 0;
 }
 
-if (args[0] == "read") { linesFrom = Option("--lines"); heardFrom = Option("--heard"); }
-Open(Option("--models") ?? AppContext.BaseDirectory, int.Parse(Option("--threads") ?? "8"), linesFrom == null, heardFrom == null);
+if (args[0] == "read") { linesFrom = Option("--lines"); heardFrom = Option("--heard"); voiceFrom = Option("--voice"); }
+Open(Option("--models") ?? AppContext.BaseDirectory, int.Parse(Option("--threads") ?? "8"), linesFrom == null, heardFrom == null, voiceFrom == null);
 Console.WriteLine($"start and open the models: {started.Elapsed.TotalSeconds:F2} s");
 
 if (args[0] == "read")
@@ -277,7 +285,7 @@ if (args[0] == "read")
         }
     }
     Console.WriteLine($"{n} songs, {audio / n:F0} s of audio each; a song: load {load / n:F2} s, to 22050 Hz {mel / n:F2} s, "
-        + $"the features {cqt / n:F2} s, the beats {beat / n:F2} s, the chords {chord / n:F2} s, the rules {rules / n:F2} s");
+        + $"the features {cqt / n:F2} s, the beats {beat / n:F2} s, the chords {chord / n:F2} s, the singing {sing / n:F2} s, the rules {rules / n:F2} s");
     Console.WriteLine($"in all, from the start of the process: {started.Elapsed.TotalSeconds:F2} s");
     if (failed > 0) Console.Error.WriteLine($"{failed} of {n} recordings were not read");
     return failed > 0 ? 1 : 0;
@@ -303,10 +311,13 @@ foreach (var file in files)
     }
     cqt += clock.Elapsed.TotalSeconds; clock.Restart();
     Npy.WriteHeard(stem + ".npz", Heard(high, low, out int frames), frames, Crema.Chords, Crema.Step);     // the two ears together
-    chord += clock.Elapsed.TotalSeconds;
+    chord += clock.Elapsed.TotalSeconds; clock.Restart();
+    var voice = Voice.Loudness(voiceModel!, high, Voice.Parallel);
+    Npy.Write(stem + ".voc.npy", voice, voice.Length);
+    sing += clock.Elapsed.TotalSeconds;
 }
 Console.WriteLine($"{n} songs, {audio / n:F0} s of audio each; a song: load {load / n:F2} s, to 22050 Hz {mel / n:F2} s, "
-    + $"mel and beat model {beat / n:F2} s, CQT {cqt / n:F2} s, chord model {chord / n:F2} s");
+    + $"mel and beat model {beat / n:F2} s, CQT {cqt / n:F2} s, chord model {chord / n:F2} s, the singing {sing / n:F2} s");
 Console.WriteLine($"in all, from the start of the process: {started.Elapsed.TotalSeconds:F2} s");
 return 0;
 

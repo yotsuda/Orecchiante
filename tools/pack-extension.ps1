@@ -1,6 +1,6 @@
 param(
     [string]$Out = "$PSScriptRoot\..\out\extension",   # the staging folder and the .vsix
-    [string]$Models = "$PSScriptRoot\..\scratch\d2"    # where the three .onnx are (README: how they are made)
+    [string]$Models = "$PSScriptRoot\..\scratch\d2"    # where the four .onnx are (README: how they are made)
 )
 # The reader as a VS Code extension (docs/ROADMAP.md, D2 and D4; the shape is Calamo's): dettato.exe
 # published self-contained for win-x64 into extension/bin, the three models beside it (where the program
@@ -10,7 +10,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = Resolve-Path "$PSScriptRoot\.."
 $ext = "$root\extension"
-$onnx = 'beat-this-final0-dynamo.onnx', 'crema-chord.onnx', 'btc-large-voca.onnx'
+$onnx = 'beat-this-final0-dynamo.onnx', 'crema-chord.onnx', 'btc-large-voca.onnx', 'htdemucs-mm8.onnx'
 foreach ($name in $onnx) {
     if (-not (Test-Path "$Models\$name")) { throw "$name is not in ${Models}: pass -Models <folder>" }
 }

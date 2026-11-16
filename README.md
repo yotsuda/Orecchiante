@@ -546,8 +546,8 @@ then; AIST's are now (below).
 ### Sections by meaning
 
 **The default since 2026-11-16** (the owner; before, `--phrase`; the old sections are
-`--old-sections`). In .NET too (`Form.Turns`, `Form.Phrases`), without the voice: the vocals have
-no model that ships yet, so `dettato` reads as "no voice" below, and Python with `--voice`.
+`--old-sections`). In .NET too (`Form.Turns`, `Form.Phrases`, `Form.VoiceTurns`), with the voice
+since 0.6.0 (below, "The voice in .NET").
 
 The owner would rather have a section begin where the music turns: where singing comes in or
 stops, where the key or the feel changes, at a solo. They cut two songs by hand (糸, My Life), and
@@ -568,7 +568,8 @@ leaving out boundaries between two sections of the same label (chorus A, chorus 
 |---|---|---|
 | the old sections (`find_form`, `--old-sections`) | 58.5 / 28.2 / 38.1% | 52.8 / 25.6 / 34.5% |
 | `--phrase`, no voice | 54.9 / 39.2 / 45.8% | 58.5 / 40.8 / 48.1% |
-| `--phrase` with the voice | 67.1 / 63.4 / 65.2% | 66.1 / 56.1 / 60.7% |
+| `--phrase` with the voice (torch's Demucs, stereo) | 67.1 / 63.4 / 65.2% | 66.1 / 56.1 / 60.7% |
+| the voice dettato hears (0.6.0, below) | 65.6 / 63.0 / 64.3% | 65.8 / 55.5 / 60.2% |
 
 Within 0.5 s, F is 21.2 / 25.2 / 41.5% on `rwc-dev` and 17.6 / 29.2 / 37.6% on `rwc-test`.
 `PHRASE_BARS` and `BEGIN_SHARE` were chosen on `rwc-dev` (and on keeping the owner's two songs
@@ -590,6 +591,45 @@ them a bar or two long; the old sections 6.2 and 5.5), and 3.8, 3.7, 2.9 in `see
 `seed11`. With nothing folded the chords change by a tenth of a point or so (`rwc-dev` root 87.3
 → 87.4%, `rwc-test` 88.8 → 88.9%), and the marks are half a point fewer (`rwc-test` 28.7 → 28.1%
 marked, catching 72.5 → 72.0% of the wrong roots and families).
+
+### The voice in .NET
+
+Since 0.6.0 (the owner) dettato hears the singing itself: Demucs's `htdemucs` (demucs 4.1.0, MIT)
+written out as ONNX without its Fourier transforms (`tools/d2/demucs_onnx.py`), which `Voice.cs`
+does, with the recording split and put back together as `demucs.apply.apply_model` does (7.8 s
+segments, a quarter overlapping, a triangle of weights) but with no random shift, so the same
+recording gives the same chart. The recording is read in mono and given to both channels.
+
+- Its matrix products are held in 8-bit integers (`htdemucs-mm8.onnx`, 85 MB against 174 MB):
+  the vocals of a segment of `RWC_P001` 0.7% off the network's own. With the convolutions in
+  8 bits too (59 MB) the vocals came out half as loud, so they are not.
+- Against torch's Demucs on the same mono recording, no shift (`RWC_P001`): the loudness every
+  10 ms correlates 0.99993, 0.8% off; the moments it calls singing are the same in 99.7%.
+- Mono against the stereo recording with a random shift, as the first numbers above were
+  counted (`rwc-dev`): bars sung or not right 96.4% (96.3%), where singing begins or stops found
+  within a bar 93.2% (94.0%); AIST's section starts within 3 s F 64.3% (65.2%), within 0.5 s
+  42.3% (41.5%). `rwc-test` (counted only): 95.6% (95.0%), 94.3% (94.7%); F 60.2% (60.7%), 37.5% (37.6%).
+- A recording with no singing: the vocals' loud end is then a hundredth or less of the
+  recording's (`seed1`: 0.001 to 0.005, against 0.21 and more for RWC's songs, 0.55 in the middle, by the features'
+  `rms`), and below a twentieth (`VOICE_FLOOR`) no singing is heard. The songs made here gave no
+  turns of singing even without it (their vocals are the rest leaking, as loud all through).
+- The rules are .NET's too (`Form.VoiceTurns`, the turns near where singing begins or stops in
+  `Form.Phrases`): given the same `.voc.npy`, the charts of `rwc-dev` and `rwc-test` are the same
+  as Python's letter for letter (`dettato read … --voice <folder>`, `measure.py … --voice <folder>`).
+  Python went through the turns near singing in the order of its set; it now goes in order.
+- The time, all of it the separation: `RWC_P001` (3 min 27 s) from the `.wav` to the chart in
+  49.6 s, against about 6 s before; 3 segments at once on 8 threads each (one at a time, 2, or 6 of
+  4 threads were slower). Counted while another program kept 6 to 12 of the 24 cores busy, so not
+  the time on an idle machine (over RWC's 100 songs, 48 s of separation a song of 4 min).
+
+```
+scratch/sep/venv/Scripts/python tools/d2/demucs_onnx.py scratch/real/rwc-p/RWC_P001.wav     # scratch/d2/htdemucs-mm8.onnx
+scratch/net/out/dettato.exe ears scratch/real/rwc-p --out scratch/net/voice/rwc-p --models scratch/d2     # <name>.voc.npy too
+.venv/Scripts/python tools/aist_sections.py rwc-dev modes=voice voice=scratch/net/voice/rwc-p
+.venv/Scripts/python tools/measure.py table rwc-dev --ears --net scratch/net --voice scratch/net/voice --write scratch/pyread-nv
+scratch/net/out/dettato.exe read scratch/real/rwc-p --out scratch/net/read-nv/rwc-p --lines scratch/real/beats-bt-folds --heard scratch/real/chords-crema+btc --voice scratch/net/voice/rwc-p
+```
+
 
 ### How a chart begins and ends
 
@@ -846,9 +886,9 @@ scratch/net/out/dettato.exe features scratch/real/rwc-p --out scratch/net/rwc-p 
 
 The third part (2026-11-14) is the reader itself: `dettato read` takes a `.wav` and writes the
 `.lys` and the `.dettato.json`, with nothing of Python in between. It is `read_chords.py` as it
-runs with `--ears`, step for step (`Reader.cs`, 726 lines: the bars carried to both ends, the
-search, the two ends and the pickup, the bass note, the marks, the key; `Form.cs`, 209: the
-sections, by meaning; `Writer.cs`, 251: the two files; 2776 lines in all). The reader with nothing learnt
+runs with `--ears`, step for step (`Reader.cs`, 753 lines: the bars carried to both ends, the
+search, the two ends and the pickup, the bass note, the marks, the key; `Form.cs`, 255: the
+sections, by meaning; `Voice.cs`, 178: the singing; `Writer.cs`, 251: the two files; 3052 lines in all). The reader with nothing learnt
 and the one with its own model are not moved: they are what the songs made here are measured
 against, and stay in Python. Where numpy's arithmetic is not the plain one it is done numpy's
 way (`Np.cs`: the order of its sums, means in single precision where the features are, Python's
@@ -874,8 +914,8 @@ heard those songs, so its bar lines are not to be counted).
 ```
 scratch/net/out/dettato.exe read song.wav --out charts --models scratch/d2      # song.lys and song.dettato.json
 .venv/Scripts/python tools/measure.py table seed1 rwc-dev rwc-test --ears --net scratch/net --write scratch/pyread
-scratch/net/out/dettato.exe read data/synth/seed1 --out scratch/net/read/seed1 --lines scratch/beats-bt/seed1 --heard scratch/chords-crema+btc/seed1
-scratch/net/out/dettato.exe read scratch/real/rwc-p --out scratch/net/read/rwc-p --lines scratch/real/beats-bt-folds --heard scratch/real/chords-crema+btc   # 27 s
+scratch/net/out/dettato.exe read data/synth/seed1 --out scratch/net/read/seed1 --lines scratch/beats-bt/seed1 --heard scratch/chords-crema+btc/seed1 --voice none
+scratch/net/out/dettato.exe read scratch/real/rwc-p --out scratch/net/read/rwc-p --lines scratch/real/beats-bt-folds --heard scratch/real/chords-crema+btc --voice none   # 27 s
 py -3.12 tools/read_check.py scratch/pyread/seed1 scratch/net/read/seed1
 py -3.12 tools/read_check.py scratch/pyread/rwc-dev scratch/net/read/rwc-p
 .venv/Scripts/python tools/measure.py table seed1 rwc-dev rwc-test --ears --read scratch/net/read

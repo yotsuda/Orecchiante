@@ -551,6 +551,8 @@ BEGIN_SHARE = 0.67     # on the grid, also cut where the phrase is played elsewh
 WHOLE_BLOCK = 2        # phrases: a block no longer than this is one section (an intro, an interlude, a solo)
 PHRASE_ALIKE = 0.75    # two phrases, or two sections, are the same when this share of their beats have the same root and family
 VOICE_LOUD = 0.25      # a moment sings when the vocals are this share of the song's loud end (their 95th percentile)
+VOICE_FLOOR = 0.05     # a song sings at all when the vocals' loud end is this share of the recording's (no singing:
+                       # 0.001 to 0.005 in seed1; singing: 0.19 to 0.72 in RWC)
 VOICE_SHARE = 0.45     # a bar sings when this share of it sings (糸: a verse 0.41 to 0.84, the tail of a phrase 0.39)
 VOICE_RUN = 2          # bars: singing, or its silence, has to last this long to turn the music
 VOICE_GAP = 3          # bars: a silence shorter than this between singing is a breath, or an instrument's answer (My Life)
@@ -624,8 +626,8 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset()):
     # where singing begins or stops is where the section does, and another turn this near it is the same one, a bar
     # off; but not a turn where a phrase played elsewhere begins (My Life: the riff at 135, the voice ending at 138)
     kept, others = set(), set(moved)
-    for s in sings:
-        near = [t for t in others if abs(t - s) <= TURN_NEAR]
+    for s in sorted(sings):                    # in order, and the turns near in order (the same in .NET)
+        near = sorted(t for t in others if abs(t - s) <= TURN_NEAR)
         strong = [moved[t] for t in near if begins_again(moved[t])]
         kept.add(strong[0] if strong else s)
         others -= set(near)
@@ -1247,7 +1249,7 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
         db = np.array([20.0 * np.log10(float(over(rms, bar["start"] * SR / HOP + BEAT_LAG, bar["end"] * SR / HOP + BEAT_LAG)[0]) + 1e-9)
                        for bar in whole])
         turns = frozenset(turns_of(notes, db))
-        if voice is not None and len(voice):
+        if voice is not None and len(voice) and float(np.percentile(voice, 95)) >= VOICE_FLOOR * float(np.percentile(rms, 95)):
             singing = voice >= VOICE_LOUD * float(np.percentile(voice, 95))
             sung = [float(np.mean(singing[int(bar["start"] * 100):max(int(bar["end"] * 100), int(bar["start"] * 100) + 1)]))
                     for bar in whole]

@@ -15,15 +15,17 @@ Install both.
 
 1. Right-click a recording (`.mp3`, `.m4a`, `.flac`, `.wav`, …) in the Explorer and choose
    **Convert Recording to Lily# (.lys)… (Preview)**, or run it from the Command Palette.
-2. After some seconds (about five for a three-minute song) `x.lys` opens. It is written beside the
-   recording, with `x.dettato.json` (when each bar begins in the recording) beside it.
+2. After half a minute or so for a three-minute song (most of it spent finding where singing comes
+   in and stops) `x.lys` opens. It is written beside the recording, with `x.dettato.json` (when each
+   bar begins in the recording) beside it.
 3. Correct what it misheard. Lily# draws and plays the chart as you edit, and can play the
    recording beside it.
 
 ## What to expect
 
 On 100 recorded pop songs (the RWC Popular Music Database) the reader gets the root of the chord
-right 87% of the time, root and major/minor 82%, and finds 94% of the bar lines. It is a first
+right 87% of the time, root and major/minor 82%, and finds 94% of the bar lines. Sections begin
+where the music turns: where singing comes in or stops, where the key or the loudness changes. It is a first
 draft to correct, not a finished chart. Songs whose tempo changes much, and bars without a chord
 at the start of a song, are not handled yet. The numbers and how they were measured are in the
 [repository's README](https://github.com/yotsuda/Dettato#readme).

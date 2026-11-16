@@ -280,6 +280,17 @@ static class Reader
     }
 
     /// <summary>The frames a stretch from a to b (in frames, not whole) is heard in: at least one.</summary>
+    /// <summary>numpy's percentile(…, 95) of float32 (linear, and in float32).</summary>
+    static float Percentile95(float[] values)
+    {
+        var sorted = (float[])values.Clone();
+        Array.Sort(sorted);
+        double index = 0.95 * (sorted.Length - 1);
+        int lo = (int)Math.Floor(index), hi = Math.Min(lo + 1, sorted.Length - 1);
+        float t = (float)(index - lo), a = sorted[lo], b = sorted[hi], d = b - a;
+        return t >= 0.5f ? b - d * (1f - t) : a + d * t;
+    }
+
     static (int From, int To) Over(double a, double b, int frames)
     {
         int i = Math.Max((int)Math.Round(a), 0);
@@ -442,7 +453,7 @@ static class Reader
     /// <param name="lineSeconds">The bar lines a beat tracker found, in seconds, the end of the last bar too.</param>
     /// <param name="beats">The beats it counted in a bar.</param>
     /// <param name="logp">The chord model's log probabilities, [frame * its chords + chord], a frame every <paramref name="step"/> seconds.</param>
-    public static Chart Read(string audio, Features.Heard f, List<double> lineSeconds, int beats, float[] logp, int frames, double step)
+    public static Chart Read(string audio, Features.Heard f, List<double> lineSeconds, int beats, float[] logp, int frames, double step, float[]? voice = null)
     {
         float[] oenv = f.Onsets, rms = f.Loudness, chroma = f.Chroma, bass = f.Bass;
         int n = oenv.Length, chromaFrames = chroma.Length / 12, bassFrames = bass.Length / 12;
@@ -689,6 +700,22 @@ static class Reader
             barDb[i] = 20.0 * Math.Log10((double)Np.Mean(rms.AsSpan(a, b - a)) + 1e-9);
         }
         var turns = Form.Turns(barNotes, barDb);
+        // where singing begins and stops: the share of each bar whose vocals are a quarter of the song's loud end
+        var sings = new List<int>();
+        if (voice is { Length: > 0 } && (double)Percentile95(voice) >= Form.VoiceFloor * (double)Percentile95(rms))
+        {
+            float line = (float)(Form.VoiceLoud * (double)Percentile95(voice));
+            var sung = new double[full.Count];
+            for (int i = 0; i < full.Count; i++)
+            {
+                int a = (int)(full[i].Start * 100), b = Math.Max((int)(full[i].End * 100), a + 1);
+                b = Math.Min(b, voice.Length);
+                int heardOf = 0, on = 0;
+                for (int k = a; k < b; k++) { heardOf++; if (voice[k] >= line) on++; }
+                sung[i] = heardOf == 0 ? double.NaN : (double)on / heardOf;
+            }
+            sings = Form.VoiceTurns(sung);
+        }
         var (tonic, major) = FindKey([.. read.Select(c => (c.End - c.Start, c.Symbol.Root, c.Symbol.Quality))]);
         var keys = full.Select(bar => Enumerable.Range(0, tempoBeats).Select(i =>
         {
@@ -696,7 +723,7 @@ static class Reader
             var c = bar.Chords.FirstOrDefault(c => c.Start <= at && at < c.End) ?? bar.Chords[^1];
             return c.Symbol.Quality * 12 + c.Symbol.Root;
         }).ToArray()).ToArray();
-        var (form, places) = Form.Phrases(keys, turns, tonic, major, Form.PhraseBars);
+        var (form, places) = Form.Phrases(keys, turns, tonic, major, Form.PhraseBars, sings);
         for (int i = 0; i < full.Count; i++) (full[i].Section, full[i].BarOfSection) = places[i];
         if (bars[0].Pickup != 0)        // a section of its own: Lily# lets only the first one open short
         {

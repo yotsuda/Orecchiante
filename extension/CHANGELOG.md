@@ -2,6 +2,14 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.6.0
+
+- Where singing comes in and stops is heard, and a section begins there: the vocals are separated by
+  Demucs (htdemucs, MIT; `bin/htdemucs-mm8.onnx`, 85 MB) and how loud they are tells which bars sing.
+  A recording with no singing (the vocals far quieter than the rest) has its sections as before.
+- Reading takes longer: the separation is most of it (about half a minute for a song of three and a
+  half minutes, more on fewer cores).
+
 ## 0.5.0
 
 - Sections by meaning: a section begins where the music turns (the key signature moves, the music

@@ -1,9 +1,10 @@
 """Section starts against the AIST structure annotation of RWC-P (research only, not redistributed).
 
-  .venv/Scripts/python tools/aist_sections.py [rwc-dev|rwc-test] [--each] [modes=base,phrase,voice] [READ_CHORDS_CONSTANT=value ...]
+  .venv/Scripts/python tools/aist_sections.py [rwc-dev|rwc-test] [--each] [modes=base,phrase,voice] [voice=<folder>] [READ_CHORDS_CONSTANT=value ...]
 
-Needs the AIST annotation (docs/DATASETS.md) and, for voice, the vocal stems of Demucs in scratch/sep/out/htdemucs.
-Modes: base (the default sections), phrase (PHRASE_SECTIONS, no voice), voice (PHRASE_SECTIONS + Demucs voice).
+Needs the AIST annotation (docs/DATASETS.md) and, for voice, the vocals' loudness: <name>.voc.npy in scratch/net/voice/rwc-p
+(dettato ears) unless voice= says where (scratch/sep/out/htdemucs: Demucs in torch, stereo, a random shift).
+Modes: base (the old sections, --old-sections), phrase (by meaning, no voice), voice (by meaning, with the voice).
 A boundary counts within 0.5 s and within 3 s; the song's first start and the end are left out.
 'all' takes every AIST boundary, 'change' only those where the label changes (chorus A, chorus A is one).
 """
@@ -15,13 +16,15 @@ sys.path.insert(0, "tools")
 import measure as ms, read_chords as rc
 
 AIST = Path("scratch/real/rwc-annotations-archive/AIST_RWC-MDB-P-2001_CHORUS")
-VOICE = Path("scratch/sep/out/htdemucs")
+VOICE = Path("scratch/net/voice/rwc-p")
 name = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("-") else "rwc-dev"
 each = "--each" in sys.argv
 MODES = ("base", "phrase", "voice")
 for a in sys.argv[2:]:
     if a.startswith("modes="):
         MODES = tuple(a[6:].split(","))
+    elif a.startswith("voice="):
+        VOICE = Path(a[6:])
     elif "=" in a:
         k, v = a.split("=")
         setattr(rc, k, type(getattr(rc, k))(float(v) if "." in v else int(v)))
