@@ -102,7 +102,7 @@
 - **糸の M64 は rit ではなく 6 拍の小節**（オーナー。4＋2 拍、M65 に `time 2/4`）。手がかりは Beat This! の downbeat の値: G の小節の頭が今の組み方で平均 2.3、2 拍ずらすと 3.5（`scratch/sec/downs.py`、`.venv-bt`）。
   案: 2 拍ずつ組む所で向きを downbeat の値で選び、入れ替わる所に 2 拍の小節（値段つき）。要るもの: `.beats` に 3 列目（downbeat の値）＝`track_beats.py` と `Beats.cs`、全セットの拍の作り直し。未着手。
   書き方は **Lily# 依頼 13（コードの行の中の `time 2/4`）＝Lily# master `91187cf45` で fixed**（小節の頭だけ。次の `time` か section の終わりまで効く。次の section は見出しの拍子に戻る）。
-  古い Lily# では通らないので、書くのは Lily# の次の版が出てから（それまでの代わりは 1 小節の section＋`time 2/4`）。
+  **オーナーは Lily# を手元に入れた＝行の中の `time 2/4` で書いてよい**（手元の lysc で通ることを確かめた。2026-11-16）。
 - Lily# 依頼 11（小節数が違っても少ない方まで鳴らす）は Lily# master `184efc304` で fixed。オーナーの版で確かめたら `done`。
 
 **その前の一手（0.4.1 の確認）**: 糸（`scratch/ito/ito041.lys`）の小節の長さ。form の繰り返し記号・2 番カッコは、上の section の作り直しで要らなくなる見込み。
