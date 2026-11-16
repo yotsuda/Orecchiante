@@ -647,8 +647,8 @@ scratch/net/out/dettato.exe read scratch/real/rwc-p --out scratch/net/read-nv/rw
 
 ### The parts
 
-Demucs separates four parts, and since 0.7.0 (the owner, 2026-11-17: to transcribe by ear, the
-bass alone, or all but the singing) `dettato <recording>` writes them all, not the vocals' loudness
+Demucs separates four parts, and since 0.7.0 (the owner, 2026-11-17: to transcribe by ear, one
+part alone or all but one; whatever instrument the user plays, not one above the others) `dettato <recording>` writes them all, not the vocals' loudness
 alone: `<name>.parts/drums.flac`, `bass.flac`, `other.flac`, `vocals.flac` beside the chart, and
 their ways in `.dettato.json`'s `parts` (SIDECAR.md). Lily# is asked to turn each on and off where
 the recording plays (REQUESTS 16).
