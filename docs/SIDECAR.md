@@ -60,7 +60,7 @@ comes"; an mp3 with no such note and a bare `.aac` keep theirs, 13 and 23 ms as 
 | `tuning` | when measured | How far the recording's pitches are from A = 440 Hz, in whole cents, -50 to 49: -12 is 12 cents flat. The commonest distance of its louder spectral peaks from a semitone (librosa's `estimate_tuning`, 12 bins to the octave). Half a semitone is as far as it can tell: 70 cents sharp reads as -30. For an old tape run fast or slow, the editor turns the pitch by this to bring it back. `dettato` always writes it (2026-11-16 on); `read_chords.py` from features made before then does not. |
 | `strange` | when true | The reader's own model did not know the sound, and the bar lines are the rules' (the reader without `--ears` only). |
 | `doubt` | with `sure` | A chord whose `sure` is below this is doubted. |
-| `form` | always | The names of the sections in the order they are played. `"Pickup"` is first when the first bar is a pickup. |
+| `form` | always | The names of the sections in the order they are played. `"Pickup"` is first when the first bar is a pickup. A section of three bars or more is a letter, `"A"`, `"B"` … in the order they come (`"S27"` … past Z); a shorter one is named after the section played before it, `"B_1"`, `"B_2"` … (after the next one, `"A_1"`, when none is before it), and the chart hides its name (`~B_1` in its `form`; 2026-11-16, 0.3.4, the owner). |
 | `bars` | always | **Every bar played, in the order it is played**: a bar of a section played three times is here three times, each with its own seconds. |
 
 ### Of a bar

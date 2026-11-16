@@ -403,7 +403,8 @@ SAID_AGAIN = 0.95       # runs of bars are one section when this share of their 
 SHORT_SECTION = 6       # two sections running of at most this many bars are one: a chart in sections of four bars
                         # or two is hard to read (the owner, 2026-11-16: four and eight may stand side by side, four
                         # and four may not). 0: as found.
-LEAD_OFF = True         # the second ending: a section played once opens with what a short section is elsewhere (lead_off)
+HIDE_SHORT = 3          # a section shorter than this many bars is named after the one before (B_1) and its name hidden (~B_1)
+LEAD_OFF = True        # the second ending: a section played once opens with what a short section is elsewhere (lead_off)
 LONG_SECTION = 32      # sections played once, one after the other, are one section up to this many bars, and a
                         # longer run is cut into even sections no longer (the owner, 2026-11-16). 0: as found.
 
@@ -475,8 +476,8 @@ def lead_off(bars):
     """The second ending (the owner, 2026-11-16, on 糸): where a section X is followed once by a short
     section played once, C of k bars, and another time by a longer section played once, D, whose
     k-th bar ends on the root C ends on, those k bars of D are the phrase X began, as C is: they
-    become a section of their own, and D begins where its phrase does. Then the sections are named
-    again in the order they come. Chords are (root, quality, bass) here. Returns the form."""
+    become a section of their own, and D begins where its phrase does (name_sections names it).
+    Chords are (root, quality, bass) here."""
     played = []                         # [section, first bar, bars] for each section played
     for i, bar in enumerate(bars):
         if bar["barOfSection"] == 1:
@@ -498,11 +499,28 @@ def lead_off(bars):
             bars[b]["section"] = (name, "lead")
         for b in range(first + k, first + length):
             bars[b]["barOfSection"] -= k
-    names = {"Pickup": "Pickup"}
+
+
+def name_sections(bars):
+    """Names the sections in the order they come: A, B, C … for those of HIDE_SHORT bars or more; a
+    shorter one is named after the section played before it, B_1, B_2 …, and the chart hides its
+    name (`~B_1` in the form), so that no letter is missing (the owner, 2026-11-16). Returns the form."""
+    lengths = {}
     for bar in bars:
-        if bar["section"] not in names:
-            k = len(names) - 1
-            names[bar["section"]] = chr(ord("A") + k) if k < 26 else f"S{k + 1}"
+        lengths[bar["section"]] = max(lengths.get(bar["section"], 0), bar["barOfSection"])
+    names, shown, under, before = {"Pickup": "Pickup"}, 0, Counter(), None
+    for bar in bars:
+        s = bar["section"]
+        if s not in names:
+            if lengths[s] >= HIDE_SHORT:
+                names[s] = chr(ord("A") + shown) if shown < 26 else f"S{shown + 1}"
+                shown += 1
+            else:
+                base = before or (chr(ord("A") + shown) if shown < 26 else f"S{shown + 1}")
+                under[base] += 1
+                names[s] = f"{base}_{under[base]}"
+        if s != "Pickup" and "_" not in names[s]:
+            before = names[s]
     for bar in bars:
         bar["section"] = names[bar["section"]]
     return [bar["section"] for bar in bars if bar["barOfSection"] == 1]
@@ -925,7 +943,8 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
     read_chords = [c for bar in bars for c in bar["chords"]]
     tonic, mode = find_key([(c["end"] - c["start"], c["symbol"][0], c["symbol"][1]) for c in read_chords])
     if LEAD_OFF:
-        form = lead_off(bars)
+        lead_off(bars)
+    form = name_sections(bars)
     tonic_name = (MAJOR_KEYS if mode == "major" else MINOR_KEYS)[tonic]
     flats = "b" in tonic_name or (tonic_name == "F" if mode == "major" else tonic_name in FLAT_MINORS)
     roots = FLAT_ROOTS if flats else SHARP_ROOTS
@@ -1057,7 +1076,8 @@ def lys(result, title, shape_of=None):
         last = w + 1 == len(written) or len(written[w + 1][1]) > 1      # a section of one bar goes on the line before
         body += [f"section {name} {{", *partial, "  chords harmony {", *rows(bars, "    ", name != "Pickup", last), "  }", "}", ""]
     # Repeat signs only in the form, so that the form alone shows how the song goes (the owner, 2026-11-16).
-    return "\n".join(head + body + ["form { " + form_with_repeats(form) + " }", "", "score {", "  chords harmony", "}", ""])
+    shown = ["~" + s if "_" in s else s for s in form]     # a short section's name is hidden (name_sections)
+    return "\n".join(head + body + ["form { " + form_with_repeats(shown) + " }", "", "score {", "  chords harmony", "}", ""])
 
 
 def line_sizes(bars):

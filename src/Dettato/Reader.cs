@@ -565,7 +565,8 @@ static class Reader
         }
         read = [.. bars.SelectMany(bar => bar.Chords)];
         var (tonic, major) = FindKey([.. read.Select(c => (c.End - c.Start, c.Symbol.Root, c.Symbol.Quality))]);
-        if (LeadOff) form = Form.LeadOff(bars);
+        if (LeadOff) Form.LeadOff(bars);
+        form = Form.NameSections(bars);
         string tonicName = (major ? MajorKeys : MinorKeys)[tonic];
         bool flats = tonicName.Contains('b') || (major ? tonicName == "F" : FlatMinors.Contains(tonicName));
         var roots = flats ? FlatRoots : SharpRoots;

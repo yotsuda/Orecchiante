@@ -2,6 +2,12 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.3.4
+
+- A section shorter than three bars shows no name: it is named after the section before it
+  (`B_1`, `B_2`) and hidden in the form (`|: B [1. ~B_1] :| [2. ~B_2] C`), so the letters run on
+  with none missing.
+
 ## 0.3.3
 
 - The second ending: where a section is followed once by a short section and another time by a

@@ -6,7 +6,8 @@ static class Form
 {
     const int SectionBars = 4;      // the shortest run of bars that is a section for being said again
     const int LongSection = 32;     // sections played once running are one up to this many bars; a longer run is cut evenly
-    const int ShortSection = 6;     // two sections running of at most this many bars are one (the owner, 2026-11-16)
+    const int HideShort = 3;        // a section shorter than this many bars is named after the one before (B_1), its name hidden (~B_1)
+    const int ShortSection = 6;    // two sections running of at most this many bars are one (the owner, 2026-11-16)
 
     /// <summary>A count a key, in the order the keys came (Python's Counter): the first of the largest wins.</summary>
     sealed class Tally<T> where T : notnull
@@ -277,7 +278,7 @@ static class Form
     /// followed once by a short section played once, C of k bars, and another time by a longer section played once, D,
     /// whose k-th bar ends on the root C ends on, those k bars of D become a section of their own, and D begins where
     /// its phrase does. Then the sections are named again in the order they come. Returns the form.</summary>
-    public static List<string> LeadOff(List<Bar> bars)
+    public static void LeadOff(List<Bar> bars)
     {
         var played = new List<(string Name, int First, int Length)>();
         for (int i = 0; i < bars.Count; i++)
@@ -300,13 +301,35 @@ static class Form
             for (int b = first; b < first + k; b++) bars[b].Section = name + "\0lead";
             for (int b = first + k; b < first + length; b++) bars[b].BarOfSection -= k;
         }
+    }
+
+    /// <summary>As tools/read_chords.py's name_sections: A, B, C … in the order they come for sections of HideShort bars
+    /// or more; a shorter one is named after the section played before it, B_1, B_2 …, and the chart hides its name
+    /// (`~B_1` in the form), so that no letter is missing (the owner, 2026-11-16). Returns the form.</summary>
+    public static List<string> NameSections(List<Bar> bars)
+    {
+        var lengths = new Dictionary<string, int>();
+        foreach (var bar in bars) lengths[bar.Section!] = Math.Max(lengths.GetValueOrDefault(bar.Section!), bar.BarOfSection);
         var names = new Dictionary<string, string> { ["Pickup"] = "Pickup" };
+        var under = new Dictionary<string, int>();
+        int shown = 0;
+        string? before = null;
+        string Letter(int k) => k < 26 ? ((char)('A' + k)).ToString() : $"S{k + 1}";
         foreach (var bar in bars)
-            if (!names.ContainsKey(bar.Section!))
+        {
+            string s = bar.Section!;
+            if (!names.ContainsKey(s))
             {
-                int k = names.Count - 1;
-                names[bar.Section!] = k < 26 ? ((char)('A' + k)).ToString() : $"S{k + 1}";
+                if (lengths[s] >= HideShort) names[s] = Letter(shown++);
+                else
+                {
+                    string b = before ?? Letter(shown);
+                    under[b] = under.GetValueOrDefault(b) + 1;
+                    names[s] = $"{b}_{under[b]}";
+                }
             }
+            if (s != "Pickup" && !names[s].Contains('_')) before = names[s];
+        }
         foreach (var bar in bars) bar.Section = names[bar.Section!];
         return [.. bars.Where(bar => bar.BarOfSection == 1).Select(bar => bar.Section!)];
     }

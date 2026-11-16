@@ -3,7 +3,7 @@
 **毎セッションの終わりに書き換える**（追記しない。200 行以内）。方向づけは [ROADMAP.md](ROADMAP.md)、
 数字と使い方は [README](../README.md)、録音の出典は [DATASETS.md](DATASETS.md)。
 
-最終更新: 2026-11-16 夕（テンポを小数 1 桁に、最初のコードに lysc のシェイプ、2 番カッコ。拡張 0.3.3。HEAD は `git log -1` で確かめる）。
+最終更新: 2026-11-16 夕（テンポを小数 1 桁に、最初のコードに lysc のシェイプ、2 番カッコ、短い section の名前を隠す。拡張 0.3.4。HEAD は `git log -1` で確かめる）。
 
 ### テンポを小数 1 桁に（2026-11-16、Lily# の依頼 7・オーナー了承。README「The tempo to a tenth」）
 - **Dettato は数の出し方を変えず、丸めを小数 1 桁に**（録音は書いたテンポで鳴る＝Lily# `c74d132ee`）（`TENTH_TEMPO`・`Chart.BpmText`。整数なら `131` のまま）。`rwc-dev` テンポ 46 → 47、ほかは不変。268 曲で Python と一字一句同じ。
@@ -21,12 +21,12 @@
   section の中は書き出す。`form_with_repeats`／`FormWithRepeats`。`sidecar.py` は `lysc midi --batch` から演奏の小節数を数える。
 - **改行: 4 小節ごとと section の終わりに `break`**（弱起には書かない）。余り 1 は前の行と 5、余り 2 は 3・3（`line_sizes`／`LineSizes`）。**1 小節の section は前の行に続ける**（0.3.3）。
 - **2 番カッコ（0.3.3、オーナー・糸。`lead_off`／`LeadOff`、README「The second ending」）:** X の後に一度は短い 1 回きりの C（k≤6 小節）、別の時に長い 1 回きりの D が来て、D の k 小節目の最後の根音が C と同じなら、D の頭の k 小節を別の section に。
-  form が 22/268 曲で変わり、数字は不変。合成曲の新しい境目 7 つのうち 6 つが正解の頭（残り 1 つは曲の終わり）。RWC は section の正解がなく、見ていない。行の DP（3〜5 小節で区切りを探す）は試さずにやめた。
+  form が 22/268 曲で変わり、数字は不変。合成曲の新しい境目 7 つのうち 6 つが正解の頭（残り 1 つは曲の終わり）。RWC は section の正解がなく、見ていない。
+- **3 小節未満の section は名前を隠す（0.3.4、オーナー。`name_sections`／`NameSections`）:** 前に弾いた section にちなんで `B_1`・`B_2`、form では `~B_1`。文字は欠番なし。先頭なら次の名前で `~A_1`。49/268 曲。糸は `A |: B [1. ~B_1] :| [2. ~B_2] C D`（png で見た）。
 - **捨てた案:** chords の中の `|: … :|`・1 番 2 番、4 小節の section の 2 回を `|: A :|`。記号は RWC 76/100、合成曲 79/168。My Life は `A |: B C B [1. D] :| [2. E] B F`（オーナー未見）。
 
-### 書き出し先と `audio`（2026-11-16、オーナーの希望。依頼 6）
-- **Lily# に毎回フォルダ選択のダイアログを依頼（6）。オーナー決定: 別のフォルダでは録音をコピーせず `audio` が場所を指す**（`Program.cs`。`/` 区切りの相対パス、
-  ドライブ違いは絶対パス、隣はファイル名）。**今の Lily# は `/` を含む `audio` を読まない**（`recordingCore.ts:159`）。
+### 書き出し先と `audio`（2026-11-16、オーナー決定。依頼 6 は Lily# master で fixed）
+- 別のフォルダでは録音をコピーせず `audio` が場所を指す（`Program.cs`。`/` 区切りの相対パス、ドライブ違いは絶対パス、隣はファイル名）。
 
 ### D4 の形（2026-11-15、オーナーと話して決めた。依頼 4・[便り](repro/lilysharp-requests-2026-11-15-listening.md)）
 
@@ -37,7 +37,7 @@
 
 **`dettato <録音> [-o <x.lys>] [--force]` が、mp3・m4a・mp4・aac・flac・wma・wav から `.lys` と `.dettato.json` を録音の隣に書く**
 （Python なし。RWC_P001 の mp3 で 6.3 秒）。配る形は .NET＋ONNX の実行ファイルを VS Code 拡張に入れる（Calamo と同じ形）。
-**拡張 `yotsuda.dettato` 0.3.3 をこの PC の VS Code に入れた**（`extension/`、`tools/deploy-extension.ps1`。113 MB、Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
+**拡張 `yotsuda.dettato` 0.3.4 をこの PC の VS Code に入れた**（`extension/`、`tools/deploy-extension.ps1`。113 MB、Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
 「Convert Recording to Lily# (.lys)… (Preview)」で、Lily# が `ext.activate()` で `{path, version, protocol, inputs}` を受け取る。**VS Code の中で動くことはユーザーが確かめた（0.2.0。0.3.x は Lily# のメニューからはまだ）。**
 
 ### コマンドと入力（D3。`Program.cs`・`Audio.cs`。README の「A recording as it comes」、Lily# 向けは便りの §2a）
@@ -91,7 +91,7 @@
 
 ## 次の一手
 
-**まず短い section をまとめた形と form の繰り返し記号をオーナーに見てもらう**（0.3.3 を入れた。上の「短い section と繰り返し記号」。糸 `scratch/ito/` の 2 番カッコの形も）。
+**まず短い section をまとめた形と form の繰り返し記号をオーナーに見てもらう**（0.3.4 を入れた。上の「短い section と繰り返し記号」。糸 `scratch/ito/` の 2 番カッコの形も）。
 **それから、ユーザーの録音で譜面の出来を聴いてもらう**（耳で聴く所。機械で見られる所は 2026-11-16 に見た）。My Life（`scratch/d3/mylife/`）は 0.2.1 で
 「さほど違和感はない」（ブリッジの C#dim・F#7/C# は未確認、3 拍の小節が 1 つ）。次の候補: ユーザーがベースで弾く曲・コードの分かっている曲、
 バンド練習（`F:\Music\ギャラン☆Do!\`。58 分の譜面は `scratch/d3/user/long-only/`。テンポが曲ごとに変わる＝C3）。

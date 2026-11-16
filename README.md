@@ -490,7 +490,7 @@ opened with one bar of `D`: the phrase is eight bars both times, and the long se
 begins a bar later. So (`lead_off`, `Form.LeadOff`): where a section is followed once by a short
 section played once (k bars, six or fewer) and another time by a longer section played once whose
 k-th bar ends on the root the short one ends on, those k bars become a section of their own, the
-second ending: `A |: B [1. C] :| [2. D] E F`, E beginning on its phrase's first bar. And a section
+second ending: `A |: B [1. C] :| [2. D] E F` (named as below since), E beginning on its phrase's first bar. And a section
 of one bar goes on the line before (no `break` between them):
 
 ```
@@ -502,6 +502,11 @@ of one bar goes on the line before (no `break` between them):
   ...
     Em | Bm7 | Cmaj7 | G D/F# break |
 ```
+
+And (`name_sections`, `Form.NameSections`, 0.3.4) a section shorter than three bars is named
+after the section played before it, `B_1`, `B_2` …, and the form hides its name, so that the
+letters run on with none missing: `form { A |: B [1. ~B_1] :| [2. ~B_2] C D }`. 49 of the 268
+charts have such sections; one before any other is named after the next (`~A_1 |: A :| B …`).
 
 The forms of 22 of the 268 charts change (17 of RWC's 100); the chords and every number stay as
 they were (only sections played once are cut). Of the songs made here, 7 cuts are new in 5 songs:
