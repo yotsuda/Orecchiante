@@ -1,13 +1,15 @@
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
+using NAudio.Wave;
 
 namespace Dettato;
 
-/// <summary>How loud the singing is, every 10 ms: the vocals Demucs (htdemucs, MIT) separates from the recording.
+/// <summary>How loud the singing is, every 10 ms: the vocals Demucs (htdemucs, MIT) separates from the recording;
+/// and, for the user to hear one at a time, the four parts it separates (drums, bass, other, vocals) as files.
 /// Its network is an ONNX file without the STFT and the inverse STFT (tools/d2/demucs_onnx.py), which are done
 /// here; the recording is split and put back together as demucs.apply.apply_model does with shifts=0 (7.8 s
 /// segments, a quarter overlapping, weighed by a triangle). The channels are one: the recording is read in mono
-/// and given to both. The sections take where singing begins and stops from it (Form.Phrases).</summary>
+/// and given to both, so the parts are mono. The sections take where singing begins and stops from it (Form.Phrases).</summary>
 static class Voice
 {
     public const string Model = "htdemucs-mm8.onnx";     // its matrix products in int8 (85 MB; tools/d2/demucs_onnx.py)
@@ -19,13 +21,16 @@ static class Voice
     const int Segment = 343980;         // int(44100 * 39 / 5), the length the network was trained on
     const int Nfft = 4096, Hop = 1024, Bins = Nfft / 2;
     const int Frames = (Segment + Hop - 1) / Hop;   // 336
-    const int Vocals = 3;               // drums, bass, other, vocals
+    public static readonly string[] Parts = ["drums", "bass", "other", "vocals"];     // the network's order
+    const int Vocals = 3;
+    const int Batch = 24;               // segments separated before the samples they finish are put together and written
     const double Overlap = 0.25;       // as apply_model (none is a third quicker, but changed the sections of 15 of RWC's 100 songs, right starts lost; README)
 
     static readonly double[] Window = Enumerable.Range(0, Nfft).Select(n => 0.5 - 0.5 * Math.Cos(2 * Math.PI * n / Nfft)).ToArray();
 
-    /// <summary>The vocals' root mean square every 10 ms of <paramref name="mono"/> (at 44100 Hz).</summary>
-    public static float[] Loudness(IReadOnlyList<InferenceSession> models, double[] mono)
+    /// <summary>The vocals' root mean square every 10 ms of <paramref name="mono"/> (at 44100 Hz); with
+    /// <paramref name="partsTo"/>, also each part as &lt;part&gt;.wav there (16 bits, 44100 Hz, one channel).</summary>
+    public static float[] Loudness(IReadOnlyList<InferenceSession> models, double[] mono, string? partsTo = null)
     {
         int n = mono.Length;
         double mean = 0;
@@ -46,53 +51,97 @@ static class Voice
 
         var offsets = new List<int>();
         for (int o = 0; o < n; o += stride) offsets.Add(o);
-        var outs = new float[offsets.Count][];
         // (a session each for the segments at once was a tenth quicker and held as much memory again each)
         var model = models[0];
-        System.Threading.Tasks.Parallel.For(0, offsets.Count, new ParallelOptions { MaxDegreeOfParallelism = Parallel }, k =>
-        {
-            int offset = offsets[k], length = Math.Min(Segment, n - offset);
-            // TensorChunk.padded: centred on the chunk, with the recording around it where there is some
-            int delta = Segment - length, start = offset - delta / 2;
-            var chunk = new float[Segment];
-            for (int i = 0; i < Segment; i++)
-            {
-                int j = start + i;
-                if (j >= 0 && j < n) chunk[i] = x[j];
-            }
-            var sung = Separate(model, chunk);
-            var trimmed = new float[length];         // center_trim
-            Array.Copy(sung, delta / 2, trimmed, 0, length);
-            outs[k] = trimmed;
-        });
-        var sum = new double[n];
-        var weights = new double[n];
-        for (int k = 0; k < offsets.Count; k++)
-        {
-            int offset = offsets[k];
-            for (int i = 0; i < outs[k].Length; i++)
-            {
-                sum[offset + i] += weight[i] * outs[k][i];
-                weights[offset + i] += weight[i];
-            }
-        }
         int frames = n / Hop10ms;
         var rms = new float[frames];
-        for (int f = 0; f < frames; f++)
+        WaveFileWriter[]? writers = partsTo == null ? null
+            : Parts.Select(p => new WaveFileWriter(Path.Combine(partsTo, p + ".wav"), new WaveFormat(Rate, 16, 1))).ToArray();
+        try
         {
-            double s = 0;
-            for (int i = f * Hop10ms; i < (f + 1) * Hop10ms; i++)
+            // A batch of segments at a time; once separated, the samples before the next batch's first segment have all
+            // their segments, and are put together (each sample's sum in the segments' order, as all at once did) and let go.
+            var live = new List<(int Offset, float[][] Parts)>();
+            int done = 0;                // samples put together
+            double square = 0;           // the vocals' squares in the frame being filled
+            for (int first = 0; first < offsets.Count; first += Batch)
             {
-                double v = sum[i] / weights[i] * std + mean;
-                s += v * v;
+                int end = Math.Min(offsets.Count, first + Batch);
+                var outs = new float[end - first][][];
+                System.Threading.Tasks.Parallel.For(first, end, new ParallelOptions { MaxDegreeOfParallelism = Parallel }, k =>
+                    outs[k - first] = Segmented(model, x, n, offsets[k], writers != null));
+                for (int k = first; k < end; k++) live.Add((offsets[k], outs[k - first]));
+                int upTo = end < offsets.Count ? offsets[end] : n, length = upTo - done;
+                var sum = new double[writers == null ? 1 : Parts.Length][];
+                for (int p = 0; p < sum.Length; p++) sum[p] = new double[length];
+                var weights = new double[length];
+                foreach (var (offset, parts) in live)
+                {
+                    int from = Math.Max(done, offset), to = Math.Min(upTo, offset + parts[0].Length);
+                    for (int j = from; j < to; j++)
+                    {
+                        int i = j - offset, at = j - done;
+                        if (writers == null) sum[0][at] += weight[i] * parts[Vocals][i];
+                        else for (int p = 0; p < Parts.Length; p++) sum[p][at] += weight[i] * parts[p][i];
+                        weights[at] += weight[i];
+                    }
+                }
+                int vocals = writers == null ? 0 : Vocals;
+                for (int j = done; j < upTo; j++)
+                {
+                    int f = j / Hop10ms;
+                    if (f >= frames) break;
+                    double v = sum[vocals][j - done] / weights[j - done] * std + mean;
+                    square += v * v;
+                    if ((j + 1) % Hop10ms == 0) { rms[f] = (float)Math.Sqrt(square / Hop10ms); square = 0; }
+                }
+                if (writers != null)
+                {
+                    var samples = new float[length];
+                    for (int p = 0; p < Parts.Length; p++)
+                    {
+                        for (int at = 0; at < length; at++)
+                            samples[at] = (float)Math.Clamp(sum[p][at] / weights[at] * std + mean, -1.0, 32767.0 / 32768);
+                        writers[p].WriteSamples(samples, 0, length);
+                    }
+                }
+                done = upTo;
+                live.RemoveAll(s => s.Offset + s.Parts[0].Length <= done);
             }
-            rms[f] = (float)Math.Sqrt(s / Hop10ms);
+        }
+        finally
+        {
+            if (writers != null) foreach (var w in writers) w.Dispose();
         }
         return rms;
     }
 
-    /// <summary>One segment of the mix (normalized) to the vocals, both channels averaged.</summary>
-    static float[] Separate(InferenceSession model, float[] chunk)
+    /// <summary>The parts of the segment at <paramref name="offset"/>, trimmed to the recording (the vocals alone
+    /// unless <paramref name="all"/>; the others null).</summary>
+    static float[][] Segmented(InferenceSession model, float[] x, int n, int offset, bool all)
+    {
+        int length = Math.Min(Segment, n - offset);
+        // TensorChunk.padded: centred on the chunk, with the recording around it where there is some
+        int delta = Segment - length, start = offset - delta / 2;
+        var chunk = new float[Segment];
+        for (int i = 0; i < Segment; i++)
+        {
+            int j = start + i;
+            if (j >= 0 && j < n) chunk[i] = x[j];
+        }
+        var parts = Separate(model, chunk, all);
+        var trimmed = new float[Parts.Length][];      // center_trim
+        for (int p = 0; p < Parts.Length; p++)
+        {
+            if (parts[p] == null) continue;
+            trimmed[p] = new float[length];
+            Array.Copy(parts[p], delta / 2, trimmed[p], 0, length);
+        }
+        return trimmed;
+    }
+
+    /// <summary>One segment of the mix (normalized) to its four parts, each with both channels averaged.</summary>
+    static float[][] Separate(InferenceSession model, float[] chunk, bool all)
     {
         // HTDemucs._spec: reflect by 3/8 of a window each side (and up to whole hops), then torch.stft centred
         // (reflect by half a window), normalized; the last bin and the first and last two frames are dropped
@@ -126,43 +175,49 @@ static class Voice
             NamedOnnxValue.CreateFromTensor("mix", new DenseTensor<float>(mix, [1, 2, Segment])),
             NamedOnnxValue.CreateFromTensor("mag", new DenseTensor<float>(mag, [1, 4, Bins, Frames])),
         ]);
-        var spec = results.First(r => r.Name == "spec").AsTensor<float>();
-        var wave = results.First(r => r.Name == "wave").AsTensor<float>();
+        // read straight from the buffers ([1, 4, 4, Bins, Frames] and [1, 4, 2, Segment]), not by the tensors' indexers
+        var spec = ((DenseTensor<float>)results.First(r => r.Name == "spec").AsTensor<float>()).Buffer.Span;
+        var wave = ((DenseTensor<float>)results.First(r => r.Name == "wave").AsTensor<float>()).Buffer.Span;
 
-        // HTDemucs._ispec of the vocals: a zero bin on top and two empty frames each side, torch.istft centred and
-        // normalized, then the 3/8 of a window each side taken off
+        // HTDemucs._ispec of each part: a zero bin on top and two empty frames each side, torch.istft centred and
+        // normalized, then the 3/8 of a window each side taken off; the part is that and the time branch's
         int framesOut = Frames + 4;
-        var output = new float[Segment];
-        for (int c = 0; c < 2; c++)
+        var outputs = new float[Parts.Length][];
+        for (int part = all ? 0 : Vocals; part < Parts.Length; part++)
         {
-            int full = Nfft + Hop * (framesOut - 1);
-            var signal = new double[full];
-            var envelope = new double[full];
-            for (int t = 0; t < framesOut; t++)
+            var output = outputs[part] = new float[Segment];
+            for (int c = 0; c < 2; c++)
             {
-                int tt = t - 2;
-                if (tt >= 0 && tt < Frames)
+                int full = Nfft + Hop * (framesOut - 1);
+                var signal = new double[full];
+                var envelope = new double[full];
+                for (int t = 0; t < framesOut; t++)
                 {
-                    for (int b = 0; b < Bins; b++) { re[b] = spec[0, Vocals, 2 * c, b, tt]; im[b] = spec[0, Vocals, 2 * c + 1, b, tt]; }
-                    re[Bins] = 0; im[Bins] = 0;
-                    for (int b = 1; b < Bins; b++) { re[Nfft - b] = re[b]; im[Nfft - b] = -im[b]; }
-                    // the inverse transform: conjugate, forward, conjugate, over n; normalized: times sqrt(n)
-                    for (int i = 0; i < Nfft; i++) im[i] = -im[i];
-                    fft.Forward(re, im);
-                    double scale = Math.Sqrt(Nfft) / Nfft;
-                    for (int i = 0; i < Nfft; i++) signal[t * Hop + i] += re[i] * scale * Window[i];
+                    int tt = t - 2;
+                    if (tt >= 0 && tt < Frames)
+                    {
+                        int real = ((part * 4 + 2 * c) * Bins) * Frames + tt, imaginary = real + Bins * Frames;
+                        for (int b = 0; b < Bins; b++) { re[b] = spec[real + b * Frames]; im[b] = spec[imaginary + b * Frames]; }
+                        re[Bins] = 0; im[Bins] = 0;
+                        for (int b = 1; b < Bins; b++) { re[Nfft - b] = re[b]; im[Nfft - b] = -im[b]; }
+                        // the inverse transform: conjugate, forward, conjugate, over n; normalized: times sqrt(n)
+                        for (int i = 0; i < Nfft; i++) im[i] = -im[i];
+                        fft.Forward(re, im);
+                        double scale = Math.Sqrt(Nfft) / Nfft;
+                        for (int i = 0; i < Nfft; i++) signal[t * Hop + i] += re[i] * scale * Window[i];
+                    }
+                    for (int i = 0; i < Nfft; i++) envelope[t * Hop + i] += Window[i] * Window[i];
                 }
-                for (int i = 0; i < Nfft; i++) envelope[t * Hop + i] += Window[i] * Window[i];
-            }
-            // torch.istft(center=True, length=le): from half a window in, le samples
-            for (int i = 0; i < Segment; i++)
-            {
-                int j = Nfft / 2 + pad + i;
-                double v = envelope[j] > 1e-11 ? signal[j] / envelope[j] : 0;
-                output[i] += (float)((v + wave[0, Vocals, c, i]) / 2);
+                // torch.istft(center=True, length=le): from half a window in, le samples
+                for (int i = 0; i < Segment; i++)
+                {
+                    int j = Nfft / 2 + pad + i;
+                    double v = envelope[j] > 1e-11 ? signal[j] / envelope[j] : 0;
+                    output[i] += (float)((v + wave[(part * 2 + c) * Segment + i]) / 2);
+                }
             }
         }
-        return output;
+        return outputs;
     }
 
     /// <summary>numpy's and torch's reflect padding (the edge sample not repeated).</summary>

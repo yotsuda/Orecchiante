@@ -209,6 +209,8 @@ static class Writer
         s.Append($"  \"key\": {Quoted(chart.Key)},\n");
         if (chart.Tuning is int tuning) s.Append($"  \"tuning\": {tuning},\n");
         if (chart.Doubt is double doubt) s.Append($"  \"doubt\": {Np.Repr(doubt)},\n");
+        if (chart.Parts is { } parts)
+            s.Append("  \"parts\": {\n" + string.Join(",\n", parts.Select(p => $"    {Quoted(p.Part)}: {Quoted(p.Path)}")) + "\n  },\n");
         s.Append(chart.Form.Count == 0 ? "  \"form\": [],\n"
             : "  \"form\": [\n" + string.Join(",\n", chart.Form.Select(name => "    " + Quoted(name))) + "\n  ],\n");
         s.Append("  \"bars\": [\n");

@@ -3,12 +3,9 @@
 **毎セッションの終わりに書き換える**（追記しない。200 行以内）。方向づけは [ROADMAP.md](ROADMAP.md)、
 数字と使い方は [README](../README.md)、録音の出典は [DATASETS.md](DATASETS.md)。
 
-最終更新: 2026-11-17 未明（歌の分離の重なりなしを測って捨てた＝オーナー決定。その前に 0.6.0: 歌のモデル（Demucs）を .NET に入れ、歌の出入りで section を切る。依頼 15 に返事。その前に 0.5.0: 意味で切る section を既定に。その前の 11-16: 半分の小節、テンポの小数、2 つ目の耳 BTC など。HEAD は `git log -1` で確かめる）。
+最終更新: 2026-11-17（0.7.0: 録音の 4 パートを FLAC で書く＝耳コピ用、依頼 16。歌の分離の重なりなしと「荒く読んで詰める」を測って捨てた。その前に 0.6.0: 歌のモデル（Demucs）を .NET に入れ、歌の出入りで section を切る。依頼 15 に返事。その前に 0.5.0: 意味で切る section を既定に。その前の 11-16: 半分の小節、テンポの小数、2 つ目の耳 BTC など。HEAD は `git log -1` で確かめる）。
 
-### 11-16 に入れたもの（詳しくは README と git の履歴）
-- **2 つ目の耳 BTC（0.4.0）**: crema と BTC の確率を平均（`Btc.cs`・`tools/two_ears.py`）。**0.08 秒の小節（0.3.5）**: `TINY_BAR`。テンポは小数 1 桁（`TENTH_TEMPO`）。最初のコードに `lysc shape`。
-- **半分の小節（0.4.1、README「Half bars」）**: `HALF_BARS`・`pair_halves`／`PairHalves`。糸は 89 → 71 小節。**半分のテンポで読んでいた RWC の 4 曲（P050・P095・P034・P038）では悪くなる。**
-- **0.5.0: section は意味で切るのが既定**。前の分け方は Python の `--old-sections` だけに残し、.NET からは消した。改行は 4 小節ごと、0.4.2 から `| break`。
+11-16 に入れたもの（README と git の履歴）: 2 つ目の耳 BTC（0.4.0）、0.08 秒の小節（0.3.5 `TINY_BAR`）、テンポは小数 1 桁、最初のコードに `lysc shape`、半分の小節（0.4.1 `HALF_BARS`。**半分のテンポで読んでいた RWC の 4 曲 P050・P095・P034・P038 では悪くなる**）、section は意味で切るのが既定（0.5.0。前の分け方は Python の `--old-sections` だけ）。
 
 ### D4 の形（2026-11-15、オーナーと話して決めた。依頼 4・[便り](repro/lilysharp-requests-2026-11-15-listening.md)）
 **Lily# の設計メモ `C:\MyProj\LilySharp\docs\recording-design.md`（セッションの頭に読む）:** 紐づけは隣のファイル（形式 2）だけ、m4a は Lily# の LSP が復号。
@@ -18,7 +15,7 @@
 
 **`dettato <録音> [-o <x.lys>] [--force]` が、mp3・m4a・mp4・aac・flac・wma・wav から `.lys` と `.dettato.json` を録音の隣に書く**
 （Python なし。RWC_P001 の mp3 で 6.3 秒）。配る形は .NET＋ONNX の実行ファイルを VS Code 拡張に入れる（Calamo と同じ形）。
-**拡張 `yotsuda.dettato` 0.6.1 をこの PC の VS Code に入れた**（0.6.0: 歌を聞いて section を切る。0.6.1: メモリ半分。入った版で読んで確かめた）（`extension/`、`tools/deploy-extension.ps1`。.vsix 171 MB、Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
+**拡張 `yotsuda.dettato` 0.7.0 をこの PC の VS Code に入れた**（0.6.0: 歌を聞いて section を切る。0.7.0: 4 パートを書く）（`extension/`、`tools/deploy-extension.ps1`。.vsix 171 MB、Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
 「Convert Recording to Lily# (.lys)… (Preview)」で、Lily# が `ext.activate()` で `{path, version, protocol, inputs}` を受け取る。**VS Code の中で動くことはユーザーが確かめた（0.2.0。0.3.x は Lily# のメニューからはまだ）。**
 
 ### コマンドと入力（D3。`Program.cs`・`Audio.cs`。README の「A recording as it comes」、Lily# 向けは便りの §2a）
@@ -86,6 +83,9 @@
   **結果を変えずに速くする手は見つからなかった**（スレッドの組み方・セッションを分ける・単精度、README）。どれも Calamo が 6〜14 コアを使っている中の数字。
   **重なりなしは捨てた（オーナー決定 2026-11-17、README「The voice in .NET」）:** RWC 100 曲中 15 曲の section が変わり（揺れではない）、AIST の数字はほぼ同じだが合っていた線が消えて 1 小節ずれた線が増える。
   オーナーの 2 曲は同じ。原因は 7.8 秒の区間の端。道具は `scratch/sec/ov_cmp.py <A> <B>`（section の頭の差と最寄りの AIST）・`ov_edges.py`。歌は `scratch/net/voice-ov0/`（消してよい）。
+- **パート（0.7.0、オーナー決定 2026-11-17「レコーディングのオンオフをパートごとに。耳コピにとても便利」、README「The parts」）:** 変換のたびに `<名前>.parts/{drums,bass,other,vocals}.flac`（モノラル 16 bit 44100 Hz、録音の秒の上）と `x.dettato.json` の `parts`（SIDECAR.md）。
+  譜面は 0.6.1 と一字一句同じ（RWC_P001・糸・My Life）、時間も同じ（テンソルの添字読みをやめた）。58 分で 694 秒・私有メモリ 1.7 GB・361 MB。確かめは `scratch/sec/parts_check.py <録音> <x.parts>`（和 32 dB・ずれ 0 標本）。
+  **Lily# 依頼 16（パートごとのトグルとフェーダー）は open。** ステレオのパートは未（歌の判定が変わり section の測り直し）。Moises（クラウド）との質の比較はしていない。
 - **次:** (1) 歌の中の境目（AIST の verse A→B）。手がかり候補: 旋律の音域・歌の密度・ドラムの型。
   (2) 速くする手が要るなら: 重なりを 4 分の 1 より小さく（8 分の 1 など、同じ道具で測る。未測定）、空いた PC で測り直す、蒸留した小さなモデル（学習の音源はオーナーが決める）。
 - **糸の M64 は rit ではなく 6 拍の小節**（オーナー。4＋2 拍、M65 に `time 2/4`）。手がかりは Beat This! の downbeat の値: G の小節の頭が今の組み方で平均 2.3、2 拍ずらすと 3.5（`scratch/sec/downs.py`、`.venv-bt`）。
@@ -97,7 +97,7 @@
 **それから、ユーザーの録音で聴いてもらう**: ベースで弾く曲・バンド練習（`F:\Music\ギャラン☆Do!\`、58 分は `scratch/d3/user/long-only/`、曲ごとにテンポが変わる＝C3）。
 - **D4 で Dettato 側に作るものは今はない**（読み直しは単に上書き＝オーナー決定、設計メモ §6）。配り直すときは版を 2 か所（`Program.cs`・`extension/package.json`）と CHANGELOG で上げて `tools/deploy-extension.ps1`。
 - **Lily# の依頼（`docs/repro/REQUESTS.md`。セッションの頭に見る）:** 1 は `done`。4 は Lily# が作り中（S1〜S3 済み、次は S4）。
-  **5（m4a の `iTunSMPB`）は `fixed`＝実物の m4a で確かめてから `done`。** 7（小数のテンポ。Lily# が 6 と書いたのを振り直した）は 0.3.1 で入れた。
+  **16（パートのオン・オフ）は open。** **5（m4a の `iTunSMPB`）は `fixed`＝実物の m4a で確かめてから `done`。** 7（小数のテンポ。Lily# が 6 と書いたのを振り直した）は 0.3.1 で入れた。
   **6（保存先のダイアログ・`audio` の道）・8（`warpFit` を中央値に）・9（`lysc shape`・`LILYSHARP_LYSC_PATH`）は Lily# master で `fixed`、Dettato は 9 を 0.3.2 で使った。
   Lily# の次の版が入ったら、変換メニューから 3 つとも実物で確かめて `done`**（3・5 も同じく確かめてから）。
 - 返事を待つ間にできる一手: C3（テンポの大きな変化。範囲のテンポ・人の拍マーカーとつながる）。規則を触るなら「.NET の規則」の手順で。

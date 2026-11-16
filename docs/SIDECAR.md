@@ -6,7 +6,7 @@ is**. An editor reads it to play the recording's own bar while the bar is being 
 measuring tools read it to count a reading against the truth.
 
 This is format **1** (2026-11-14; `tuning` and the bars' `beats` added 2026-11-16, for listening
-to the recording beside the chart in Lily#). `dettato` and `tools/read_chords.py` write it, `tools/sidecar.py` checks a
+to the recording beside the chart in Lily#; `parts` added 2026-11-17, to hear one part of it at a time). `dettato` and `tools/read_chords.py` write it, `tools/sidecar.py` checks a
 file against this page and against the chart beside it, and `tools/measure.py` runs that check on
 every chart it writes.
 
@@ -58,6 +58,7 @@ comes"; an mp3 with no such note and a bare `.aac` keep theirs, 13 and 23 ms as 
 | `time` | always | The meter: `"4/4"`, `"3/4"`, `"2/4"`, `"6/8"`, or another number of quarters. One for the whole recording. |
 | `key` | always | `"<tonic> major"` or `"<tonic> minor"`, the tonic a letter with `#` or `b`. It is what the chords are spelled by. |
 | `tuning` | when measured | How far the recording's pitches are from A = 440 Hz, in whole cents, -50 to 49: -12 is 12 cents flat. The commonest distance of its louder spectral peaks from a semitone (librosa's `estimate_tuning`, 12 bins to the octave). Half a semitone is as far as it can tell: 70 cents sharp reads as -30. For an old tape run fast or slow, the editor turns the pitch by this to bring it back. `dettato` always writes it (2026-11-16 on); `read_chords.py` from features made before then does not. |
+| `parts` | when written | The recording separated into four parts, for a player to turn each on or off (to hear the bass alone, or all but the singing): `{"drums": …, "bass": …, "other": …, "vocals": …}`, in that order, each the way to a FLAC file as `audio` is found (`dettato <recording>` writes them into a folder beside this file named like it, `<name>.parts/bass.flac`). Each part is one channel, 16 bits at 44100 Hz, as long as the recording and **on its seconds** (the first sample is the recording's first: FLAC puts nothing before it), and the four add up to the recording (in mono) within the separation's error (Demucs `htdemucs`; README, "The parts"). `dettato` writes them on every reading (2026-11-17, 0.7.0, the owner); `dettato read` and `read_chords.py` do not. A recording read again with `--force` has its parts written over. |
 | `strange` | when true | The reader's own model did not know the sound, and the bar lines are the rules' (the reader without `--ears` only). |
 | `doubt` | with `sure` | A chord whose `sure` is below this is doubted. |
 | `form` | always | The names of the sections in the order they are played. `"Pickup"` is first when the first bar is a pickup. A section of three bars or more is a letter, `"A"`, `"B"` … in the order they come (`"S27"` … past Z); a shorter one is named after the section played before it, `"B_1"`, `"B_2"` … (after the next one, `"A_1"`, when none is before it), and the chart hides its name (`~B_1` in its `form`; 2026-11-16, 0.3.4, the owner). |

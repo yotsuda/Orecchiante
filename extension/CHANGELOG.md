@@ -2,6 +2,13 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.7.0
+
+- The recording's four parts are written beside the chart, to hear one at a time while transcribing:
+  `<name>.parts/drums.flac`, `bass.flac`, `other.flac` and `vocals.flac` (mono FLAC, on the recording's
+  seconds), named in `<name>.dettato.json` as `parts`. They are what the singing was already separated
+  from, so the reading takes no longer; a song of five minutes gives about 30 MB. The charts are the same.
+
 ## 0.6.1
 
 - Half the memory while the singing is separated (a song of three and a half minutes peaked at 8.6 GB,

@@ -33,6 +33,9 @@ sealed class Chart
     /// <summary>The tempo as Python's json and f-string write it: a whole number bare, else its repr.</summary>
     public string BpmText => Bpm == Math.Floor(Bpm) ? ((long)Bpm).ToString(System.Globalization.CultureInfo.InvariantCulture) : Np.Repr(Bpm);
     public int? Tuning;                         // in cents from A = 440 Hz
+    /// <summary>The parts the recording was separated into (Voice.Parts order), each the way to its file as `audio` is;
+    /// null when none were written (dettato read, and so read_chords.py, write none).</summary>
+    public List<(string Part, string Path)>? Parts;
     public List<string> Form = [];
     public List<Bar> Bars = [];
 }

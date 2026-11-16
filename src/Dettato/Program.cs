@@ -4,7 +4,8 @@
 //   dettato <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]
 //
 // writes <name>.lys (a Lily# chord chart) beside the recording, or where -o says, and beside the chart
-// <name>.dettato.json (docs/SIDECAR.md). A chart already there is not written over without --force: it may hold
+// <name>.dettato.json (docs/SIDECAR.md), and the recording's four parts in <name>.parts/ (drums, bass, other and
+// vocals .flac, to hear one at a time; SIDECAR.md, `parts`). A chart already there is not written over without --force: it may hold
 // corrections. Both files are written at the end, whole or not at all. stderr says what is being done, a line a
 // step, and on failure why in its last line; stdout has the chart's path alone. Exit codes: 0 written, 1 the
 // recording was not read, 2 the arguments (no such file, a kind not read, a chart in the way), 3 the reader itself.
@@ -44,7 +45,7 @@ using System.Text;
 using Dettato;
 using Microsoft.ML.OnnxRuntime;
 
-const string version = "0.6.1";
+const string version = "0.7.0";
 const int protocol = 1;
 const string usage = "usage: dettato <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]\n"
                    + "       dettato --version [--json]\n"
@@ -97,8 +98,9 @@ float[] Heard(double[] high, double[] low, out int frames)
     return Btc.Average(first, frames, Crema.Step, second, secondFrames, Btc.Step);
 }
 
-// One recording to its chart; `say` is told each step as it begins.
-Chart Read(string file, Action<string>? say = null)
+// One recording to its chart; `say` is told each step as it begins; with `partsTo`, the separated parts are written
+// there too (Voice.Loudness: <part>.wav).
+Chart Read(string file, Action<string>? say = null, string? partsTo = null)
 {
     string name = Path.GetFileNameWithoutExtension(file);
     var clock = Stopwatch.StartNew();
@@ -116,7 +118,7 @@ Chart Read(string file, Action<string>? say = null)
     Collect();
     mel += clock.Elapsed.TotalSeconds; clock.Restart();
     // The singing is most of the time: it is separated while the beats and the chords are read (the same vocals).
-    var singing = voiceFrom == null ? Task.Run(() => Voice.Loudness(voiceModels, high!)) : null;
+    var singing = voiceFrom == null ? Task.Run(() => Voice.Loudness(voiceModels, high!, partsTo)) : null;
     var heard = Features.Of(low);
     cqt += clock.Elapsed.TotalSeconds; clock.Restart();
     say?.Invoke("the beats");
@@ -174,20 +176,33 @@ if (args[0] is not ("read" or "ears" or "features" or "audio"))
     chartPath = Path.GetFullPath(chartPath ?? Path.ChangeExtension(recording, ".lys"));
     if (!chartPath.EndsWith(".lys", StringComparison.OrdinalIgnoreCase)) return Fail(2, $"-o wants a .lys file, not {chartPath}");
     string sidePath = chartPath[..^4] + ".dettato.json";
+    // The parts, to hear one at a time (SIDECAR.md, `parts`): a folder beside the chart, made under another name first.
+    string partsPath = chartPath[..^4] + ".parts", partsMade = partsPath + ".part";
     if (File.Exists(chartPath) && !force) return Fail(2, $"{chartPath} is already there (--force to write over it)");
+    void Unmake() { try { if (Directory.Exists(partsMade)) Directory.Delete(partsMade, true); } catch (Exception x) when (Unread(x)) { } }
 
     string lys, json;
     try
     {
+        Unmake();
+        Directory.CreateDirectory(partsMade);
         modelsAt ??= AppContext.BaseDirectory;
         foreach (var model in new[] { "beat-this-final0-dynamo.onnx", "crema-chord.onnx", "btc-large-voca.onnx", Voice.Model })
             if (!File.Exists(Path.Combine(modelsAt, model))) return Fail(3, $"the model {model} is not in {Path.GetFullPath(modelsAt)} (--models <folder>)");
         try { Open(modelsAt, threads, true, true, true); }
         catch (Exception e) { return Fail(3, $"the models did not open ({e.Message.Trim()})"); }
-        var chart = Read(recording, Console.Error.WriteLine);
+        var chart = Read(recording, Console.Error.WriteLine, partsMade);
         // The recording as the chart finds it: its file name beside the chart, else the way there from the chart's
         // folder ('/' between folders; the whole path when they are on different drives). SIDECAR.md, `audio`.
-        chart.Audio = Path.GetRelativePath(Path.GetDirectoryName(chartPath)!, Path.GetFullPath(recording)).Replace('\\', '/');
+        string chartFolder = Path.GetDirectoryName(chartPath)!;
+        chart.Audio = Path.GetRelativePath(chartFolder, Path.GetFullPath(recording)).Replace('\\', '/');
+        Console.Error.WriteLine("the parts");
+        Parallel.ForEach(Voice.Parts, part =>       // a second each, one after another
+        {
+            Audio.Flac(Path.Combine(partsMade, part + ".wav"), Path.Combine(partsMade, part + ".flac"));
+            File.Delete(Path.Combine(partsMade, part + ".wav"));
+        });
+        chart.Parts = Voice.Parts.Select(p => (p, Path.GetRelativePath(chartFolder, Path.Combine(partsPath, p + ".flac")).Replace('\\', '/'))).ToList();
         lys = Writer.Lys(chart, Path.GetFileNameWithoutExtension(recording), Lysc.Shape);
         json = Writer.Json(chart);
         int marks = lys.Split("@todo").Length - 1;
@@ -195,19 +210,24 @@ if (args[0] is not ("read" or "ears" or "features" or "audio"))
     }
     catch (Exception e) when (Unread(e))
     {
+        Unmake();
         return Fail(1, $"{Path.GetFileName(recording)} was not read: {e.Message}");
     }
     catch (Exception e)
     {
+        Unmake();
         Console.Error.WriteLine(e);
         return Fail(3, $"{Path.GetFileName(recording)} was not read: the reader failed ({e.GetType().Name})");
     }
     try
     {
-        // Whole or not at all: each under another name first, the chart last (a chart there has its side file).
+        // Whole or not at all: each under another name first, the parts first and the chart last (a chart there has
+        // its side file and its parts).
         Directory.CreateDirectory(Path.GetDirectoryName(chartPath)!);
         File.WriteAllText(sidePath + ".part", json);
         File.WriteAllText(chartPath + ".part", lys);
+        if (Directory.Exists(partsPath)) Directory.Delete(partsPath, true);
+        Directory.Move(partsMade, partsPath);
         File.Move(sidePath + ".part", sidePath, true);
         File.Move(chartPath + ".part", chartPath, true);
     }
@@ -215,6 +235,7 @@ if (args[0] is not ("read" or "ears" or "features" or "audio"))
     {
         foreach (var part in new[] { sidePath + ".part", chartPath + ".part" })
             try { File.Delete(part); } catch (Exception x) when (Unread(x)) { }
+        Unmake();
         return Fail(1, $"{chartPath} was not written: {e.Message}");
     }
     Console.Error.WriteLine($"written in {started.Elapsed.TotalSeconds:F1} s");

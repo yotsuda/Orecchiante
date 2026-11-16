@@ -645,6 +645,33 @@ scratch/net/out/dettato.exe ears scratch/real/rwc-p --out scratch/net/voice/rwc-
 scratch/net/out/dettato.exe read scratch/real/rwc-p --out scratch/net/read-nv/rwc-p --lines scratch/real/beats-bt-folds --heard scratch/real/chords-crema+btc --voice scratch/net/voice/rwc-p
 ```
 
+### The parts
+
+Demucs separates four parts, and since 0.7.0 (the owner, 2026-11-17: to transcribe by ear, the
+bass alone, or all but the singing) `dettato <recording>` writes them all, not the vocals' loudness
+alone: `<name>.parts/drums.flac`, `bass.flac`, `other.flac`, `vocals.flac` beside the chart, and
+their ways in `.dettato.json`'s `parts` (SIDECAR.md). Lily# is asked to turn each on and off where
+the recording plays (REQUESTS 16).
+
+- Mono, 16 bits at 44100 Hz, as long as the recording and on its seconds: the four added up are
+  the recording (in mono) to 32.1 dB (糸) and 31.9 dB (`RWC_P001`) of signal to difference, at a lag of 0
+  samples (`scratch/sec/parts_check.py`). Windows' own FLAC encoder (Media Foundation) puts
+  nothing before the first sample: written and read back by ffmpeg, the samples are the same.
+- The charts are the same as 0.6.1's, letter for letter (`RWC_P001`, 糸, My Life: the owner's
+  sections all there). The segments are put together a batch of 24 at a time, each sample's sum in the
+  segments' order as before, and the samples a batch finishes are written and let go.
+- The time is 0.6.1's (`RWC_P001` 40.7 and 44.5 s, 0.6.1 44.8 and 44.5 s, while another program kept
+  cores busy). Reading the network's outputs by the tensors' indexers had made four parts 15 to 25 s
+  slower; read from their buffers, they cost nothing seen. The four files are written at once (a second each).
+- Their size: 29 MB for 糸 (4 min 45 s; bass 4.6, drums 6.8, other 9.7, vocals 8.3 MB); 361 MB
+  for the band's practice of 58 min (bass 57, drums 125, other 102, vocals 77 MB).
+- The practice of 58 min (48 kHz mp3) read in 694 s with the parts, the process's private memory
+  at most 1.7 GB (sampled every half second while another program kept cores busy; the separation no
+  longer holds every segment's vocals and a sum the length of the recording). Its chart was not
+  compared with 0.6.1's.
+- Stereo parts would cost the network nothing more (it takes two channels), but the vocals heard
+  from stereo differ a little and the sections would have to be measured again; not yet.
+
 
 ### How a chart begins and ends
 
