@@ -286,16 +286,16 @@ crema; the same words hold for BTC, on which the prices and the marks were chose
 
 Counted on 2026-11-14 (`measure.py table rwc-dev rwc-test rwc-p --ears`; the beats of RWC are
 the fold models', as above; the first three columns again after "Two half bars are one bar" below,
-and their tempo row after "The tempo to a tenth"):
+their tempo row after "The tempo to a tenth", and their bar lines after "A bar of 0.08 s"):
 
 | | `rwc-dev` (chosen on) | `rwc-test` (counted only) | `rwc-p`, all 100 | crema as it is, `rwc-p` | with BTC's chords, `rwc-p` |
 |---|---|---|---|---|---|
 | Tempo (within 4%), songs | 47 of 50 | 47 of 50 | 94 | 91 | 93 |
 | Meter, songs | 49 of 50 | 49 of 50 | 98 | 96 | 98 |
-| Bar lines (within 70 ms), F | 93.6% | 94.9% | 94.2% | 93.8% | 93.4% |
+| Bar lines (within 70 ms), F | 93.7% | 95.0% | 94.3% | 93.8% | 93.4% |
 | Chord root, by time | 86.4% | 87.3% | 86.9% | 84.4% | 85.9% |
-| Root and family | 82.3% | 82.2% | 82.2% | 79.8% | 80.6% |
-| Root and quality | 68.0% | 69.2% | 68.6% | 66.5% | 67.1% |
+| Root and family | 82.2% | 82.2% | 82.2% | 79.8% | 80.6% |
+| Root and quality | 67.9% | 69.2% | 68.6% | 66.5% | 67.1% |
 | The bass note too | 64.1% | 64.9% | 64.5% | 61.4% | 62.8% |
 
 Two points of root and of family come from the rules (a chord lasts whole half beats and
@@ -319,12 +319,12 @@ are BTC's still: fitted again on crema they catch a point more of `rwc-dev` and 
 
 | The marks, `--ears` | `rwc-dev` | `rwc-test` (counted only) | `rwc-p`, all 100 | with BTC's chords: `rwc-dev` (chosen on), `rwc-test` |
 |---|---|---|---|---|
-| Chords read | 6933 | 6718 | 13651 | 7274, 7042 |
-| Wrong in root or family | 14.8% | 15.9% | 15.3% | 19.0%, 18.0% |
-| Marked | 30.2% | 25.7% | 28.0% | 30.8%, 24.1% |
-| Of the chords wrong in root or family, marked | 77.8% | 70.3% | 73.9% | 79.5%, 63.1% |
-| Of the marked, wrong in root or family | 38.1% | 43.5% | 40.5% | 49.0%, 47.2% |
-| Marked and wrong so: the chord offered has the true root and family | 58.2% | 52.9% | 55.6% | 42.1%, 45.2% |
+| Chords read | 6893 | 6697 | 13590 | 7274, 7042 |
+| Wrong in root or family | 14.6% | 15.9% | 15.2% | 19.0%, 18.0% |
+| Marked | 29.7% | 25.3% | 27.6% | 30.8%, 24.1% |
+| Of the chords wrong in root or family, marked | 77.5% | 69.6% | 73.4% | 79.5%, 63.1% |
+| Of the marked, wrong in root or family | 38.1% | 43.5% | 40.6% | 49.0%, 47.2% |
+| Marked and wrong so: the chord offered has the true root and family | 57.2% | 52.6% | 55.0% | 42.1%, 45.2% |
 
 (The marks of this table are up to a point more than the line alone gives: a chord two playings
 of a section disagree on is marked too, see "What is said again". And they are up to a point more
@@ -909,6 +909,22 @@ four beats or more was tried and is worse on the songs made here (`seed7` 90.4%)
 bar stays a bar (it may be the music's own bar of two beats), and is written as long as the rest.
 "My Life" is 152 bars at 131 now, the two times its verse leads into the bridge written alike.
 In .NET the same (`Reader.cs`), letter for letter on the 268 charts.
+
+**A bar of 0.08 s (2026-11-16, Lily# REQUESTS 10, the owner on 糸).** The beat model marked one
+bar's start twice, at 174.80 s and 174.88 s, and the chart had a bar there that the music has not:
+with the recording, Lily# played its Em for 0.08 s. So (`TINY_BAR`): of the lines the tracker
+gives, a bar shorter than a quarter of the middle one goes with the shorter bar beside it. Bar
+lines, F, with `--ears`: `rwc-dev` 93.6 → 93.7%, `rwc-test` 94.9 → 95.0%, `seed1` 96.7 → 97.1%,
+`seed7` 90.9 → 91.0%, `seed11` 93.6 → 94.1%, `seed31` 93.5 → 94.1%, `seed41` 90.8 → 90.9%; root and
+family move 0.1 at most (`rwc-dev` family 82.3 → 82.2%); the marks catch a little less (`rwc-dev`
+30.2% marked → 77.8% of the wrong caught, now 29.7% → 77.5%; `rwc-test` 25.7% → 70.3%, now 25.3% → 69.6%).
+
+Not done: in 糸 the model also counts twice as fast for a while (bars 10 to 38 or so: four beats
+in about 2 s, where the rest has two beats of 0.95 s in a bar, paired into 4/4), so those bars are
+half as long as the rest and, with the recording, sound twice as fast. Pairing such bars, two
+running, from the first of them was tried: the bar lines go up a little on every set (`rwc-test`
+95.3%), but in 糸 the pairs begin half a bar off (`Am7 . Dsus4 D` split) and the repeats are no
+longer found (`A B C`). It waits for the owner.
 
 ### The tempo to a tenth
 

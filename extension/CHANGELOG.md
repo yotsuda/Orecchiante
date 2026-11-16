@@ -2,6 +2,11 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.3.5
+
+- A bar far shorter than the rest (a quarter of the middle one or less: the beat model marking one
+  bar's start twice, 0.08 s apart) is no longer a bar: it goes with the shorter bar beside it.
+
 ## 0.3.4
 
 - A section shorter than three bars shows no name: it is named after the section before it

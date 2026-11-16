@@ -2,7 +2,7 @@
   "name": "dettato",
   "displayName": "Dettato Chord Chart Transcriber",
   "description": "Reads a recording into an editable Lily# (.lys) chord chart: tempo, meter, key, bar lines and the chord of every bar, with the uncertain places marked. Open source (Apache-2.0). Runs locally on Windows; no cloud.",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "publisher": "yotsuda",
   "icon": "icon.png",
   "author": "Yoshifumi Tsuda",

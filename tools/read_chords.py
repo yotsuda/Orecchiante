@@ -90,6 +90,7 @@ RING_OUT = 0.2          # ears: a bar past the last one found and this much quie
                         # (rwc-dev and seed1; asking for the same chord too leaves 11 such bars in seed1's 24 songs, this 4)
 PARTIAL = {1: "4", 2: "2", 3: "2.", 4: "1", 6: "1."}   # a pickup of so many quarters, as Lily#'s `partial` takes it
 MEND_BARS = True       # ears: two short bars that together have a bar's beats are one bar (the tracker's slip)
+TINY_BAR = 0.25        # ears: a bar shorter than this share of the middle one is not a bar (糸: 0.08 s, Lily# REQUESTS 10)
 EVEN_TEMPO = 0.1       # the tempo is from the mean of the bars within this share of the middle one (0: the middle one alone)
 DIAGRAM_NOTE = "// Shift+Ctrl+Up/Down on a chord name shows its guitar chord diagram"   # above the first chords (the owner, 2026-11-16)
 TENTH_TEMPO = True    # ears: the tempo to a tenth, a whole number when it is one (Lily# writes `tempo 4 = 131.8`, 2026-11-16)
@@ -183,6 +184,15 @@ def lines_of(path):
             kept.append(downs[i])
             i += 1
         downs = kept
+    if TINY_BAR:                        # a bar far shorter than the rest is two lines for one (Lily# REQUESTS 10, 2026-11-16, 糸):
+        lengths = lambda: [times[b] - times[a] for a, b in zip(downs, downs[1:])]     # one goes, the shorter neighbour's
+        middle = float(np.median(lengths()))
+        while len(downs) > 2:
+            s = lengths()
+            k = next((k for k, x in enumerate(s) if x < TINY_BAR * middle), None)
+            if k is None:
+                break
+            del downs[1 if k == 0 else k if k == len(s) - 1 or s[k - 1] <= s[k + 1] else k + 1]
     beat = float(np.median(np.diff(times)))
     last = downs[-1] + per
     end = times[last] if last < len(times) else min(times[-1] + beat, times[downs[-1]] + per * beat)

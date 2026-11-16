@@ -66,7 +66,8 @@ static class Reader
     public static readonly Dictionary<int, string> Partial = new() { [1] = "4", [2] = "2", [3] = "2.", [4] = "1", [6] = "1." };
     const bool LeadOff = true;              // the second ending: a section played once opens with what a short section is elsewhere
     const double EvenTempo = 0.1;          // the tempo is from the mean of the bars within this share of the middle one
-    const double SlowTwo = 1.5;             // a bar of two beats longer than this is a bar of four
+    const double TinyBar = 0.25;            // a bar shorter than this share of the middle one is not a bar (糸: 0.08 s)
+    const double SlowTwo = 1.5;            // a bar of two beats longer than this is a bar of four
     public const double SaidAgain = 0.95;
 
     static readonly string[] MajorKeys = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
@@ -136,6 +137,19 @@ static class Reader
             kept.Add(downs[i]);
         }
         downs = [.. kept];
+        // a bar far shorter than the rest is two lines for one (Lily# REQUESTS 10, 2026-11-16, 糸): one goes, the shorter
+        // neighbour's; as tools/read_chords.py's lines_of
+        var list = downs.ToList();
+        List<double> Lengths() => [.. Enumerable.Range(0, list.Count - 1).Select(k => times[list[k + 1]] - times[list[k]])];
+        double middle = Np.Median(Lengths());
+        while (list.Count > 2)
+        {
+            var s = Lengths();
+            int k = s.FindIndex(x => x < TinyBar * middle);
+            if (k < 0) break;
+            list.RemoveAt(k == 0 ? 1 : k == s.Count - 1 || s[k - 1] <= s[k + 1] ? k : k + 1);
+        }
+        downs = [.. list];
         double beat = Np.Median(Np.Diff(times));
         int last = downs[^1] + per;
         double end = last < times.Length ? times[last] : Math.Min(times[^1] + beat, times[downs[^1]] + per * beat);
