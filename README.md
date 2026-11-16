@@ -672,6 +672,41 @@ the recording plays (REQUESTS 16).
 - Stereo parts would cost the network nothing more (it takes two channels), but the vocals heard
   from stereo differ a little and the sections would have to be measured again; not yet.
 
+#### Six parts: guitar and piano too (tried 2026-11-17, not taken yet)
+
+Demucs's `htdemucs_6s` (the same repository and licence as `htdemucs`; its authors call the guitar
+"okay" and the piano weak, with a lot of bleeding) separates guitar and piano out of `other`. It is
+in .NET behind `DETTATO_VOICE_MODEL=htdemucs_6s-mm8.onnx`; the default is still the four.
+
+- To ONNX as the four (`demucs_onnx.py --model htdemucs_6s`): against torch 0.0004 at most; with its
+  matrix products in int8, 64 MB, each part within 0.004 to 0.010 of torch (rms) but the piano
+  13% quieter on `RWC_P001`.
+- **The time is the four's** (`RWC_P001` 45.3 → 44.4 s, 糸 59.1 → 63.2, My Life 58.7 → 53.2, while
+  Calamo kept 9 cores busy). **The charts of the three are the same letter for letter.**
+- **The six leave out some of the recording:** they add up to it within 17.7 dB (糸), 18.8 (My Life),
+  23.8 (`RWC_P001`), against 32 for the four; in torch in float32 too (22.4 against 33.0 on 30 s of 糸),
+  so not the int8. What is left out is mostly chords: on 糸 its spectrum is `other`'s (61% of it at
+  150 to 600 Hz), and the four's `other` is nearer six's other + guitar + piano with it (8.8 → 12.2 dB).
+  Lily# plays the parts' sum once one is off (REQUESTS 16), so `other` takes it: the six then add up
+  to the recording within 67 dB (16 bits). `other` is everything the named parts are not.
+- **On the songs made here (`seed1`, each part rendered alone as the truth: `scratch/six/stems.py`,
+  `score.py`; General MIDI sound, not a recording's):** electric guitars, clean or overdriven, go into
+  `guitar` (90 to 99% of them), as clean as in the four's `other`; **acoustic guitars split between
+  `guitar` and `piano`** (often half each), pianos between `piano` and `other`. In the middle of 12
+  songs the chord guitar is 5.5 dB in the four's `other` (with the melody instrument in it too) and 3.4
+  dB in six's `guitar`; pianos 6.2 and 3.9 dB. The bass (13.2 → 13.4 dB) and the drums (13.1 → 12.8) are
+  the four's.
+- **The sections change in 16 of `rwc-dev`'s 50 songs**, the vocals being six's: AIST's F within 3 s
+  64.3 → 64.4%, within 0.5 s 42.3 → 41.7%; starts gone 52 (27 within 3 s of AIST), come 43 (22); the
+  owner's two songs the same. As with no overlap, right starts go and others come.
+- Not measured: the quality on recordings (MoisesDB has guitar and piano stems, for non-commercial
+  research, by registration), `rwc-test`, how the parts sound to the owner.
+- **The vocals are not the same twice:** with 3 segments at once (`Voice.Parallel`) `RWC_P001`'s
+  loudness differs by up to 0.01 (of 0.34) between two runs of the same program; one at a time it is the
+  same. Not onnxruntime's version (1.32.0 too), not one session shared (a session each too); Python's
+  onnxruntime gives the same answer at once and alone. The sections did not change with it before
+  (above, "not by chance").
+
 
 ### How a chart begins and ends
 

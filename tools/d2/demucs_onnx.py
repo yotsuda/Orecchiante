@@ -112,8 +112,10 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("wav", type=Path)
     p.add_argument("--out", type=Path, default=Path("scratch/d2"))
+    p.add_argument("--model", default="htdemucs", help="htdemucs (4 sources) or htdemucs_6s (also guitar and piano)")
     a = p.parse_args()
-    m = get_model("htdemucs").models[0].eval()
+    m = get_model(a.model).models[0].eval()
+    print("sources", m.sources)
     L = int(m.segment * m.samplerate)
     y, sr = sf.read(a.wav, dtype="float32", always_2d=True)
     assert sr == m.samplerate, "give a 44.1 kHz recording"
@@ -130,7 +132,7 @@ def main():
     print("the core against forward: max |diff|", float((want - got).abs().max()), "of", float(want.abs().max()))
 
     a.out.mkdir(parents=True, exist_ok=True)
-    path = a.out / "htdemucs-core.onnx"
+    path = a.out / f"{a.model}-core.onnx"
     torch.onnx.export(core, (mix, mag), str(path), input_names=["mix", "mag"], output_names=["spec", "wave"],
                       opset_version=17, dynamo=False)
     import onnxruntime as ort
@@ -143,14 +145,15 @@ def main():
     print(f"{path}: {path.stat().st_size / 1e6:.1f} MB")
 
     from onnxruntime.quantization import quantize_dynamic, QuantType
-    q = a.out / "htdemucs-mm8.onnx"
+    q = a.out / f"{a.model}-mm8.onnx"
     quantize_dynamic(str(path), str(q), weight_type=QuantType.QInt8, op_types_to_quantize=["MatMul"])
     s = ort.InferenceSession(str(q), providers=["CPUExecutionProvider"])
     qx, qxt = s.run(None, {"mix": mix.numpy(), "mag": mag.numpy()})
     with torch.no_grad():
         qg = torch.from_numpy(qxt) + spec_out(m, torch.from_numpy(qx), L)
     rms = lambda v: float(v.pow(2).mean().sqrt())
-    print("int8 against forward: vocals rms", rms(qg[0, voc]), "against", rms(want[0, voc]), "| diff rms", rms(qg[0, voc] - want[0, voc]))
+    for i, name in enumerate(m.sources):
+        print(f"int8 against forward: {name} rms {rms(qg[0, i]):.4f} against {rms(want[0, i]):.4f} | diff rms {rms(qg[0, i] - want[0, i]):.4f}")
     print(f"{q}: {q.stat().st_size / 1e6:.1f} MB")
 
 

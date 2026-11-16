@@ -3,9 +3,9 @@
 **毎セッションの終わりに書き換える**（追記しない。200 行以内）。方向づけは [ROADMAP.md](ROADMAP.md)、
 数字と使い方は [README](../README.md)、録音の出典は [DATASETS.md](DATASETS.md)。
 
-最終更新: 2026-11-17（0.7.0: 録音の 4 パートを FLAC で書く＝耳コピ用、依頼 16。歌の分離の重なりなしと「荒く読んで詰める」を測って捨てた。その前に 0.6.0: 歌のモデル（Demucs）を .NET に入れ、歌の出入りで section を切る。依頼 15 に返事。その前に 0.5.0: 意味で切る section を既定に。その前の 11-16: 半分の小節、テンポの小数、2 つ目の耳 BTC など。HEAD は `git log -1` で確かめる）。
+最終更新: 2026-11-17 午前（6 分割 `htdemucs_6s` を試した＝**採るかはオーナー待ち**、下の「次の一手」。`dettato ears` が 0.7.0 から落ちていたのを直した。その前に 0.7.0: 4 パートを FLAC で書く、0.6.0: 歌のモデル、0.5.0: 意味で切る section。HEAD は `git log -1`）。
 
-11-16 に入れたもの（README と git の履歴）: 2 つ目の耳 BTC（0.4.0）、0.08 秒の小節（0.3.5 `TINY_BAR`）、テンポは小数 1 桁、最初のコードに `lysc shape`、半分の小節（0.4.1 `HALF_BARS`。**半分のテンポで読んでいた RWC の 4 曲 P050・P095・P034・P038 では悪くなる**）、section は意味で切るのが既定（0.5.0。前の分け方は Python の `--old-sections` だけ）。
+11-16 に入れたもの（README と git の履歴）: BTC（0.4.0）、0.08 秒の小節（0.3.5）、テンポは小数 1 桁、`lysc shape`、半分の小節（0.4.1。**RWC の P050・P095・P034・P038 では悪くなる**）、意味で切る section（0.5.0）。
 
 ### D4 の形（2026-11-15、オーナーと話して決めた。依頼 4・[便り](repro/lilysharp-requests-2026-11-15-listening.md)）
 **Lily# の設計メモ `C:\MyProj\LilySharp\docs\recording-design.md`（セッションの頭に読む）:** 紐づけは隣のファイル（形式 2）だけ、m4a は Lily# の LSP が復号。
@@ -29,11 +29,8 @@
 - **ユーザーの音楽フォルダ（`F:\Music`）で測った（2026-11-16、README の「A recording as it comes」の末尾）:** mp3 はほぼ Xing/Info なし（iTunes 製）、m4a は編集リストなしで `iTunSMPB`。
   **合わせる相手は再生する側**（Lily# の mp3 は Chrome の `decodeAudioData`＝ffmpeg と同じ、m4a は Lily# の LSP の Media Foundation）。`Mp3Lead` は Xing/Info なしで −528、
   `Mp4Lead` は編集リストなしで `Priming()`。7 種すべて ffmpeg と 0 標本（`scratch/d3/user/<種類>/`、`heard_check.py <フォルダ> ref.wav`）。Chrome は `tools/chrome_lag.py`＋`tools/cdp.mjs`。
-- **長い録音: 58 分（48 kHz、バンド練習の mp3）は読める。** 1500 小節、Calamo が CPU を使っていない時で 74〜81 秒（Beat This! が 60 秒）。メモリのピークは 9.6 → 7.1 GB
-  （`Audio.Read` を 1 本の配列に、`Program.Read` で使い終えた配列を手放して `GC.Collect`。出力は前と一字一句同じ、seed1 を wav から通しで読んでも同じ）。
-  残る大きい所: `Features.Of` の +1.2 GB（全体の STFT を持つらしい）、Beat This! の段の +1.2 GB（未調査）。
-- seed1 を mp3・m4a にして読むと精度は wav と同じ、譜面は同じではない（小節の数が違う曲が 3・5 曲。数字は README）。48000 Hz の wav は同じ譜面。
-- 測る道具: `dettato audio` → `tools/heard_check.py`（頭のずれ）、`tools/kinds_check.py`（譜面どうし）。試した録音は `scratch/d3/`（消してよい）。ffmpeg は PATH にある。
+- **長い録音: 58 分（48 kHz、バンド練習の mp3）は読める**（パートつきで 694 秒、README）。残る大きいメモリ: `Features.Of` の +1.2 GB、Beat This! の段の +1.2 GB（未調査）。
+- seed1 を mp3・m4a にすると精度は wav と同じ、譜面は小節の数が違う曲が 3・5 曲。測る道具: `tools/heard_check.py`（頭のずれ）、`tools/kinds_check.py`。ffmpeg は PATH にある。
 
 ### .NET の規則（`Reader.cs` 726 行・`Form.cs` 209＝`Turns`・`Phrases`・`Writer.cs` 251。README の「In .NET: the rules」。全体で 2776 行）
 
@@ -76,31 +73,30 @@
 - 仕組み（README「Sections by meaning」「The voice in .NET」）: 歌の出入り・調号 2 つ以上・6 dB で塊に切り、丸ごと別の所で鳴る塊の頭と終わり、長い塊の中は 4 小節の句（`PHRASE_BARS`）の格子で
   「同じ句 2 回の終わり」「V→I」「別の所でも始まる句（`BEGIN_SHARE`）」で切る。名前は再演なら A2。fold はしない。.NET は `Form.Turns`・`Form.Phrases`・`Form.VoiceTurns`。
 - **歌（0.6.0、オーナー了承）:** `Voice.cs` が Demucs（htdemucs、MIT）の ONNX（`tools/d2/demucs_onnx.py`。STFT と逆 STFT は外、行列積だけ int8＝85 MB）を 7.8 秒ずつ、ずらしなし・モノラルを両チャンネルで回す。
-  torch と RWC_P001 で 0.8% 差。歌の判定は torch（ステレオ）と同じ水準（dev 96.4・test 95.6%）。AIST 3 秒以内の F: dev 64.3%・test 60.2%（torch 65.2・60.7）。歌のない曲は `VOICE_FLOOR`（0.05）で歌なし。
-  **Python と .NET は同じ `.voc.npy` で RWC 100 曲が一字一句同じ**（`measure.py … --voice scratch/net/voice`、`dettato read … --voice <folder>`）。合成曲の突き合わせは `--voice none`（268 曲一致）。
-  Python の `phrase_sections` は歌の線を小さい順に回すようにした（前は集合の順。オーナーの 2 曲は同じ）。
-- **時間とメモリ（0.6.1）:** 通しで RWC_P001（3 分 27 秒）33.4〜33.9 秒（0.5.0 は 6 秒ほど）、ピーク 8.6 GB（0.6.0 は 16.2 GB＝ORT の arena と memory pattern）。分離の間に拍とコードを読む。並行は 3（メモリで減る、`Voice.Parallel`）。
-  **結果を変えずに速くする手は見つからなかった**（スレッドの組み方・セッションを分ける・単精度、README）。どれも Calamo が 6〜14 コアを使っている中の数字。
-  **重なりなしは捨てた（オーナー決定 2026-11-17、README「The voice in .NET」）:** RWC 100 曲中 15 曲の section が変わり（揺れではない）、AIST の数字はほぼ同じだが合っていた線が消えて 1 小節ずれた線が増える。
-  オーナーの 2 曲は同じ。原因は 7.8 秒の区間の端。道具は `scratch/sec/ov_cmp.py <A> <B>`（section の頭の差と最寄りの AIST）・`ov_edges.py`。歌は `scratch/net/voice-ov0/`（消してよい）。
+  AIST 3 秒以内の F: dev 64.3%・test 60.2%。歌のない曲は `VOICE_FLOOR`（0.05）で歌なし。**Python と .NET は同じ `.voc.npy` で RWC 100 曲が一字一句同じ**（`dettato read … --voice <folder>`、合成曲は `--voice none`）。
+- **時間とメモリ（0.6.1）:** 通しで RWC_P001 33〜45 秒（Calamo の負荷しだい）、ピーク 8.6 GB。並行は 3（`Voice.Parallel`）。結果を変えずに速くする手は見つからなかった（README）。
+  重なりなしは捨てた（オーナー決定）。section の頭の比べ方は `scratch/sec/ov_cmp.py <A の譜面> <B の譜面>`（最寄りの AIST つき）。
 - **パート（0.7.0、オーナー決定 2026-11-17「レコーディングのオンオフをパートごとに。耳コピにとても便利」、README「The parts」）:** 変換のたびに `<名前>.parts/{drums,bass,other,vocals}.flac`（モノラル 16 bit 44100 Hz、録音の秒の上）と `x.dettato.json` の `parts`（SIDECAR.md）。
   譜面は 0.6.1 と一字一句同じ（RWC_P001・糸・My Life）、時間も同じ（テンソルの添字読みをやめた）。58 分で 694 秒・私有メモリ 1.7 GB・361 MB。確かめは `scratch/sec/parts_check.py <録音> <x.parts>`（和 32 dB・ずれ 0 標本）。
-  **Lily# 依頼 16（パートごとのトグルとフェーダー）は open。** ステレオのパートは未（歌の判定が変わり section の測り直し）。Moises（クラウド）との質の比較はしていない。
-- **次:** (0) ギターとピアノも分ける（今は other にまとまる）: Demucs の 6 分割 `htdemucs_6s`（MIT、作者いわくギターはそこそこ・ピアノは弱い）を ONNX にして質と時間と section を測る。質の測り方（MoisesDB など）とライセンスを先に。
-  (1) 歌の中の境目（AIST の verse A→B）。手がかり候補: 旋律の音域・歌の密度・ドラムの型。
-  (2) 速くする手が要るなら: 重なりを 4 分の 1 より小さく（8 分の 1 など、同じ道具で測る。未測定）、空いた PC で測り直す、蒸留した小さなモデル（学習の音源はオーナーが決める）。
+  **Lily# 依頼 16 は Lily# master `e04df995a` で fixed**（パートの行は `parts` の数と順で出る＝6 つでもそのまま。全部オンなら元の録音、1 本でもオフなら残りの和）。ステレオのパートは未。Moises との比較はしていない。
+- **6 分割（ギターとピアノ）を試した（2026-11-17、README「Six parts」）。採るかはオーナー待ち:** `DETTATO_VOICE_MODEL=htdemucs_6s-mm8.onnx`（64 MB、`demucs_onnx.py --model htdemucs_6s`）。既定は 4 のまま。
+  時間は同じ、譜面は RWC_P001・糸・My Life で一字一句同じ。6 本は録音の一部（18〜24 dB）を落とす＝和音の楽器の音 → **`other` に足して和を録音に戻した**（67 dB）。
+  合成曲（seed1、パートを 1 つずつ鳴らした正解。`scratch/six/stems.py`・`score.py`）: エレキギターは `guitar` に入る、**アコギは `guitar` と `piano` に割れる**、ベース・ドラムは同じ。
+  **`rwc-dev` の 16/50 曲で section の頭が変わる**（AIST の F は同じ＝64.3 → 64.4%。重なりなしと同じ形）。`rwc-test` の歌は `scratch/net/voice6/rwc-p` に作り中だった（続きは `dettato ears` を同じ環境変数で）。
+  **オーナーに聴いてもらう: `scratch/six/listen/`（糸・My Life の 6 パートつき `.dettato.json`）。** 質の数字は MoisesDB（登録制・非商用研究）を使うかもオーナー次第。
+  採るなら: 既定のモデルを変え、SIDECAR.md と `tools/sidecar.py`（いま 4 つ決め打ち）を「4 つか、guitar・piano を足した 6 つ」に、拡張に同梱するモデルを差し替え、版を上げる。採らないなら「捨てた案」へ。
+- **次:** (1) 歌の中の境目（AIST の verse A→B）。手がかり候補: 旋律の音域・歌の密度・ドラムの型。
+  (2) C3（テンポの大きな変化。範囲のテンポ・人の拍マーカーとつながる）。(3) 速くする手が要るなら: 重なりを 4 分の 1 より小さく（8 分の 1 など、同じ道具で測る。未測定）、空いた PC で測り直す、蒸留した小さなモデル（学習の音源はオーナーが決める）。
 - **糸の M64 は rit ではなく 6 拍の小節**（オーナー。4＋2 拍、M65 に `time 2/4`）。手がかりは Beat This! の downbeat の値: G の小節の頭が今の組み方で平均 2.3、2 拍ずらすと 3.5（`scratch/sec/downs.py`、`.venv-bt`）。
   案: 2 拍ずつ組む所で向きを downbeat の値で選び、入れ替わる所に 2 拍の小節（値段つき）。要るもの: `.beats` に 3 列目（downbeat の値）＝`track_beats.py` と `Beats.cs`、全セットの拍の作り直し。未着手。
-  書き方は **Lily# 依頼 13（コードの行の中の `time 2/4`）＝Lily# master `91187cf45` で fixed**（小節の頭だけ。次の `time` か section の終わりまで効く。次の section は見出しの拍子に戻る）。
-  **オーナーは Lily# を手元に入れた＝行の中の `time 2/4` で書いてよい**（手元の lysc で通ることを確かめた。2026-11-16）。Lily# 依頼 11（小節数が違っても少ない方まで鳴らす）は Lily# master `184efc304` で fixed。オーナーの版で確かめたら `done`。依頼 15（拍の伸び）は Lily# の計器の誤りで closed（Dettato の拍は伸びていない）。
+  書き方は行の中の `time 2/4`（依頼 13、Lily# で fixed。オーナーの手元の lysc で通る）。依頼 11 は fixed（オーナーの版で確かめたら `done`）、15 は closed。
 
 **それから、ユーザーの録音で聴いてもらう**: ベースで弾く曲・バンド練習（`F:\Music\ギャラン☆Do!\`、58 分は `scratch/d3/user/long-only/`、曲ごとにテンポが変わる＝C3）。
 - **D4 で Dettato 側に作るものは今はない**（読み直しは単に上書き＝オーナー決定、設計メモ §6）。配り直すときは版を 2 か所（`Program.cs`・`extension/package.json`）と CHANGELOG で上げて `tools/deploy-extension.ps1`。
 - **Lily# の依頼（`docs/repro/REQUESTS.md`。セッションの頭に見る）:** 1 は `done`。4 は Lily# が作り中（S1〜S3 済み、次は S4）。
-  **16（パートのオン・オフ）は open。** **5（m4a の `iTunSMPB`）は `fixed`＝実物の m4a で確かめてから `done`。** 7（小数のテンポ。Lily# が 6 と書いたのを振り直した）は 0.3.1 で入れた。
+  **16（パートのオン・オフ）は `fixed`＝オーナーの版で確かめてから `done`。** **5（m4a の `iTunSMPB`）は `fixed`＝実物の m4a で確かめてから `done`。** 7（小数のテンポ。Lily# が 6 と書いたのを振り直した）は 0.3.1 で入れた。
   **6（保存先のダイアログ・`audio` の道）・8（`warpFit` を中央値に）・9（`lysc shape`・`LILYSHARP_LYSC_PATH`）は Lily# master で `fixed`、Dettato は 9 を 0.3.2 で使った。
   Lily# の次の版が入ったら、変換メニューから 3 つとも実物で確かめて `done`**（3・5 も同じく確かめてから）。
-- 返事を待つ間にできる一手: C3（テンポの大きな変化。範囲のテンポ・人の拍マーカーとつながる）。規則を触るなら「.NET の規則」の手順で。
 
 やり残し（急がない）:
 - **Beat This! の `small0`（8 MB）と半精度は測れていない**（配布元 cloud.cp.jku.at が 500）。取れたら `track_beats.py --model small0` で `final0` と比べる。
@@ -136,6 +132,7 @@
 | `scratch/real/rwc-p/`（wav 100 個と truth）、`rwc-annotations/`、`rwc-annotations-archive/`（AIST の構造）、`RWC-P.zip`（3.79 GB） | DATASETS.md の手順 |
 | `scratch/sep/venv`（demucs 4.1.0・onnx・onnxruntime）、`scratch/sep/out/htdemucs/*.voc.npy`（torch・ステレオ・ずらしあり、比べる相手） | `scratch/sep/song.py` |
 | `scratch/d2/htdemucs-core.onnx`・`htdemucs-mm8.onnx`、`scratch/net/voice/<セット>/*.voc.npy`（.NET の歌、RWC 100 曲・seed1 の 7 曲・`sec`＝オーナーの 2 曲） | `tools/d2/demucs_onnx.py`、`dettato ears`（RWC は Calamo と取り合って 92 分） |
+| `scratch/d2/htdemucs_6s-core.onnx`・`-mm8.onnx`、`scratch/net/voice6/rwc-p/`（6 分割の歌）、`scratch/six/`（`stems/seed1` 正解のパート、`sep/` 分けたもの、`listen/` オーナー用） | `demucs_onnx.py --model htdemucs_6s`、`dettato ears`（環境変数つき）、`scratch/six/stems.py`・`sep_seed1.ps1` |
 | `scratch/real/beat_this_annotations/`、`scratch/btc/`・`scratch/chordmini/`（clone）、`.venv-bt/`、`.venv-crema/` | README |
 | `scratch/real/beats-bt-folds/*.beats`、`scratch/beats-bt/<セット>/`（合成曲 7 セットを `final0` で） | `track_beats.py`（README） |
 | `scratch/real/chords-crema/`、`scratch/chords-crema/<セット>/` | `crema_chords.py <セットのフォルダ> --out <ここ>` |
@@ -181,6 +178,7 @@
 ## 分かっている弱点・未確認
 
 - **セントの `tuning`:** librosa との一致は `seed1` の 24 曲だけ。伸びたテープ、±50 セントを超えるずれ、曲の途中で音高が動く録音は見ていない（RWC は −9〜+4）。
+- **歌の値は走るたびに揺れる**（区間 3 つを並行に回すとき。RWC_P001 で最大 0.01／0.34、1 つずつなら同じ）。onnxruntime の版でもセッションの共有でもない（README「Six parts」の末尾）。原因は未特定。
 - **.NET:** `RWC_P059` の調律が 0.01 ずれる理由。**入力:** 編集リストと `iTunSMPB` が両方ある m4a（いまは編集リストが先）、動画つき mp4、VS Code の Chromium の mp3 の頭、
   メモリの少ない PC で 1 時間、実録音の mp3 の精度（1 曲だけ）、Windows 10・N エディション、RWC を wav から通し、5/4・7/4、別の CPU の速さ、`small0`。通しの規則一致は seed1 だけ。
 - 弱起つき・section つき・繰り返し記号つきの `.lys` は `lysc check` と小節数だけ（png は RWC_P010 を 1 枚）。鳴り方は耳で確かめていない。
@@ -191,6 +189,8 @@
 - RWC の注釈に調がなく、調は実録音で測れていない。大きなテンポ変化（C3）は未対応。Chord Tracker とは比べていない。
 
 ## 未決（ユーザーの判断待ち）
+
+- **6 分割（ギター・ピアノ）を既定にするか**（`scratch/six/listen/` を聴いてもらう。section が 1/3 の曲で入れ替わる。質の数字に MoisesDB を使うか）。
 
 - **`x.dettato.json` を人が直してよい形式 2 にすること**（オーナーは「人の小節線が正」に同意。形式の中身と、Lily# と Dettato の書き分けは依頼 4 の返事待ち）。
 - **和音のないイントロ・弱起を譜面に書くか。** いまは書かない。書くなら N.C. の小節として。`rwc-dev` で落としている和音なしの小節は 14。

@@ -12,7 +12,9 @@ namespace Dettato;
 /// and given to both, so the parts are mono. The sections take where singing begins and stops from it (Form.Phrases).</summary>
 static class Voice
 {
-    public const string Model = "htdemucs-mm8.onnx";     // its matrix products in int8 (85 MB; tools/d2/demucs_onnx.py)
+    // its matrix products in int8 (85 MB; tools/d2/demucs_onnx.py); DETTATO_VOICE_MODEL tries another, such as
+    // htdemucs_6s-mm8.onnx (also guitar and piano, 64 MB: README, "Six parts")
+    public static readonly string Model = Environment.GetEnvironmentVariable("DETTATO_VOICE_MODEL") is { Length: > 0 } m ? m : "htdemucs-mm8.onnx";
     // segments at once, on the session's threads: 3 was the fastest (1, 2, or 6 of 4 threads were slower), and each
     // more holds about 2 GB: so as many as the memory takes (a song of 3.5 min peaked at 8.4 GB with 3, 6.6 GB with 2)
     public static readonly int Parallel = Math.Clamp((int)((GC.GetGCMemoryInfo().TotalAvailableMemoryBytes / (1L << 30) - 4) / 4), 1, 3);      // segments at once, each on the session's 8 threads (2 at once or 6 of 4 threads were slower)
@@ -21,8 +23,9 @@ static class Voice
     const int Segment = 343980;         // int(44100 * 39 / 5), the length the network was trained on
     const int Nfft = 4096, Hop = 1024, Bins = Nfft / 2;
     const int Frames = (Segment + Hop - 1) / Hop;   // 336
-    public static readonly string[] Parts = ["drums", "bass", "other", "vocals"];     // the network's order
-    const int Vocals = 3;
+    // the network's order (htdemucs_6s adds guitar and piano after them)
+    public static readonly string[] Parts = Model.Contains("_6s") ? ["drums", "bass", "other", "vocals", "guitar", "piano"] : ["drums", "bass", "other", "vocals"];
+    const int Vocals = 3, Other = 2;
     const int Batch = 24;               // segments separated before the samples they finish are put together and written
     const double Overlap = 0.25;       // as apply_model (none is a third quicker, but changed the sections of 15 of RWC's 100 songs, right starts lost; README)
 
@@ -77,7 +80,7 @@ static class Voice
                 var weights = new double[length];
                 foreach (var (offset, parts) in live)
                 {
-                    int from = Math.Max(done, offset), to = Math.Min(upTo, offset + parts[0].Length);
+                    int from = Math.Max(done, offset), to = Math.Min(upTo, offset + parts[Vocals].Length);     // the vocals are always there
                     for (int j = from; j < to; j++)
                     {
                         int i = j - offset, at = j - done;
@@ -97,16 +100,27 @@ static class Voice
                 }
                 if (writers != null)
                 {
+                    for (int p = 0; p < Parts.Length; p++)
+                        for (int at = 0; at < length; at++) sum[p][at] = sum[p][at] / weights[at] * std + mean;
+                    // htdemucs_6s leaves out some of the recording (its six add up to it within 18 to 24 dB, the four
+                    // within 32), most of it chords like `other`'s: `other` takes it, so that all but one part are
+                    // the recording without that part (Lily# plays the parts' sum once one is off)
+                    if (Parts.Length > 4)
+                        for (int at = 0; at < length; at++)
+                        {
+                            double rest = mono[done + at];
+                            for (int p = 0; p < Parts.Length; p++) rest -= sum[p][at];
+                            sum[Other][at] += rest;
+                        }
                     var samples = new float[length];
                     for (int p = 0; p < Parts.Length; p++)
                     {
-                        for (int at = 0; at < length; at++)
-                            samples[at] = (float)Math.Clamp(sum[p][at] / weights[at] * std + mean, -1.0, 32767.0 / 32768);
+                        for (int at = 0; at < length; at++) samples[at] = (float)Math.Clamp(sum[p][at], -1.0, 32767.0 / 32768);
                         writers[p].WriteSamples(samples, 0, length);
                     }
                 }
                 done = upTo;
-                live.RemoveAll(s => s.Offset + s.Parts[0].Length <= done);
+                live.RemoveAll(s => s.Offset + s.Parts[Vocals].Length <= done);
             }
         }
         finally
@@ -175,7 +189,7 @@ static class Voice
             NamedOnnxValue.CreateFromTensor("mix", new DenseTensor<float>(mix, [1, 2, Segment])),
             NamedOnnxValue.CreateFromTensor("mag", new DenseTensor<float>(mag, [1, 4, Bins, Frames])),
         ]);
-        // read straight from the buffers ([1, 4, 4, Bins, Frames] and [1, 4, 2, Segment]), not by the tensors' indexers
+        // read straight from the buffers ([1, parts, 4, Bins, Frames] and [1, parts, 2, Segment]), not by the tensors' indexers
         var spec = ((DenseTensor<float>)results.First(r => r.Name == "spec").AsTensor<float>()).Buffer.Span;
         var wave = ((DenseTensor<float>)results.First(r => r.Name == "wave").AsTensor<float>()).Buffer.Span;
 
