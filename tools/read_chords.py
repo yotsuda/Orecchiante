@@ -546,6 +546,8 @@ def turns_of(notes, loud):
 PHRASE_SECTIONS = False # sections as the owner cut 糸 and My Life (2026-11-16): blocks between turns, played again elsewhere, cut on a grid of phrases, named
                        # after the section they play again (A, A2); no repeat signs. False: find_form and fold, as before
 PHRASE_SECONDS = 15.0  # a phrase lasts about this long: as many bars as come nearest, a power of two (糸 4 of 3.8 s, My Life 8 of 1.8 s)
+PHRASE_BARS = 4        # a phrase is this many bars whatever the tempo (AIST, rwc-dev: sections of 8 bars and 4; 糸 and My Life still the owner's); 0: from PHRASE_SECONDS
+BEGIN_SHARE = 0.67     # on the grid, also cut where the phrase is played elsewhere and, at this share of those places or more, the bar before differs (a chorus, a verse B); 0: never
 WHOLE_BLOCK = 2        # phrases: a block no longer than this is one section (an intro, an interlude, a solo)
 PHRASE_ALIKE = 0.75    # two phrases, or two sections, are the same when this share of their beats have the same root and family
 VOICE_LOUD = 0.25      # a moment sings when the vocals are this share of the song's loud end (their 95th percentile)
@@ -609,6 +611,13 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset()):
         return any(abs(h - g) >= phrase and alike(g, h, phrase) and not (h > 0 and alike(g - 1, h - 1, 1))
                    for h in range(n - phrase + 1))
 
+    def always_begins(g):
+        """A phrase from bar g is played elsewhere, and wherever it is, the bar before it is not the bar before it here."""
+        if g <= 0 or g + phrase > n:
+            return False
+        heard = [h for h in range(1, n - phrase + 1) if abs(h - g) >= phrase and alike(g, h, phrase)]
+        return bool(heard) and sum(not alike(g - 1, h - 1, 1) for h in heard) >= BEGIN_SHARE * len(heard)
+
     # a turn a bar after where a phrase played elsewhere begins is that phrase's (My Life: the riff begins on
     # the D its key shares with the song's; the key is seen to change a bar into it)
     moved = {t: t - 1 if begins_again(t - 1) and not begins_again(t) else t for t in turns if 0 < t < n}
@@ -665,7 +674,7 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset()):
             middle = g - phrase >= a and g + phrase <= b and alike(g - phrase, g, phrase)
             ended = (g - 2 * phrase >= a and alike(g - 2 * phrase, g - phrase, phrase)
                      and not (g + phrase <= b and alike(g - phrase, g, phrase)))
-            if not middle and (ended or cadence(g)):
+            if not middle and (ended or cadence(g) or (BEGIN_SHARE and g + phrase <= b and always_begins(g))):
                 cuts.add(g)
     cuts = sorted(cuts)
     pieces = list(zip(cuts, cuts[1:]))
@@ -1250,7 +1259,7 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
         on = [[next((c for c in bar["chords"] if c["start"] <= bar["start"] + (i + 0.01) * (bar["end"] - bar["start"]) / beats_in_bar < c["end"]),
                     bar["chords"][-1]) for i in range(beats_in_bar)] for bar in whole]
         bar_seconds = float(np.median([bar["end"] - bar["start"] for bar in whole]))
-        phrase = int(min(max(2 ** round(np.log2(PHRASE_SECONDS / bar_seconds)), 2), 16))
+        phrase = PHRASE_BARS or int(min(max(2 ** round(np.log2(PHRASE_SECONDS / bar_seconds)), 2), 16))
         form, places = phrase_sections([tuple(c["symbol"][:2] for c in row) for row in on], turns, tonic, mode, phrase, sings)
         for bar, (section, k) in zip(whole, places):
             bar["section"], bar["barOfSection"] = section, k

@@ -41,6 +41,22 @@ Zenodo は 1 接続あたり 350 kB/s ほどに絞られる。`curl -r` で範�
   dim7 → dim、hdim7 → m7(b5)。`N`（コードなし）、増三和音、三度のない和音（パワーコード）は外し、
   その時間も分母から外す（`chordSeconds`）。外れるのは全体の 4% ほど。
 
+### AIST Annotation の曲の構造（RWC-P の section の答え。2026-11-16 から）
+
+| | |
+|---|---|
+| 中身 | `AIST_RWC-MDB-P-2001_CHORUS/RM-P*.CHORUS.TXT`: 開始・終了（10 ms 単位）・ラベル（`intro`・`verse A`・`chorus A`・`bridge A`・`pre-chorus`・`ending` …）。`AIST_RWC-MDB-P-2001_VOCA_INST` は歌と楽器の区間（未使用） |
+| 置き場 | <https://github.com/rwc-music/rwc-annotations-archive>（未整理の注釈の保管庫。AIST の配布元 staff.aist.go.jp は 2026-11-16 に応答なし） |
+| 条件 | 同梱の README: 研究以外に使わない、許可なく配らない、使ったことを明記する（Copyright (C) 2006 AIST） |
+| 出典 | Goto "AIST Annotation for the RWC Music Database" (ISMIR 2006) |
+
+**測るためだけに使い、注釈もその派生物も配らない。** section の境目の数え方は README の「Sections by meaning」、道具は `tools/aist_sections.py`。
+
+```
+git clone --depth 1 https://github.com/rwc-music/rwc-annotations-archive scratch/real/rwc-annotations-archive
+.venv/Scripts/python tools/aist_sections.py rwc-dev      # rwc-test は数えるだけ
+```
+
 ## 候補（まだ使っていない）
 
 | データ | 中身 | 音源 | ライセンス | 見立て |

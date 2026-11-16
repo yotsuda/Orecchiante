@@ -535,7 +535,45 @@ charts have such sections; one before any other is named after the next (`~A_1 |
 The forms of 22 of the 268 charts change (17 of RWC's 100); the chords and every number stay as
 they were (only sections played once are cut). Of the songs made here, 7 cuts are new in 5 songs:
 6 fall on the true start of a section, the seventh at the end of a song, where the truth says
-nothing (`scratch/lead_count.py`, `scratch/lead_truth.py`). RWC's sections are not annotated here.
+nothing (`scratch/lead_count.py`, `scratch/lead_truth.py`). RWC's sections were not annotated here
+then; AIST's are now (below).
+
+### Sections by meaning (tried, off: `--phrase`)
+
+The owner would rather have a section begin where the music turns: where singing comes in or
+stops, where the key or the feel changes, at a solo. They cut two songs by hand (糸, My Life), and
+`PHRASE_SECTIONS` (`phrase_sections`, `turns_of`, `voice_turns`) cuts both as they did: blocks
+between where singing begins or stops (the vocal stem from Demucs, `--voice <folder>` of
+`<name>.voc.npy`), the key signature moves by two or more, or the music grows 6 dB louder or
+quieter; blocks played again whole elsewhere; and inside a long block, a grid of phrases of four
+bars (`PHRASE_BARS`) cut where a phrase said twice has ended, where the dominant goes home across
+the bar line, or where the phrase is one played elsewhere that, at two thirds of those places or
+more, follows a different bar (`BEGIN_SHARE`: a chorus, a verse B). No repeat signs and no `fold`.
+
+To see whether that is what a section means beyond two songs, the section starts are counted
+against AIST's structure annotation of RWC-P (intro, verse A, chorus …; [DATASETS.md](docs/DATASETS.md)),
+leaving out boundaries between two sections of the same label (chorus A, chorus A), by
+`tools/aist_sections.py`. Precision, recall and F of the starts within 3 s:
+
+| | `rwc-dev` | `rwc-test` |
+|---|---|---|
+| the default sections (`find_form`) | 58.5 / 28.2 / 38.1% | 52.8 / 25.6 / 34.5% |
+| `--phrase`, no voice | 54.9 / 39.2 / 45.8% | 58.5 / 40.8 / 48.1% |
+| `--phrase` with the voice | 67.1 / 63.4 / 65.2% | 66.1 / 56.1 / 60.7% |
+
+Within 0.5 s, F is 21.2 / 25.2 / 41.5% on `rwc-dev` and 17.6 / 29.2 / 37.6% on `rwc-test`.
+`PHRASE_BARS` and `BEGIN_SHARE` were chosen on `rwc-dev` (and on keeping the owner's two songs
+exact); a phrase of 15 s, as first written, gave 56.0% with the voice. AIST's sections in RWC-P
+are mostly eight bars (399 of 777 in `rwc-dev`) or four (162), and 79% of their boundaries are
+within a tenth of a bar of a true bar line. What is found: where singing begins or stops (an
+interlude to a verse 93%, a chorus to an interlude 89%). What is missed: the turns inside
+singing (`rwc-dev`: verse to verse 49%, chorus to chorus 48%, verse to chorus 74%, before
+`BEGIN_SHARE` 38 / 38 / 51%; cutting wherever a phrase begins elsewhere after a different bar
+finds 62 / 60 / 87% but breaks My Life). Where singing stops, the cut is more often a bar late than
+early (38 to 10 of 132 in `rwc-dev`); a last bar holding its note over does not explain it.
+Without the voice, My Life is still the owner's but for one cut, 糸 loses five of nine.
+Demucs on `rwc-test`: 95.0% of bars right sung or not, 94.7% of where singing begins or stops
+within a bar (`scratch/sep/count.py`, the line chosen on `rwc-dev`).
 
 ### How a chart begins and ends
 
