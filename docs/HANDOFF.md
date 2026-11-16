@@ -9,12 +9,14 @@
 
 - **6 小節以下の section が続いたら 1 つにまとめる**（`SHORT_SECTION`／`ShortSection`。`find_form` の最後。4＋4 は 8、同じ 4 小節が 2 回でも 8 に＝書き出す。4 と 8 はそのまま）。
   `section`・`barOfSection`・`form` が変わり、ベースまでの率が少し動く（数字の表）。
+- **一度きりの section が続いたら 32 小節まで 1 つ、32 を超える所（繰り返す section も）は分ける**（`LONG_SECTION`、`cut_long`／`CutLong`）。
+  切る所は見つけた section の境目か 8 の倍数だけ（オーナー: 等分は良くない）。少ない数→境目で切る→偏りが少ない、の順。17〜31 小節を文脈で分けるかは未決。
 - **繰り返し記号は form だけ**（オーナー:「form だけで全体の流れが把握できる方が良い」）。`|: A :|`・`|: A B :|`・`:|*N`・`|: A [1. B] :| [2. C]`。
   section の中は書き出す。`form_with_repeats`／`FormWithRepeats`。`sidecar.py` は `lysc midi --batch` から演奏の小節数を数える。
 - **改行: 4 小節ごとと section の終わりに `break`**（section は必ず行の頭から。弱起には書かない）。余り 1 は前の行と 5、余り 2 は 3・3（`line_sizes`／`LineSizes`）。
 - **捨てた案（同じ日に試して戻した）:** chords の中の `|: … :|`・1 番 2 番、4 小節の section の 2 回を `|: A :|`（オーナー: 8 小節を書き出す方が使いやすい）。
-- 268 曲で Python と .NET が一字一句同じ、`lysc check`・sidecar 268/268。記号は RWC 55/100、合成曲 79/168。My Life は
-  `form { A B |: C [1. D] :| [2. E] F |: C [1. D] :| [2. G] H C I J K }`（K は 2 小節）。png で見た。**この形はオーナーがまだ見ていない。**
+- 268 曲で Python と .NET が一字一句同じ、`lysc check`・sidecar 268/268。記号は RWC 73/100、合成曲 79/168。My Life は
+  `form { A |: B [1. C] :| [2. D] |: B [1. C] :| [2. E] :| [3. F] }`（16・14・8・16・16・18 小節）。png で見た。**この形はオーナーがまだ見ていない。**
 
 ### 書き出し先と `audio`（2026-11-16、オーナーの希望。依頼 6）
 
@@ -94,13 +96,9 @@
 - **D4 で Dettato 側に作るものは今はない。** 人の小節線から読み直す入口（D4 (3)）は**オーナー決定（2026-11-16、設計メモ §6）で要らなくなった**＝
   読み直しは単に上書き、Lily# からは頼まない。Lily# は既にある `.lys` の横に `song (Dettato).lys` を書く「Write Beside」も作った（`e29f2463d`。`-o` で `--force` なし＝今の呼び方のまま）。
   配り直すときは版を 2 か所（`Program.cs`・`extension/package.json`）と CHANGELOG で上げて `tools/deploy-extension.ps1`。
-- **Lily# の依頼（`docs/repro/REQUESTS.md`。セッションの頭に見る）:** **1 は Lily# が作った**（master `da1d1caac`〜`7dd898bf9`、次の版から。
-  「Convert Recording to Lily# (.lys)… (Preview)」、Dettato が無ければ入れるよう勧める、鍵 `lilysharp.dettatoAvailable` は Lily# が自分で立てる＝Dettato の拡張は何も立てなくてよい）。
-  Dettato 側で確かめて行に書いた（取り決めどおり、テスト 6/6、気づいた 3 点。Lily# が 3 点に返事した）。**オーナーの指示で拡張の `dettato.transcribe` を外した（0.3.0、1 は `done`）。**
-  6（保存先のダイアログ・`audio` の相対パスを読む）は 2026-11-16 に出した。
-  4 は Lily# が作り中（S1〜S3 済み、次は S4）、`tuning`・`beats` は受け取られた。**5（m4a の `iTunSMPB` を Lily# の `Mp4Lead` に写す）は 2026-11-16 に出した。**
-  入るまで、iTunes の m4a では Dettato の小節が Lily# の鳴らす音より 48 ms 早い（Lily# の m4a 再生は master だけ）。
-  **2026-11-16 夜に見た時点で 5 は返事なし**（Lily# の `RecordingDecoder` の最後の変更は `b7d98c03c` のまま）。3 は `done` にするのは確かめてから。
+- **Lily# の依頼（`docs/repro/REQUESTS.md`。セッションの頭に見る）:** 1 は Lily# が作り（「Convert Recording to Lily# (.lys)… (Preview)」、鍵は Lily# が立てる）、
+  **オーナーの指示で拡張の `dettato.transcribe` を外した（0.3.0、1 は `done`）。** 4 は Lily# が作り中（S1〜S3 済み、次は S4）、`tuning`・`beats` は受け取られた。
+  **5（m4a の `iTunSMPB` を Lily# の `Mp4Lead` に）は返事なし**（入るまで iTunes の m4a で 48 ms 早い）。6（保存先のダイアログ・`audio` の相対パス）は 2026-11-16 に出した。3 は確かめてから `done`。
 - 返事を待つ間にできる一手: C3（テンポの大きな変化。範囲のテンポ・人の拍マーカーとつながる）。規則を触るなら「.NET の規則」の手順で。
 
 やり残し（急がない）:

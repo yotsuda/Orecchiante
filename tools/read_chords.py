@@ -399,6 +399,8 @@ SAID_AGAIN = 0.95       # runs of bars are one section when this share of their 
 SHORT_SECTION = 6       # two sections running of at most this many bars are one: a chart in sections of four bars
                         # or two is hard to read (the owner, 2026-11-16: four and eight may stand side by side, four
                         # and four may not). 0: as found.
+LONG_SECTION = 32       # sections played once, one after the other, are one section up to this many bars, and a
+                        # longer run is cut into even sections no longer (the owner, 2026-11-16). 0: as found.
 
 
 def fold(bars, beats, alike):
@@ -462,6 +464,29 @@ def fold(bars, beats, alike):
                         c = next(c for c in bar["chords"] if c["start"] <= at < c["end"])
                         c["sure"], c["other"] = min(c["sure"], round(DOUBT - 0.001, 3)), other
     return form
+
+
+def cut_long(total, found):
+    """Where a run of `total` bars played once is cut into sections: whole when LONG_SECTION bars or
+    fewer; else at the sections `found` there (bars from the run's start: where the music turns) or
+    every eight bars from the run's start, never evenly for its own sake (the owner, 2026-11-16).
+    Of the ways that keep each within LONG_SECTION: the fewest sections, then the fewest cuts at no
+    section found, then the least uneven. [(first bar, end)] from the run's start."""
+    if total <= LONG_SECTION:
+        return [(0, total)]
+    places = [0] + sorted(found | set(range(8, total, 8))) + [total]
+    best = {0: (0, 0, 0, -1)}           # place: (sections, cuts at no section found, sum of squared lengths, the cut before)
+    for b in places[1:]:
+        ways = [(best[a][0] + 1, best[a][1] + (0 if b == total or b in found else 1), best[a][2] + (b - a) ** 2, a)
+                for a in places if a < b and a in best and b - a <= LONG_SECTION]
+        if ways:
+            best[b] = min(ways)
+    spans, b = [], total
+    while b:
+        a = best[b][3]
+        spans.append((a, b))
+        b = a
+    return spans[::-1]
 
 
 def beat_names(bar, beats):
@@ -563,6 +588,26 @@ def find_form(keys, alike=1.0):
             joined.append((start, bars, group))
             i += 1
         played = joined
+    if LONG_SECTION:                            # sections played once, one after the other, are one, cut where it is too long
+        count = Counter(s for _, _, s in played)
+        joined, i = [], 0
+        while i < len(played):
+            if count[played[i][2]] > 1:
+                joined.append(played[i])
+                i += 1
+                continue
+            j = i
+            while j < len(played) and count[played[j][2]] == 1:
+                j += 1
+            start = played[i][0]
+            total = sum(bars for _, bars, _ in played[i:j])
+            found = {first - start for first, _, _ in played[i + 1:j]}
+            for a, b in cut_long(total, found):
+                joined.append((start + a, b - a, ("once", start + a)))
+            i = j
+        # a section played more than once and longer than LONG_SECTION is cut the same way each time
+        played = [(start + a, b - a, (s, a)) if count[s] > 1 else (start, bars, s)
+                  for start, bars, s in joined for a, b in (cut_long(bars, set()) if count[s] > 1 else [(0, bars)])]
     names = {}
     for _, _, s in played:
         if s not in names:
@@ -913,7 +958,7 @@ def lys(result, title):
     ]
     form = result.get("form") or []
     short = result["bars"][0].get("pickup")
-    if len(set(form)) == len(form) and not short:   # nothing is said twice: the chart is the bars in their order
+    if len(form) == 1 and not short:    # one section: the chart is the bars in their order
         return "\n".join(head + ["chords harmony {", *rows([[bar] for bar in result["bars"]], "  "), "}", "",
                                  "score {", "  chords harmony", "}", ""])
     sections = {}                       # name: its bars, each a list of the bar each time the section is played

@@ -109,7 +109,10 @@ seconds, `fit` and `sure` are each playing's own.
   stays as played (`["A", "A", "B"]` for `|: A :| B`).
 - **Sections of six bars or fewer that come one after the other are one section** (2026-11-16, the
   owner's wish: four and four make eight, also the same four twice; four beside eight stay). So
-  `section` and `barOfSection` name the joined sections.
+  `section` and `barOfSection` name the joined sections. **Sections played once that come one after
+  the other are one section up to 32 bars**; a longer run, and a section played more than once
+  that is longer, is cut into as few sections of 32 bars or fewer as can be, at the sections found
+  there (where the music turns) or every eight bars, never evenly for its own sake.
 - **Each line of the chart's page is four bars of one section**: `break` after every four bars
   and at the end of each section (not in the pickup, which goes on with the first line). A last
   line of one bar joins the line before (five), and four and two are three and three (`line_sizes`:

@@ -77,7 +77,7 @@ static class Writer
             "",
         };
         int pickup = chart.Bars[0].Pickup;
-        if (chart.Form.Distinct().Count() == chart.Form.Count && pickup == 0)   // nothing is said twice: the chart is the bars in their order
+        if (chart.Form.Count == 1 && pickup == 0)   // one section: the chart is the bars in their order
         {
             lines.Add("chords harmony {");
             lines.AddRange(Rows([.. chart.Bars.Select(bar => new List<Bar> { bar })], "  "));

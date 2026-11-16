@@ -398,10 +398,10 @@ would give):
 |---|---|---|---|
 | Bars written, of the bars played | 80.1% | 81.0% | 84.4%, 74.4%, 82.1% |
 | The same, of the truth's chords | 80.9% | 85.1% | 57.1%, 55.0%, 58.6% |
-| Sections a song (of them a bar or two long) | 10.6 (0.6) | 8.2 (0.4) | 3.3 (0.2), 2.9 (0.5), 3.0 (0.2) |
-| The same, of the truth's chords | 8.7 (0.6) | 6.9 (0.5) | 2.1 (0.0), 2.0 (0.0), 2.0 (0.0) |
+| Sections a song (of them a bar or two long) | 6.2 (0.4) | 5.5 (0.2) | 2.0 (0.2), 2.6 (0.4), 2.0 (0.0) |
+| The same, of the truth's chords | 6.1 (0.4) | 5.4 (0.4) | 2.1 (0.0), 2.0 (0.0), 1.9 (0.0) |
 
-(The table as counted after 2026-11-16, when short sections running became one: more bars are
+(The table as counted after 2026-11-16, when short sections running became one, and sections played once running one up to 32 bars: more bars are
 written, for a section joined of two is said again only where both come again together; before,
 62% and 68% of the bars of `rwc-dev` and `rwc-test` were written, in 11.5 and 9.0 sections a
 song, 2.3 and 1.8 of them a bar or two long. The chords are read as well, the bass notes within
@@ -450,7 +450,10 @@ two playings is mostly the music.
 bars long or less, one after another, is hard to follow (`A B C D B E D F G H D B E D I G J D K`
 for one song). So **sections of six bars or fewer that come one after the other are one section**
 (four and four make eight, also when they are the same four bars twice: eight written out read
-better than `|: A :|` of four; four beside eight stay as they are). **Sections the form plays
+better than `|: A :|` of four; four beside eight stay as they are). **Sections played once that
+come one after the other are one section up to 32 bars**, and longer than that (a section played
+more than once too) they are cut into as few as keep each within 32, at the sections found there
+(where the music turns) or every eight bars, never evenly for its own sake. **Sections the form plays
 again right away repeat in the form**, so that the form alone shows how the song goes; the bars
 inside a section are written out. **And each line of the page is four bars of one section**
 (`break` after every four bars and where a section ends: a section begins a line; a last bar
@@ -459,19 +462,21 @@ alone joins the line before, and four and two bars are three and three):
 ```
 section A {
   chords harmony {
-    D | D | D | D@todo("or Dsus4?") break |
     D | D | D | D break |
+    D | D | D | D@todo("or Dsus4?") break |
+    D | C7 | F7 | A# Am@todo("or A?") break |
+    D | C7 | F | A# C break |
   }
 }
 ...
-form { A B |: C [1. D] :| [2. E] F |: C [1. D] :| [2. G] H C I J K }
+form { A |: B [1. C] :| [2. D] |: B [1. C] :| [2. E] :| [3. F] }
 ```
 
 That is `|: A :|`, `|: A B :|`, `|: A :|*3`, or `|: A [1. B] :| [2. C]` with one section in each
 ending (the rules: [SIDECAR.md](docs/SIDECAR.md), "The chart and the file"). The bars in
 `.dettato.json` are as played, and Lily# plays each chart as many bars as the file has
 (`tools/sidecar.py` counts them from `lysc midi`, the repeats played). Of the charts `--ears`
-writes, signs are in 55 of the 100 RWC songs and in 79 of the 168 songs made here (the seven
+writes, signs are in 73 of the 100 RWC songs and in 79 of the 168 songs made here (the seven
 sets `read_check.py` compares). A passage that comes again later, not right away (a verse after
 a chorus), is a section the form names again, as before. Tried first and taken back the same
 day: signs inside a section's chords too (`|: C | G :|`, `|: C | G | [1. Am :| [2. F | ]`), and a

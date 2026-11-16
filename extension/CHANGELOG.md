@@ -8,7 +8,8 @@ Notable changes to Dettato are recorded here, newest first.
   has the menu now ("Convert Recording to Lily# (.lys)…"), and this extension carries the reader
   it runs.
 - Fewer, longer sections: sections of six bars or fewer that come one after the other are one
-  (four and four make eight).
+  (four and four make eight), and so are sections played once that come one after the other, up
+  to 32 bars; a longer one is cut at a turn of the music or every eight bars.
 - Four bars a line (a last bar alone joins the line before, four and two are three and three), and every section begins a line.
 - The form writes repeat signs where sections come again right away (`|: A :|`,
   `|: A [1. B] :| [2. C]`), so that it shows how the song goes. Lily# plays the chart bar for bar

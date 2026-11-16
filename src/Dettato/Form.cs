@@ -5,6 +5,7 @@ namespace Dettato;
 static class Form
 {
     const int SectionBars = 4;      // the shortest run of bars that is a section for being said again
+    const int LongSection = 32;     // sections played once running are one up to this many bars; a longer run is cut evenly
     const int ShortSection = 6;     // two sections running of at most this many bars are one (the owner, 2026-11-16)
 
     /// <summary>A count a key, in the order the keys came (Python's Counter): the first of the largest wins.</summary>
@@ -228,6 +229,41 @@ static class Form
             }
             played = joined;
         }
+        if (LongSection > 0)                    // sections played once, one after the other, are one, cut where it is too long
+        {
+            var count = played.GroupBy(p => p.Section).ToDictionary(g => g.Key, g => g.Count());
+            int next = played.Count == 0 ? 0 : played.Max(p => p.Section) + 1;
+            var joined = new List<(int First, int Bars, int Section)>();
+            for (int i = 0; i < played.Count;)
+            {
+                if (count[played[i].Section] > 1)
+                {
+                    joined.Add(played[i]);
+                    i++;
+                    continue;
+                }
+                int j = i;
+                while (j < played.Count && count[played[j].Section] == 1) j++;
+                int start = played[i].First, total = 0;
+                for (int k = i; k < j; k++) total += played[k].Bars;
+                var found = new HashSet<int>();
+                for (int k = i + 1; k < j; k++) found.Add(played[k].First - start);
+                foreach (var (a, b) in CutLong(total, found)) joined.Add((start + a, b - a, next++));
+                i = j;
+            }
+            // a section played more than once and longer than LongSection is cut the same way each time
+            var pieces = new Dictionary<(int, int), int>();
+            played = [];
+            foreach (var (start, bars, s) in joined)
+            {
+                if (!count.TryGetValue(s, out int times) || times < 2) { played.Add((start, bars, s)); continue; }
+                foreach (var (a, b) in CutLong(bars, []))
+                {
+                    if (!pieces.TryGetValue((s, a), out int id)) pieces[(s, a)] = id = next++;
+                    played.Add((start + a, b - a, id));
+                }
+            }
+        }
         var names = new Dictionary<int, string>();
         foreach (var (_, _, s) in played)
             if (!names.ContainsKey(s)) names[s] = names.Count < 26 ? ((char)('A' + names.Count)).ToString() : $"S{names.Count + 1}";
@@ -235,5 +271,34 @@ static class Form
         foreach (var (_, barCount, s) in played)
             for (int k = 0; k < barCount; k++) places.Add((names[s], k + 1));
         return ([.. played.Select(p => names[p.Section])], [.. places]);
+    }
+
+    /// <summary>Where a run of `total` bars played once is cut into sections, as tools/read_chords.py's cut_long: whole
+    /// when LongSection bars or fewer; else at the sections `found` there or every eight bars from the run's start. Of
+    /// the ways that keep each within LongSection: the fewest sections, then the fewest cuts at no section found, then
+    /// the least uneven. [(first bar, end)] from the run's start.</summary>
+    static List<(int, int)> CutLong(int total, HashSet<int> found)
+    {
+        if (total <= LongSection) return [(0, total)];
+        var places = new List<int> { 0 };
+        places.AddRange(found.Union(Enumerable.Range(1, (total - 1) / 8).Select(k => 8 * k)).Where(c => c < total).OrderBy(c => c));
+        places.Add(total);
+        var best = new Dictionary<int, (int Sections, int Elsewhere, long Squares, int Before)> { [0] = (0, 0, 0, -1) };
+        foreach (int b in places.Skip(1))
+        {
+            (int, int, long, int)? least = null;
+            foreach (int a in places)
+            {
+                if (a >= b) break;
+                if (!best.TryGetValue(a, out var at) || b - a > LongSection) continue;
+                var way = (at.Sections + 1, at.Elsewhere + (b == total || found.Contains(b) ? 0 : 1), at.Squares + (long)(b - a) * (b - a), a);
+                if (least is null || way.CompareTo(least.Value) < 0) least = way;
+            }
+            if (least is { } l) best[b] = l;
+        }
+        var spans = new List<(int, int)>();
+        for (int e = total; e > 0; e = best[e].Before) spans.Add((best[e].Before, e));
+        spans.Reverse();
+        return spans;
     }
 }
