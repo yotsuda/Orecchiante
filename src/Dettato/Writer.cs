@@ -129,7 +129,7 @@ static class Writer
             lines.AddRange(["  }", "}", ""]);
         }
         // Repeat signs only in the form, so that the form alone shows how the song goes (the owner, 2026-11-16).
-        var shown = chart.Form.Select(s => s.Contains('_') ? "~" + s : s).ToList();   // a short section's name is hidden (Form.NameSections)
+        var shown = chart.Form.Select(s => s.Contains('_') ? "~" + s : s).ToList();   // a short section's name is hidden (read_chords.py --old-sections names them B_1)
         lines.AddRange(["form { " + FormWithRepeats(shown) + " }", "", "score {", "  chords harmony", "}", ""]);
         return string.Join("\n", lines);
     }

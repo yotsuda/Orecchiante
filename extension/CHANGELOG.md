@@ -2,6 +2,17 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.5.0
+
+- Sections by meaning: a section begins where the music turns (the key signature moves, the music
+  grows far louder or quieter), where a passage played again whole elsewhere begins or ends, and,
+  inside a long passage, on a grid of four-bar phrases where a phrase said twice has ended, where the
+  dominant goes home across the bar line, or where a phrase played elsewhere begins as it does there.
+  A section that plays an earlier one again is named after it (A, A2, A3). No repeat signs, and the
+  playings of a section no longer have their chords made the same.
+- Where singing comes in or stops is not heard yet (it needs a model for the vocals), so a sung song
+  may have longer sections than it should.
+
 ## 0.4.2
 
 - A line of the chart ends with its bar line, then the break (`… | G C | break`), which reads more

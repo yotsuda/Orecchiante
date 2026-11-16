@@ -1,365 +1,209 @@
 namespace Dettato;
 
-/// <summary>The sections of a chart: runs of bars said again are written once, and the order they are played in
-/// after them. tools/read_chords.py's fold() and find_form(), step for step.</summary>
+/// <summary>The sections of a chart, by meaning: where the music turns, and the phrases between. tools/read_chords.py's
+/// turns_of() and phrase_sections(), step for step (its --old-sections, find_form and fold, stays in Python).</summary>
 static class Form
 {
-    const int SectionBars = 4;      // the shortest run of bars that is a section for being said again
-    const int LongSection = 32;     // sections played once running are one up to this many bars; a longer run is cut evenly
-    const int HideShort = 3;        // a section shorter than this many bars is named after the one before (B_1), its name hidden (~B_1)
-    const int ShortSection = 6;    // two sections running of at most this many bars are one (the owner, 2026-11-16)
+    const int KeyTurn = 2;          // a key region this many accidentals from the one before turns the music
+    const double KeyPrice = 1.5;    // what a change of key signature costs, against a bar's evidence
+    const int KeyRegion = 4;        // bars: a shorter run in one key is not a region of its own
+    const double LoudTurn = 6.0;    // dB: the two bars after a bar line this much louder or quieter than the two before
+    public const int PhraseBars = 4;    // a phrase is this many bars, whatever the tempo
+    const double BeginShare = 0.67; // on the grid, a cut where the phrase is played elsewhere after another bar at this share of the places
+    const int WholeBlock = 2;       // phrases: a block no longer than this is one section
+    const double PhraseAlike = 0.75;    // two phrases are the same when this share of their beats have the same root and family
 
-    /// <summary>A count a key, in the order the keys came (Python's Counter): the first of the largest wins.</summary>
-    sealed class Tally<T> where T : notnull
+    /// <summary>Where the music turns: the bars a section begins at. <paramref name="notes"/>: each bar's notes heard
+    /// (12 each: the chords' tones, weighed by how likely and how long); <paramref name="loud"/>: each bar in dB.</summary>
+    public static HashSet<int> Turns(double[][] notes, double[] loud)
     {
-        readonly List<T> keys = [];
-        readonly Dictionary<T, double> sums = [];
-        public bool Any => keys.Count > 0;
-        public void Add(T key, double weight)
+        int n = loud.Length;
+        var turns = new HashSet<int>();
+        if (n < 2 * KeyRegion) return turns;
+        var fits = new double[n][];
+        for (int i = 0; i < n; i++)
         {
-            if (!sums.TryGetValue(key, out double sum)) keys.Add(key);
-            sums[key] = sum + weight;
-        }
-        public T Most()
-        {
-            T best = keys[0];
-            foreach (T key in keys) if (sums[key] > sums[best]) best = key;
-            return best;
-        }
-    }
-
-    static (int Root, int Kind) KindOf(Symbol s) => (s.Root, Reader.Kind[s.Quality]);
-
-    /// <summary>Finds the sections and makes every playing of a section say the same: on each beat, the chord the
-    /// playings are surest of together. Where they differed in root or family, the chord is marked in every
-    /// playing, and the chord offered in its place is the other reading. Returns the form.</summary>
-    public static List<string> Fold(List<Bar> bars, int beats, double alike, double doubt)
-    {
-        var on = bars.Select(bar => Enumerable.Range(0, beats).Select(i =>
-        {
-            double at = bar.Start + (i + 0.01) * (bar.End - bar.Start) / beats;
-            return bar.Chords.FirstOrDefault(c => c.Start <= at && at < c.End) ?? bar.Chords[^1];
-        }).ToArray()).ToArray();
-        var (form, places) = Find([.. on.Select(row => row.Select(c => c.Symbol.Quality * 12 + c.Symbol.Root).ToArray())], alike);
-        var said = new Dictionary<(string, int), List<int>>();
-        for (int n = 0; n < bars.Count; n++)
-        {
-            (bars[n].Section, bars[n].BarOfSection) = places[n];
-            if (!said.TryGetValue(places[n], out var list)) said[places[n]] = list = [];
-            list.Add(n);
-        }
-        foreach (var playings in said.Values)
-        {
-            if (playings.Count < 2 || playings.All(n => on[n].Select(c => c.Symbol).SequenceEqual(on[playings[0]].Select(c => c.Symbol)))) continue;
-            var agreed = new (Symbol Symbol, double Sure, (int Root, int Quality)? Other)[beats];
-            for (int b = 0; b < beats; b++)
+            double total = Math.Max(Np.Sum(notes[i]), 1e-9);
+            var row = fits[i] = new double[12];
+            for (int t = 0; t < 12; t++)
             {
-                var heard = playings.Select(n => on[n][b]).ToArray();
-                var kinds = new Tally<(int, int)>();
-                foreach (var c in heard) kinds.Add(KindOf(c.Symbol), c.Sure ?? 1.0);
-                var won = kinds.Most();
-                var symbols = new Tally<Symbol>();
-                var others = new Tally<(int, int)>();
-                foreach (var c in heard)
-                    if (KindOf(c.Symbol) == won) symbols.Add(c.Symbol, c.Sure ?? 1.0);
-                    else others.Add((c.Symbol.Root, c.Symbol.Quality), c.Sure ?? 1.0);
-                double sure = Np.Mean(heard.Where(c => KindOf(c.Symbol) == won).Select(c => c.Sure ?? 1.0).ToArray());
-                agreed[b] = (symbols.Most(), sure, others.Any ? others.Most() : null);
-            }
-            foreach (int n in playings)
-            {
-                var bar = bars[n];
-                bool marked = bar.Chords[0].Sure != null;
-                if (Enumerable.Range(0, beats).All(b => KindOf(on[n][b].Symbol) == KindOf(agreed[b].Symbol)))
-                {
-                    for (int b = beats - 1; b >= 0; b--) on[n][b].Symbol = agreed[b].Symbol;    // the same chords, named as agreed (a seventh, a bass note)
-                }
-                else                                                                            // written again, a chord a beat
-                {
-                    double step = (bar.End - bar.Start) / beats;
-                    var chords = new List<Chord>();
-                    for (int b = 0; b < beats; b++)
-                    {
-                        var (symbol, sure, _) = agreed[b];
-                        double end = b < beats - 1 ? Np.Round(bar.Start + (b + 1) * step, 4) : bar.End;
-                        if (chords.Count > 0 && chords[^1].Symbol == symbol)
-                        {
-                            chords[^1].End = end;
-                            continue;
-                        }
-                        var chord = new Chord { Start = Np.Round(bar.Start + b * step, 4), End = end, Symbol = symbol, Fit = on[n][b].Fit };
-                        if (marked)
-                        {
-                            chord.Sure = Np.Round(sure, 3);
-                            chord.Other = KindOf(on[n][b].Symbol) == KindOf(symbol) ? on[n][b].Other : (on[n][b].Symbol.Root, on[n][b].Symbol.Quality);
-                        }
-                        chords.Add(chord);
-                    }
-                    bar.Chords = chords;
-                }
-                if (!marked) continue;
-                for (int b = 0; b < beats; b++)
-                {
-                    if (agreed[b].Other is not { } other) continue;
-                    double at = bar.Start + (b + 0.01) * (bar.End - bar.Start) / beats;
-                    var c = bar.Chords.First(c => c.Start <= at && at < c.End);
-                    c.Sure = Math.Min(c.Sure!.Value, Np.Round(doubt - 0.001, 3));
-                    c.Other = other;
-                }
+                double inScale = 0;
+                for (int pc = 0; pc < 12; pc++) if (InScale(t, pc)) inScale += notes[i][pc];
+                row[t] = 4.0 * Math.Log(Math.Max(inScale / total, 1e-3));
             }
         }
-        return form;
+        var score = (double[])fits[0].Clone();
+        var back = new List<int[]>();
+        for (int i = 1; i < n; i++)
+        {
+            int top = ArgMax(score);
+            double best = score[top];
+            var came = new int[12];
+            for (int t = 0; t < 12; t++)
+            {
+                bool stay = score[t] >= best - KeyPrice;
+                came[t] = stay ? t : top;
+                score[t] = (stay ? score[t] : best - KeyPrice) + fits[i][t];
+            }
+            back.Add(came);
+        }
+        var path = new List<int> { ArgMax(score) };
+        for (int i = back.Count - 1; i >= 0; i--) path.Add(back[i][path[^1]]);
+        path.Reverse();
+        var regions = new List<(int First, int Signature)>();
+        int start = 0;
+        for (int i = 1; i <= n; i++)
+        {
+            if (i == n || path[i] != path[start])
+            {
+                if (i - start >= KeyRegion) regions.Add((start, ((path[start] * 7 + 6) % 12) - 6));
+                start = i;
+            }
+        }
+        for (int r = 1; r < regions.Count; r++)
+        {
+            int d = Math.Abs(regions[r - 1].Signature - regions[r].Signature);
+            if (Math.Min(d, 12 - d) >= KeyTurn) turns.Add(regions[r].First);
+        }
+        var jump = new double[n];
+        for (int i = 2; i < n - 1; i++) jump[i] = (loud[i] + loud[i + 1]) / 2 - (loud[i - 2] + loud[i - 1]) / 2;
+        for (int i = 2; i < n - 1; i++)
+        {
+            double most = 0;
+            for (int j = Math.Max(i - 2, 0); j < Math.Min(i + 3, n); j++) most = Math.Max(most, Math.Abs(jump[j]));
+            if (Math.Abs(jump[i]) >= LoudTurn && Math.Abs(jump[i]) >= most) turns.Add(i);
+        }
+        return turns;
     }
 
-    /// <summary>The sections a chart is made of, from the chord on each beat of each bar: the form (a section's
-    /// name for each one played) and, for each bar, its section and which bar of it it is.
-    ///
-    /// Two runs of bars are the same section when <paramref name="alike"/> of their beats have the same chord. The
-    /// run whose saying again saves the most bars becomes a section, the longer run if two save as many; then the
-    /// same among the bars left, until nothing is said twice. What is left between sections is a section said
-    /// once. Two sections that only ever come one after the other are one.</summary>
-    public static (List<string> Form, (string Section, int Bar)[] Places) Find(int[][] keys, double alike = 1.0)
+    static bool InScale(int tonic, int pc) => ((pc - tonic) % 12 + 12) % 12 is 0 or 2 or 4 or 5 or 7 or 9 or 11;
+
+    static int ArgMax(double[] a)
+    {
+        int k = 0;
+        for (int i = 1; i < a.Length; i++) if (a[i] > a[k]) k = i;
+        return k;
+    }
+
+    /// <summary>The sections, as the owner cut 糸 and My Life: blocks between turns, blocks played again whole elsewhere,
+    /// and inside a long block a grid of phrases cut where a phrase said twice has ended, where the dominant goes
+    /// home across the bar line, or where the phrase is one played elsewhere after another bar. A section that plays
+    /// one before it again is named after it (A, A2). <paramref name="keys"/>: the chord (quality * 12 + root) on each
+    /// beat of each bar. Returns the form and, for each bar, its section and which bar of it it is.</summary>
+    public static (List<string> Form, List<(string, int)> Places) Phrases(int[][] keys, HashSet<int> turns, int tonic, bool major, int phrase)
     {
         int n = keys.Length;
-        int width = Math.Max(keys.Length == 0 ? 0 : keys.Max(k => k.Length), 1);
-        var same = new double[n, n];        // bar against bar: the share of their beats that have the same chord
-        for (int i = 0; i < n; i++)
-            for (int j = 0; j < n; j++)
-            {
-                int equal = 0;
-                for (int b = 0; b < Math.Min(keys[i].Length, keys[j].Length); b++) if (keys[i][b] == keys[j][b]) equal++;
-                same[i, j] = (double)equal / width;
-            }
-        var close = new SortedDictionary<int, bool[,]>();   // for each length: do the runs from bar i and from bar j say the same?
-        var run = new double[n, n];
-        for (int length = 1; length <= n / 2; length++)
-        {
-            int m = n - length + 1;
-            for (int i = 0; i < m; i++)
-                for (int j = 0; j < m; j++) run[i, j] += same[i + length - 1, j + length - 1];
-            if (length < SectionBars) continue;
-            var near = close[length] = new bool[m, m];
-            for (int i = 0; i < m; i++)
-                for (int j = 0; j < m; j++) near[i, j] = run[i, j] >= alike * length - 1e-9 && Math.Abs(i - j) >= length;
-        }
-        var owner = new int?[n];
-        var played = new List<(int First, int Bars, int Section)>();    // each section played
-        while (true)
-        {
-            var free = new int[n + 1];          // how many bars from here on belong to no section yet
-            for (int i = n - 1; i >= 0; i--) free[i] = owner[i] != null ? 0 : free[i + 1] + 1;
-            (int Saved, int Length, List<int>? Kept) best = (0, 0, null);
-            foreach (var (length, near) in close)
-            {
-                int m = near.GetLength(0);
-                int least = Math.Max(best.Saved, 1);
-                for (int i = 0; i < m; i++)
-                {
-                    if (free[i] < length) continue;
-                    int reach = 0;
-                    for (int j = 0; j < m; j++) if (near[i, j] && free[j] >= length) reach++;
-                    if (reach * length < least) continue;
-                    var kept = new List<int> { i };
-                    for (int j = 0; j < m; j++)
-                        if (near[i, j] && free[j] >= length && kept.All(k => Math.Abs(j - k) >= length)) kept.Add(j);
-                    int saved = (kept.Count - 1) * length;
-                    if (saved > best.Saved || (saved == best.Saved && length > best.Length)) best = (saved, length, kept);
-                }
-            }
-            if (best.Saved == 0) break;
-            int section = played.Count;
-            foreach (int s in best.Kept!)
-            {
-                played.Add((s, best.Length, section));
-                for (int i = s; i < s + best.Length; i++) owner[i] = section;
-            }
-        }
-        for (int i = 0; i < n;)                 // what is said once
-        {
-            if (owner[i] != null) { i++; continue; }
-            int j = i;
-            while (j < n && owner[j] == null) j++;
-            played.Add((i, j - i, played.Count));
-            i = j;
-        }
-        played.Sort();
-        while (true)                            // A B ... A B: one section
-        {
-            var order = played.Select(p => p.Section).ToList();
-            var count = order.GroupBy(s => s).ToDictionary(g => g.Key, g => g.Count());
-            var pairs = new List<(int A, int B)>();
-            var times = new Dictionary<(int, int), int>();
-            for (int i = 0; i + 1 < order.Count; i++)
-            {
-                var pair = (order[i], order[i + 1]);
-                if (!times.TryGetValue(pair, out int k)) pairs.Add(pair);
-                times[pair] = k + 1;
-            }
-            int found = pairs.FindIndex(p => p.A != p.B && times[p] == count[p.A] && count[p.A] == count[p.B]);
-            if (found < 0) break;
-            int first = pairs[found].A;
-            var merged = new List<(int First, int Bars, int Section)>();
-            for (int i = 0; i < played.Count; i++)
-            {
-                if (played[i].Section == first)
-                {
-                    merged.Add((played[i].First, played[i].Bars + played[i + 1].Bars, first));
-                    i++;
-                }
-                else merged.Add(played[i]);
-            }
-            played = merged;
-        }
-        if (ShortSection > 0)                   // short sections running are one (find_form's last step)
-        {
-            // (a short section played twice running too: four bars said twice are eight written out)
-            var groups = new Dictionary<string, int>();
-            var joined = new List<(int First, int Bars, int Section)>();
-            for (int i = 0; i < played.Count; i++)
-            {
-                var (start, bars, s) = played[i];
-                string group = s.ToString();
-                while (bars <= ShortSection && i + 1 < played.Count && played[i + 1].Bars <= ShortSection)
-                {
-                    i++;
-                    bars += played[i].Bars;
-                    group += "," + played[i].Section;
-                }
-                if (!groups.TryGetValue(group, out int id)) groups[group] = id = groups.Count;
-                joined.Add((start, bars, id));
-            }
-            played = joined;
-        }
-        if (LongSection > 0)                    // sections played once, one after the other, are one, cut where it is too long
-        {
-            var count = played.GroupBy(p => p.Section).ToDictionary(g => g.Key, g => g.Count());
-            int next = played.Count == 0 ? 0 : played.Max(p => p.Section) + 1;
-            var joined = new List<(int First, int Bars, int Section)>();
-            for (int i = 0; i < played.Count;)
-            {
-                if (count[played[i].Section] > 1)
-                {
-                    joined.Add(played[i]);
-                    i++;
-                    continue;
-                }
-                int j = i;
-                while (j < played.Count && count[played[j].Section] == 1) j++;
-                int start = played[i].First, total = 0;
-                for (int k = i; k < j; k++) total += played[k].Bars;
-                var found = new HashSet<int>();
-                for (int k = i + 1; k < j; k++) found.Add(played[k].First - start);
-                foreach (var (a, b) in CutLong(total, found)) joined.Add((start + a, b - a, next++));
-                i = j;
-            }
-            // a section played more than once and longer than LongSection is cut the same way each time
-            var pieces = new Dictionary<(int, int), int>();
-            played = [];
-            foreach (var (start, bars, s) in joined)
-            {
-                if (!count.TryGetValue(s, out int times) || times < 2) { played.Add((start, bars, s)); continue; }
-                foreach (var (a, b) in CutLong(bars, []))
-                {
-                    if (!pieces.TryGetValue((s, a), out int id)) pieces[(s, a)] = id = next++;
-                    played.Add((start + a, b - a, id));
-                }
-            }
-        }
-        var names = new Dictionary<int, string>();
-        foreach (var (_, _, s) in played)
-            if (!names.ContainsKey(s)) names[s] = names.Count < 26 ? ((char)('A' + names.Count)).ToString() : $"S{names.Count + 1}";
-        var places = new List<(string, int)>();
-        foreach (var (_, barCount, s) in played)
-            for (int k = 0; k < barCount; k++) places.Add((names[s], k + 1));
-        return ([.. played.Select(p => names[p.Section])], [.. places]);
-    }
+        var fam = keys.Select(row => row.Select(k => k % 12 * 4 + Reader.Kind[k / 12]).ToArray()).ToArray();
+        int home = tonic * 4 + (major ? 0 : 1);
 
-    /// <summary>As tools/read_chords.py's lead_off, the second ending (the owner, 2026-11-16, on 糸): where a section X is
-    /// followed once by a short section played once, C of k bars, and another time by a longer section played once, D,
-    /// whose k-th bar ends on the root C ends on, those k bars of D become a section of their own, and D begins where
-    /// its phrase does. Then the sections are named again in the order they come. Returns the form.</summary>
-    public static void LeadOff(List<Bar> bars)
-    {
-        var played = new List<(string Name, int First, int Length)>();
-        for (int i = 0; i < bars.Count; i++)
+        int Same(int a, int b, int length, out int all)
         {
-            if (bars[i].BarOfSection == 1) played.Add((bars[i].Section!, i, 0));
-            played[^1] = played[^1] with { Length = played[^1].Length + 1 };
+            int same = 0;
+            all = 0;
+            for (int i = 0; i < length; i++)
+                for (int j = 0; j < Math.Min(fam[a + i].Length, fam[b + i].Length); j++) { all++; if (fam[a + i][j] == fam[b + i][j]) same++; }
+            return same;
         }
+        bool Alike(int a, int b, int length)
+        {
+            int same = Same(a, b, length, out int all);
+            return all > 0 && same >= PhraseAlike * all;
+        }
+        bool Cadence(int g)
+        {
+            int last = fam[g - 1][^1], first = fam[g][0];
+            return last / 4 == (tonic + 7) % 12 && (last % 4 == 0 || last % 4 == 2) && first == home;
+        }
+        bool BeginsAgain(int g)
+        {
+            if (g <= 0 || g + phrase > n) return false;
+            for (int h = 0; h < n - phrase + 1; h++)
+                if (Math.Abs(h - g) >= phrase && Alike(g, h, phrase) && !(h > 0 && Alike(g - 1, h - 1, 1))) return true;
+            return false;
+        }
+        bool AlwaysBegins(int g)
+        {
+            if (g <= 0 || g + phrase > n) return false;
+            var heard = Enumerable.Range(1, Math.Max(n - phrase, 0)).Where(h => Math.Abs(h - g) >= phrase && Alike(g, h, phrase)).ToList();
+            return heard.Count > 0 && heard.Count(h => !Alike(g - 1, h - 1, 1)) >= BeginShare * heard.Count;
+        }
+
+        // a turn a bar after where a phrase played elsewhere begins is that phrase's. No singing is heard here: the
+        // voice is Python's only (--voice) until the vocals have a model that ships.
+        var moved = turns.Where(t => 0 < t && t < n).Select(t => BeginsAgain(t - 1) && !BeginsAgain(t) ? t - 1 : t);
+        var edges = new SortedSet<int>(moved.Where(t => 0 < t && t < n)) { 0, n }.ToList();
+        var cuts = new HashSet<int>(edges);
+        var blocks = edges.Zip(edges.Skip(1)).Where(p => p.Second - p.First >= phrase).ToList();
+
+        List<int> HeardAt(int a, int b)
+        {
+            var found = new List<int>();
+            int h = 0;
+            while (h + (b - a) <= n)
+            {
+                if ((h + (b - a) <= a || h >= b) && Alike(h, a, b - a)) { found.Add(h); h += b - a; }
+                else h++;
+            }
+            return found;
+        }
+        // a block the turns close in, played again whole elsewhere, is a section there too; played again right after
+        // itself, one section; not a block that is a piece of a longer one played elsewhere, nor where it falls inside
+        // another block but at that block's start
+        var played = blocks.ToDictionary(blk => blk, blk => HeardAt(blk.First, blk.Second));
+        foreach (var (a, b) in blocks)
+        {
+            int length = b - a;
+            if (blocks.Any(cd => cd.Second - cd.First > length && played[cd].Any(h => h <= a && a + length <= h + cd.Second - cd.First))) continue;
+            var runs = new List<int[]>();
+            foreach (int h in played[(a, b)])
+            {
+                if (runs.Count > 0 && runs[^1][1] == h) runs[^1][1] = h + length;
+                else runs.Add([h, h + length]);
+            }
+            foreach (var run in runs)
+            {
+                int h = run[0], e = run[1];
+                if (h == b) cuts.Add(e);
+                else if (edges.Zip(edges.Skip(1)).First(p => p.First <= h && h < p.Second).First == h) { cuts.Add(h); cuts.Add(e); }
+            }
+        }
+        edges = [.. cuts.Where(c => 0 <= c && c <= n).OrderBy(c => c)];
+        for (int i = 0; i + 1 < edges.Count; i++)
+        {
+            int a = edges[i], b = edges[i + 1];
+            if (b - a <= WholeBlock * phrase) continue;
+            for (int g = a + phrase; g < b - 1; g += phrase)
+            {
+                bool middle = g - phrase >= a && g + phrase <= b && Alike(g - phrase, g, phrase);
+                bool ended = g - 2 * phrase >= a && Alike(g - 2 * phrase, g - phrase, phrase) && !(g + phrase <= b && Alike(g - phrase, g, phrase));
+                if (!middle && (ended || Cadence(g) || (BeginShare != 0 && g + phrase <= b && AlwaysBegins(g)))) cuts.Add(g);
+            }
+        }
+        var sorted = cuts.OrderBy(c => c).ToList();
+        var bases = new List<(int, int)>();
+        var names = new List<string>();
         var count = new Dictionary<string, int>();
-        foreach (var p in played) count[p.Name] = count.GetValueOrDefault(p.Name) + 1;
-        for (int n = 1; n < played.Count; n++)
+        var places = new List<(string, int)>();
+        for (int p = 0; p + 1 < sorted.Count; p++)
         {
-            var (name, first, length) = played[n];
-            if (name == "Pickup" || count[name] > 1) continue;
-            int m = Enumerable.Range(0, played.Count - 1).FirstOrDefault(m => m + 1 != n && played[m].Name == played[n - 1].Name
-                && count[played[m + 1].Name] == 1 && played[m + 1].Length <= ShortSection, -1);
-            if (m < 0 || played[m + 1].Length >= length) continue;
-            var ending = played[m + 1];
-            int k = ending.Length;
-            if (bars[ending.First + k - 1].Chords[^1].Symbol.Root != bars[first + k - 1].Chords[^1].Symbol.Root) continue;
-            for (int b = first; b < first + k; b++) bars[b].Section = name + "\0lead";
-            for (int b = first + k; b < first + length; b++) bars[b].BarOfSection -= k;
-        }
-    }
-
-    /// <summary>As tools/read_chords.py's name_sections: A, B, C … in the order they come for sections of HideShort bars
-    /// or more; a shorter one is named after the section played before it, B_1, B_2 …, and the chart hides its name
-    /// (`~B_1` in the form), so that no letter is missing (the owner, 2026-11-16). Returns the form.</summary>
-    public static List<string> NameSections(List<Bar> bars)
-    {
-        var lengths = new Dictionary<string, int>();
-        foreach (var bar in bars) lengths[bar.Section!] = Math.Max(lengths.GetValueOrDefault(bar.Section!), bar.BarOfSection);
-        var names = new Dictionary<string, string> { ["Pickup"] = "Pickup" };
-        var under = new Dictionary<string, int>();
-        int shown = 0;
-        string? before = null;
-        string Letter(int k) => k < 26 ? ((char)('A' + k)).ToString() : $"S{k + 1}";
-        foreach (var bar in bars)
-        {
-            string s = bar.Section!;
-            if (!names.ContainsKey(s))
+            int a = sorted[p], b = sorted[p + 1], k = -1, bestSame = -1;
+            for (int j = 0; j < bases.Count; j++)
             {
-                if (lengths[s] >= HideShort) names[s] = Letter(shown++);
-                else
+                var (c, d) = bases[j];
+                int length = Math.Min(b - a, d - c);
+                if (length >= Math.Min(phrase, b - a) && Alike(a, c, length))
                 {
-                    string b = before ?? Letter(shown);
-                    under[b] = under.GetValueOrDefault(b) + 1;
-                    names[s] = $"{b}_{under[b]}";
+                    int same = Same(a, c, length, out _);
+                    if (k < 0 || same > bestSame) (k, bestSame) = (j, same);
                 }
             }
-            if (s != "Pickup" && !names[s].Contains('_')) before = names[s];
+            if (k < 0) { bases.Add((a, b)); k = bases.Count - 1; }
+            string letter = k < 26 ? ((char)('A' + k)).ToString() : $"S{k + 1}";
+            count[letter] = count.GetValueOrDefault(letter) + 1;
+            string name = count[letter] == 1 ? letter : $"{letter}{count[letter]}";
+            names.Add(name);
+            for (int i = 0; i < b - a; i++) places.Add((name, i + 1));
         }
-        foreach (var bar in bars) bar.Section = names[bar.Section!];
-        return [.. bars.Where(bar => bar.BarOfSection == 1).Select(bar => bar.Section!)];
-    }
-
-    /// <summary>Where a run of `total` bars played once is cut into sections, as tools/read_chords.py's cut_long: whole
-    /// when LongSection bars or fewer; else at the sections `found` there or every eight bars from the run's start. Of
-    /// the ways that keep each within LongSection: the fewest sections, then the fewest cuts at no section found, then
-    /// the least uneven. [(first bar, end)] from the run's start.</summary>
-    static List<(int, int)> CutLong(int total, HashSet<int> found)
-    {
-        if (total <= LongSection) return [(0, total)];
-        var places = new List<int> { 0 };
-        places.AddRange(found.Union(Enumerable.Range(1, (total - 1) / 8).Select(k => 8 * k)).Where(c => c < total).OrderBy(c => c));
-        places.Add(total);
-        var best = new Dictionary<int, (int Sections, int Elsewhere, long Squares, int Before)> { [0] = (0, 0, 0, -1) };
-        foreach (int b in places.Skip(1))
-        {
-            (int, int, long, int)? least = null;
-            foreach (int a in places)
-            {
-                if (a >= b) break;
-                if (!best.TryGetValue(a, out var at) || b - a > LongSection) continue;
-                var way = (at.Sections + 1, at.Elsewhere + (b == total || found.Contains(b) ? 0 : 1), at.Squares + (long)(b - a) * (b - a), a);
-                if (least is null || way.CompareTo(least.Value) < 0) least = way;
-            }
-            if (least is { } l) best[b] = l;
-        }
-        var spans = new List<(int, int)>();
-        for (int e = total; e > 0; e = best[e].Before) spans.Add((best[e].Before, e));
-        spans.Reverse();
-        return spans;
+        return (names, places);
     }
 }

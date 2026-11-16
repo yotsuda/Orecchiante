@@ -543,8 +543,8 @@ def turns_of(notes, loud):
     return turns
 
 
-PHRASE_SECTIONS = False # sections as the owner cut 糸 and My Life (2026-11-16): blocks between turns, played again elsewhere, cut on a grid of phrases, named
-                       # after the section they play again (A, A2); no repeat signs. False: find_form and fold, as before
+PHRASE_SECTIONS = True  # sections as the owner cut 糸 and My Life (2026-11-16): blocks between turns, played again elsewhere, cut on a grid of phrases, named
+                       # after the section they play again (A, A2); no repeat signs (the default since 2026-11-16, the owner). False: find_form and fold
 PHRASE_SECONDS = 15.0  # a phrase lasts about this long: as many bars as come nearest, a power of two (糸 4 of 3.8 s, My Life 8 of 1.8 s)
 PHRASE_BARS = 4        # a phrase is this many bars whatever the tempo (AIST, rwc-dev: sections of 8 bars and 4; 糸 and My Life still the owner's); 0: from PHRASE_SECONDS
 BEGIN_SHARE = 0.67     # on the grid, also cut where the phrase is played elsewhere and, at this share of those places or more, the bar before differs (a chorus, a verse B); 0: never
@@ -1475,10 +1475,10 @@ def main():
                         "and <name>.npz (tools/btc_chords.py --probs) of the recordings")
     p.add_argument("--voice", type=Path,
                    help="the folder of <name>.voc.npy: the vocals' loudness every 10 ms (scratch/sep/song.py, Demucs), for the sections")
-    p.add_argument("--phrase", action="store_true", help="sections by meaning (PHRASE_SECTIONS), as the owner cut 糸 and My Life")
+    p.add_argument("--old-sections", action="store_true", help="the sections before 2026-11-16 (find_form and fold, repeat signs) instead of by meaning")
     args = p.parse_args()
     global PHRASE_SECTIONS
-    PHRASE_SECTIONS = PHRASE_SECTIONS or args.phrase
+    PHRASE_SECTIONS = PHRASE_SECTIONS and not args.old_sections
     if args.ears:
         use_ears()
     elif args.model:

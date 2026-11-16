@@ -64,12 +64,10 @@ static class Reader
     const double Chorded = 0.25;            // a bar at either end is in the chart when this much of it sounds a chord
     const double RingOut = 0.2;             // a bar past the last one found and this much quieter than the one before
     public static readonly Dictionary<int, string> Partial = new() { [1] = "4", [2] = "2", [3] = "2.", [4] = "1", [6] = "1." };
-    const bool LeadOff = true;              // the second ending: a section played once opens with what a short section is elsewhere
     const double EvenTempo = 0.1;          // the tempo is from the mean of the bars within this share of the middle one
     const double TinyBar = 0.25;            // a bar shorter than this share of the middle one is not a bar (糸: 0.08 s)
     static readonly (double Lo, double Hi) HalfBars = (0.35, 0.7);   // bars this share of the middle one are halves (PairHalves)
     const double SlowTwo = 1.5;            // a bar of two beats longer than this is a bar of four
-    public const double SaidAgain = 0.95;
 
     static readonly string[] MajorKeys = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
     static readonly string[] MinorKeys = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"];
@@ -662,16 +660,49 @@ static class Reader
             read[i].Sure = Np.Round(1.0 / (1.0 + Math.Exp(-z)), 3);
         }
         foreach (var bar in bars) bar.Beats = BeatsOf(bar.Start, bar.End, bar.Pickup != 0 ? bar.Pickup : tempoBeats);
-        var form = Form.Fold([.. bars.Where(bar => bar.Pickup == 0)], tempoBeats, SaidAgain, Doubt);
+        // The sections, by meaning: what each bar sounds (the notes of the chords the ears hear in it, and how loud
+        // it is) tells where the music turns; then the phrases (Form.Phrases).
+        var full = bars.Where(bar => bar.Pickup == 0).ToList();
+        var unitNotes = new double[count][];
+        var begins = new double[count];
+        for (int u = 0; u < count; u++)
+        {
+            var row = unitNotes[u] = new double[12];
+            for (int k = 0; k < Chords; k++)
+            {
+                double p = Math.Exp(said[u][k]);
+                foreach (int i in Intervals[k / 12]) row[(k % 12 + i) % 12] += p;
+            }
+            for (int c = 0; c < 12; c++) row[c] *= seconds[u];
+            begins[u] = Stamp(edges[u]);
+        }
+        var barNotes = new double[full.Count][];
+        var barDb = new double[full.Count];
+        for (int i = 0; i < full.Count; i++)
+        {
+            var bar = full[i];
+            var sum = barNotes[i] = new double[12];
+            for (int u = 0; u < count; u++)
+                if (begins[u] >= bar.Start && begins[u] < bar.End)
+                    for (int c = 0; c < 12; c++) sum[c] += unitNotes[u][c];
+            var (a, b) = Over(bar.Start * SR / HOP + BeatLag, bar.End * SR / HOP + BeatLag, rms.Length);
+            barDb[i] = 20.0 * Math.Log10((double)Np.Mean(rms.AsSpan(a, b - a)) + 1e-9);
+        }
+        var turns = Form.Turns(barNotes, barDb);
+        var (tonic, major) = FindKey([.. read.Select(c => (c.End - c.Start, c.Symbol.Root, c.Symbol.Quality))]);
+        var keys = full.Select(bar => Enumerable.Range(0, tempoBeats).Select(i =>
+        {
+            double at = bar.Start + (i + 0.01) * (bar.End - bar.Start) / tempoBeats;
+            var c = bar.Chords.FirstOrDefault(c => c.Start <= at && at < c.End) ?? bar.Chords[^1];
+            return c.Symbol.Quality * 12 + c.Symbol.Root;
+        }).ToArray()).ToArray();
+        var (form, places) = Form.Phrases(keys, turns, tonic, major, Form.PhraseBars);
+        for (int i = 0; i < full.Count; i++) (full[i].Section, full[i].BarOfSection) = places[i];
         if (bars[0].Pickup != 0)        // a section of its own: Lily# lets only the first one open short
         {
             (bars[0].Section, bars[0].BarOfSection) = ("Pickup", 1);
             form.Insert(0, "Pickup");
         }
-        read = [.. bars.SelectMany(bar => bar.Chords)];
-        var (tonic, major) = FindKey([.. read.Select(c => (c.End - c.Start, c.Symbol.Root, c.Symbol.Quality))]);
-        if (LeadOff) Form.LeadOff(bars);
-        form = Form.NameSections(bars);
         string tonicName = (major ? MajorKeys : MinorKeys)[tonic];
         bool flats = tonicName.Contains('b') || (major ? tonicName == "F" : FlatMinors.Contains(tonicName));
         var roots = flats ? FlatRoots : SharpRoots;
