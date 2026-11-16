@@ -39,7 +39,7 @@
 
 **`dettato <録音> [-o <x.lys>] [--force]` が、mp3・m4a・mp4・aac・flac・wma・wav から `.lys` と `.dettato.json` を録音の隣に書く**
 （Python なし。RWC_P001 の mp3 で 6.3 秒）。配る形は .NET＋ONNX の実行ファイルを VS Code 拡張に入れる（Calamo と同じ形）。
-**拡張 `yotsuda.dettato` 0.4.1 をこの PC の VS Code に入れた**（`extension/`、`tools/deploy-extension.ps1`。113 MB、Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
+**拡張 `yotsuda.dettato` 0.4.2 をこの PC の VS Code に入れた**（0.4.2: 行の終わりを `| break` に＝オーナー。改行の位置は同じ）（`extension/`、`tools/deploy-extension.ps1`。113 MB、Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
 「Convert Recording to Lily# (.lys)… (Preview)」で、Lily# が `ext.activate()` で `{path, version, protocol, inputs}` を受け取る。**VS Code の中で動くことはユーザーが確かめた（0.2.0。0.3.x は Lily# のメニューからはまだ）。**
 
 ### コマンドと入力（D3。`Program.cs`・`Audio.cs`。README の「A recording as it comes」、Lily# 向けは便りの §2a）
@@ -92,8 +92,20 @@
 
 ## 次の一手
 
-**まず 0.4.1 の糸（`scratch/ito/ito041.lys`、または Lily# の変換メニューで読み直したもの）をオーナーに見てもらう**: 小節の長さと、短い section をまとめた形・form の繰り返し記号・2 番カッコ
-（オーナー:「小節線を直した後でもういちど見る」）。0.4.1 の form は `A |: B [1. C] :| [2. D] |: E [1. F] :| [2. G]`。
+**作業中（2026-11-16 夜。Python の試作は commit 済みで既定オフ＝`PHRASE_SECTIONS = False`、オンにして試す）: 意味で切る section**（オーナー: 調や曲調が変わる所・歌が入る所・ソロで切りたい）。
+- オーナーが糸を手で分けた（`scratch/ito/ito-one.lys`: Intro 1–8・A 9–16・B 17–20・C 21–27・Inter 28–31・A2 32–39・B2 40–43・C2 44–50・Solo 51–58・C3 59–）。**繰り返し記号は要らないかも**（オーナー）。
+- 試作 `PHRASE_SECTIONS`（`phrase_sections`・`turns_of`・`voice_turns`）: 歌の出入り（Demucs、`--voice <folder>` の `<name>.voc.npy`）・調号の変化（2 つ以上）・6 dB の音量で塊に切り、塊の中は句（約 15 秒＝糸 4 小節・My Life 8 小節）の格子で
+  「同じ句 2 回の終わり」か「V→I が小節線をまたぐ」所で切る（句とその繰り返しの間では切らない）。名前は前の section の再演なら A2・A3。fold（繰り返しのコードをそろえる）はしない。
+  **糸はオーナーの分け方と一致**（+67 から終わり）。My Life はまだ粗い（39–54・55–83・91–120: 句の格子が 2 小節ずれる）。`rwc-dev` ルート 87.3 → 87.4%（fold をやめた分）。.NET は未移植。材料は `scratch/sec/`（`turns.py`・`dbg3.py`・`starts.py`）。
+- 歌: Demucs（`scratch/sep/venv`、htdemucs）で `rwc-dev` 50 曲、小節の歌あり／なし 96.3%・歌の入りと終わり 94.0% を 1 小節以内（`scratch/sep/count.py`。線は dev で選んだ）。`rwc-test` は裏で分離中（`scratch/sep/test.log`）。
+  3 分半で 43 秒（8 スレッド）。配る形（(a) Demucs をそのまま・(b) 蒸留した小さなモデル。(b) は学習の音源をオーナーが決める）は未決。
+- **糸の M64 は rit ではなく 6 拍の小節**（オーナー。4＋2 拍、M65 に `time 2/4`）。手がかりは Beat This! の downbeat の値: G の小節の頭が今の組み方で平均 2.3、2 拍ずらすと 3.5（`scratch/sec/downs.py`、`.venv-bt`）。
+  案: 2 拍ずつ組む所で向きを downbeat の値で選び、入れ替わる所に 2 拍の小節（値段つき）。要るもの: `.beats` に 3 列目（downbeat の値）＝`track_beats.py` と `Beats.cs`、全セットの拍の作り直し。未着手。
+  書き方は **Lily# 依頼 13（コードの行の中の `time 2/4`）＝Lily# master `91187cf45` で fixed**（小節の頭だけ。次の `time` か section の終わりまで効く。次の section は見出しの拍子に戻る）。
+  古い Lily# では通らないので、書くのは Lily# の次の版が出てから（それまでの代わりは 1 小節の section＋`time 2/4`）。
+- Lily# 依頼 11（小節数が違っても少ない方まで鳴らす）は Lily# master `184efc304` で fixed。オーナーの版で確かめたら `done`。
+
+**その前の一手（0.4.1 の確認）**: 糸（`scratch/ito/ito041.lys`）の小節の長さ。form の繰り返し記号・2 番カッコは、上の section の作り直しで要らなくなる見込み。
 **それから、ユーザーの録音で譜面の出来を聴いてもらう**（耳で聴く所。機械で見られる所は 2026-11-16 に見た）。My Life（`scratch/d3/mylife/`）は 0.2.1 で
 「さほど違和感はない」（ブリッジの C#dim・F#7/C# は未確認、3 拍の小節が 1 つ）。次の候補: ユーザーがベースで弾く曲・コードの分かっている曲、
 バンド練習（`F:\Music\ギャラン☆Do!\`。58 分の譜面は `scratch/d3/user/long-only/`。テンポが曲ごとに変わる＝C3）。

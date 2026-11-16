@@ -2,6 +2,11 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.4.2
+
+- A line of the chart ends with its bar line, then the break (`… | G C | break`), which reads more
+  easily than `… G C break |`. The lines fall where they did.
+
 ## 0.4.1
 
 - Bars half as long as the rest, one after the other (the beat model counting twice as fast for a

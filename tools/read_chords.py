@@ -490,7 +490,152 @@ LONG_SECTION = 32      # sections played once, one after the other, are one sect
                         # longer run is cut into even sections no longer (the owner, 2026-11-16). 0: as found.
 
 
-def fold(bars, beats, alike):
+KEY_TURN = 2           # ears: a key region this many accidentals from the one before is a turn of the music (a section
+                       # may not run across it: the owner, 2026-11-16, sections where the key or the mood changes)
+KEY_PRICE = 1.5        # what a change of key signature costs, against a bar's evidence (4 times the log of its share in the scale)
+KEY_REGION = 4         # bars: a shorter run in one key is not a region of its own
+LOUD_TURN = 6.0        # dB: the two bars after a bar line this much louder or quieter than the two before turn the music
+TURN_SLACK = 1         # bars: a section may run across a turn this close to its first or its last bar
+TONES = np.zeros((len(CHORDS), 12))
+for _k, (_r, _q) in enumerate(CHORDS):
+    TONES[_k, [(_r + _i) % 12 for _i in QUALITIES[_q]]] = 1.0
+SCALES = np.array([[1.0 if (pc - t) % 12 in (0, 2, 4, 5, 7, 9, 11) else 0.0 for pc in range(12)] for t in range(12)])
+SIGNATURE = [((t * 7 + 6) % 12) - 6 for t in range(12)]   # sharps (+) or flats (-) of the major scale on t
+
+
+def turns_of(notes, loud):
+    """Where the music turns (the owner, 2026-11-16): the bars a section begins at rather than runs
+    across. `notes`: each bar's notes heard (bars, 12: the chords' tones, weighed by how likely and how
+    long); `loud`: each bar's loudness in dB. A turn is where the key signature moves by KEY_TURN
+    accidentals or more (the scale of the notes, bar by bar, changing at a price; runs shorter than
+    KEY_REGION bars not counted), or where the two bars after are LOUD_TURN dB louder or quieter than the
+    two before, the most of the bars around."""
+    n = len(loud)
+    turns = set()
+    if n < 2 * KEY_REGION:
+        return turns
+    fits = 4.0 * np.log(np.maximum(notes @ SCALES.T / np.maximum(notes.sum(axis=1), 1e-9)[:, None], 1e-3))   # (bars, 12)
+    score, back = fits[0].copy(), []
+    for i in range(1, n):
+        best = float(score.max())
+        stay = score >= best - KEY_PRICE
+        back.append(np.where(stay, np.arange(12), int(score.argmax())))
+        score = np.where(stay, score, best - KEY_PRICE) + fits[i]
+    path = [int(score.argmax())]
+    for came in back[::-1]:
+        path.append(int(came[path[-1]]))
+    path = path[::-1]
+    regions, start = [], 0                       # (first bar, signature) of each region long enough
+    for i in range(1, n + 1):
+        if i == n or path[i] != path[start]:
+            if i - start >= KEY_REGION:
+                regions.append((start, SIGNATURE[path[start]]))
+            start = i
+    for (_, a), (first, b) in zip(regions, regions[1:]):
+        if min(abs(a - b), 12 - abs(a - b)) >= KEY_TURN:
+            turns.add(first)
+    jump = np.zeros(n)
+    for i in range(2, n - 1):
+        jump[i] = np.mean(loud[i:i + 2]) - np.mean(loud[i - 2:i])
+    for i in range(2, n - 1):
+        if abs(jump[i]) >= LOUD_TURN and abs(jump[i]) >= np.abs(jump[max(i - 2, 0):i + 3]).max():
+            turns.add(i)
+    return turns
+
+
+PHRASE_SECTIONS = False # sections as the owner cut 糸 (2026-11-16): blocks between turns, cut on a grid of four bars, named
+                       # after the section they play again (A, A2); no repeat signs. False: find_form and fold, as before
+PHRASE_SECONDS = 15.0  # a phrase lasts about this long: as many bars as come nearest, a power of two (糸 4 of 3.8 s, My Life 8 of 1.8 s)
+WHOLE_BLOCK = 2        # phrases: a block no longer than this is one section (an intro, an interlude, a solo)
+PHRASE_ALIKE = 0.75    # two phrases, or two sections, are the same when this share of their beats have the same root and family
+VOICE_LOUD = 0.25      # a moment sings when the vocals are this share of the song's loud end (their 95th percentile)
+VOICE_SHARE = 0.45     # a bar sings when this share of it sings (糸: a verse 0.41 to 0.84, the tail of a phrase 0.39)
+VOICE_RUN = 2          # bars: singing, or its silence, has to last this long to turn the music
+VOICE_GAP = 3          # bars: a silence shorter than this between singing is a breath, or an instrument's answer (My Life)
+TURN_NEAR = 2          # bars: a turn of key or loudness this near where singing begins or stops is that one
+
+
+def voice_turns(sung):
+    """Where singing begins or stops (`sung`: the share of each bar that sings) and goes on: the bars a
+    section begins at. A silence shorter than VOICE_GAP bars between singing is a breath; then singing
+    shorter than VOICE_RUN bars is none."""
+    on = [s >= VOICE_SHARE for s in sung]
+
+    def runs():
+        out, i = [], 0
+        while i < len(on):
+            j = i
+            while j < len(on) and on[j] == on[i]:
+                j += 1
+            out.append((i, j, on[i]))
+            i = j
+        return out
+
+    found = runs()
+    for k, (i, j, v) in enumerate(found):
+        if not v and j - i < VOICE_GAP and 0 < k < len(found) - 1:
+            on[i:j] = [True] * (j - i)
+    for i, j, v in runs():
+        if v and j - i < VOICE_RUN:
+            on[i:j] = [False] * (j - i)
+    return {i for i, _, _ in runs()[1:]}
+
+
+def phrase_sections(keys, turns, tonic, mode, phrase=4):
+    """The sections, as the owner cut 糸 (2026-11-16): the music is cut into blocks where it turns (singing
+    begins or stops, the key changes, it grows far louder or quieter); a block of WHOLE_BLOCK bars or
+    phrases or fewer is one section; a longer one is cut on a grid of `phrase` bars from its start, where a phrase
+    said twice has ended (A: four bars, the same four again) or where the dominant goes to the home
+    chord across the bar line, but never between a phrase and its saying again. A section that plays
+    one before it again (PHRASE_ALIKE of the beats of the shorter, at their starts) is named after it:
+    A, A2, A3. `keys`: the chord on each beat of each bar. Returns the form and, for each bar, its
+    section and which bar of it it is."""
+    n = len(keys)
+    fam = [tuple((r, _KIND[q]) for r, q in k) for k in keys]
+    home = "maj" if mode == "major" else "min"
+
+    def alike(a, b, length):
+        beats = [x == y for i in range(length) for x, y in zip(fam[a + i], fam[b + i])]
+        return bool(beats) and sum(beats) >= PHRASE_ALIKE * len(beats)
+
+    def cadence(g):
+        last, first = fam[g - 1][-1], fam[g][0]
+        return last[0] == (tonic + 7) % 12 and last[1] in ("maj", "sus") and first == (tonic, home)
+
+    edges = sorted({0, n} | {t for t in turns if 0 < t < n})
+    cuts = set(edges)
+    for a, b in zip(edges, edges[1:]):
+        if b - a <= WHOLE_BLOCK * phrase:
+            continue
+        for g in range(a + phrase, b - 1, phrase):
+            middle = g - phrase >= a and g + phrase <= b and alike(g - phrase, g, phrase)
+            ended = (g - 2 * phrase >= a and alike(g - 2 * phrase, g - phrase, phrase)
+                     and not (g + phrase <= b and alike(g - phrase, g, phrase)))
+            if not middle and (ended or cadence(g)):
+                cuts.add(g)
+    cuts = sorted(cuts)
+    pieces = list(zip(cuts, cuts[1:]))
+    bases, names, count = [], [], Counter()
+    for a, b in pieces:
+        best = None
+        for k, (c, d) in enumerate(bases):
+            length = min(b - a, d - c)
+            if length >= min(phrase, b - a) and alike(a, c, length):
+                same = sum(x == y for i in range(length) for x, y in zip(fam[a + i], fam[c + i]))
+                if best is None or same > best[0]:
+                    best = (same, k)
+        if best is None:
+            bases.append((a, b))
+            k = len(bases) - 1
+        else:
+            k = best[1]
+        letter = chr(ord("A") + k) if k < 26 else f"S{k + 1}"
+        count[letter] += 1
+        names.append(letter if count[letter] == 1 else f"{letter}{count[letter]}")
+    return names, [(name, i + 1) for name, (a, b) in zip(names, pieces) for i in range(b - a)]
+
+
+def fold(bars, beats, alike, turns=frozenset()):
     """Finds the sections (find_form) and makes every playing of a section say the same: on each
     beat, the chord the playings are surest of together. Where they differed in root or family,
     the chord is marked in every playing, and the chord offered in its place is the other reading.
@@ -498,7 +643,7 @@ def fold(bars, beats, alike):
     kind = lambda c: (c["symbol"][0], _KIND[c["symbol"][1]])
     on = [[next((c for c in bar["chords"] if c["start"] <= bar["start"] + (i + 0.01) * (bar["end"] - bar["start"]) / beats < c["end"]),
                 bar["chords"][-1]) for i in range(beats)] for bar in bars]
-    form, places = find_form([tuple(c["symbol"][:2] for c in row) for row in on], alike)
+    form, places = find_form([tuple(c["symbol"][:2] for c in row) for row in on], alike, turns)
     said = {}
     for n, place in enumerate(places):
         bars[n]["section"], bars[n]["barOfSection"] = place
@@ -641,7 +786,7 @@ def beat_names(bar, beats):
     return tuple(names)
 
 
-def find_form(keys, alike=1.0):
+def find_form(keys, alike=1.0, turns=frozenset()):
     """The sections a chart is made of, from the chord on each beat of each bar (`keys`: a tuple a
     bar): (the form, a section's name for each one played; for each bar, its section and which
     bar of it it is).
@@ -651,8 +796,12 @@ def find_form(keys, alike=1.0):
     many; then the same among the bars left, until nothing is said twice. What is left between
     sections is a section said once. Two sections that only ever come one after the other are one,
     and so are sections of SHORT_SECTION bars or fewer that come one after the other.
+
+    `turns`: bars where the music turns (turns_of). No section runs across one, but within
+    TURN_SLACK bars of its ends; what is said once is cut there; nothing is joined there.
     """
     n = len(keys)
+    at_turn = lambda b: any(abs(b - t) <= TURN_SLACK for t in turns)
     ids = {}
     grid = np.full((n, max([len(k) for k in keys] + [1])), -1)
     for i, k in enumerate(keys):
@@ -693,19 +842,26 @@ def find_form(keys, alike=1.0):
     i = 0
     while i < n:                                # what is said once
         if owner[i] is None:
-            j = i
-            while j < n and owner[j] is None:
+            j = i + 1
+            while j < n and owner[j] is None and j not in turns:
                 j += 1
             played.append((i, j - i, len(played)))
             i = j
         else:
             i += 1
     played.sort()
+    if turns:                                   # a section the music turns inside is cut there, each time it is played
+        cuts = {}
+        for start, length, s in played:
+            cuts.setdefault(s, set()).update(t - start for t in turns if TURN_SLACK < t - start < length - TURN_SLACK)
+        played = sorted((start + a, b - a, (s, a) if cuts[s] else s) for start, length, s in played
+                        for a, b in zip([0] + sorted(cuts[s]), sorted(cuts[s]) + [length]))
     while True:                                 # A B ... A B: one section
         order = [s for _, _, s in played]
         count = Counter(order)
         pairs = Counter(zip(order, order[1:]))
-        pair = next(((a, b) for (a, b), k in pairs.items() if a != b and k == count[a] == count[b]), None)
+        parted = {(played[k][2], played[k + 1][2]) for k in range(len(played) - 1) if at_turn(played[k + 1][0])}
+        pair = next(((a, b) for (a, b), k in pairs.items() if a != b and k == count[a] == count[b] and (a, b) not in parted), None)
         if pair is None:
             break
         merged, i = [], 0
@@ -722,7 +878,8 @@ def find_form(keys, alike=1.0):
         joined, i = [], 0
         while i < len(played):
             start, bars, group = played[i][0], played[i][1], (played[i][2],)
-            while bars <= SHORT_SECTION and i + 1 < len(played) and played[i + 1][1] <= SHORT_SECTION:
+            while (bars <= SHORT_SECTION and i + 1 < len(played) and played[i + 1][1] <= SHORT_SECTION
+                   and not at_turn(played[i + 1][0])):
                 i += 1
                 bars += played[i][1]
                 group += (played[i][2],)
@@ -737,8 +894,8 @@ def find_form(keys, alike=1.0):
                 joined.append(played[i])
                 i += 1
                 continue
-            j = i
-            while j < len(played) and count[played[j][2]] == 1:
+            j = i + 1
+            while j < len(played) and count[played[j][2]] == 1 and not at_turn(played[j][0]):
                 j += 1
             start = played[i][0]
             total = sum(bars for _, bars, _ in played[i:j])
@@ -772,7 +929,7 @@ def features(path):
     }
 
 
-def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, why=False):
+def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, why=False, voice=None):
     """The chart of a recording. `tempo`, if told, is about how many beats a minute it has: what
     is heard cannot tell a fast song whose chords last two bars from a slow one, bar by bar.
 
@@ -1017,15 +1174,45 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
         at = [k for k, _ in items].index("end") + 1
         bars[i] = dict(items[:at] + [("beats", beats_of(bar["start"], bar["end"], bar.get("pickup") or tempo_beats))]
                        + items[at:])
-    form = fold([bar for bar in bars if not bar.get("pickup")], 2 if time == "6/8" else int(time.split("/")[0]), SAID_AGAIN)
+    whole = [bar for bar in bars if not bar.get("pickup")]
+    turns = frozenset()
+    if ears and PHRASE_SECTIONS:
+        # what each bar sounds: the notes of the chords the ears hear in it, and how loud it is
+        begins = np.array([stamp(e) for e in edges[:-1]])
+        heard_notes = np.exp(said) @ TONES * seconds[:, None]
+        notes = np.array([heard_notes[(begins >= bar["start"]) & (begins < bar["end"])].sum(axis=0) for bar in whole])
+        db = np.array([20.0 * np.log10(float(over(rms, bar["start"] * SR / HOP + BEAT_LAG, bar["end"] * SR / HOP + BEAT_LAG)[0]) + 1e-9)
+                       for bar in whole])
+        turns = frozenset(turns_of(notes, db))
+        if voice is not None and len(voice):
+            singing = voice >= VOICE_LOUD * float(np.percentile(voice, 95))
+            sung = [float(np.mean(singing[int(bar["start"] * 100):max(int(bar["end"] * 100), int(bar["start"] * 100) + 1)]))
+                    for bar in whole]
+            sings = voice_turns(sung)
+            # where singing begins or stops is where the section does: another turn this near it is the same one, a bar off
+            turns = frozenset(sings | {t for t in turns if all(abs(t - s) > TURN_NEAR for s in sings)})
+    beats_in_bar = 2 if time == "6/8" else int(time.split("/")[0])
+    read_chords = [c for bar in bars for c in bar["chords"]]
+    tonic, mode = find_key([(c["end"] - c["start"], c["symbol"][0], c["symbol"][1]) for c in read_chords])
+    if PHRASE_SECTIONS:
+        on = [[next((c for c in bar["chords"] if c["start"] <= bar["start"] + (i + 0.01) * (bar["end"] - bar["start"]) / beats_in_bar < c["end"]),
+                    bar["chords"][-1]) for i in range(beats_in_bar)] for bar in whole]
+        bar_seconds = float(np.median([bar["end"] - bar["start"] for bar in whole]))
+        phrase = int(min(max(2 ** round(np.log2(PHRASE_SECONDS / bar_seconds)), 2), 16))
+        form, places = phrase_sections([tuple(c["symbol"][:2] for c in row) for row in on], turns, tonic, mode, phrase)
+        for bar, (section, k) in zip(whole, places):
+            bar["section"], bar["barOfSection"] = section, k
+    else:
+        form = fold(whole, beats_in_bar, SAID_AGAIN, turns)
     if bars[0].get("pickup"):                       # a section of its own: Lily# lets only the first one open short
         bars[0]["section"], bars[0]["barOfSection"] = "Pickup", 1
         form = ["Pickup"] + form
     read_chords = [c for bar in bars for c in bar["chords"]]
-    tonic, mode = find_key([(c["end"] - c["start"], c["symbol"][0], c["symbol"][1]) for c in read_chords])
-    if LEAD_OFF:
-        lead_off(bars)
-    form = name_sections(bars)
+    if not PHRASE_SECTIONS:
+        tonic, mode = find_key([(c["end"] - c["start"], c["symbol"][0], c["symbol"][1]) for c in read_chords])
+        if LEAD_OFF:
+            lead_off(bars)
+        form = name_sections(bars)
     tonic_name = (MAJOR_KEYS if mode == "major" else MINOR_KEYS)[tonic]
     flats = "b" in tonic_name or (tonic_name == "F" if mode == "major" else tonic_name in FLAT_MINORS)
     roots = FLAT_ROOTS if flats else SHARP_ROOTS
@@ -1124,7 +1311,7 @@ def lys(result, title, shape_of=None):
             out.append(f"{indent}{DIAGRAM_NOTE}")
         sizes = line_sizes(len(bars))
         for k, size in enumerate(sizes):
-            end = " break |" if breaks and (last or k < len(sizes) - 1) else " |"
+            end = " | break" if breaks and (last or k < len(sizes) - 1) else " |"   # the bar line, then the break: easier to read (the owner, 2026-11-16)
             out.append(f"{indent}{' | '.join(slots(said) for said in bars[i:i + size])}{end}")
             i += size
         return out
@@ -1225,6 +1412,8 @@ def main():
     p.add_argument("--ears", type=Path,
                    help="read with models trained on recordings: the folder of <name>.beats (tools/track_beats.py) "
                         "and <name>.npz (tools/btc_chords.py --probs) of the recordings")
+    p.add_argument("--voice", type=Path,
+                   help="the folder of <name>.voc.npy: the vocals' loudness every 10 ms (scratch/sep/song.py, Demucs), for the sections")
     args = p.parse_args()
     if args.ears:
         use_ears()
@@ -1238,7 +1427,9 @@ def main():
             if args.ears:
                 heard = np.load(args.ears / (path.stem + ".npz"))
                 lines, beats = lines_of(args.ears / (path.stem + ".beats"), heard)
-                result = read(path, lines=lines, beats=beats, heard=heard)
+                voc = args.voice / (path.stem + ".voc.npy") if args.voice else None
+                result = read(path, lines=lines, beats=beats, heard=heard,
+                              voice=np.load(voc) if voc is not None and voc.exists() else None)
             else:
                 result = read(path, tempo=args.tempo)
         except Exception as e:  # one recording that cannot be read does not stop the rest

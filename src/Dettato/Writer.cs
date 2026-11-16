@@ -81,7 +81,7 @@ static class Writer
             for (int k = 0; k < sizes.Count; k++)
             {
                 bool brk = breaks && (last || k < sizes.Count - 1);
-                yield return indent + string.Join(" | ", bars.Skip(i).Take(sizes[k]).Select(Slots)) + (brk ? " break |" : " |");
+                yield return indent + string.Join(" | ", bars.Skip(i).Take(sizes[k]).Select(Slots)) + (brk ? " | break" : " |");   // the bar line, then the break (the owner, 2026-11-16)
                 i += sizes[k];
             }
         }

@@ -480,15 +480,17 @@ more than once too) they are cut into as few as keep each within 32, at the sect
 again right away repeat in the form**, so that the form alone shows how the song goes; the bars
 inside a section are written out. **And each line of the page is four bars of one section**
 (`break` after every four bars and where a section ends: a section begins a line; a last bar
-alone joins the line before, and four and two bars are three and three):
+alone joins the line before, and four and two bars are three and three; since 0.4.2 the line ends
+with its bar line, then the break, `| break`, which reads more easily than `break |` and breaks
+the page in the same places, the owner, 2026-11-16):
 
 ```
 section A {
   chords harmony {
-    D | D | D | D break |
-    D | D | D | D@todo("or Dsus4?") break |
-    D | C7 | F7 | A# Am@todo("or A?") break |
-    D | C7 | F | A# C break |
+    D | D | D | D | break
+    D | D | D | D@todo("or Dsus4?") | break
+    D | C7 | F7 | A# Am@todo("or A?") | break
+    D | C7 | F | A# C | break
   }
 }
 ...
@@ -520,9 +522,9 @@ of one bar goes on the line before (no `break` between them):
   ...
     Dsus4@todo("or C?") D |
   ...
-    D@todo("or Dsus4?") break |
+    D@todo("or Dsus4?") | break
   ...
-    Em | Bm7 | Cmaj7 | G D/F# break |
+    Em | Bm7 | Cmaj7 | G D/F# | break
 ```
 
 And (`name_sections`, `Form.NameSections`, 0.3.4) a section shorter than three bars is named
