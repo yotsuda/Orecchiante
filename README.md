@@ -623,8 +623,15 @@ same recording are not quite the same: ONNX Runtime's threads add in another ord
   (one at a time, 2, 6 of 4 threads, 24 threads, or a session each were slower or no quicker but for
   a tenth), the beats and the chords read meanwhile. Counted while another program kept 6 to 14 of
   the 24 cores busy, so not the time on an idle machine. Held in int8 or in float32, the network is
-  as quick. No overlap between segments is a third quicker, but changed the sections of 3 of 13 RWC
-  songs (P010 to P012; two runs with the overlap gave the same sections), so it is not taken.
+  as quick. No overlap between segments is a third quicker, but not taken (the owner, 2026-11-17):
+  it changed the sections of 15 of RWC's 100 songs (`scratch/sec/ov_cmp.py`), not by chance (those
+  songs read again with the overlap gave the same sections). AIST's F within 3 s `rwc-dev` 64.3 →
+  63.8%, `rwc-test` 60.1 → 60.1%; within 0.5 s 42.3 → 41.2%, 37.3 → 37.5%; the bars sung or not
+  the same (96.4%, 95.6 → 95.5%); the owner's two songs the same. But of the starts that changed,
+  34 went (11 within 0.5 s of AIST) and 37 came (7): starts a bar off (P011's five), right ones
+  lost (P012 12 → 9 sections), two-bar sections (P010). Without the overlap the edges of the
+  segments, where the network hears little around, decide: of the moments called sung in one and
+  not the other, 27% lie within 0.5 s of an edge, 13% of the time (`scratch/sec/ov_edges.py`).
 - The memory: ONNX Runtime's arena and memory pattern held twice what a run needs: `RWC_P001`
   peaked at 16.2 GB with them, 8.6 GB without (0.6.1), the vocals within what two runs differ by.
   Each segment more at once holds about 2 GB, so the segments at once are as many as the memory

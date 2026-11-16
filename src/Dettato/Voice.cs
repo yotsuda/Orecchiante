@@ -20,7 +20,7 @@ static class Voice
     const int Nfft = 4096, Hop = 1024, Bins = Nfft / 2;
     const int Frames = (Segment + Hop - 1) / Hop;   // 336
     const int Vocals = 3;               // drums, bass, other, vocals
-    const double Overlap = 0.25;       // as apply_model (none is a third quicker, but changed the sections of 3 of 13 RWC songs)
+    const double Overlap = 0.25;       // as apply_model (none is a third quicker, but changed the sections of 15 of RWC's 100 songs, right starts lost; README)
 
     static readonly double[] Window = Enumerable.Range(0, Nfft).Select(n => 0.5 - 0.5 * Math.Cos(2 * Math.PI * n / Nfft)).ToArray();
 
