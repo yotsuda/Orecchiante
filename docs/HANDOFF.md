@@ -18,7 +18,7 @@
 
 **`dettato <録音> [-o <x.lys>] [--force]` が、mp3・m4a・mp4・aac・flac・wma・wav から `.lys` と `.dettato.json` を録音の隣に書く**
 （Python なし。RWC_P001 の mp3 で 6.3 秒）。配る形は .NET＋ONNX の実行ファイルを VS Code 拡張に入れる（Calamo と同じ形）。
-**拡張 `yotsuda.dettato` 0.6.0 をこの PC の VS Code に入れた**（0.6.0: 歌を聞いて section を切る。入った版で My Life の mp3 を読んで確かめた）（`extension/`、`tools/deploy-extension.ps1`。.vsix 171 MB、Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
+**拡張 `yotsuda.dettato` 0.6.1 をこの PC の VS Code に入れた**（0.6.0: 歌を聞いて section を切る。0.6.1: メモリ半分。入った版で読んで確かめた）（`extension/`、`tools/deploy-extension.ps1`。.vsix 171 MB、Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
 「Convert Recording to Lily# (.lys)… (Preview)」で、Lily# が `ext.activate()` で `{path, version, protocol, inputs}` を受け取る。**VS Code の中で動くことはユーザーが確かめた（0.2.0。0.3.x は Lily# のメニューからはまだ）。**
 
 ### コマンドと入力（D3。`Program.cs`・`Audio.cs`。README の「A recording as it comes」、Lily# 向けは便りの §2a）
@@ -82,10 +82,11 @@
   torch と RWC_P001 で 0.8% 差。歌の判定は torch（ステレオ）と同じ水準（dev 96.4・test 95.6%）。AIST 3 秒以内の F: dev 64.3%・test 60.2%（torch 65.2・60.7）。歌のない曲は `VOICE_FLOOR`（0.05）で歌なし。
   **Python と .NET は同じ `.voc.npy` で RWC 100 曲が一字一句同じ**（`measure.py … --voice scratch/net/voice`、`dettato read … --voice <folder>`）。合成曲の突き合わせは `--voice none`（268 曲一致）。
   Python の `phrase_sections` は歌の線を小さい順に回すようにした（前は集合の順。オーナーの 2 曲は同じ）。
-- **重い:** 通しで RWC_P001（3 分 27 秒）49.6 秒、My Life 81.6 秒（0.5.0 は 6 秒ほど）。ほとんどが分離。どれも Calamo が 6〜12 コアを使っている中の数字＝空いた PC では測れていない。
+- **時間とメモリ（0.6.1）:** 通しで RWC_P001（3 分 27 秒）33.4〜33.9 秒（0.5.0 は 6 秒ほど）、ピーク 8.6 GB（0.6.0 は 16.2 GB＝ORT の arena と memory pattern）。分離の間に拍とコードを読む。並行は 3（メモリで減る、`Voice.Parallel`）。
+  **結果を変えずに速くする手は見つからなかった**（スレッドの組み方・セッションを分ける・単精度、README）。**重なりなしは 3 分の 1 速いが RWC 13 曲中 3 曲の section が変わる**（オーナーに聞いた）。どれも Calamo が 6〜14 コアを使っている中の数字。
 - AIST の構造の注釈で取れるのは歌の出入り（9 割）、取れないのは歌の中（verse→verse 49%・chorus→chorus 48%）。歌の終わりの線は 1 小節遅れが多い（原因は未確認）。
-- **次:** (1) **オーナーに 0.6.0 を実物で見てもらう**（Reload Window）。待ち時間が許せるか。
-  (2) 速くするなら: 空いた PC で測る → 重なり 0.25 を 0 に（区間が 3/4、torch と比べて判定と AIST を測り直す）、蒸留した小さなモデル（学習の音源はオーナーが決める）。
+- **次:** (1) **重なりなしにするか（オーナーの答え待ち）**。するなら `scratch/net/voice-ov0/rwc-p`（14 曲まで）の続きを `dettato ears` で作り、AIST と歌の判定を測り直す。
+  (2) ほかに速くする手: 空いた PC で測り直す、蒸留した小さなモデル（学習の音源はオーナーが決める）。
   (3) 歌の中の境目（AIST の verse A→B）。手がかり候補: 旋律の音域・歌の密度・ドラムの型。
 - **Lily# 依頼 15（拍が 1 秒 2.37 ms 遅れる、My Life）: 同じファイルを `tools/beat_phase.py` で測ると伸びはない**（傾き −0.02 ms/秒）。Lab の計器（中身 1 バイトで読めない）の標本化率を見てほしいと返事した（`docs/repro/dettato-reply-2026-11-16-beat-drift.md`）。Lily# の答え待ち。
 - **糸の M64 は rit ではなく 6 拍の小節**（オーナー。4＋2 拍、M65 に `time 2/4`）。手がかりは Beat This! の downbeat の値: G の小節の頭が今の組み方で平均 2.3、2 拍ずらすと 3.5（`scratch/sec/downs.py`、`.venv-bt`）。

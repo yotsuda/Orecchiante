@@ -2,6 +2,12 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.6.1
+
+- Half the memory while the singing is separated (a song of three and a half minutes peaked at 8.6 GB,
+  16.2 GB before), in the same time: the beats and the chords are read meanwhile. The charts are the same.
+- On a computer with less memory, fewer pieces of the recording are separated at once (slower, the same chart).
+
 ## 0.6.0
 
 - Where singing comes in and stops is heard, and a section begins there: the vocals are separated by

@@ -597,8 +597,9 @@ marked, catching 72.5 → 72.0% of the wrong roots and families).
 Since 0.6.0 (the owner) dettato hears the singing itself: Demucs's `htdemucs` (demucs 4.1.0, MIT)
 written out as ONNX without its Fourier transforms (`tools/d2/demucs_onnx.py`), which `Voice.cs`
 does, with the recording split and put back together as `demucs.apply.apply_model` does (7.8 s
-segments, a quarter overlapping, a triangle of weights) but with no random shift, so the same
-recording gives the same chart. The recording is read in mono and given to both channels.
+segments, a quarter overlapping, a triangle of weights) but with no random shift. (Two runs on the
+same recording are not quite the same: ONNX Runtime's threads add in another order, and of
+`RWC_P001`'s 20716 moments 12 to 14 are called singing in one run and not the other.) The recording is read in mono and given to both channels.
 
 - Its matrix products are held in 8-bit integers (`htdemucs-mm8.onnx`, 85 MB against 174 MB):
   the vocals of a segment of `RWC_P001` 0.7% off the network's own. With the convolutions in
@@ -617,10 +618,17 @@ recording gives the same chart. The recording is read in mono and given to both 
   `Form.Phrases`): given the same `.voc.npy`, the charts of `rwc-dev` and `rwc-test` are the same
   as Python's letter for letter (`dettato read … --voice <folder>`, `measure.py … --voice <folder>`).
   Python went through the turns near singing in the order of its set; it now goes in order.
-- The time, all of it the separation: `RWC_P001` (3 min 27 s) from the `.wav` to the chart in
-  49.6 s, against about 6 s before; 3 segments at once on 8 threads each (one at a time, 2, or 6 of
-  4 threads were slower). Counted while another program kept 6 to 12 of the 24 cores busy, so not
-  the time on an idle machine (over RWC's 100 songs, 48 s of separation a song of 4 min).
+- The time, most of it the separation: `RWC_P001` (3 min 27 s) from the `.wav` to the chart in
+  33.6 to 33.9 s (0.6.1), against about 6 s before; 3 segments at once on the session's 8 threads
+  (one at a time, 2, 6 of 4 threads, 24 threads, or a session each were slower or no quicker but for
+  a tenth), the beats and the chords read meanwhile. Counted while another program kept 6 to 14 of
+  the 24 cores busy, so not the time on an idle machine. Held in int8 or in float32, the network is
+  as quick. No overlap between segments is a third quicker, but changed the sections of 3 of 13 RWC
+  songs (P010 to P012; two runs with the overlap gave the same sections), so it is not taken.
+- The memory: ONNX Runtime's arena and memory pattern held twice what a run needs: `RWC_P001`
+  peaked at 16.2 GB with them, 8.6 GB without (0.6.1), the vocals within what two runs differ by.
+  Each segment more at once holds about 2 GB, so the segments at once are as many as the memory
+  takes (`Voice.Parallel`: 3 from 16 GB, 2 from 12 GB, else 1).
 
 ```
 scratch/sep/venv/Scripts/python tools/d2/demucs_onnx.py scratch/real/rwc-p/RWC_P001.wav     # scratch/d2/htdemucs-mm8.onnx

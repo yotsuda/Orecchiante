@@ -44,7 +44,7 @@ using System.Text;
 using Dettato;
 using Microsoft.ML.OnnxRuntime;
 
-const string version = "0.6.0";
+const string version = "0.6.1";
 const int protocol = 1;
 const string usage = "usage: dettato <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]\n"
                    + "       dettato --version [--json]\n"
@@ -69,7 +69,8 @@ if (args.Length == 0 || args[0] is "-h" or "--help" or "-?" or "/?")
 
 var started = Stopwatch.StartNew();
 double load = 0, mel = 0, beat = 0, cqt = 0, chord = 0, sing = 0, audio = 0, rules = 0;
-InferenceSession? beatModel = null, chordModel = null, btcModel = null, voiceModel = null;
+InferenceSession? beatModel = null, chordModel = null, btcModel = null;
+InferenceSession[] voiceModels = [];
 string? linesFrom = null, heardFrom = null, voiceFrom = null;     // voiceFrom "none": no singing heard
 
 int Fail(int code, string why) { Console.Error.WriteLine("dettato: " + why); return code; }
@@ -81,7 +82,9 @@ void Open(string models, int threads, bool beats, bool chords, bool voice)
     if (beats) beatModel = new InferenceSession(Path.Combine(models, "beat-this-final0-dynamo.onnx"), options);
     if (chords) chordModel = new InferenceSession(Path.Combine(models, "crema-chord.onnx"), options);
     if (chords) btcModel = new InferenceSession(Path.Combine(models, "btc-large-voca.onnx"), options);    // the second ear
-    if (voice) voiceModel = new InferenceSession(Path.Combine(models, Voice.Model), options);
+    // (one session for the segments run at once; without its arena and memory pattern a run holds half the memory:
+    // a song of 3.5 min peaked at 8.4 GB with 3 at once, 16.4 GB with them, for 5 s more; the vocals the same)
+    if (voice) voiceModels = [new InferenceSession(Path.Combine(models, Voice.Model), new SessionOptions { IntraOpNumThreads = threads, EnableCpuMemArena = false, EnableMemoryPattern = false })];
 }
 
 // The chords as the two ears hear them together (Btc.Average): crema at 44100 Hz, BTC at 22050 Hz.
@@ -112,6 +115,8 @@ Chart Read(string file, Action<string>? say = null)
     mono = null!;
     Collect();
     mel += clock.Elapsed.TotalSeconds; clock.Restart();
+    // The singing is most of the time: it is separated while the beats and the chords are read (the same vocals).
+    var singing = voiceFrom == null ? Task.Run(() => Voice.Loudness(voiceModels, high!)) : null;
     var heard = Features.Of(low);
     cqt += clock.Elapsed.TotalSeconds; clock.Restart();
     say?.Invoke("the beats");
@@ -127,7 +132,7 @@ Chart Read(string file, Action<string>? say = null)
     say?.Invoke("the singing");
     float[]? voice = voiceFrom == "none" ? null
         : voiceFrom != null ? (File.Exists(Path.Combine(voiceFrom, name + ".voc.npy")) ? Npy.ReadFloats(Path.Combine(voiceFrom, name + ".voc.npy")) : null)
-        : Voice.Loudness(voiceModel!, high!, Voice.Parallel);
+        : singing!.GetAwaiter().GetResult();
     high = null;
     low = null!;
     Collect();
@@ -312,7 +317,7 @@ foreach (var file in files)
     cqt += clock.Elapsed.TotalSeconds; clock.Restart();
     Npy.WriteHeard(stem + ".npz", Heard(high, low, out int frames), frames, Crema.Chords, Crema.Step);     // the two ears together
     chord += clock.Elapsed.TotalSeconds; clock.Restart();
-    var voice = Voice.Loudness(voiceModel!, high, Voice.Parallel);
+    var voice = Voice.Loudness(voiceModels, high);
     Npy.Write(stem + ".voc.npy", voice, voice.Length);
     sing += clock.Elapsed.TotalSeconds;
 }

@@ -11,19 +11,21 @@ namespace Dettato;
 static class Voice
 {
     public const string Model = "htdemucs-mm8.onnx";     // its matrix products in int8 (85 MB; tools/d2/demucs_onnx.py)
-    public const int Parallel = 3;      // segments at once, each on the session's 8 threads (2 at once or 6 of 4 threads were slower)
+    // segments at once, on the session's threads: 3 was the fastest (1, 2, or 6 of 4 threads were slower), and each
+    // more holds about 2 GB: so as many as the memory takes (a song of 3.5 min peaked at 8.4 GB with 3, 6.6 GB with 2)
+    public static readonly int Parallel = Math.Clamp((int)((GC.GetGCMemoryInfo().TotalAvailableMemoryBytes / (1L << 30) - 4) / 4), 1, 3);      // segments at once, each on the session's 8 threads (2 at once or 6 of 4 threads were slower)
     public const int Rate = 44100;
     public const int Hop10ms = Rate / 100;
     const int Segment = 343980;         // int(44100 * 39 / 5), the length the network was trained on
     const int Nfft = 4096, Hop = 1024, Bins = Nfft / 2;
     const int Frames = (Segment + Hop - 1) / Hop;   // 336
     const int Vocals = 3;               // drums, bass, other, vocals
-    const double Overlap = 0.25;
+    const double Overlap = 0.25;       // as apply_model (none is a third quicker, but changed the sections of 3 of 13 RWC songs)
 
     static readonly double[] Window = Enumerable.Range(0, Nfft).Select(n => 0.5 - 0.5 * Math.Cos(2 * Math.PI * n / Nfft)).ToArray();
 
     /// <summary>The vocals' root mean square every 10 ms of <paramref name="mono"/> (at 44100 Hz).</summary>
-    public static float[] Loudness(InferenceSession model, double[] mono, int parallel = 1)
+    public static float[] Loudness(IReadOnlyList<InferenceSession> models, double[] mono)
     {
         int n = mono.Length;
         double mean = 0;
@@ -45,7 +47,9 @@ static class Voice
         var offsets = new List<int>();
         for (int o = 0; o < n; o += stride) offsets.Add(o);
         var outs = new float[offsets.Count][];
-        System.Threading.Tasks.Parallel.For(0, offsets.Count, new ParallelOptions { MaxDegreeOfParallelism = parallel }, k =>
+        // (a session each for the segments at once was a tenth quicker and held as much memory again each)
+        var model = models[0];
+        System.Threading.Tasks.Parallel.For(0, offsets.Count, new ParallelOptions { MaxDegreeOfParallelism = Parallel }, k =>
         {
             int offset = offsets[k], length = Math.Min(Segment, n - offset);
             // TensorChunk.padded: centred on the chunk, with the recording around it where there is some
