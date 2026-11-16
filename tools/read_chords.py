@@ -964,6 +964,7 @@ def lys(result, title):
         f"tempo {result['tempo']['note']} = {result['tempo']['bpm']}",
         f"time {result['time']}",
         f"key {tonic[0].lower()}{acc} {mode}",
+        "",
         "// Shift+Ctrl+Up/Down on the font name switches the font",
         'fonts { music "Petaluma" }',
         "",

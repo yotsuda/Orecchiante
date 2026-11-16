@@ -82,6 +82,7 @@ static class Writer
             $"tempo {chart.TempoNote} = {chart.BpmText}",
             $"time {chart.Time}",
             $"key {char.ToLowerInvariant(tonic[0])}{accidental} {mode}",
+            "",
             "// Shift+Ctrl+Up/Down on the font name switches the font",
             "fonts { music \"Petaluma\" }",
             "",
