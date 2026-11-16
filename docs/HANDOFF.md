@@ -15,21 +15,10 @@
   線の後の 1 拍の主和音 ×（1＋線の前の 1 拍の属和音））。偶数個まで調に任せると糸の 58・59 が `C | G D/F#` に割れたのでやめた。糸は 89 → 71 小節、全部 3.6〜5.0 秒（`scratch/ito/ito041.lys`）。
   RWC で 15 曲・合成曲で 5 曲の小節線が変わる。**半分のテンポで読んでいた RWC の 4 曲（P050・P095・P034・P038）では本当の小節をまとめて悪くなる**（長さだけでは見分けられない）。
 
-### テンポを小数 1 桁に（2026-11-16、Lily# の依頼 7・オーナー了承。README「The tempo to a tenth」）
-- **Dettato は数の出し方を変えず、丸めを小数 1 桁に**（`TENTH_TEMPO`・`Chart.BpmText`。整数なら `131`）。`rwc-dev` テンポ 46 → 47。
-- **捨てた案: 「拍の総数 ÷ 全長」**（テンポの合う曲が 172 中 −17、58 分の練習録音で 104.1）。代わりに Lily# 依頼 8: `warpFit` を小節ごとの比の中央値に（35 → 3 曲、1.26 → 0.994 倍）。
-- **同じ版で `.lys` に 3 行**（オーナーの指示、`lys()`・`Writer.cs`）: `key` の下に `// Shift+Ctrl+Up/Down on the font name switches the font` と `fonts { music "Petaluma" }`、
-  最初のコードの行の上に `// Shift+Ctrl+Up/Down on a chord name shows its guitar chord diagram`（`DIAGRAM_NOTE`）。**0.3.2: 最初のコードにシェイプ（`D(xx0232)`）**
-  ＝`LILYSHARP_LYSC_PATH` の `lysc shape`（依頼 9、`Lysc.cs`・`lysc_shape`。オーナー:「コードの重複は避けたい」）。無ければ名前だけ。`shape` 入りの lysc は `scratch/lysc/`（Lily# master をビルド）。
-
-### 短い section と繰り返し記号（2026-11-16、オーナーの希望。README の「What is said again」の末尾・SIDECAR.md「The chart and the file」）
-- **6 小節以下の section が続いたら 1 つに**（`SHORT_SECTION`）。**一度きりの section が続いたら 32 小節まで 1 つ、超えたら境目か 8 の倍数で切る**（`LONG_SECTION`、`cut_long`。等分はしない）。
-- **繰り返し記号は form だけ**（`|: A :|`・`:|*N`・`|: A [1. B] :| [2. C]`。`form_with_repeats`）。`sidecar.py` は `lysc midi --batch` から演奏の小節数を数える。
-- **改行: 4 小節ごとと section の終わりに `break`**（弱起には書かない）。余り 1 は前の行と 5、余り 2 は 3・3（`line_sizes`／`LineSizes`）。**1 小節の section は前の行に続ける**（0.3.3）。
-- **2 番カッコ（0.3.3、オーナー・糸。`lead_off`／`LeadOff`、README「The second ending」）:** X の後に一度は短い 1 回きりの C（k≤6 小節）、別の時に長い 1 回きりの D が来て、D の k 小節目の最後の根音が C と同じなら、D の頭の k 小節を別の section に。
-  form が 22/268 曲で変わり、数字は不変。合成曲の新しい境目 7 つのうち 6 つが正解の頭（残り 1 つは曲の終わり）。RWC は section の正解がなく、見ていない。
-- **3 小節未満の section は名前を隠す（0.3.4、オーナー。`name_sections`／`NameSections`）:** 前に弾いた section にちなんで `B_1`・`B_2`、form では `~B_1`。文字は欠番なし。先頭なら次の名前で `~A_1`。49/268 曲。
-- **捨てた案:** chords の中の `|: … :|`・1 番 2 番、4 小節の section の 2 回を `|: A :|`。記号は RWC 76/100、合成曲 79/168。My Life は `A |: B C B [1. D] :| [2. E] B F`（オーナー未見）。
+### 同日のほかの変更（詳しくは README と git の履歴）
+- テンポは小数 1 桁（`TENTH_TEMPO`。「拍の総数 ÷ 全長」は捨てた）。`.lys` に font と diagram の注記、最初のコードに `lysc shape` のシェイプ（`LILYSHARP_LYSC_PATH`）。
+- 今の既定の section（`find_form`・`fold`）: 6 小節以下は続けてまとめ（`SHORT_SECTION`）、一度きりは 32 小節まで（`LONG_SECTION`）、繰り返し記号は form だけ、2 番カッコ（`lead_off`）、
+  3 小節未満は名前を隠す（`~B_1`）。改行は 4 小節ごと（`line_sizes`）、0.4.2 から `| break`。**意味で切る `--phrase` に置き換える見込み**（下の「作業中」）。
 
 ### D4 の形（2026-11-15、オーナーと話して決めた。依頼 4・[便り](repro/lilysharp-requests-2026-11-15-listening.md)）
 **Lily# の設計メモ `C:\MyProj\LilySharp\docs\recording-design.md`（セッションの頭に読む）:** 紐づけは隣のファイル（形式 2）だけ、m4a は Lily# の LSP が復号。
