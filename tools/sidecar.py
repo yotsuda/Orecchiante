@@ -55,9 +55,10 @@ def faults(doc):
         wrong('"key" is not "<tonic> major" or "<tonic> minor"')
     if "tuning" in doc and not (isinstance(doc["tuning"], int) and -50 <= doc["tuning"] < 50):
         wrong('"tuning" is not a whole number of cents from -50 to 49')
-    if "parts" in doc and not (isinstance(doc["parts"], dict) and list(doc["parts"]) == ["drums", "bass", "other", "vocals"]
+    if "parts" in doc and not (isinstance(doc["parts"], dict)
+                               and list(doc["parts"]) in (["drums", "bass", "other", "vocals", "guitar", "piano"], ["drums", "bass", "other", "vocals"])
                                and all(isinstance(v, str) and v for v in doc["parts"].values())):
-        wrong('"parts" is not the ways to drums, bass, other and vocals')
+        wrong('"parts" is not the ways to drums, bass, other, vocals, guitar and piano (or the first four, 0.7.0)')
     if "strange" in doc and doc["strange"] is not True:
         wrong('"strange" is there only when true')
     bars, form = doc.get("bars"), doc.get("form")

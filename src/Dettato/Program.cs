@@ -4,8 +4,8 @@
 //   dettato <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]
 //
 // writes <name>.lys (a Lily# chord chart) beside the recording, or where -o says, and beside the chart
-// <name>.dettato.json (docs/SIDECAR.md), and the recording's four parts in <name>.parts/ (drums, bass, other and
-// vocals .flac, to hear one at a time; SIDECAR.md, `parts`). A chart already there is not written over without --force: it may hold
+// <name>.dettato.json (docs/SIDECAR.md), and the recording's six parts in <name>.parts/ (drums, bass, other,
+// vocals, guitar and piano .flac, to hear one at a time; SIDECAR.md, `parts`). A chart already there is not written over without --force: it may hold
 // corrections. Both files are written at the end, whole or not at all. stderr says what is being done, a line a
 // step, and on failure why in its last line; stdout has the chart's path alone. Exit codes: 0 written, 1 the
 // recording was not read, 2 the arguments (no such file, a kind not read, a chart in the way), 3 the reader itself.
@@ -29,7 +29,7 @@
 // writes <name>.beats (as tools/track_beats.py does), <name>.npz (as tools/crema_chords.py does) and <name>.voc.npy
 // (the vocals' loudness every 10 ms, as scratch/sep/song.py does with Demucs in torch);
 // with --cqt, also <name>.cqt.npy, what the chord model was given. The models are beat-this-final0-dynamo.onnx
-// crema-chord.onnx, btc-large-voca.onnx and htdemucs-mm8.onnx (README: how they are made), beside the program unless --models says where.
+// crema-chord.onnx, btc-large-voca.onnx and htdemucs_6s-mm8.onnx (README: how they are made), beside the program unless --models says where.
 //
 //   dettato features <a recording or a folder of them> --out <folder>
 //
@@ -45,7 +45,7 @@ using System.Text;
 using Dettato;
 using Microsoft.ML.OnnxRuntime;
 
-const string version = "0.7.0";
+const string version = "0.8.0";
 const int protocol = 1;
 const string usage = "usage: dettato <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]\n"
                    + "       dettato --version [--json]\n"

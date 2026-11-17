@@ -10,7 +10,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = Resolve-Path "$PSScriptRoot\.."
 $ext = "$root\extension"
-$onnx = 'beat-this-final0-dynamo.onnx', 'crema-chord.onnx', 'btc-large-voca.onnx', 'htdemucs-mm8.onnx'
+$onnx = 'beat-this-final0-dynamo.onnx', 'crema-chord.onnx', 'btc-large-voca.onnx', 'htdemucs_6s-mm8.onnx'
 foreach ($name in $onnx) {
     if (-not (Test-Path "$Models\$name")) { throw "$name is not in ${Models}: pass -Models <folder>" }
 }

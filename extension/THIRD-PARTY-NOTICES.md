@@ -93,8 +93,9 @@ SOFTWARE.
 
 ## Demucs
 
-`bin/htdemucs-mm8.onnx` — hears where singing comes in and stops (for the sections). It is the network of
-Demucs's `htdemucs` (demucs 4.1.0), written out as ONNX without its Fourier transforms, which the reader does
+`bin/htdemucs_6s-mm8.onnx` — separates the recording into six parts (drums, bass, other, vocals, guitar, piano)
+to hear one at a time, and hears where singing comes in and stops (for the sections). It is the network of
+Demucs's `htdemucs_6s` (demucs 4.1.0), written out as ONNX without its Fourier transforms, which the reader does
 itself, and with its matrix products held in 8-bit integers; otherwise unchanged.
 <https://github.com/facebookresearch/demucs> The weights are those the package downloads; the package is under
 the license below.

@@ -4,17 +4,17 @@ using NAudio.Wave;
 
 namespace Dettato;
 
-/// <summary>How loud the singing is, every 10 ms: the vocals Demucs (htdemucs, MIT) separates from the recording;
-/// and, for the user to hear one at a time, the four parts it separates (drums, bass, other, vocals) as files.
+/// <summary>How loud the singing is, every 10 ms: the vocals Demucs (htdemucs_6s, MIT) separates from the recording;
+/// and, for the user to hear one at a time, the six parts it separates (drums, bass, other, vocals, guitar, piano) as files.
 /// Its network is an ONNX file without the STFT and the inverse STFT (tools/d2/demucs_onnx.py), which are done
 /// here; the recording is split and put back together as demucs.apply.apply_model does with shifts=0 (7.8 s
 /// segments, a quarter overlapping, weighed by a triangle). The channels are one: the recording is read in mono
 /// and given to both, so the parts are mono. The sections take where singing begins and stops from it (Form.Phrases).</summary>
 static class Voice
 {
-    // its matrix products in int8 (85 MB; tools/d2/demucs_onnx.py); DETTATO_VOICE_MODEL tries another, such as
-    // htdemucs_6s-mm8.onnx (also guitar and piano, 64 MB: README, "Six parts")
-    public static readonly string Model = Environment.GetEnvironmentVariable("DETTATO_VOICE_MODEL") is { Length: > 0 } m ? m : "htdemucs-mm8.onnx";
+    // htdemucs_6s (guitar and piano too; 0.8.0, the owner), its matrix products in int8 (64 MB; tools/d2/demucs_onnx.py
+    // --model htdemucs_6s; README, "Six parts"); DETTATO_VOICE_MODEL tries another, such as htdemucs-mm8.onnx (the four, 0.6.0 to 0.7.0)
+    public static readonly string Model = Environment.GetEnvironmentVariable("DETTATO_VOICE_MODEL") is { Length: > 0 } m ? m : "htdemucs_6s-mm8.onnx";
     // segments at once, on the session's threads: 3 was the fastest (1, 2, or 6 of 4 threads were slower), and each
     // more holds about 2 GB: so as many as the memory takes (a song of 3.5 min peaked at 8.4 GB with 3, 6.6 GB with 2)
     public static readonly int Parallel = Math.Clamp((int)((GC.GetGCMemoryInfo().TotalAvailableMemoryBytes / (1L << 30) - 4) / 4), 1, 3);      // segments at once, each on the session's 8 threads (2 at once or 6 of 4 threads were slower)
@@ -154,7 +154,7 @@ static class Voice
         return trimmed;
     }
 
-    /// <summary>One segment of the mix (normalized) to its four parts, each with both channels averaged.</summary>
+    /// <summary>One segment of the mix (normalized) to its parts, each with both channels averaged.</summary>
     static float[][] Separate(InferenceSession model, float[] chunk, bool all)
     {
         // HTDemucs._spec: reflect by 3/8 of a window each side (and up to whole hops), then torch.stft centred

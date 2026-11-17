@@ -570,6 +570,7 @@ leaving out boundaries between two sections of the same label (chorus A, chorus 
 | `--phrase`, no voice | 54.9 / 39.2 / 45.8% | 58.5 / 40.8 / 48.1% |
 | `--phrase` with the voice (torch's Demucs, stereo) | 67.1 / 63.4 / 65.2% | 66.1 / 56.1 / 60.7% |
 | the voice dettato hears (0.6.0, below) | 65.6 / 63.0 / 64.3% | 65.8 / 55.5 / 60.2% |
+| the voice of six parts (0.8.0, "Six parts") | 65.8 / 62.5 / 64.1% | 65.5 / 56.3 / 60.5% |
 
 Within 0.5 s, F is 21.2 / 25.2 / 41.5% on `rwc-dev` and 17.6 / 29.2 / 37.6% on `rwc-test`.
 `PHRASE_BARS` and `BEGIN_SHARE` were chosen on `rwc-dev` (and on keeping the owner's two songs
@@ -638,7 +639,8 @@ same recording are not quite the same: ONNX Runtime's threads add in another ord
   takes (`Voice.Parallel`: 3 from 16 GB, 2 from 12 GB, else 1).
 
 ```
-scratch/sep/venv/Scripts/python tools/d2/demucs_onnx.py scratch/real/rwc-p/RWC_P001.wav     # scratch/d2/htdemucs-mm8.onnx
+scratch/sep/venv/Scripts/python tools/d2/demucs_onnx.py scratch/real/rwc-p/RWC_P001.wav     # scratch/d2/htdemucs-mm8.onnx (the four)
+scratch/sep/venv/Scripts/python tools/d2/demucs_onnx.py scratch/real/rwc-p/RWC_P001.wav --model htdemucs_6s     # htdemucs_6s-mm8.onnx (0.8.0)
 scratch/net/out/dettato.exe ears scratch/real/rwc-p --out scratch/net/voice/rwc-p --models scratch/d2     # <name>.voc.npy too
 .venv/Scripts/python tools/aist_sections.py rwc-dev modes=voice voice=scratch/net/voice/rwc-p
 .venv/Scripts/python tools/measure.py table rwc-dev --ears --net scratch/net --voice scratch/net/voice --write scratch/pyread-nv
@@ -650,8 +652,9 @@ scratch/net/out/dettato.exe read scratch/real/rwc-p --out scratch/net/read-nv/rw
 Demucs separates four parts, and since 0.7.0 (the owner, 2026-11-17: to transcribe by ear, one
 part alone or all but one; whatever instrument the user plays, not one above the others) `dettato <recording>` writes them all, not the vocals' loudness
 alone: `<name>.parts/drums.flac`, `bass.flac`, `other.flac`, `vocals.flac` beside the chart, and
-their ways in `.dettato.json`'s `parts` (SIDECAR.md). Lily# is asked to turn each on and off where
-the recording plays (REQUESTS 16).
+their ways in `.dettato.json`'s `parts` (SIDECAR.md). Lily# turns each on and off where the recording
+plays (REQUESTS 16, as many parts as are listed). **Since 0.8.0 they are six, `guitar.flac` and
+`piano.flac` after the four ("Six parts", below); what follows was measured on the four.**
 
 - Mono, 16 bits at 44100 Hz, as long as the recording and on its seconds: the four added up are
   the recording (in mono) to 32.1 dB (糸) and 31.9 dB (`RWC_P001`) of signal to difference, at a lag of 0
@@ -672,11 +675,13 @@ the recording plays (REQUESTS 16).
 - Stereo parts would cost the network nothing more (it takes two channels), but the vocals heard
   from stereo differ a little and the sections would have to be measured again; not yet.
 
-#### Six parts: guitar and piano too (tried 2026-11-17, not taken yet)
+#### Six parts: guitar and piano too (0.8.0, the owner, 2026-11-17)
 
 Demucs's `htdemucs_6s` (the same repository and licence as `htdemucs`; its authors call the guitar
 "okay" and the piano weak, with a lot of bleeding) separates guitar and piano out of `other`. It is
-in .NET behind `DETTATO_VOICE_MODEL=htdemucs_6s-mm8.onnx`; the default is still the four.
+the default since 0.8.0 (the owner, having listened to 糸 and My Life: "very well made for a free tool;
+guitar and piano not quite apart"); `DETTATO_VOICE_MODEL=htdemucs-mm8.onnx` gives the four again.
+The vocals the sections hear are six's too (`scratch/net/voice/` holds them; the four's are in `voice4/`).
 
 - To ONNX as the four (`demucs_onnx.py --model htdemucs_6s`): against torch 0.0004 at most; with its
   matrix products in int8, 64 MB, each part within 0.004 to 0.010 of torch (rms) but the piano
@@ -698,9 +703,10 @@ in .NET behind `DETTATO_VOICE_MODEL=htdemucs_6s-mm8.onnx`; the default is still 
   the four's.
 - **The sections change in 16 of `rwc-dev`'s 50 songs**, the vocals being six's: AIST's F within 3 s
   64.3 → 64.4%, within 0.5 s 42.3 → 41.7%; starts gone 52 (27 within 3 s of AIST), come 43 (22); the
-  owner's two songs the same. As with no overlap, right starts go and others come.
+  owner's two songs the same. As with no overlap, right starts go and others come. `rwc-test`
+  (counted only): within 3 s 60.1 → 60.5%, within 0.5 s 37.3 → 37.4%.
 - Not measured: the quality on recordings (MoisesDB has guitar and piano stems, for non-commercial
-  research, by registration), `rwc-test`, how the parts sound to the owner.
+  research, by registration; worth it once there are ways to compare, the owner's ears being enough to choose).
 - **The vocals are not the same twice:** with 3 segments at once (`Voice.Parallel`) `RWC_P001`'s
   loudness differs by up to 0.01 (of 0.34) between two runs of the same program; one at a time it is the
   same. Not onnxruntime's version (1.32.0 too), not one session shared (a session each too); Python's

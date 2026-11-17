@@ -2,6 +2,16 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.8.0
+
+- Six parts in place of four: guitar and piano are separated out of `other` too (`guitar.flac`,
+  `piano.flac`, after the four in `parts`). Demucs's `htdemucs_6s` (MIT; `bin/htdemucs_6s-mm8.onnx`, 64 MB,
+  in place of `htdemucs-mm8.onnx`). Electric guitars come out well; acoustic guitars and pianos are
+  often split between the two. `other` keeps what none of the six takes, so that all parts but one are
+  the recording without that one. The reading takes as long; the files are about a quarter larger.
+- Where singing comes in and stops is heard from these vocals: the chords and the bars are the same, and
+  a third of songs have some section starts elsewhere (as many right as before).
+
 ## 0.7.0
 
 - The recording's four parts are written beside the chart, to hear one at a time while transcribing:
