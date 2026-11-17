@@ -100,6 +100,7 @@ THREE_FOUR = (0.65, 0.85, 2)  # ears: a bar this share of its neighbours', not i
 HALF_BARS = (0.35, 0.7)  # ears: bars this share of the middle one are halves, paired as the key says (pair_halves). None: as found
 EVEN_TEMPO = 0.1       # the tempo is from the mean of the bars within this share of the middle one (0: the middle one alone)
 DIAGRAM_NOTE = "// Shift+Ctrl+Up/Down on a chord name shows its guitar chord diagram; on X@or(Y), swaps in Y and plays it"   # above the first chords (the owner, 2026-11-16)
+JOIN_NOTE = "// Ctrl+. on a section's name offers Join Sections (with the next one, or all the sections selected)"   # above the first section (the owner, 2026-11-17)
 TENTH_TEMPO = True    # ears: the tempo to a tenth, a whole number when it is one (Lily# writes `tempo 4 = 131.8`, 2026-11-16)
 SECTION_TEMPO = (0.06, 6, 0.75, 1.3)   # ears: a section's own tempo, written at its head (section_tempos, C3, 2026-11-17):
                         # where it is more than the first share away from the tempo standing, the section has this many
@@ -1571,7 +1572,7 @@ def lys(result, title, shape_of=None):
         if bar["barOfSection"] > len(of):
             of.append([])
         of[bar["barOfSection"] - 1].append(bar)
-    body, written = [], list(sections.items())
+    body, written = [JOIN_NOTE], list(sections.items())
     for w, (name, bars) in enumerate(written):
         partial = [f"  partial {'4.' if result['time'] == '6/8' else PARTIAL[short]}"] if name == "Pickup" else []
         own = bars[0][0].get("tempo")   # the section's own tempo (section_tempos): Lily# sounds it each time the section is played

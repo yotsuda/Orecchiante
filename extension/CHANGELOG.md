@@ -2,6 +2,12 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.8.8
+
+- A note above the first section: Ctrl+. on a section's name offers Join Sections (Lily#), to
+  join it with the next one, or all the sections selected.
+
+
 ## 0.8.7
 
 - The note above the first chords also says what Shift+Ctrl+Up/Down does on a chord with `@or`:

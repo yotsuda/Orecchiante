@@ -13,7 +13,7 @@
 
 **`dettato <録音> [-o <x.lys>] [--force]` が、mp3・m4a・mp4・aac・flac・wma・wav から `.lys` と `.dettato.json` を録音の隣に書く**
 （Python なし。RWC_P001 の mp3 で 6.3 秒）。配る形は .NET＋ONNX の実行ファイルを VS Code 拡張に入れる（Calamo と同じ形）。
-**拡張 `yotsuda.dettato` 0.8.7 をこの PC の VS Code に入れた**（0.8.7: 譜面の頭のコメントが `@or` の上での Shift+Ctrl+Up/Down も言う。0.8.6: `@or`・`time 3/4`。0.8.5: `time 2/4`。入った版で糸を通しで読み、scratch の exe と `.lys` が一字一句同じ（`scratch/c3/ito/`）。0.8.4: 2 拍の小節の組み方。0.8.3: section のテンポ。0.6.0: 歌を聞いて section を切る。0.7.0: パートを書く。0.8.0: 6 パート。0.8.1: 歌の中の境目。0.8.2: 格子の起点。入った版の通しで糸・My Life の section は前と同じ）（`extension/`、`tools/deploy-extension.ps1`。.vsix 167 MB、Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
+**拡張 `yotsuda.dettato` 0.8.8 をこの PC の VS Code に入れた**（0.8.8: 最初の section の上に Join Sections（Ctrl+.）のコメント。0.8.7: 譜面の頭のコメントが `@or` の上での Shift+Ctrl+Up/Down も言う。0.8.6: `@or`・`time 3/4`。0.8.5: `time 2/4`。入った版で糸を通しで読み、scratch の exe と `.lys` が一字一句同じ（`scratch/c3/ito/`）。0.8.4: 2 拍の小節の組み方。0.8.3: section のテンポ。0.6.0: 歌を聞いて section を切る。0.7.0: パートを書く。0.8.0: 6 パート。0.8.1: 歌の中の境目。0.8.2: 格子の起点。入った版の通しで糸・My Life の section は前と同じ）（`extension/`、`tools/deploy-extension.ps1`。.vsix 167 MB、Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
 「Convert Recording to Lily# (.lys)… (Preview)」で、Lily# が `ext.activate()` で `{path, version, protocol, inputs}` を受け取る。**VS Code の中で動くことはユーザーが確かめた（0.2.0。0.3.x は Lily# のメニューからはまだ）。**
 
 ### コマンドと入力（D3。`Program.cs`・`Audio.cs`。README の「A recording as it comes」、Lily# 向けは便りの §2a）
