@@ -124,6 +124,7 @@ static class Writer
             bool last = w + 1 == names.Count || sections[names[w + 1]].Count > 1;     // a section of one bar goes on the line before
             lines.Add($"section {name} {{");
             if (name == "Pickup") lines.Add($"  partial {(chart.Time == "6/8" ? "4." : Reader.Partial[pickup])}");
+            if (sections[name][0][0].Tempo is double own) lines.Add($"  tempo {chart.TempoNote} = {Bar.TempoText(own)}");   // Lily# sounds it each time the section is played
             lines.Add("  chords harmony {");
             lines.AddRange(Rows(sections[name], "    ", name != "Pickup", last));
             lines.AddRange(["  }", "}", ""]);
@@ -232,6 +233,7 @@ static class Writer
             })));
             b.Append("\n      ]");
             if (bar.Section is string section) b.Append($",\n      \"section\": {Quoted(section)},\n      \"barOfSection\": {bar.BarOfSection}");
+            if (bar.Tempo is double tempo) b.Append($",\n      \"tempo\": {Bar.TempoText(tempo)}");
             return b.Append("\n    }").ToString();
         })));
         s.Append("\n  ]\n}\n");

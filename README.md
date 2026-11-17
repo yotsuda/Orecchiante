@@ -1224,6 +1224,38 @@ then more than 2% off in 3 of 172 songs (at most 2.7%), against 35 (at most 39%)
 band practice 0.994 against 1.26 (`scratch/fit.py`, `scratch/user_fit.py`: counted on the bar
 seconds the charts give, not played in Lily#).
 
+### A section's own tempo (C3, 0.8.3)
+
+One tempo for a recording is wrong where the tempo moves for good: a slower intro, or a band's
+practice of 58 minutes whose songs are at 128, 136, 150 and 128 (written 131 for all of them).
+Beat This! follows such a tempo: with tempos stepping 5% a bar (`drift5/seed31`) the bar lines
+are 92.8% (96.0% where the tempo stands still, `still/seed31`; the reader's own tracker lost
+them at 80.9%). What was missing is the chart saying it. So (`SECTION_TEMPO`, `section_tempos` /
+`SectionTempos`): walking the sections in the order played, a section whose bars are more than
+6% from the tempo standing is given its own, `tempo 4 = 100.2` at its head (Lily# sounds a
+section header's tempo each time the section is played and holds it after), and the bar has it
+as `tempo` (SIDECAR.md). Only where it is a tempo and not bars read wrong: 6 bars or more, three
+in four of them within a tenth of their middle one, and a step of less than 1.3 (a section read
+at half, two thirds or three quarters of the song's bar is a reading of the bars, C4). A section
+back at the head's tempo needs only 2 bars. The file's `tempo` stays the whole recording's, so
+the tempo column does not move.
+
+Counted with `scratch/c3/tempo_try.py <charts> <truths> --written`: each true bar against the
+bar the written tempo standing there makes, within 4%.
+
+| | `rwc-dev` | `rwc-test` (counted; its songs were seen one by one) | `seed1`, `seed7`, `seed11`, `seed31`, `still/seed31` | `drift5/seed31` |
+|---|---|---|---|---|
+| True bars at the written tempo | 91.2 → 91.4% | 95.2 → 95.3% | as before | 66.9 → 70.2% |
+| Tempos written | 3, in P038 (100 → 125.5 → 140.2) | 2, in P057 (60.6 → 69.9) | none | 8 in 4 songs |
+
+Of RWC's 100 songs, 7 have a true tempo that moves more than 6% over 8 bars (P034, P035, P037,
+P038, P043, P057, P072; some of them a meter that changes). P038 and P057 are the slower intros;
+P038's last 140.2 is wrong (the true 111, its bars read short). Without the conditions, every
+tempo written was a reading of the bars: half or double bars (`s31-024`: 40 for 80), 3/2
+(P018), bars that disagree (P095, read at a quarter). Chords and bar lines do not move; the
+charts pass `lysc check`. Python and .NET write the same (`read_check.py`: RWC 100/100 with the
+voice, `drift5/seed31` 24/24).
+
 ### On the songs made here, nothing learnt
 
 

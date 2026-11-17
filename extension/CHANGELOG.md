@@ -2,6 +2,14 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.8.3
+
+- A section whose tempo is its own has it written at its head (`tempo 4 = 100.2`): a slower intro,
+  or songs at different tempos in one recording. Only where the section's bars agree with each other
+  and the step is not one of two, three halves or four thirds (those are bars read wrong). Of RWC's
+  100 songs two get one; songs at a steady tempo get none. The chords, the bars and the file's tempo
+  are the same; the file has the tempo on the section's first bar (`tempo`).
+
 ## 0.8.2
 
 - Sections inside a long stretch count their phrases of four bars from where singing last began or

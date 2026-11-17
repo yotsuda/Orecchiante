@@ -21,6 +21,8 @@ sealed class Bar
     public List<double> Beats = [];             // where each of its beats begins, the first at Start
     public List<Chord> Chords = [];
     public string? Section;
+    public double? Tempo;                       // its section's own tempo, on the first bar each time the section is played (SectionTempos)
+    public static string TempoText(double bpm) => bpm == Math.Floor(bpm) ? ((long)bpm).ToString(System.Globalization.CultureInfo.InvariantCulture) : Np.Repr(bpm);
 }
 
 /// <summary>What is read of a recording: docs/SIDECAR.md says what each of these is.</summary>
@@ -31,7 +33,7 @@ sealed class Chart
     public double Bpm;                          // to a tenth (Lily# writes `tempo 4 = 131.8`)
     public double? Doubt;
     /// <summary>The tempo as Python's json and f-string write it: a whole number bare, else its repr.</summary>
-    public string BpmText => Bpm == Math.Floor(Bpm) ? ((long)Bpm).ToString(System.Globalization.CultureInfo.InvariantCulture) : Np.Repr(Bpm);
+    public string BpmText => Bar.TempoText(Bpm);
     public int? Tuning;                         // in cents from A = 440 Hz
     /// <summary>The parts the recording was separated into (Voice.Parts order), each the way to its file as `audio` is;
     /// null when none were written (dettato read, and so read_chords.py, write none).</summary>
@@ -745,12 +747,62 @@ static class Reader
         double barSeconds = Np.Median(barGaps) * HOP / SR;
         // the lines are a beat tracker's, on its grid of 20 ms: the bars about as long as the middle one, together
         barSeconds = Np.Mean(barGaps.Select(g => g * HOP / SR).Where(g => Math.Abs(g - barSeconds) <= EvenTempo * barSeconds).ToArray());
+        double bpm = Np.Round(60.0 * tempoBeats / barSeconds, 1);
+        var tempos = SectionTempos(bars, tempoBeats, bpm);
+        string? lastSection = null;
+        foreach (var bar in bars)
+        {
+            if (bar.Section != lastSection && tempos.TryGetValue(bar.Section!, out double own)) bar.Tempo = own;
+            lastSection = bar.Section;
+        }
         return new Chart
         {
             Audio = audio, Duration = Np.Round((n - 1) * HOP / SR, 2),
-            TempoNote = six ? "4." : "4", Bpm = Np.Round(60.0 * tempoBeats / barSeconds, 1),
+            TempoNote = six ? "4." : "4", Bpm = bpm,
             Time = time, Key = $"{tonicName} {(major ? "major" : "minor")}", Tuning = (int)f.Cents,
             Doubt = read.Any(c => c.Sure != null) ? Doubt : null, Form = form, Bars = bars,
         };
+    }
+
+    // a section's own tempo, written at its head (C3, 2026-11-17): more than this share away from the tempo standing,
+    // the section this many bars or more, this share of them within EvenTempo of their middle one, the step less than
+    // the last (2, 3/2 and 4/3 are the bars read wrong, not the tempo)
+    const double TempoAway = 0.06, TempoAgree = 0.75, TempoCap = 1.3;
+    const int TempoFewest = 6;
+
+    /// <summary>{section: its tempo} for the sections whose tempo is their own, as tools/read_chords.py's section_tempos:
+    /// walked in the order played from the head's `bpm`; a section once given a tempo keeps it each time it is played.</summary>
+    static Dictionary<string, double> SectionTempos(List<Bar> bars, int beats, double bpm)
+    {
+        var of = new Dictionary<string, List<double>>();
+        foreach (var bar in bars)
+            if (bar.Pickup == 0)
+            {
+                if (!of.TryGetValue(bar.Section!, out var s)) of[bar.Section!] = s = [];
+                s.Add(bar.End - bar.Start);
+            }
+        var own = new Dictionary<string, (double Tempo, int Bars)>();
+        foreach (var (name, s) in of)
+        {
+            double middle = Np.Median(s);
+            var near = s.Where(x => Math.Abs(x - middle) <= EvenTempo * middle).ToArray();
+            if (s.Count >= 2 && near.Length >= TempoAgree * s.Count) own[name] = (60.0 * beats / Np.Mean(near), s.Count);
+        }
+        var given = new Dictionary<string, double>();
+        double now = bpm;
+        string? last = null;
+        foreach (var bar in bars)
+        {
+            string name = bar.Section!;
+            if (bar.Pickup != 0 || name == last) continue;
+            last = name;
+            if (given.TryGetValue(name, out double g)) now = g;
+            else if (own.TryGetValue(name, out var o) && Math.Abs(o.Tempo / now - 1) > TempoAway)
+            {
+                if (Math.Abs(o.Tempo / bpm - 1) <= TempoAway) given[name] = now = bpm;     // back to the head's tempo: a short section says it too
+                else if (o.Bars >= TempoFewest && 1 / TempoCap < o.Tempo / now && o.Tempo / now < TempoCap) given[name] = now = Np.Round(o.Tempo, 1);
+            }
+        }
+        return given;
     }
 }

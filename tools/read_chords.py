@@ -95,6 +95,11 @@ HALF_BARS = (0.35, 0.7)  # ears: bars this share of the middle one are halves, p
 EVEN_TEMPO = 0.1       # the tempo is from the mean of the bars within this share of the middle one (0: the middle one alone)
 DIAGRAM_NOTE = "// Shift+Ctrl+Up/Down on a chord name shows its guitar chord diagram"   # above the first chords (the owner, 2026-11-16)
 TENTH_TEMPO = True    # ears: the tempo to a tenth, a whole number when it is one (Lily# writes `tempo 4 = 131.8`, 2026-11-16)
+SECTION_TEMPO = (0.06, 6, 0.75, 1.3)   # ears: a section's own tempo, written at its head (section_tempos, C3, 2026-11-17):
+                        # where it is more than the first share away from the tempo standing, the section has this many
+                        # bars or more, this share of them within EVEN_TEMPO of their middle one, and the step is less
+                        # than the last (2, 3/2 and 4/3 are the bars read wrong, not the tempo). None: one tempo
+                        # (chosen on rwc-dev and seed1/7/11/31 with still/ and drift5/; rwc-test seen song by song)
 SLOW_TWO = 1.5        # a bar of two beats longer than this (beats slower than 80 a minute) is a bar of four
                         # (chosen looking at seed7 and seed11, test sets, 2026-11-14)
 
@@ -268,6 +273,47 @@ def lines_of(path, heard=None):
     last = downs[-1] + per
     end = times[last] if last < len(times) else min(times[-1] + beat, times[downs[-1]] + per * beat)
     return [times[i] for i in downs] + ([end] if end > times[downs[-1]] + 0.5 * per * beat else []), per
+
+
+def tenth(bpm):
+    """A tempo as the chart writes it: to a tenth, bare when whole."""
+    bpm = round(bpm, 1)
+    return int(bpm) if bpm == int(bpm) else bpm
+
+
+def section_tempos(bars, beats, bpm):
+    """{section: its tempo} for the sections whose tempo is their own (SECTION_TEMPO): a recording
+    whose tempo moves (a slower intro, songs at 128 to 154 in a band's practice). Walked in the order
+    played, from the head's `bpm`; a section once given a tempo keeps it each time it is played."""
+    if not SECTION_TEMPO:
+        return {}
+    away, fewest, agree, cap = SECTION_TEMPO
+    of = {}
+    for bar in bars:
+        if not bar.get("pickup"):
+            of.setdefault(bar["section"], []).append(bar["end"] - bar["start"])
+    own = {}
+    for name, s in of.items():
+        s = np.array(s)
+        middle = float(np.median(s))
+        near = s[np.abs(s - middle) <= EVEN_TEMPO * middle]
+        if len(s) >= 2 and len(near) >= agree * len(s):
+            own[name] = (60.0 * beats / float(np.mean(near)), len(s))
+    given, now, last = {}, float(bpm), None
+    for bar in bars:
+        name = bar["section"]
+        if bar.get("pickup") or name == last:
+            continue
+        last = name
+        if name in given:
+            now = given[name]
+        elif name in own and abs(own[name][0] / now - 1) > away:
+            t, n = own[name]
+            if abs(t / bpm - 1) <= away:        # back to the head's tempo: a short section says it too
+                given[name] = now = float(bpm)
+            elif n >= fewest and 1 / cap < t / now < cap:
+                given[name] = now = float(tenth(t))
+    return {name: tenth(t) for name, t in given.items()}
 
 
 def beats_of(start, end, n):
@@ -1321,7 +1367,13 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
     if TENTH_TEMPO and ears:
         bpm = round(60.0 * tempo_beats / bar_seconds, 1)
         bpm = int(bpm) if bpm == int(bpm) else bpm
-    return {                                      # docs/SIDECAR.md says what each of these is
+    if ears and PHRASE_SECTIONS:
+        tempos, last = section_tempos(bars, tempo_beats, bpm), None
+        for bar in bars:
+            if bar["section"] != last and bar["section"] in tempos:
+                bar["tempo"] = tempos[bar["section"]]
+            last = bar["section"]
+    return {                                    # docs/SIDECAR.md says what each of these is
         "dettato": FORMAT,
         "audio": name,
         "duration": round((len(oenv) - 1) * HOP / SR, 2),
@@ -1433,8 +1485,10 @@ def lys(result, title, shape_of=None):
     body, written = [], list(sections.items())
     for w, (name, bars) in enumerate(written):
         partial = [f"  partial {'4.' if result['time'] == '6/8' else PARTIAL[short]}"] if name == "Pickup" else []
+        own = bars[0][0].get("tempo")   # the section's own tempo (section_tempos): Lily# sounds it each time the section is played
+        partial += [f"  tempo {result['tempo']['note']} = {own}"] if own is not None else []
         last = w + 1 == len(written) or len(written[w + 1][1]) > 1      # a section of one bar goes on the line before
-        body += [f"section {name} {{", *partial, "  chords harmony {", *rows(bars, "    ", name != "Pickup", last), "  }", "}", ""]
+        body += [f"section {name} {{", *partial,"  chords harmony {", *rows(bars, "    ", name != "Pickup", last), "  }", "}", ""]
     # Repeat signs only in the form, so that the form alone shows how the song goes (the owner, 2026-11-16).
     shown = ["~" + s if "_" in s else s for s in form]     # a short section's name is hidden (name_sections)
     return "\n".join(head + body + ["form { " + form_with_repeats(shown) + " }", "", "score {", "  chords harmony", "}", ""])
