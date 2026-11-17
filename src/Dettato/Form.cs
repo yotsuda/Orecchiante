@@ -13,6 +13,8 @@ static class Form
     const int PairHeard = 2;        // on the grid, a cut after every pair of phrases where the phrase after is played this many times
                                     // elsewhere and does not begin the pair as the one before did (a b a c is one period)
     const bool GridAnchor = true;   // a block's grid counts from where singing last began or stopped, or a block played again whole begins or ends, not from a turn
+    const int HeldShift = 2;        // a grid cut where a chord other than the home chord is held across the bar line moves up to this many bars on, to where the home chord arrives; the grid goes on from there
+    const int MergeShort = 2;       // a section of fewer bars than this joins the one before (the first: the one after)
     const int WholeBlock = 2;      // phrases: a block no longer than this is one section
     const string Letters = "ABCDEFGHIJKLMNOPQSTUVWXYZ";   // section names; no R: R2 reads in Lily# as a whole-bar rest of a half
     const double PhraseAlike = 0.75;    // two phrases are the same when this share of their beats have the same root and family
@@ -240,10 +242,26 @@ static class Form
                 bool ended = g - 2 * phrase >= a && Alike(g - 2 * phrase, g - phrase, phrase) && !(g + phrase <= b && Alike(g - phrase, g, phrase));
                 bool pair = PairHeard != 0 && g - a - p >= 2 * phrase && (g - a - p) % (2 * phrase) == 0 && g + phrase <= b && !Alike(g - 2 * phrase, g, phrase)
                     && Enumerable.Range(0, n - phrase + 1).Count(h => Math.Abs(h - g) >= phrase && Alike(g, h, phrase)) >= PairHeard;
-                if (!middle && (ended || Cadence(g) || pair || (BeginShare != 0 && g + phrase <= b && AlwaysBegins(g)))) cuts.Add(g);
+                if (!middle && (ended || Cadence(g) || pair || (BeginShare != 0 && g + phrase <= b && AlwaysBegins(g))))
+                {
+                    int s = 0;
+                    if (HeldShift != 0 && fam[g - 1][^1] == fam[g][0] && fam[g][0] != home)
+                        for (int k = 1; k <= HeldShift; k++)
+                            if (g + k < b - 1 && fam[g + k - 1][^1] != fam[g + k][0] && fam[g + k][0] == home) { s = k; break; }
+                    cuts.Add(g + s);
+                    g += s;
+                    p += s;
+                }
             }
         }
         var sorted = cuts.OrderBy(c => c).ToList();
+        if (MergeShort != 0)   // a piece of fewer bars than this joins the one before (the first: the one after)
+            while (sorted.Count > 2)
+            {
+                int i = Enumerable.Range(1, sorted.Count - 1).FirstOrDefault(j => sorted[j] - sorted[j - 1] < MergeShort);
+                if (i == 0) break;
+                sorted.RemoveAt(i == 1 ? i : i - 1);
+            }
         var bases = new List<(int, int)>();
         var names = new List<string>();
         var count = new Dictionary<string, int>();

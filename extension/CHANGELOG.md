@@ -2,6 +2,13 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.8.9
+
+- Fewer sections cut in the wrong place: a section no longer begins on a chord held over from the
+  bar before, but where the home chord arrives up to two bars later (a verse of eight bars and two
+  more), and a section of one bar joins the one before.
+
+
 ## 0.8.8
 
 - A note above the first section: Ctrl+. on a section's name offers Join Sections (Lily#), to

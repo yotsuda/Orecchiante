@@ -715,6 +715,13 @@ PAIR_HEARD = 2         # on the grid, also cut after every pair of phrases from 
                        # one before did (a b a c is one period: My Life's verses of 14 and 16 bars, the owner's); 0: never
 
 
+HELD_SHIFT = 2         # a grid cut where a chord other than the home chord is held across the bar line moves up to this many bars on, to
+                       # where the home chord arrives, and the grid goes on from there (Open Arms, the owner: G | G A | D, the verse's 8 bars and 2
+                       # more; AIST rwc-dev 66.3 -> 66.7%, without the voice 50.7 -> 52.4%; 3: 66.1%, 4: 65.4%; to any change of chord: 65.6%); 0: never
+HELD_SHIFT_LOOSE = 0   # (tried, kept off) ... to where any chord changes, and also when the held chord is the home chord
+HELD_REANCHOR = 1      # the grid goes on from the moved cut (0: rwc-dev 66.3%)
+MERGE_SHORT = 2        # a section of fewer bars than this joins the one before (the first: the one after); Open Arms' bar 50, the chorus's
+                       # last bar (AIST rwc-dev the same 66.7%, 790 -> 776 starts; 3: 66.5% and My Life's last section lost; 4: 65.8%); 0: never
 GRID_ANCHOR = 1        # count a block's grid from where singing last began or stopped, or a block played again whole begins or
                        # ends, not from a turn of key or loudness (AIST, rwc-dev: 66.1 -> 66.6%, without the voice 48.7 -> 50.9%); 0: from the block's start
 
@@ -823,7 +830,9 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset()):
         if b - a <= WHOLE_BLOCK * phrase:
             continue
         p = (max(k for k in edges if k <= a and k not in only_turns) - a) % phrase if GRID_ANCHOR else 0
-        for g in range(a + (p or phrase), b - 1, phrase):
+        g = a + (p or phrase) - phrase
+        while g + phrase < b - 1:
+            g += phrase
             middle = g - phrase >= a and g + phrase <= b and alike(g - phrase, g, phrase)
             ended = (g - 2 * phrase >= a and alike(g - 2 * phrase, g - phrase, phrase)
                      and not (g + phrase <= b and alike(g - phrase, g, phrase)))
@@ -831,8 +840,22 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset()):
                     and not alike(g - 2 * phrase, g, phrase)
                     and sum(1 for h in range(n - phrase + 1) if abs(h - g) >= phrase and alike(g, h, phrase)) >= PAIR_HEARD)
             if not middle and (ended or cadence(g) or pair or (BEGIN_SHARE and g + phrase <= b and always_begins(g))):
-                cuts.add(g)
+                s = 0
+                if HELD_SHIFT and fam[g - 1][-1] == fam[g][0] and (HELD_SHIFT_LOOSE or fam[g][0] != (tonic, home)):
+                    s = next((k for k in range(1, HELD_SHIFT + 1) if g + k < b - 1 and fam[g + k - 1][-1] != fam[g + k][0]
+                              and (HELD_SHIFT_LOOSE or fam[g + k][0] == (tonic, home))), 0)
+                cuts.add(g + s)
+                if HELD_REANCHOR:
+                    g += s
+                    p += s
     cuts = sorted(cuts)
+    if MERGE_SHORT:                              # a piece of fewer bars than this joins the one before (the first: the one after)
+        while True:
+            short = [i for i in range(1, len(cuts)) if cuts[i] - cuts[i - 1] < MERGE_SHORT]
+            if not short or len(cuts) <= 2:
+                break
+            i = short[0]
+            cuts.pop(i if i == 1 else i - 1)
     pieces = list(zip(cuts, cuts[1:]))
     bases, names, count = [], [], Counter()
     for a, b in pieces:

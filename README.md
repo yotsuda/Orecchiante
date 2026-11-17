@@ -575,10 +575,11 @@ leaving out boundaries between two sections of the same label (chorus A, chorus 
 | and a cut after a pair of phrases (0.8.1, `PAIR_HEARD`) | 64.6 / 67.2 / 65.9% | 63.5 / 60.7 / 62.1% |
 | and the grid not moved by a turn (0.8.2, `GRID_ANCHOR`) | 65.2 / 67.5 / 66.3% | 63.4 / 61.0 / 62.1% |
 | and bars of two beats paired by the downbeat logits (0.8.4, `SHORT_BAR`) | 64.9 / 67.1 / 66.0% | 63.3 / 61.0 / 62.1% |
+| and a cut off a held chord, no section of one bar (0.8.9, `HELD_SHIFT`, `MERGE_SHORT`) | 65.9 / 66.8 / 66.3% | 64.5 / 60.8 / 62.6% |
 
 Counting every AIST boundary (not only where the label changes), the 0.8.0 and 0.8.1 rows are `rwc-dev`
 68.9 / 60.5 / 64.4% → 67.3 / 64.8 / 66.1%, `rwc-test` 67.4 / 54.8 / 60.5% → 65.2 / 59.1 / 62.0%, and
-0.8.2 68.1 / 65.2 / 66.6% and 64.9 / 59.2 / 61.9%, 0.8.4 67.8 / 64.8 / 66.3% and 64.8 / 59.2 / 61.9%; the F of the paragraphs below is of every boundary.
+0.8.2 68.1 / 65.2 / 66.6% and 64.9 / 59.2 / 61.9%, 0.8.4 67.8 / 64.8 / 66.3% and 64.8 / 59.2 / 61.9%, 0.8.9 68.9 / 64.7 / 66.7% and 66.0 / 59.1 / 62.4%; the F of the paragraphs below is of every boundary.
 
 **The grid and the turns (2026-11-17, 0.8.2, `GRID_ANCHOR`).** Of the boundaries inside singing still
 missed in `rwc-dev` (verse to verse, chorus to chorus: 95), 34 fall two bars off the four-bar grid of
@@ -596,6 +597,25 @@ no gain. Not taken: choosing each block's phase where its phrases begin as they 
 (`rwc-dev` 62.1 to 63.7%), and moving where singing begins or stops a bar back when a phrase played
 elsewhere begins there (66.0%; `scratch/sec/song_phase.py`, `phase_look.py`). A song keeps one phase
 of four bars for half its AIST boundaries (the median), so the phase is not the song's but the block's.
+
+**A cut off a held chord (2026-11-18, 0.8.9, `HELD_SHIFT`, `MERGE_SHORT`; the owner on Open Arms, 3/4:
+"bar 35 begins a section, the chart cuts at 33; too many sections").** The owner's verses there are
+ten bars, eight and two more: `… G G | G | G A | D` (and `G G | G | G | D` the second time), the
+chorus beginning on the home chord at 35 and 85, where the grid of four bars from the verse's start
+(25, 75) cut at 33 and 83, and again at 41 and 91 inside the chorus. A section seldom begins on a
+chord held across the bar line from the one before. So a cut the grid makes where a chord other than
+the home chord is held across its bar line moves up to `HELD_SHIFT` (2) bars on, to where the home
+chord arrives across a bar line, and the block's grid goes on from there (`HELD_REANCHOR`; without it
+`rwc-dev` 66.3%); with no such bar it stays. And a section of fewer than `MERGE_SHORT` (2) bars joins
+the one before (the first: the one after): Open Arms' bar 50, the chorus's last, cut off where the
+block played again ended a bar early. `rwc-dev` (every boundary, 3 s) 66.3 → 66.7%, without the voice
+50.7 → 52.4%; `rwc-test` (counted only) 61.9 → 62.4%, without the voice 49.7 → 51.1%; 糸 and My Life as
+before, with the voice and without; Open Arms 3 of the owner's 10 heads missed and 11 more → 1 and 6
+(`scratch/sec/try.py`, `arms_bars.py`). Not taken: up to 3 or 4 bars (66.1, 65.4%), to any change of
+chord, held home chord too (65.6%), sections of fewer than 3 bars joined (66.5%, and My Life's last
+section lost; 4: 65.8%, Open Arms' 59 lost). Open Arms still has 15 (two bars after singing stops,
+before it starts again: a section of two), 62 and 65 (singing at a third of the bar, read as stopping),
+79 (the dominant going home inside the verse), and 100 for 101 (the chorus's last bar sung at a quarter).
 
 **The turns inside singing (2026-11-17, `PAIR_HEARD`).** Of AIST's verse-to-verse boundaries (verse A
 to B) in `rwc-dev`, 67 of 133 were missed; 32 of those fall on the four-bar grid of their block, 20 two
@@ -633,7 +653,8 @@ As the default (`measure.py form … --ears`, no voice): every bar is written, n
 behind a repeat sign; 11.8 sections a song in `rwc-dev` and 11.3 in `rwc-test` (0.7 and 0.9 of
 them a bar or two long; the old sections 6.2 and 5.5), and 3.8, 3.7, 2.9 in `seed1`, `seed7`,
 `seed11`; since 0.8.1 (`PAIR_HEARD`) 14.2 and 13.7, and 4.0, 4.1, 3.0; since 0.8.2 (`GRID_ANCHOR`) 14.4
-and 13.8 (0.9 and 1.1 a bar or two long: after a turn, the grid's next point can come a bar or two in). With that many, the
+and 13.8 (0.9 and 1.1 a bar or two long: after a turn, the grid's next point can come a bar or two in); since 0.8.9
+(`HELD_SHIFT`, `MERGE_SHORT`) 14.1 and 13.7 (0.7 and 0.9 a bar or two long), and 3.9, 4.0, 3.0. With that many, the
 eighteenth letter came: a section is never named R, for its second playing, `R2`, reads in Lily#
 as a whole-bar rest of a half (`LETTERS`). With nothing folded the chords change by a tenth of a point or so (`rwc-dev` root 87.3
 → 87.4%, `rwc-test` 88.8 → 88.9%), and the marks are half a point fewer (`rwc-test` 28.7 → 28.1%
