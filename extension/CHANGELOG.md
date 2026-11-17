@@ -2,6 +2,12 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.8.7
+
+- The note above the first chords also says what Shift+Ctrl+Up/Down does on a chord with `@or`:
+  it swaps in the other chord and plays it.
+
+
 ## 0.8.6
 
 - A chord the reader doubts is written with the one it would have said next, `F@or(Bm)` (was

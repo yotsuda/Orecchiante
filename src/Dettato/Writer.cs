@@ -6,7 +6,7 @@ namespace Dettato;
 /// (.dettato.json, docs/SIDECAR.md). As tools/read_chords.py writes them, to the letter.</summary>
 static class Writer
 {
-    const string DiagramNote = "// Shift+Ctrl+Up/Down on a chord name shows its guitar chord diagram";
+    const string DiagramNote = "// Shift+Ctrl+Up/Down on a chord name shows its guitar chord diagram; on X@or(Y), swaps in Y and plays it";
 
     /// <summary>The chord on each beat of a bar: what the chart writes of it.</summary>
     static string[] BeatNames(Bar bar, int beats)
