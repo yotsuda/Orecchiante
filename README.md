@@ -714,6 +714,9 @@ The vocals the sections hear are six's too (`scratch/net/voice/` holds them; the
   sharing guitar + piano out again by their magnitudes (to the power 1, 2, 4; with `other` too) changes
   nothing; the piano's sound is in the wrong part, not shared with the guitar's. General MIDI's acoustic
   grand holding long chords renders at 1/25 of the others' loudness, and is left out of the piano's numbers.
+  **The owner: MuseScore General's electric guitar hardly sounds like one; not much to go by.** So the
+  shares above (which part each sound went to) say little about recordings; the two comparisons (int8 and
+  float32, re-masking or not) say a little more, being the same input either way, but are not recordings either.
 - Not measured: the quality on recordings (MoisesDB has guitar and piano stems, for non-commercial
   research, by registration; worth it once there are ways to compare, the owner's ears being enough to choose).
 - **The vocals are not the same twice:** with 3 segments at once (`Voice.Parallel`) `RWC_P001`'s
