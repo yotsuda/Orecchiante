@@ -100,7 +100,6 @@
 やり残し（急がない）:
 - **MuScriptor**（github.com/muscriptor/muscriptor、Kyutai×Mirelo、2026-11-17 にオーナーから）: 多楽器の採譜（MIDI・MusicXML、拍・小節線も。コード名は出さない）、torch の 103M〜1.4B。コードは MIT、**重みは CC BY-NC 4.0（HF でゲート）**。精度・学習データは README になし（arXiv 2607.08168 未読）。M5 の候補、配るならオーナー判断。
   **music-to-midi**（github.com/mason369/music-to-midi、MIT、オーナーから）: 既存モデルの寄せ集め（YourMT3+・MuScriptor・TransKun・Beat This! final0・ChordMini BTC・BS-RoFormer）。重みのライセンス表が役に立つ: **YourMT3+ は Apache-2.0**（M5 の第一候補）、TransKun（ピアノ）MIT、ByteDance のピアノ CC BY 4.0、Aria-AMT は CC BY-NC-SA。GPU 前提。
-- **Beat This! の `small0`（8 MB）と半精度は測れていない**（配布元 cloud.cp.jku.at が 500）。取れたら `track_beats.py --model small0` で `final0` と比べる。
 - 和音のないイントロの小節（`rwc-dev` の P027）は譜面に入れていない。`fold`・`beat_names`・`lys()` が「和音のない拍」を扱う必要がある（Lily# は `r` で N.C.）。最後の和音の終わりは `.dettato.json` にない。`check` は `lysc check --batch` で速くなる。crema の `chord_root`・`chord_bass`・`chord_pitch` は未使用。
 
 ## 環境（この PC）
@@ -140,7 +139,6 @@
 | `scratch/net/read/<セット>/`（.NET の譜面。`head/seed141` は `seed141`）、`scratch/pyread/<セット>/`（比べる相手の Python の譜面） | README の「In .NET: the rules」の末尾（RWC 100 曲で 27 秒） |
 
 `scratch/c1*.py`・`c2*.py`・`b3*.py` は残す。ほかの古いスクリプトとログ、`scratch/d3/` は消してよい。
-
 ## セットの扱い
 
 | セット | 役割 | 注意 |
@@ -184,7 +182,7 @@
 - **セントの `tuning`:** librosa との一致は `seed1` の 24 曲だけ。伸びたテープ、±50 セントを超えるずれ、曲の途中で音高が動く録音は見ていない（RWC は −9〜+4）。
 - **歌の値は走るたびに揺れる**（区間 3 つを並行に回すとき。RWC_P001 で最大 0.01／0.34、1 つずつなら同じ）。onnxruntime の版でもセッションの共有でもない（README「Six parts」の末尾）。原因は未特定。
 - **.NET:** `RWC_P059` の調律が 0.01 ずれる理由。**入力:** 編集リストと `iTunSMPB` が両方ある m4a（いまは編集リストが先）、動画つき mp4、VS Code の Chromium の mp3 の頭、
-  メモリの少ない PC で 1 時間、実録音の mp3 の精度（1 曲だけ）、Windows 10・N エディション、RWC を wav から通し、5/4・7/4、別の CPU の速さ、`small0`。通しの規則一致は seed1 だけ。
+  メモリの少ない PC で 1 時間、実録音の mp3 の精度（1 曲だけ）、Windows 10・N エディション、RWC を wav から通し、5/4・7/4、別の CPU の速さ、Beat This! の `small0`（8 MB）と半精度（配布元が 500）。通しの規則一致は seed1 だけ。
 - 弱起つき・section つき・繰り返し記号つきの `.lys` は `lysc check` と小節数だけ（png は RWC_P010 を 1 枚）。鳴り方は耳で確かめていない。
 - 旋律だけの弱起に、自作の読み取り器は和音を書く。半拍より短い弱起は消える。弱起は 1・2・3・4・6 拍だけ（`PARTIAL`）。
 - 原因を見ていないもの: `rwc-dev` で最初の小節線が正解と違う 11 曲、`seed41` で外した曲、自作の読み取り器に正解の小節線を与えると実録音のルートが 77.4 → 77.1% に下がること。
