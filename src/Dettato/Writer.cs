@@ -38,7 +38,8 @@ static class Writer
         string Slots(List<Bar> said)
         {
             int brief = said[0].Pickup;
-            var names = BeatNames(said[0], brief != 0 ? brief : beats);
+            int n = said[0].TwoFour ? 2 : beats;   // a bar of 2/4 (Reader.TwoFourBars)
+            var names = BeatNames(said[0], brief != 0 ? brief : n);
             // Lily# fits a bar's slots to the meter's beats, a short bar's too: three beats of 4/4 cannot be
             // written a chord a beat. The chord that leads into the first bar stands for them.
             if (brief != 0 && names.Distinct().Count() > 1 && beats % brief != 0) names = [names[^1]];
@@ -59,8 +60,8 @@ static class Writer
                 if (shapeOf!(names[0]) is { Length: > 0 } shape) marks[0] = names[0] + $"({shape})" + marks[0][names[0].Length..];
             }
             if (marks.Skip(1).All(m => m == ".")) return marks[0];
-            int half = beats / 2;
-            if (brief == 0 && beats % 2 == 0 && marks.Where((m, i) => i != 0 && i != half).All(m => m == "."))
+            int half = n / 2;
+            if (brief == 0 && n % 2 == 0 && marks.Where((m, i) => i != 0 && i != half).All(m => m == "."))
                 return $"{marks[0]} {marks[half]}";
             return string.Join(" ", marks);
         }
@@ -77,11 +78,15 @@ static class Writer
                 yield return indent + DiagramNote;
             }
             int i = 0;
+            // A bar of 2/4 says so at its head, and the bar after it goes back (Lily# takes a `time` at a bar's head to
+            // the section's end: a section's last bar needs no way back).
+            var texts = bars.Select((said, j) => (said[0].TwoFour ? "time 2/4 " : j > 0 && bars[j - 1][0].TwoFour ? $"time {chart.Time} " : "")
+                                                 + Slots(said)).ToList();
             var sizes = LineSizes(bars.Count);
             for (int k = 0; k < sizes.Count; k++)
             {
                 bool brk = breaks && (last || k < sizes.Count - 1);
-                yield return indent + string.Join(" | ", bars.Skip(i).Take(sizes[k]).Select(Slots)) + (brk ? " | break" : " |");   // the bar line, then the break (the owner, 2026-11-16)
+                yield return indent + string.Join(" | ", texts.Skip(i).Take(sizes[k])) + (brk ? " | break" : " |");   // the bar line, then the break (the owner, 2026-11-16)
                 i += sizes[k];
             }
         }
@@ -222,6 +227,7 @@ static class Writer
             if (bar.Pickup != 0) b.Append($"      \"pickup\": {bar.Pickup},\n");
             b.Append($"      \"start\": {Np.Repr(bar.Start)},\n      \"end\": {Np.Repr(bar.End)},\n");
             b.Append("      \"beats\": [\n" + string.Join(",\n", bar.Beats.Select(t => "        " + Np.Repr(t))) + "\n      ],\n");
+            if (bar.TwoFour) b.Append("      \"time\": \"2/4\",\n");
             b.Append("      \"chords\": [\n");
             b.Append(string.Join(",\n", bar.Chords.Select(c =>
             {

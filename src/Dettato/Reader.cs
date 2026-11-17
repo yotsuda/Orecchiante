@@ -22,6 +22,7 @@ sealed class Bar
     public List<Chord> Chords = [];
     public string? Section;
     public double? Tempo;                       // its section's own tempo, on the first bar each time the section is played (SectionTempos)
+    public bool TwoFour;                        // a bar of 2/4 in a chart of 4/4 (Reader.TwoFourBars): two beats, `time 2/4` at its head
     public static string TempoText(double bpm) => bpm == Math.Floor(bpm) ? ((long)bpm).ToString(System.Globalization.CultureInfo.InvariantCulture) : Np.Repr(bpm);
 }
 
@@ -71,6 +72,9 @@ static class Reader
     public static readonly Dictionary<int, string> Partial = new() { [1] = "4", [2] = "2", [3] = "2.", [4] = "1", [6] = "1." };
     const double EvenTempo = 0.1;          // the tempo is from the mean of the bars within this share of the middle one
     const double TinyBar = 0.25;            // a bar shorter than this share of the middle one is not a bar (糸: 0.08 s)
+    // A bar this share of its neighbours' (low, high), between two within this of theirs, is a bar of 2/4 in 4/4
+    // (TwoFourBars; the owner, 2026-11-17: 糸's M65).
+    static readonly (double Low, double High, double Whole) TwoFour = (0.4, 0.6, 0.15);
     const double ShortBar = 12.0;            // bars of half the beats are paired where the downbeat logits say (PairRuns)
     static readonly (double Lo, double Hi) HalfBars = (0.35, 0.7);   // bars this share of the middle one are halves (PairHalves)
     const double SlowTwo = 1.5;            // a bar of two beats longer than this is a bar of four
@@ -787,6 +791,11 @@ static class Reader
         // the lines are a beat tracker's, on its grid of 20 ms: the bars about as long as the middle one, together
         barSeconds = Np.Mean(barGaps.Select(g => g * HOP / SR).Where(g => Math.Abs(g - barSeconds) <= EvenTempo * barSeconds).ToArray());
         double bpm = Np.Round(60.0 * tempoBeats / barSeconds, 1);
+        foreach (int i in TwoFourBars(bars, time))     // a bar of 2/4: its two beats, and its meter after them
+        {
+            bars[i].TwoFour = true;
+            bars[i].Beats = BeatsOf(bars[i].Start, bars[i].End, 2);
+        }
         var tempos = SectionTempos(bars, tempoBeats, bpm);
         string? lastSection = null;
         foreach (var bar in bars)
@@ -811,6 +820,37 @@ static class Reader
 
     /// <summary>{section: its tempo} for the sections whose tempo is their own, as tools/read_chords.py's section_tempos:
     /// walked in the order played from the head's `bpm`; a section once given a tempo keeps it each time it is played.</summary>
+    /// <summary>The bars of 2/4 in a chart of 4/4, as read_chords.py's two_four: about half as long as the bars around
+    /// them (the median of four each side), between two bars about as long as theirs, and the same each time their
+    /// section is played; not a pickup, not the first or the last bar. Indexes into `bars`.</summary>
+    static HashSet<int> TwoFourBars(List<Bar> bars, string time)
+    {
+        var none = new HashSet<int>();
+        if (time != "4/4") return none;
+        var at = Enumerable.Range(0, bars.Count).Where(i => bars[i].Pickup == 0).ToList();
+        var s = at.Select(i => bars[i].End - bars[i].Start).ToArray();
+        if (s.Length < 3) return none;
+        var ratio = new double[s.Length];
+        for (int k = 0; k < s.Length; k++)
+        {
+            var near = s[Math.Max(0, k - 4)..k].Concat(s[(k + 1)..Math.Min(s.Length, k + 5)]);
+            ratio[k] = s[k] / Np.Median(near);
+        }
+        var found = new HashSet<int>();
+        for (int k = 1; k < s.Length - 1; k++)
+            if (TwoFour.Low <= ratio[k] && ratio[k] <= TwoFour.High
+                && Math.Abs(ratio[k - 1] - 1.0) <= TwoFour.Whole && Math.Abs(ratio[k + 1] - 1.0) <= TwoFour.Whole)
+                found.Add(at[k]);
+        var played = new Dictionary<(string?, int), List<int>>();  // a bar of a section is 2/4 when it is each time the section is played
+        foreach (int i in at)
+        {
+            var key = (bars[i].Section, bars[i].BarOfSection);
+            if (!played.TryGetValue(key, out var of)) played[key] = of = [];
+            of.Add(i);
+        }
+        return [.. found.Where(i => played[(bars[i].Section, bars[i].BarOfSection)].All(found.Contains))];
+    }
+
     static Dictionary<string, double> SectionTempos(List<Bar> bars, int beats, double bpm)
     {
         var of = new Dictionary<string, List<double>>();

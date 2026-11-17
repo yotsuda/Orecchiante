@@ -86,6 +86,8 @@ def faults(doc):
                 wrong(f"{at}: only the first bar may be a pickup")
             elif not isinstance(bar["pickup"], int) or not (beats is None or 0 < bar["pickup"] < beats):
                 wrong(f'{at}: "pickup" is not a number of beats less than a bar')
+        if "time" in bar and (bar["time"] != "2/4" or doc.get("time") != "4/4" or "pickup" in bar):
+            wrong(f'{at}: "time" is not "2/4" in a chart of 4/4, or it is on a pickup')
         if not (number(bar.get("start")) and number(bar.get("end")) and 0 <= bar["start"] < bar["end"]):
             wrong(f"{at}: it does not begin before it ends")
             continue
@@ -94,7 +96,7 @@ def faults(doc):
         if number(doc.get("duration")) and bar["start"] >= doc["duration"]:
             wrong(f"{at}: it begins after the recording ends")
         if "beats" in bar:      # not in files written before 2026-11-16
-            ticks, many = bar["beats"], bar.get("pickup") or beats
+            ticks, many = bar["beats"], bar.get("pickup") or (int(bar["time"].split("/")[0]) if TIME.match(str(bar.get("time", ""))) else beats)
             if (not isinstance(ticks, list) or not ticks or not all(number(t) for t in ticks)
                     or (many is not None and len(ticks) != many)):
                 wrong(f'{at}: "beats" is not the {many} beats of the bar')
@@ -205,7 +207,7 @@ def lysc_bars(charts):
         for job in jobs:
             job.wait()
         for w in range(workers):
-            for k, (chart, (time, pickup)) in enumerate(listed[w::workers]):
+            for k, (chart, (time, pickup, *halves)) in enumerate(listed[w::workers]):
                 played = Path(d) / f"{w}-{k}" / (chart.stem + ".mid")
                 if not played.exists():
                     continue
@@ -213,9 +215,10 @@ def lysc_bars(charts):
                 top, under = (int(x) for x in time.split("/"))
                 bar = quarter * 4 * top / under
                 beat = bar / (2 if time == "6/8" else top)
-                whole = (last - pickup * beat) / bar
+                twos = halves[0] if halves else 0           # bars of 2/4 (a bar's "time")
+                whole = (last - pickup * beat - twos * 2 * beat) / bar
                 if abs(whole - round(whole)) < 0.01:
-                    found[chart] = round(whole) + (1 if pickup else 0)
+                    found[chart] = round(whole) + (1 if pickup else 0) + twos
     return found
 
 
@@ -228,7 +231,8 @@ def check(files, lysc=True):
     told = "the specification"
     if lysc:
         there = {f: c.resolve() for f, c in charts.items() if c.exists()}
-        played = lysc_bars({chart: (docs[f].get("time") or "4/4", (docs[f].get("bars") or [{}])[0].get("pickup") or 0)
+        played = lysc_bars({chart: (docs[f].get("time") or "4/4", (docs[f].get("bars") or [{}])[0].get("pickup") or 0,
+                                    sum(1 for b in docs[f].get("bars") or [] if "time" in b))
                             for f, chart in there.items()})
         for f, chart in there.items():
             if chart not in played:

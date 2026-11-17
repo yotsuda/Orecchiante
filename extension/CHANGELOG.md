@@ -2,6 +2,14 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.8.5
+
+- A bar of two beats between bars of four is written `time 2/4` at its head, and the bar after it
+  `time 4/4` (the owner: "Dettato should write it in"). In 糸 the bar of two near the end now reads
+  `time 2/4 G | time 4/4 C#m7(b5)`, so Lily# plays it at the pace of the recording. In
+  `x.dettato.json` the bar has two `beats` and `"time": "2/4"`.
+
+
 ## 0.8.4
 
 - Where the beat tracker counts bars of four beats as bars of two for a while, they are put back

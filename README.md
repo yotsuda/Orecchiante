@@ -1228,6 +1228,22 @@ Sections against AIST (3 s): with the voice `rwc-dev` 66.6 → 66.3%, `rwc-test`
 50.9 → 50.7%, 50.1 → 49.7%; the owner's two songs as before. Python and .NET the same (RWC 100/100
 with the voice, the seven sets 168/168).
 
+**A bar of 2/4 (0.8.5, the owner 2026-11-17: "Dettato should write it in").** A bar about half as
+long as the bars around it (0.4 to 0.6 of the median of four each side), between two bars within
+15% of theirs, is written `time 2/4` at its head, and the bar after it `time 4/4` (Lily# takes a
+`time` at a bar's head to the end of its section, so a section's last bar needs no way back:
+checked, 4 + 4 + 2 + 4 + 4 beats sound). Only in 4/4, not a pickup, not the first or the last bar,
+and the same each time its section is played (`two_four` / `TwoFourBars`). In the file the bar has
+two `beats` and `"time": "2/4"` (SIDECAR.md). 糸 is written as the owner wrote it by hand
+(`Em B/D# | time 2/4 G | time 4/4 C#m7(b5) |`), My Life has none. In RWC's readings 14 bars in 10
+songs (of 100), in the songs made here 4 in 72 (seed7, seed11; none of theirs is truly two beats);
+by the truth, 6 of 10 on `rwc-dev` and 0 of 8 on `rwc-test` have both lines on true ones: RWC has
+hardly a bar of two beats (10 in 100 songs), and where the reading is wrong the bar is two beats
+long in the reading all the same (P066, P072: the tracker half a bar off until another half bar;
+P076, P088: a true bar of six beats, the two placed a bar early). Written as 2/4 it sounds with the
+recording at the bars' pace and shows where to look. The numbers do not move (the bars and chords
+are the same); 268/268 Python and .NET the same, `lysc check` and SIDECAR.md 172/172.
+
 ### The tempo to a tenth
 
 Lily# takes a tempo with a fraction (`tempo 4 = 131.8`, printed "♩ ≈ 132"), and with a recording
