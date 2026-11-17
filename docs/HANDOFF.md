@@ -64,6 +64,9 @@
 - オーナーが手で分けた 2 曲: 糸（`scratch/ito/ito-one.lys`: 1・9・17・21・28・32・40・44・51・59）、My Life（`scratch/sec/phrase/mylife-owner.lys`: 1・9・17・31・39・53・69・83・91・105・121・129・135・151）。
   **0.6.0（.NET の歌）で 2 曲とも全部、余分なしで出す**（糸は終わり 67 が増えるだけ。入った拡張の通しの読みでも同じ）。声なしだと糸は 9 つ中 5 つを落とす。
   確かめは `scratch/sec/try.py [定数=値 …]`（`VOICEDIR=scratch/net/voice/sec` で .NET の歌、`NOVOICE=1` で声なし）と `tools/aist_sections.py rwc-dev`（既定で .NET の歌）。**規則を触ったら必ず両方を見る**。
+- **Open Arms（Journey、3/4・102、2026-11-17 オーナー）: 「35 小節目が section の頭なのに 33 で切れている」「細切れすぎる」。** 材料は `scratch/sec/arms-in/arms.wav`（ffmpeg）、耳と歌 `scratch/net/voice/sec/arms.*`、見る道具 `scratch/sec/arms.py [定数=値]`（歌の割合・turn・小節ごとのコード）。
+  見立て: 歌の入り（17）から 4 小節の格子が 17・21・25・29・33… と進むが、曲は 33〜34 が前の句の 2 小節の延長（`G | G A` → 35 で D、33 は歌が 0.09 の息つぎ）で、そこから位相が 2 小節ずれる。15〜16（B）も同じ 2 小節の挿入。短い section: B 2・E2 1・A5 3・F 3・A6 2（`WHOLE_BLOCK` 以下の塊がそのまま 1 つの section になる）。オーナーの 2 曲には 4 小節未満の section がない。
+  次の手の候補: ① 2 小節の延長で格子を数え直す（V→I と歌の入りが 2 小節ずれて揃う所）② 3 小節以下の section を隣に入れる。どちらも AIST（dev）とオーナーの 2 曲で測る。**オーナーに Open Arms の section の頭を全部もらえると 3 曲目の正解になる。**
 - 仕組み（README「Sections by meaning」「The voice in .NET」）: 歌の出入り・調号 2 つ以上・6 dB で塊に切り、丸ごと別の所で鳴る塊の頭と終わり、長い塊の中は 4 小節の句（`PHRASE_BARS`）の格子で
   「同じ句 2 回の終わり」「V→I」「別の所でも始まる句（`BEGIN_SHARE`）」「8 小節ごとの新しい組（`PAIR_HEARD`、0.8.1）」で切る。名前は再演なら A2。fold はしない。.NET は `Form.Turns`・`Form.Phrases`・`Form.VoiceTurns`。
 - **歌の中の境目（0.8.1 `PAIR_HEARD`）と格子の起点（0.8.2 `GRID_ANCHOR`）:** README「The grid and the turns」。dev 64.4 → 66.6%、test 60.5 → 61.9%（0.8.2 は test で効いていない）。
@@ -98,10 +101,7 @@
   **6（保存先のダイアログ・`audio` の道）・8（`warpFit` を中央値に）・9（`lysc shape`・`LILYSHARP_LYSC_PATH`）は Lily# master で `fixed`、Dettato は 9 を 0.3.2 で使った。Lily# の次の版が入ったら、変換メニューから 3 つとも実物で確かめて `done`**（3・5 も同じく確かめてから）。**この PC の Lily# 拡張（名は 0.16.0、11-17 17:12 に入った master のビルド）には 6・9・11・16 の文字列がある**（`Locate Recording`・`LILYSHARP_LYSC_PATH`・`The score plays`・`"parts"`）＝残るのは変換メニューからの実物の確かめ（VS Code の操作が要る）。
 
 やり残し（急がない）:
-- **MuScriptor**（github.com/muscriptor/muscriptor、Kyutai×Mirelo、2026-11-17 にオーナーから）: 多楽器の採譜（MIDI・MusicXML、拍・小節線も。コード名は出さない）、torch の 103M〜1.4B。コードは MIT、**重みは CC BY-NC 4.0（HF でゲート）**。精度・学習データは README になし（arXiv 2607.08168 未読）。M5 の候補、配るならオーナー判断。
-  **music-to-midi**（github.com/mason369/music-to-midi、MIT、オーナーから）: 既存モデルの寄せ集め（YourMT3+・MuScriptor・TransKun・Beat This! final0・ChordMini BTC・BS-RoFormer）。重みのライセンス表が役に立つ: **YourMT3+ は Apache-2.0**（M5 の第一候補）、TransKun（ピアノ）MIT、ByteDance のピアノ CC BY 4.0、Aria-AMT は CC BY-NC-SA。GPU 前提。
-- 和音のないイントロの小節（`rwc-dev` の P027）は譜面に入れていない。`fold`・`beat_names`・`lys()` が「和音のない拍」を扱う必要がある（Lily# は `r` で N.C.）。最後の和音の終わりは `.dettato.json` にない。`check` は `lysc check --batch` で速くなる。crema の `chord_root`・`chord_bass`・`chord_pitch` は未使用。
-
+- **MuScriptor**（github.com/muscriptor/muscriptor、Kyutai×Mirelo、2026-11-17 にオーナーから）: 多楽器の採譜（MIDI・MusicXML、拍・小節線も。コード名は出さない）、torch の 103M〜1.4B。コードは MIT、**重みは CC BY-NC 4.0（HF でゲート）**。精度・学習データは README になし（arXiv 2607.08168 未読）。M5 の候補、配るならオーナー判断。 **music-to-midi**（github.com/mason369/music-to-midi、MIT、オーナーから）: 既存モデルの寄せ集め（YourMT3+・MuScriptor・TransKun・Beat This! final0・ChordMini BTC・BS-RoFormer）。重みのライセンス表が役に立つ: **YourMT3+ は Apache-2.0**（M5 の第一候補）、TransKun（ピアノ）MIT、ByteDance のピアノ CC BY 4.0、Aria-AMT は CC BY-NC-SA。GPU 前提。 ／和音のないイントロの小節（`rwc-dev` の P027）は譜面に入れていない。`fold`・`beat_names`・`lys()` が「和音のない拍」を扱う必要がある（Lily# は `r` で N.C.）。最後の和音の終わりは `.dettato.json` にない。`check` は `lysc check --batch` で速くなる。crema の `chord_root`・`chord_bass`・`chord_pitch` は未使用。
 ## 環境（この PC）
 
 - 作業は `C:\MyProj\Dettato`。シェルは pwsh MCP（`mcp__pwsh__*`）。組み込みの PowerShell は使えない。
