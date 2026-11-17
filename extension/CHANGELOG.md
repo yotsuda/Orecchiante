@@ -2,6 +2,14 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.8.6
+
+- A chord the reader doubts is written with the one it would have said next, `F@or(Bm)` (was
+  `F@todo("or Bm?")`): in Lily#, Ctrl+Shift+Up/Down swaps the two and plays the one brought forward,
+  and a quick fix keeps one.
+- A bar of three beats between bars of four is written `time 3/4`, as 0.8.5 writes a bar of two.
+
+
 ## 0.8.5
 
 - A bar of two beats between bars of four is written `time 2/4` at its head, and the bar after it

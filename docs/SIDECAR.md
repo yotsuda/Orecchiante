@@ -72,7 +72,7 @@ comes"; an mp3 with no such note and a bare `.aac` keep theirs, 13 and 23 ms as 
 | `pickup` | a pickup | How many beats (of `tempo.note`) the short bar has. Only the first bar may have it. |
 | `start`, `end` | always | Its first bar line and the next. A bar begins where the bar before it ends. |
 | `beats` | always (2026-11-16 on) | Where each of its beats (of `tempo.note`) begins: as many as the meter has (two in 6/8), or as `pickup` or `time` says; the first is `start`, all before `end`. The bar cut evenly: the beat tracker's own beats inside a bar are no nearer the beats annotated in RWC (2026-11-16: within 70 ms of one, 96.2% of both on `rwc-dev`, 94.3% of both on `rwc-test`). Here so that an editor has one place to read beats from, and a person's beats (format 2) one place to go. |
-| `time` | a bar of 2/4 (2026-11-17 on, 0.8.5) | `"2/4"`: a bar of two beats in a chart of 4/4, written `time 2/4` at its head in the chart (and `time 4/4` at the next bar's, unless the section ends there; Lily# takes a `time` at a bar's head to its section's end). Its `beats` are two. A bar about half as long as the bars around it, between two as long as theirs, the same each time its section is played; never a pickup, the first or the last bar. |
+| `time` | a bar of 2/4 (2026-11-17 on, 0.8.5) or 3/4 (0.8.6) | `"2/4"` or `"3/4"`: a bar of two or three beats in a chart of 4/4, written `time 2/4` or `time 3/4` at its head in the chart (and `time 4/4` at the next bar's, unless the section ends there; Lily# takes a `time` at a bar's head to its section's end). Its `beats` are two (three). A bar about half (0.65 to 0.85, not in the last two bars: three quarters) as long as the bars around it, between two as long as theirs, the same each time its section is played; never a pickup, the first or the last bar. |
 | `section` | always | The section it is a bar of. |
 | `barOfSection` | always | Which bar of that section, from 1. |
 | `tempo` | where the section has its own | The section's own tempo (of `tempo.note`, to a tenth as the file's `tempo`), on the first bar each time the section is played: the chart has it as `tempo 4 = 100.2` at the section's head, and Lily# sounds it from there on, until another section's head says another. Written where the section's bars together are more than 6% from the tempo standing (and less than 1.3 times it: 2, 3/2 and 4/3 are bars read wrong, not a tempo), the section has 6 bars or more, and three in four of them are within a tenth of their middle one; a section back at the file's `tempo` says so with 2 bars or more. A slower intro (RWC_P038: 100, then 125), songs at different tempos in one recording (2026-11-17, 0.8.3). The file's `tempo` stays the recording's tempo as a whole. |
@@ -120,8 +120,9 @@ seconds, `fit` and `sure` are each playing's own.
   and at the end of each section (not in the pickup, which goes on with the first line). A last
   line of one bar joins the line before (five), and four and two are three and three (`line_sizes`:
   9 bars are 4 5, 10 are 4 3 3, 6 are 3 3).
-- A chord of the chart is marked `@todo("or X?")` when the mean `sure` of that chord in that bar,
-  over the playings of the bar, is below `doubt`; `X` is the `other` of the least sure of them.
+- A chord of the chart is written `X@or(Y)` (0.8.6; `X@todo("or Y?")` before) when the mean `sure` of that chord in that bar,
+  over the playings of the bar, is below `doubt`; `Y` is the `other` of the least sure of them. Lily# swaps
+  them with Ctrl+Shift+Up/Down and plays the one brought forward (Lily# REQUESTS 17).
 - In a pickup of several chords that Lily# cannot write a chord a beat (three beats in 4/4), the
   chart has the last chord only; the file has them all.
 

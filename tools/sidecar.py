@@ -86,8 +86,8 @@ def faults(doc):
                 wrong(f"{at}: only the first bar may be a pickup")
             elif not isinstance(bar["pickup"], int) or not (beats is None or 0 < bar["pickup"] < beats):
                 wrong(f'{at}: "pickup" is not a number of beats less than a bar')
-        if "time" in bar and (bar["time"] != "2/4" or doc.get("time") != "4/4" or "pickup" in bar):
-            wrong(f'{at}: "time" is not "2/4" in a chart of 4/4, or it is on a pickup')
+        if "time" in bar and (bar["time"] not in ("2/4", "3/4") or doc.get("time") != "4/4" or "pickup" in bar):
+            wrong(f'{at}: "time" is not "2/4" or "3/4" in a chart of 4/4, or it is on a pickup')
         if not (number(bar.get("start")) and number(bar.get("end")) and 0 <= bar["start"] < bar["end"]):
             wrong(f"{at}: it does not begin before it ends")
             continue
@@ -215,10 +215,10 @@ def lysc_bars(charts):
                 top, under = (int(x) for x in time.split("/"))
                 bar = quarter * 4 * top / under
                 beat = bar / (2 if time == "6/8" else top)
-                twos = halves[0] if halves else 0           # bars of 2/4 (a bar's "time")
-                whole = (last - pickup * beat - twos * 2 * beat) / bar
+                shorts, beats = (halves[0] if halves else (0, 0))  # bars of 2/4 and 3/4 (a bar's "time"): how many, their beats
+                whole = (last - pickup * beat - beats * beat) / bar
                 if abs(whole - round(whole)) < 0.01:
-                    found[chart] = round(whole) + (1 if pickup else 0) + twos
+                    found[chart] = round(whole) + (1 if pickup else 0) + shorts
     return found
 
 
@@ -232,7 +232,8 @@ def check(files, lysc=True):
     if lysc:
         there = {f: c.resolve() for f, c in charts.items() if c.exists()}
         played = lysc_bars({chart: (docs[f].get("time") or "4/4", (docs[f].get("bars") or [{}])[0].get("pickup") or 0,
-                                    sum(1 for b in docs[f].get("bars") or [] if "time" in b))
+                                    (sum(1 for b in docs[f].get("bars") or [] if "time" in b),
+                                     sum(int(b["time"].split("/")[0]) for b in docs[f].get("bars") or [] if TIME.match(str(b.get("time", ""))))))
                             for f, chart in there.items()})
         for f, chart in there.items():
             if chart not in played:

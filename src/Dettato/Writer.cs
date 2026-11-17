@@ -38,7 +38,7 @@ static class Writer
         string Slots(List<Bar> said)
         {
             int brief = said[0].Pickup;
-            int n = said[0].TwoFour ? 2 : beats;   // a bar of 2/4 (Reader.TwoFourBars)
+            int n = said[0].Meter == "2/4" ? 2 : said[0].Meter == "3/4" ? 3 : beats;   // a bar of 2/4 or 3/4 (Reader.ShortMeters)
             var names = BeatNames(said[0], brief != 0 ? brief : n);
             // Lily# fits a bar's slots to the meter's beats, a short bar's too: three beats of 4/4 cannot be
             // written a chord a beat. The chord that leads into the first bar stands for them.
@@ -53,7 +53,7 @@ static class Writer
                 foreach (var c in heard) sum += c.Sure!.Value;
                 if (sum / heard.Count < doubt) doubts[name] = heard.MinBy(c => c.Sure!.Value)!.OtherName!;
             }
-            marks = [.. marks.Select(m => doubts.TryGetValue(m, out string? other) ? $"{m}@todo(\"or {other}?\")" : m)];
+            marks = [.. marks.Select(m => doubts.TryGetValue(m, out string? other) ? $"{m}@or({other})" : m)];
             if (!shaped)
             {
                 shaped = true;
@@ -78,9 +78,9 @@ static class Writer
                 yield return indent + DiagramNote;
             }
             int i = 0;
-            // A bar of 2/4 says so at its head, and the bar after it goes back (Lily# takes a `time` at a bar's head to
+            // A bar of 2/4 or 3/4 says so at its head, and the bar after it goes back (Lily# takes a `time` at a bar's head to
             // the section's end: a section's last bar needs no way back).
-            var texts = bars.Select((said, j) => (said[0].TwoFour ? "time 2/4 " : j > 0 && bars[j - 1][0].TwoFour ? $"time {chart.Time} " : "")
+            var texts = bars.Select((said, j) => (said[0].Meter != null ? $"time {said[0].Meter} " : j > 0 && bars[j - 1][0].Meter != null ? $"time {chart.Time} " : "")
                                                  + Slots(said)).ToList();
             var sizes = LineSizes(bars.Count);
             for (int k = 0; k < sizes.Count; k++)
@@ -227,7 +227,7 @@ static class Writer
             if (bar.Pickup != 0) b.Append($"      \"pickup\": {bar.Pickup},\n");
             b.Append($"      \"start\": {Np.Repr(bar.Start)},\n      \"end\": {Np.Repr(bar.End)},\n");
             b.Append("      \"beats\": [\n" + string.Join(",\n", bar.Beats.Select(t => "        " + Np.Repr(t))) + "\n      ],\n");
-            if (bar.TwoFour) b.Append("      \"time\": \"2/4\",\n");
+            if (bar.Meter != null) b.Append($"      \"time\": \"{bar.Meter}\",\n");
             b.Append("      \"chords\": [\n");
             b.Append(string.Join(",\n", bar.Chords.Select(c =>
             {

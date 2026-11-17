@@ -27,7 +27,7 @@ From a recording of a song, read three things and write them as a Lily# `chords`
 - the bar lines (where each bar begins, and the time signature),
 - the chord of each bar.
 
-A chord the reader doubts is marked on its symbol (`@todo`), as
+A chord the reader doubts is written with the chord it would have said next (`F@or(Bm)`, 0.8.6; before, `@todo("or Bm?")`), which Lily# swaps with Ctrl+Shift+Up/Down and plays, as
 [Calamo](https://github.com/yotsuda/Calamo) marks a note it doubts. Beside the `.lys`, a file holds
 where each bar is in the recording, so an editor can play that bar of the original while it is
 corrected: `<name>.dettato.json`, every bar played in the order Lily# plays it, with its seconds,
@@ -1233,7 +1233,7 @@ long as the bars around it (0.4 to 0.6 of the median of four each side), between
 15% of theirs, is written `time 2/4` at its head, and the bar after it `time 4/4` (Lily# takes a
 `time` at a bar's head to the end of its section, so a section's last bar needs no way back:
 checked, 4 + 4 + 2 + 4 + 4 beats sound). Only in 4/4, not a pickup, not the first or the last bar,
-and the same each time its section is played (`two_four` / `TwoFourBars`). In the file the bar has
+and the same each time its section is played (`short_meters` / `ShortMeters`, 0.8.6; `two_four` / `TwoFourBars` in 0.8.5). In the file the bar has
 two `beats` and `"time": "2/4"` (SIDECAR.md). 糸 is written as the owner wrote it by hand
 (`Em B/D# | time 2/4 G | time 4/4 C#m7(b5) |`), My Life has none. In RWC's readings 14 bars in 10
 songs (of 100), in the songs made here 4 in 72 (seed7, seed11; none of theirs is truly two beats);
@@ -1243,6 +1243,18 @@ long in the reading all the same (P066, P072: the tracker half a bar off until a
 P076, P088: a true bar of six beats, the two placed a bar early). Written as 2/4 it sounds with the
 recording at the bars' pace and shows where to look. The numbers do not move (the bars and chords
 are the same); 268/268 Python and .NET the same, `lysc check` and SIDECAR.md 172/172.
+**A bar of 3/4 (0.8.6, the owner 2026-11-17).** The same for a bar 0.65 to 0.85 of its neighbours',
+not in the last two bars: `time 3/4` at its head, three `beats` and `"time": "3/4"` in the file
+(`short_meters` / `ShortMeters`). RWC-P has next to none in the middle of a song: of the bars 3/4
+long in the truth nearly all are a song's last (its annotation stops at the last strike), and in the
+middle only P006's (read right) and P037's. In the readings, of the bars 3/4 long between two whole
+ones, 2 of 9 on `rwc-dev` and 0 of 3 on `rwc-test` were right, 6 of the wrong 7 in a song's last two
+or three bars (the ritardando read short: hence not the last two). Written: 7 bars in 6 songs of RWC.
+As with 2/4, right or not the bar is three beats long in the reading, so it sounds at the recording's
+pace. Lily#'s `lysc check` counts the slots of such a bar by the section's 4/4 (`time 3/4 E . F`
+warns though it plays and exports right: Lily# REQUESTS 18). Measured with `scratch/c3/three_look.py`,
+`short_bars.py`; songs that stop in the middle RWC-P has none of (`stops.py`).
+
 
 ### The tempo to a tenth
 

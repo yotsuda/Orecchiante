@@ -94,7 +94,9 @@ SHORT_BAR = 12.0       # ears: bars of half the beats are paired where the downb
                         # alone costing this much logit. None: paired from the first (before 2026-11-17)
 TINY_BAR = 0.25        # ears: a bar shorter than this share of the middle one is not a bar (糸: 0.08 s, Lily# REQUESTS 10)
 TWO_FOUR = (0.4, 0.6, 0.15)  # ears: a bar this share of its neighbours' (low, high), between two within this of theirs, is a bar of 2/4
-                        # in 4/4 (two_four; the owner, 2026-11-17: 糸's M65). None: written as 4/4 (before 0.8.5)
+                        # in 4/4 (short_meters; the owner, 2026-11-17: 糸's M65). None: written as 4/4 (before 0.8.5)
+THREE_FOUR = (0.65, 0.85, 2)  # ears: a bar this share of its neighbours', not in the last so many bars, is a bar of 3/4 in 4/4
+                        # (short_meters; the owner, 2026-11-17). None: written as 4/4 (before 0.8.6)
 HALF_BARS = (0.35, 0.7)  # ears: bars this share of the middle one are halves, paired as the key says (pair_halves). None: as found
 EVEN_TEMPO = 0.1       # the tempo is from the mean of the bars within this share of the middle one (0: the middle one alone)
 DIAGRAM_NOTE = "// Shift+Ctrl+Up/Down on a chord name shows its guitar chord diagram"   # above the first chords (the owner, 2026-11-16)
@@ -358,26 +360,38 @@ def section_tempos(bars, beats, bpm):
     return {name: tenth(t) for name, t in given.items()}
 
 
-def two_four(bars, time):
-    """The bars of 2/4 in a chart of 4/4 (TWO_FOUR): about half as long as the bars around them
-    (the median of four each side), between two bars about as long as theirs, and the same in each
-    time its section is played; not a pickup, not the first or the last bar. The tracker counted two
-    beats there and the downbeats said a bar begins after them (pair_runs): 糸's M65, two beats
-    between bars of four (the owner, 2026-11-17: "Dettato should write it"). Indexes into `bars`."""
+def short_meters(bars, time):
+    """The bars of 2/4 and 3/4 in a chart of 4/4 (TWO_FOUR, THREE_FOUR), as {index into `bars`: meter}:
+    about a half or three quarters as long as the bars around them (the median of four each side),
+    between two bars about as long as theirs, and the same in each time its section is played; not a
+    pickup, not the first or the last bar (a bar of 3/4 not the last THREE_FOUR[2] bars either: there
+    the bars read short are the ritardando's, read wrong). Of 2/4 the tracker counted two beats there
+    and the downbeats said a bar begins after them (pair_runs): 糸's M65, two beats between bars of four
+    (the owner, 2026-11-17: "Dettato should write it"). Right or not, the bar is as long as the
+    recording's: written in its meter it plays at the recording's pace, and marks where to look.
+    3/4 the owner chose on 2026-11-17 though RWC-P has next to none in the middle of a song (P006)."""
     if not TWO_FOUR or time != "4/4":
-        return set()
-    low, high, whole = TWO_FOUR
+        return {}
+    whole = TWO_FOUR[2]
     at = [i for i, bar in enumerate(bars) if not bar.get("pickup")]
     s = np.array([bars[i]["end"] - bars[i]["start"] for i in at])
     if len(s) < 3:
-        return set()
+        return {}
     ratio = [float(s[k] / np.median(np.r_[s[max(0, k - 4):k], s[k + 1:k + 5]])) for k in range(len(s))]
-    found = {at[k] for k in range(1, len(s) - 1)
-             if low <= ratio[k] <= high and abs(ratio[k - 1] - 1.0) <= whole and abs(ratio[k + 1] - 1.0) <= whole}
-    played = {}                         # a bar of a section is 2/4 when it is each time the section is played
+    found = {}
+    for k in range(1, len(s) - 1):
+        if abs(ratio[k - 1] - 1.0) > whole or abs(ratio[k + 1] - 1.0) > whole:
+            continue
+        if TWO_FOUR[0] <= ratio[k] <= TWO_FOUR[1]:
+            found[at[k]] = "2/4"
+        elif THREE_FOUR and THREE_FOUR[0] <= ratio[k] <= THREE_FOUR[1] and k < len(s) - THREE_FOUR[2]:
+            found[at[k]] = "3/4"
+    played = {}                         # a bar of a section is short when it is so each time the section is played
     for i in at:
         played.setdefault((bars[i].get("section"), bars[i].get("barOfSection")), []).append(i)
-    return {i for i in found if all(j in found for j in played[(bars[i].get("section"), bars[i].get("barOfSection"))])}
+    return {i: m for i, m in found.items()
+            if all(found.get(j) == m for j in played[(bars[i].get("section"), bars[i].get("barOfSection"))])}
+
 
 
 def beats_of(start, end, n):
@@ -1432,10 +1446,11 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
         bpm = round(60.0 * tempo_beats / bar_seconds, 1)
         bpm = int(bpm) if bpm == int(bpm) else bpm
     if ears:
-        for i in two_four(bars, time):  # a bar of 2/4: its two beats, and its meter after them
+        for i, meter in short_meters(bars, time).items():  # a bar of 2/4 or 3/4: its beats, and its meter after them
             items = list(bars[i].items())
             at = [k for k, _ in items].index("beats") + 1
-            bars[i] = dict(items[:at - 1] + [("beats", beats_of(bars[i]["start"], bars[i]["end"], 2)), ("time", "2/4")] + items[at:])
+            n = int(meter.split("/")[0])
+            bars[i] = dict(items[:at - 1] + [("beats", beats_of(bars[i]["start"], bars[i]["end"], n)), ("time", meter)] + items[at:])
     if ears and PHRASE_SECTIONS:
         tempos, last = section_tempos(bars, tempo_beats, bpm), None
         for bar in bars:
@@ -1490,7 +1505,7 @@ def lys(result, title, shape_of=None):
         `said`: the bar, each time it is played. A chord is marked when, over those times, the
         reader is less sure of it than DOUBT; the chord offered is the least sure time's."""
         short = said[0].get("pickup")
-        n = int(said[0]["time"].split("/")[0]) if "time" in said[0] else beats   # a bar of 2/4 (two_four)
+        n = int(said[0]["time"].split("/")[0]) if "time" in said[0] else beats   # a bar of 2/4 or 3/4 (short_meters)
         names = beat_names(said[0], short or n)
         if short and len(set(names)) > 1 and beats % short:
             # Lily# fits a bar's slots to the meter's beats, a short bar's too: three beats of 4/4
@@ -1502,7 +1517,7 @@ def lys(result, title, shape_of=None):
             heard = [c for bar in said for c in bar["chords"] if c["symbol"] == name and "sure" in c]
             if heard and sum(c["sure"] for c in heard) / len(heard) < DOUBT:
                 doubts[name] = min(heard, key=lambda c: c["sure"])["other"]
-        marks = [f'{m}@todo("or {doubts[m]}?")' if m in doubts else m for m in marks]
+        marks = [f'{m}@or({doubts[m]})' if m in doubts else m for m in marks]   # Lily# REQUESTS 17: Ctrl+Shift+Up/Down swaps them
         if shape_of and not shaped:
             shaped.append(True)
             shape = shape_of(names[0])
@@ -1523,9 +1538,9 @@ def lys(result, title, shape_of=None):
         if not noted:                   # the first chords of the chart: how to see a chord's diagram
             noted.append(True)
             out.append(f"{indent}{DIAGRAM_NOTE}")
-        # A bar of 2/4 says so at its head, and the bar after it goes back (Lily# takes a `time` at a bar's head
+        # A bar of 2/4 or 3/4 says so at its head, and the bar after it goes back (Lily# takes a `time` at a bar's head
         # to the section's end: a section's last bar needs no way back).
-        texts = [("time 2/4 " if "time" in said[0] else f"time {result['time']} " if j and "time" in bars[j - 1][0] else "")
+        texts = [(f"time {said[0]['time']} " if "time" in said[0] else f"time {result['time']} " if j and "time" in bars[j - 1][0] else "")
                  + slots(said) for j, said in enumerate(bars)]
         sizes = line_sizes(len(bars))
         for k, size in enumerate(sizes):
