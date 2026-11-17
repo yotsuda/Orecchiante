@@ -556,8 +556,9 @@ between where singing begins or stops (the vocal stem from Demucs, `--voice <fol
 `<name>.voc.npy`), the key signature moves by two or more, or the music grows 6 dB louder or
 quieter; blocks played again whole elsewhere; and inside a long block, a grid of phrases of four
 bars (`PHRASE_BARS`) cut where a phrase said twice has ended, where the dominant goes home across
-the bar line, or where the phrase is one played elsewhere that, at two thirds of those places or
-more, follows a different bar (`BEGIN_SHARE`: a chorus, a verse B). No repeat signs and no `fold`.
+the bar line, where the phrase is one played elsewhere that, at two thirds of those places or
+more, follows a different bar (`BEGIN_SHARE`: a chorus, a verse B), or after every pair of phrases
+from the block's start where a new pair begins (`PAIR_HEARD`, 0.8.1, below). No repeat signs and no `fold`.
 
 To see whether that is what a section means beyond two songs, the section starts are counted
 against AIST's structure annotation of RWC-P (intro, verse A, chorus …; [DATASETS.md](docs/DATASETS.md)),
@@ -571,6 +572,29 @@ leaving out boundaries between two sections of the same label (chorus A, chorus 
 | `--phrase` with the voice (torch's Demucs, stereo) | 67.1 / 63.4 / 65.2% | 66.1 / 56.1 / 60.7% |
 | the voice dettato hears (0.6.0, below) | 65.6 / 63.0 / 64.3% | 65.8 / 55.5 / 60.2% |
 | the voice of six parts (0.8.0, "Six parts") | 65.8 / 62.5 / 64.1% | 65.5 / 56.3 / 60.5% |
+| and a cut after a pair of phrases (0.8.1, `PAIR_HEARD`) | 64.6 / 67.2 / 65.9% | 63.5 / 60.7 / 62.1% |
+
+Counting every AIST boundary (not only where the label changes), the last two rows are `rwc-dev`
+68.9 / 60.5 / 64.4% → 67.3 / 64.8 / 66.1%, `rwc-test` 67.4 / 54.8 / 60.5% → 65.2 / 59.1 / 62.0%; the
+F of the paragraph below is of every boundary.
+
+**The turns inside singing (2026-11-17, `PAIR_HEARD`).** Of AIST's verse-to-verse boundaries (verse A
+to B) in `rwc-dev`, 67 of 133 were missed; 32 of those fall on the four-bar grid of their block, 20 two
+bars off it, and inside singing (`scratch/sec/vab.py`). At the grid points not cut, no one cue told
+an AIST boundary from none (`scratch/sec/grid_cues.py`, `grid_rules.py`): the share sung of the bar
+before, the change of the share sung, of the vocals' level or the whole's, how alike the phrases
+either side are. What did: every second grid point (eight bars from the block's start: 53% within a
+bar of AIST, against 31% of all grid points). Cut there alone, `rwc-dev` 64.4 → 66.9% but My Life
+gains six cuts inside its verses of 14 and 16 bars (the owner cut them whole). Four of those six begin
+the second half as the first (a b a c: one period), two begin a phrase played only once elsewhere
+(`scratch/sec/eight.py`). So the cut is made where the phrase after is played two or more times
+elsewhere and does not begin as the pair before did: `rwc-dev` 64.4 → 66.1% (verse to verse 49.6 →
+60.2%, chorus to chorus 44.0 → 50.0%), both of the owner's songs as before; `rwc-test` (counted only)
+60.5 → 62.0% (verse to verse 47.1 → 55.4%). Within 0.5 s F stays (41.7 → 41.9%, 37.4 → 37.3%): the new
+cuts fall near AIST's, not on them. Without the voice 45.7 → 48.7% and 49.0 → 50.1%, and 糸 gains one
+cut (33, against its five lost as before). Not taken: cutting also where the share sung of the phrase after
+is below the one before (`SUNG_DROP` 0.15: `rwc-dev` +0.3, but `rwc-test` 62.0 → 61.4%, seen before
+deciding).
 
 Within 0.5 s, F is 21.2 / 25.2 / 41.5% on `rwc-dev` and 17.6 / 29.2 / 37.6% on `rwc-test`.
 `PHRASE_BARS` and `BEGIN_SHARE` were chosen on `rwc-dev` (and on keeping the owner's two songs
@@ -589,7 +613,9 @@ within a bar (`scratch/sep/count.py`, the line chosen on `rwc-dev`).
 As the default (`measure.py form … --ears`, no voice): every bar is written, none said again
 behind a repeat sign; 11.8 sections a song in `rwc-dev` and 11.3 in `rwc-test` (0.7 and 0.9 of
 them a bar or two long; the old sections 6.2 and 5.5), and 3.8, 3.7, 2.9 in `seed1`, `seed7`,
-`seed11`. With nothing folded the chords change by a tenth of a point or so (`rwc-dev` root 87.3
+`seed11`; since 0.8.1 (`PAIR_HEARD`) 14.2 and 13.7, and 4.0, 4.1, 3.0. With that many, the
+eighteenth letter came: a section is never named R, for its second playing, `R2`, reads in Lily#
+as a whole-bar rest of a half (`LETTERS`). With nothing folded the chords change by a tenth of a point or so (`rwc-dev` root 87.3
 → 87.4%, `rwc-test` 88.8 → 88.9%), and the marks are half a point fewer (`rwc-test` 28.7 → 28.1%
 marked, catching 72.5 → 72.0% of the wrong roots and families).
 

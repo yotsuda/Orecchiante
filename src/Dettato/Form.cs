@@ -10,7 +10,10 @@ static class Form
     const double LoudTurn = 6.0;    // dB: the two bars after a bar line this much louder or quieter than the two before
     public const int PhraseBars = 4;    // a phrase is this many bars, whatever the tempo
     const double BeginShare = 0.67; // on the grid, a cut where the phrase is played elsewhere after another bar at this share of the places
+    const int PairHeard = 2;        // on the grid, a cut after every pair of phrases where the phrase after is played this many times
+                                    // elsewhere and does not begin the pair as the one before did (a b a c is one period)
     const int WholeBlock = 2;       // phrases: a block no longer than this is one section
+    const string Letters = "ABCDEFGHIJKLMNOPQSTUVWXYZ";   // section names; no R: R2 reads in Lily# as a whole-bar rest of a half
     const double PhraseAlike = 0.75;    // two phrases are the same when this share of their beats have the same root and family
     public const double VoiceLoud = 0.25;   // a moment sings when the vocals are this share of the song's loud end (their 95th percentile)
     public const double VoiceFloor = 0.05;  // a song sings at all when the vocals' loud end is this share of the recording's
@@ -122,7 +125,8 @@ static class Form
 
     /// <summary>The sections, as the owner cut 糸 and My Life: blocks between turns, blocks played again whole elsewhere,
     /// and inside a long block a grid of phrases cut where a phrase said twice has ended, where the dominant goes
-    /// home across the bar line, or where the phrase is one played elsewhere after another bar. A section that plays
+    /// home across the bar line, after a pair of phrases where a new pair begins, or where the phrase is one played
+    /// elsewhere after another bar. A section that plays
     /// one before it again is named after it (A, A2). <paramref name="keys"/>: the chord (quality * 12 + root) on each
     /// beat of each bar. Returns the form and, for each bar, its section and which bar of it it is.</summary>
     public static (List<string> Form, List<(string, int)> Places) Phrases(int[][] keys, HashSet<int> turns, int tonic, bool major, int phrase, IReadOnlyList<int> sings)
@@ -222,7 +226,9 @@ static class Form
             {
                 bool middle = g - phrase >= a && g + phrase <= b && Alike(g - phrase, g, phrase);
                 bool ended = g - 2 * phrase >= a && Alike(g - 2 * phrase, g - phrase, phrase) && !(g + phrase <= b && Alike(g - phrase, g, phrase));
-                if (!middle && (ended || Cadence(g) || (BeginShare != 0 && g + phrase <= b && AlwaysBegins(g)))) cuts.Add(g);
+                bool pair = PairHeard != 0 && (g - a) % (2 * phrase) == 0 && g + phrase <= b && !Alike(g - 2 * phrase, g, phrase)
+                    && Enumerable.Range(0, n - phrase + 1).Count(h => Math.Abs(h - g) >= phrase && Alike(g, h, phrase)) >= PairHeard;
+                if (!middle && (ended || Cadence(g) || pair || (BeginShare != 0 && g + phrase <= b && AlwaysBegins(g)))) cuts.Add(g);
             }
         }
         var sorted = cuts.OrderBy(c => c).ToList();
@@ -244,7 +250,7 @@ static class Form
                 }
             }
             if (k < 0) { bases.Add((a, b)); k = bases.Count - 1; }
-            string letter = k < 26 ? ((char)('A' + k)).ToString() : $"S{k + 1}";
+            string letter = k < Letters.Length ? Letters[k].ToString() : $"S{k + 1}";
             count[letter] = count.GetValueOrDefault(letter) + 1;
             string name = count[letter] == 1 ? letter : $"{letter}{count[letter]}";
             names.Add(name);

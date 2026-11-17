@@ -585,12 +585,26 @@ def voice_turns(sung):
     return {i for i, _, _ in runs()[1:]}
 
 
+PAIR_HEARD = 2         # on the grid, also cut after every pair of phrases from the block's start (AIST, rwc-dev: a verse A of 8 bars,
+                       # then B) where the phrase after is played this many times elsewhere and does not begin the pair as the
+                       # one before did (a b a c is one period: My Life's verses of 14 and 16 bars, the owner's); 0: never
+
+
+LETTERS = "ABCDEFGHIJKLMNOPQSTUVWXYZ"   # no R: R2, the second playing of R, reads in Lily# as a whole-bar rest of a half
+
+
+def section_letter(k):
+    """The name of the k-th section that plays none before it: A, B, … (no R), then S26, S27, …"""
+    return LETTERS[k] if k < len(LETTERS) else f"S{k + 1}"
+
+
 def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset()):
     """The sections, as the owner cut 糸 (2026-11-16): the music is cut into blocks where it turns (singing
     begins or stops, the key changes, it grows far louder or quieter); a block of WHOLE_BLOCK bars or
     phrases or fewer is one section; a longer one is cut on a grid of `phrase` bars from its start, where a phrase
-    said twice has ended (A: four bars, the same four again) or where the dominant goes to the home
-    chord across the bar line, but never between a phrase and its saying again. A section that plays
+    said twice has ended (A: four bars, the same four again), where the dominant goes to the home
+    chord across the bar line, or after a pair of phrases where a new pair begins (PAIR_HEARD), but
+    never between a phrase and its saying again. A section that plays
     one before it again (PHRASE_ALIKE of the beats of the shorter, at their starts) is named after it:
     A, A2, A3. `keys`: the chord on each beat of each bar. Returns the form and, for each bar, its
     section and which bar of it it is."""
@@ -676,7 +690,10 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset()):
             middle = g - phrase >= a and g + phrase <= b and alike(g - phrase, g, phrase)
             ended = (g - 2 * phrase >= a and alike(g - 2 * phrase, g - phrase, phrase)
                      and not (g + phrase <= b and alike(g - phrase, g, phrase)))
-            if not middle and (ended or cadence(g) or (BEGIN_SHARE and g + phrase <= b and always_begins(g))):
+            pair = (PAIR_HEARD and (g - a) % (2 * phrase) == 0 and g + phrase <= b
+                    and not alike(g - 2 * phrase, g, phrase)
+                    and sum(1 for h in range(n - phrase + 1) if abs(h - g) >= phrase and alike(g, h, phrase)) >= PAIR_HEARD)
+            if not middle and (ended or cadence(g) or pair or (BEGIN_SHARE and g + phrase <= b and always_begins(g))):
                 cuts.add(g)
     cuts = sorted(cuts)
     pieces = list(zip(cuts, cuts[1:]))
@@ -694,7 +711,7 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset()):
             k = len(bases) - 1
         else:
             k = best[1]
-        letter = chr(ord("A") + k) if k < 26 else f"S{k + 1}"
+        letter = section_letter(k)
         count[letter] += 1
         names.append(letter if count[letter] == 1 else f"{letter}{count[letter]}")
     return names, [(name, i + 1) for name, (a, b) in zip(names, pieces) for i in range(b - a)]
@@ -804,10 +821,10 @@ def name_sections(bars):
         s = bar["section"]
         if s not in names:
             if lengths[s] >= HIDE_SHORT:
-                names[s] = chr(ord("A") + shown) if shown < 26 else f"S{shown + 1}"
+                names[s] = section_letter(shown)
                 shown += 1
             else:
-                base = before or (chr(ord("A") + shown) if shown < 26 else f"S{shown + 1}")
+                base = before or section_letter(shown)
                 under[base] += 1
                 names[s] = f"{base}_{under[base]}"
         if s != "Pickup" and "_" not in names[s]:
@@ -975,7 +992,7 @@ def find_form(keys, alike=1.0, turns=frozenset()):
     for _, _, s in played:
         if s not in names:
             k = len(names)
-            names[s] = chr(ord("A") + k) if k < 26 else f"S{k + 1}"
+            names[s] = section_letter(k)
     return [names[s] for _, _, s in played], [(names[s], k + 1) for _, bars, s in played for k in range(bars)]
 
 

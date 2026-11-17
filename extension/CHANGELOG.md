@@ -2,6 +2,16 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.8.1
+
+- More section starts inside singing: a long stretch is also cut after every eight bars where a new
+  phrase begins that comes back elsewhere (a verse's first half, then its second), but not where the
+  second half begins as the first did. Against the structure annotated for RWC's songs, more of the
+  turns inside singing are found (a verse's A to B 50 → 60% of the songs used to choose, 47 → 55% of
+  the others); the chords and the bars are the same.
+- No section is named R any more: its second playing, `R2`, read in Lily# as a rest, and the chart
+  did not check (songs with eighteen sections or more).
+
 ## 0.8.0
 
 - Six parts in place of four: guitar and piano are separated out of `other` too (`guitar.flac`,

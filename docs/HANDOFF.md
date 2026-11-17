@@ -3,7 +3,7 @@
 **毎セッションの終わりに書き換える**（追記しない。200 行以内）。方向づけは [ROADMAP.md](ROADMAP.md)、
 数字と使い方は [README](../README.md)、録音の出典は [DATASETS.md](DATASETS.md)。
 
-最終更新: 2026-11-17（ギターとピアノの混ざりを測った＝int8 でも振り分けでもない、手はオーナーの判断待ち。その前に **0.8.0: パートは 6 つ**＝`htdemucs_6s` でギターとピアノも分ける、オーナー決定。拡張を入れ直した。`dettato ears` が 0.7.0 から落ちていたのを直した。その前に 0.7.0: 4 パートを FLAC で書く、0.6.0: 歌のモデル、0.5.0: 意味で切る section。HEAD は `git log -1`）。
+最終更新: 2026-11-17 午後（**0.8.1: 歌の中の境目**＝塊の頭から 8 小節ごとに、新しい句の組が始まる所で切る `PAIR_HEARD`。AIST の F dev 64.4 → 66.1%・test 60.5 → 62.0%、オーナーの 2 曲はそのまま。拡張を入れ直した。その前に 0.8.0: パートは 6 つ（オーナー決定、ギターとピアノの混ざりは測って 6 のまま）、0.7.0: パートを FLAC で、0.6.0: 歌のモデル、0.5.0: 意味で切る section。HEAD は `git log -1`）。
 
 11-16 に入れたもの（README と git の履歴）: BTC（0.4.0）、0.08 秒の小節（0.3.5）、テンポは小数 1 桁、`lysc shape`、半分の小節（0.4.1。**RWC の P050・P095・P034・P038 では悪くなる**）、意味で切る section（0.5.0）。
 
@@ -15,7 +15,7 @@
 
 **`dettato <録音> [-o <x.lys>] [--force]` が、mp3・m4a・mp4・aac・flac・wma・wav から `.lys` と `.dettato.json` を録音の隣に書く**
 （Python なし。RWC_P001 の mp3 で 6.3 秒）。配る形は .NET＋ONNX の実行ファイルを VS Code 拡張に入れる（Calamo と同じ形）。
-**拡張 `yotsuda.dettato` 0.8.0 をこの PC の VS Code に入れた**（0.6.0: 歌を聞いて section を切る。0.7.0: パートを書く。0.8.0: 6 パート）（`extension/`、`tools/deploy-extension.ps1`。.vsix 167 MB、Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
+**拡張 `yotsuda.dettato` 0.8.1 をこの PC の VS Code に入れた**（0.6.0: 歌を聞いて section を切る。0.7.0: パートを書く。0.8.0: 6 パート。0.8.1: 歌の中の境目。入った版の通しで糸・My Life の section は前と同じ）（`extension/`、`tools/deploy-extension.ps1`。.vsix 167 MB、Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
 「Convert Recording to Lily# (.lys)… (Preview)」で、Lily# が `ext.activate()` で `{path, version, protocol, inputs}` を受け取る。**VS Code の中で動くことはユーザーが確かめた（0.2.0。0.3.x は Lily# のメニューからはまだ）。**
 
 ### コマンドと入力（D3。`Program.cs`・`Audio.cs`。README の「A recording as it comes」、Lily# 向けは便りの §2a）
@@ -45,7 +45,7 @@
 - 耳: wav → `.beats`（Beat This!）と `.npz`（crema と BTC の平均、0.4.0 から）、特徴量: wav → `.feat.npz`。突き合わせは `tools/net_check.py`、`measure.py --net scratch/net` で表は全列同じ。
 - **`--ears` では HPSS を外した**（`use_ears()` が `HARMONIC_FRAMES = 0`。特徴量は `scratch/feat-h0/`）。1 曲 3 分半で `dettato read` 5.5 秒（Beat This! 3.7）。onnxruntime は 8 スレッド（24 だと遅い）。
 
-### 数字（`measure.py all`、2026-11-16 の 0.5.0（意味で切る section）の後。lysc check 1388/1388、sidecar 1388/1388＝演奏の小節数で。ログは `scratch/all.log`、前は `all041.log`）
+### 数字（`measure.py all`、2026-11-17 の 0.8.1（`PAIR_HEARD`）の後。コード・小節線は 0.5.0 から同じ。ログは `scratch/all.log`、前は `all080.log`）
 
 | `--ears`（crema＋BTC） | `rwc-dev`（選ぶ側） | `rwc-test`（数えるだけ） | `rwc-p` | seed1 / 7 / 11 |
 |---|---|---|---|---|
@@ -55,7 +55,7 @@
 | 小節線 F | 93.8% | 95.3% | 94.5% | 97.1 / 91.0 / 94.1% |
 | テンポ・拍子 | 47・49 | 47・49 | 94・98 | |
 | 印 → 拾う誤り | 34.9% → 86.0% | 28.1% → 72.0% | 31.6% → 78.9% | 14.8% → 73.8% |
-| section（1 曲あたり、AIST の F は声なし） | 11.8、45.8% | 11.3、48.1% | 11.5 | 3.8 / 3.7 / 2.9 |
+| section（1 曲あたり、AIST の F は声なし） | 14.2、48.7% | 13.7、49.1% | 13.9 | 4.0 / 4.1 / 3.0 |
 
 - 自作（モデルあり）seed1 / 7 / 11: ルート 95.6 / 96.1 / 97.4%、小節線 95.0 / 97.6 / 99.1%。`measure.py head`（`--ears`）: 最初の小節線 `rwc-dev` 37/50・`rwc-test` 43/50、最後 23/50・15/50。
 
@@ -71,7 +71,12 @@
   **0.6.0（.NET の歌）で 2 曲とも全部、余分なしで出す**（糸は終わり 67 が増えるだけ。入った拡張の通しの読みでも同じ）。声なしだと糸は 9 つ中 5 つを落とす。
   確かめは `scratch/sec/try.py [定数=値 …]`（`VOICEDIR=scratch/net/voice/sec` で .NET の歌、`NOVOICE=1` で声なし）と `tools/aist_sections.py rwc-dev`（既定で .NET の歌）。**規則を触ったら必ず両方を見る**。
 - 仕組み（README「Sections by meaning」「The voice in .NET」）: 歌の出入り・調号 2 つ以上・6 dB で塊に切り、丸ごと別の所で鳴る塊の頭と終わり、長い塊の中は 4 小節の句（`PHRASE_BARS`）の格子で
-  「同じ句 2 回の終わり」「V→I」「別の所でも始まる句（`BEGIN_SHARE`）」で切る。名前は再演なら A2。fold はしない。.NET は `Form.Turns`・`Form.Phrases`・`Form.VoiceTurns`。
+  「同じ句 2 回の終わり」「V→I」「別の所でも始まる句（`BEGIN_SHARE`）」「8 小節ごとの新しい組（`PAIR_HEARD`、0.8.1）」で切る。名前は再演なら A2。fold はしない。.NET は `Form.Turns`・`Form.Phrases`・`Form.VoiceTurns`。
+- **歌の中の境目（0.8.1、2026-11-17）:** `PAIR_HEARD`＝塊の頭から 8 小節目ごとに、後ろの句がほかで 2 回以上鳴り、かつ前の組と同じ句で始まらない（a b a c は 1 つ＝My Life の 14・16 小節の verse）所で切る。
+  AIST の F（全部の境目）dev 64.4 → 66.1%（verse→verse 49.6 → 60.2%、chorus→chorus 44.0 → 50.0%）、test 60.5 → 62.0%（verse→verse 47.1 → 55.4%）。0.5 秒以内は同じ（近くに落ちる）。声なし 45.7 → 48.7%、声なしの糸は 33 が増える。
+  道具: `scratch/sec/vab.py`（落とした境目の位置）、`grid_cues.py`＋`grid_rules.py`（格子点の手がかり）、`eight.py`（8 小節の線の当たり外れと My Life）、`sweep.ps1 '<定数=値 …>' …`（dev の F＋オーナーの 2 曲）。
+  dev の verse→verse で残る 53: 2 小節ずれ（格子の位相）と、手がかりの見えない格子点。
+  section が増えて 18 番目の文字に届き、**`R2` が Lily# で全休符と読まれて lysc check が 6 譜面で落ちた → 名前の文字から R を外した**（`LETTERS`・`Form.Letters`、SIDECAR.md）。
 - **歌（0.6.0、0.8.0 から 6 分割の歌）:** `Voice.cs` が Demucs（`htdemucs_6s`、MIT）の ONNX（`tools/d2/demucs_onnx.py --model htdemucs_6s`。STFT と逆 STFT は外、行列積だけ int8＝64 MB）を 7.8 秒ずつ、ずらしなし・モノラルを両チャンネルで回す。
   AIST 3 秒以内の F: dev 64.4%・test 60.5%（4 分割は 64.3・60.1）。**歌は `scratch/net/voice/`（6 分割。RWC 100・seed1 の 7・sec）、4 分割のものは `voice4/`。** 歌のない曲は `VOICE_FLOOR`（0.05）で歌なし（seed1 の 7 曲で確かめ直した）。**Python と .NET は同じ `.voc.npy` で RWC 100 曲が一字一句同じ**（`dettato read … --voice <folder>`、合成曲は `--voice none`）。
 - **時間とメモリ（0.6.1）:** 通しで RWC_P001 33〜45 秒（Calamo の負荷しだい）、ピーク 8.6 GB。並行は 3（`Voice.Parallel`）。結果を変えずに速くする手は見つからなかった（README）。
@@ -87,7 +92,8 @@
   **int8 のせいではない**（fp32 で ±0.1 dB）。**時間周波数ごとの振り分け直しは効かない**（音が別のパートに入っている）。**オーナー決定（2026-11-17）: 6 パートのまま**（糸・My Life を 5 パート＝guitar-piano 1 本の版 `scratch/six/listen5/`（`scratch/six/merge_gp.py`）と聴き比べて）。
   残る手（今はやらない）: 別のモデル（BS-RoFormer の 6 パート版。重みのライセンスは配布元で未確認）、MoisesDB で実録音を測る（登録が要る）。
 - **次:**
-  (1) 歌の中の境目（AIST の verse A→B）。手がかり候補: 旋律の音域・歌の密度・ドラムの型。
+  (1) 歌の中の境目の続き（0.8.1 で半分）。歌の密度（割合・音量の変化）は単独では効かなかった。残る候補: 格子の位相（落とした verse→verse の 20/67 が塊の頭から 2 小節ずれ）、
+  旋律の音域（歌のパートの音高が要る。RWC は `.voc.npy`＝音量しか持っていない＝歌の波形を作り直す。50 曲で 45 分ほど）、ドラムの型（ドラムのパートが要る、同じく）。
   (2) C3（テンポの大きな変化。範囲のテンポ・人の拍マーカーとつながる）。(3) 速くする手が要るなら: 重なりを 4 分の 1 より小さく（8 分の 1 など、同じ道具で測る。未測定）、空いた PC で測り直す、蒸留した小さなモデル（学習の音源はオーナーが決める）。
 - **糸の M64 は rit ではなく 6 拍の小節**（オーナー。4＋2 拍、M65 に `time 2/4`）。手がかりは Beat This! の downbeat の値: G の小節の頭が今の組み方で平均 2.3、2 拍ずらすと 3.5（`scratch/sec/downs.py`、`.venv-bt`）。
   案: 2 拍ずつ組む所で向きを downbeat の値で選び、入れ替わる所に 2 拍の小節（値段つき）。要るもの: `.beats` に 3 列目（downbeat の値）＝`track_beats.py` と `Beats.cs`、全セットの拍の作り直し。未着手。
@@ -101,6 +107,8 @@
   Lily# の次の版が入ったら、変換メニューから 3 つとも実物で確かめて `done`**（3・5 も同じく確かめてから）。
 
 やり残し（急がない）:
+- **MuScriptor**（github.com/muscriptor/muscriptor、Kyutai×Mirelo、2026-11-17 にオーナーから）: 多楽器の採譜（MIDI・MusicXML、拍・小節線も）。transformer デコーダ 103M〜1.4B、torch。
+  コードは MIT、**重みは CC BY-NC 4.0（HuggingFace でゲート）**。コード名は出さない。README に精度の数字・学習データなし（arXiv 2607.08168 は未読）。M5（旋律・ベース）の候補、配るならオーナーの判断。
 - **Beat This! の `small0`（8 MB）と半精度は測れていない**（配布元 cloud.cp.jku.at が 500）。取れたら `track_beats.py --model small0` で `final0` と比べる。
 - 和音のないイントロの小節（`rwc-dev` の P027）は譜面に入れていない。`fold`・`beat_names`・`lys()` が「和音のない拍」を扱う必要がある（Lily# は `r` で N.C.）。最後の和音の終わりは `.dettato.json` にない。`check` は `lysc check --batch` で速くなる。crema の `chord_root`・`chord_bass`・`chord_pitch` は未使用。
 
@@ -163,7 +171,8 @@
 - **半分の小節:** 頭から 2 つずつ組む（糸で半小節ずれ）。偶数個の並びも調で組み始めを選ぶ（糸の 58・59 が割れた）。
 - **6 パート:** ギターとピアノの混ざりを int8 をやめて減らす（fp32 で同じ）、guitar・piano（・other）を振幅の比で振り分け直す（指数 1・2・4 で変わらない）。
 - **意味で切る section:** 「別の所で前の小節が違って始まる」所を 1 か所でもあれば切る（AIST 65.8% だが My Life の歌を 4 小節ごとに割る）。歌の終わりで、最後の小節の後半が歌っていなければ線を 1 小節前に（効かない）。
-  句を秒で決める（10・11・15 秒。糸と RWC を両立する幅がない）。`VOICE_SHARE`・`VOICE_GAP` を動かす（オーナーの 2 曲が崩れる）。
+  句を秒で決める（10・11・15 秒。糸と RWC を両立する幅がない）。8 小節ごとに無条件で切る（dev 66.9% だが My Life の verse を割る）。
+  歌の割合が次の句で下がる所でも切る（`SUNG_DROP` 0.15: dev +0.3、test 62.0 → 61.4%。test を見てから捨てた）。`VOICE_SHARE`・`VOICE_GAP` を動かす（オーナーの 2 曲が崩れる）。
   歌の分離を重なりなしで（3 分の 1 速いが 15/100 曲の section が変わり、合っていた線を失う。オーナー決定）。荒く読んで出入りの周りだけ詰める（区切り 88%＝12% 減るだけで 5/100 曲が変わる。荒い読みが出入りを丸ごと見落とす。`scratch/sec/coarse_fine.py`、近似）。
 - **D4:** 小節の `beats` に Beat This! の拍を使う（RWC の拍の注釈に等分より近くない。テンポの揺れる録音では未確認）。
 - **C1:** 鳴り終わりを「前と同じ和音で、かつ静か」で見分ける。`--ears` の無音を自作と同じ「中央値の 1/10」で見る。
