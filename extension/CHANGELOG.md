@@ -2,6 +2,14 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.8.2
+
+- Sections inside a long stretch count their phrases of four bars from where singing last began or
+  stopped, not from where the key or the loudness turned (those turns fall in the middle of a section
+  more often than at its start). Against the structure annotated for RWC's songs, a few more section
+  starts are found in the songs used to choose (66.1 → 66.6%), as many in the others (62.0 → 61.9%);
+  the chords and the bars are the same.
+
 ## 0.8.1
 
 - More section starts inside singing: a long stretch is also cut after every eight bars where a new

@@ -590,6 +590,10 @@ PAIR_HEARD = 2         # on the grid, also cut after every pair of phrases from 
                        # one before did (a b a c is one period: My Life's verses of 14 and 16 bars, the owner's); 0: never
 
 
+GRID_ANCHOR = 1        # count a block's grid from where singing last began or stopped, or a block played again whole begins or
+                       # ends, not from a turn of key or loudness (AIST, rwc-dev: 66.1 -> 66.6%, without the voice 48.7 -> 50.9%); 0: from the block's start
+
+
 LETTERS = "ABCDEFGHIJKLMNOPQSTUVWXYZ"   # no R: R2, the second playing of R, reads in Lily# as a whole-bar rest of a half
 
 
@@ -640,7 +644,7 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset()):
     # where singing begins or stops is where the section does, and another turn this near it is the same one, a bar
     # off; but not a turn where a phrase played elsewhere begins (My Life: the riff at 135, the voice ending at 138)
     kept, others = set(), set(moved)
-    for s in sorted(sings):                    # in order, and the turns near in order (the same in .NET)
+    for s in sorted(sings):                  # in order, and the turns near in order (the same in .NET)
         near = sorted(t for t in others if abs(t - s) <= TURN_NEAR)
         strong = [moved[t] for t in near if begins_again(moved[t])]
         kept.add(strong[0] if strong else s)
@@ -667,6 +671,7 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset()):
         return found
 
     played = {blk: heard_at(*blk) for blk in blocks}
+    played_cuts = set()                          # the ends of blocks played again whole: the grid may count from them
     for a, b in blocks:
         length = b - a
         if any(d - c > length and any(h <= a and a + length <= h + d - c for h in played[(c, d)]) for c, d in blocks):
@@ -680,17 +685,24 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset()):
         for h, e in runs:
             if h == b:                           # right after the block itself: one run with it
                 cuts.add(e)
+                played_cuts.update((a, e))
             elif next(c for c, d in zip(edges, edges[1:]) if c <= h < d) == h:
                 cuts.update((h, e))
+                played_cuts.update((a, b, h, e))
     edges = sorted(c for c in cuts if 0 <= c <= n)
+    # a turn of key or loudness cuts, but the grid goes on from where singing last began or stopped, or a block played
+    # again whole begins or ends (rwc-dev: 50 of 131 turns fall on an AIST boundary, 114 of 141 places singing begins;
+    # a turn in the middle of a section of 8 moved the grid by 2 bars)
+    only_turns = {moved[t] for t in others} - kept - played_cuts
     for a, b in zip(edges, edges[1:]):
         if b - a <= WHOLE_BLOCK * phrase:
             continue
-        for g in range(a + phrase, b - 1, phrase):
+        p = (max(k for k in edges if k <= a and k not in only_turns) - a) % phrase if GRID_ANCHOR else 0
+        for g in range(a + (p or phrase), b - 1, phrase):
             middle = g - phrase >= a and g + phrase <= b and alike(g - phrase, g, phrase)
             ended = (g - 2 * phrase >= a and alike(g - 2 * phrase, g - phrase, phrase)
                      and not (g + phrase <= b and alike(g - phrase, g, phrase)))
-            pair = (PAIR_HEARD and (g - a) % (2 * phrase) == 0 and g + phrase <= b
+            pair = (PAIR_HEARD and g - a - p >= 2 * phrase and (g - a - p) % (2 * phrase) == 0 and g + phrase <= b
                     and not alike(g - 2 * phrase, g, phrase)
                     and sum(1 for h in range(n - phrase + 1) if abs(h - g) >= phrase and alike(g, h, phrase)) >= PAIR_HEARD)
             if not middle and (ended or cadence(g) or pair or (BEGIN_SHARE and g + phrase <= b and always_begins(g))):

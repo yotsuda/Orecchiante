@@ -12,7 +12,8 @@ static class Form
     const double BeginShare = 0.67; // on the grid, a cut where the phrase is played elsewhere after another bar at this share of the places
     const int PairHeard = 2;        // on the grid, a cut after every pair of phrases where the phrase after is played this many times
                                     // elsewhere and does not begin the pair as the one before did (a b a c is one period)
-    const int WholeBlock = 2;       // phrases: a block no longer than this is one section
+    const bool GridAnchor = true;   // a block's grid counts from where singing last began or stopped, or a block played again whole begins or ends, not from a turn
+    const int WholeBlock = 2;      // phrases: a block no longer than this is one section
     const string Letters = "ABCDEFGHIJKLMNOPQSTUVWXYZ";   // section names; no R: R2 reads in Lily# as a whole-bar rest of a half
     const double PhraseAlike = 0.75;    // two phrases are the same when this share of their beats have the same root and family
     public const double VoiceLoud = 0.25;   // a moment sings when the vocals are this share of the song's loud end (their 95th percentile)
@@ -200,6 +201,7 @@ static class Form
         // itself, one section; not a block that is a piece of a longer one played elsewhere, nor where it falls inside
         // another block but at that block's start
         var played = blocks.ToDictionary(blk => blk, blk => HeardAt(blk.First, blk.Second));
+        var playedCuts = new HashSet<int>();   // the ends of blocks played again whole: the grid may count from them
         foreach (var (a, b) in blocks)
         {
             int length = b - a;
@@ -213,20 +215,30 @@ static class Form
             foreach (var run in runs)
             {
                 int h = run[0], e = run[1];
-                if (h == b) cuts.Add(e);
-                else if (edges.Zip(edges.Skip(1)).First(p => p.First <= h && h < p.Second).First == h) { cuts.Add(h); cuts.Add(e); }
+                if (h == b) { cuts.Add(e); playedCuts.Add(a); playedCuts.Add(e); }
+                else if (edges.Zip(edges.Skip(1)).First(p => p.First <= h && h < p.Second).First == h)
+                {
+                    cuts.Add(h); cuts.Add(e);
+                    playedCuts.UnionWith([a, b, h, e]);
+                }
             }
         }
         edges = [.. cuts.Where(c => 0 <= c && c <= n).OrderBy(c => c)];
+        // a turn of key or loudness cuts, but the grid goes on from where singing last began or stopped, or a block
+        // played again whole begins or ends
+        var onlyTurns = new HashSet<int>(others.Select(t => moved[t]));
+        onlyTurns.ExceptWith(kept);
+        onlyTurns.ExceptWith(playedCuts);
         for (int i = 0; i + 1 < edges.Count; i++)
         {
             int a = edges[i], b = edges[i + 1];
             if (b - a <= WholeBlock * phrase) continue;
-            for (int g = a + phrase; g < b - 1; g += phrase)
+            int p = GridAnchor ? (((edges.Where(k => k <= a && !onlyTurns.Contains(k)).Max() - a) % phrase) + phrase) % phrase : 0;
+            for (int g = a + (p != 0 ? p : phrase); g < b - 1; g += phrase)
             {
                 bool middle = g - phrase >= a && g + phrase <= b && Alike(g - phrase, g, phrase);
                 bool ended = g - 2 * phrase >= a && Alike(g - 2 * phrase, g - phrase, phrase) && !(g + phrase <= b && Alike(g - phrase, g, phrase));
-                bool pair = PairHeard != 0 && (g - a) % (2 * phrase) == 0 && g + phrase <= b && !Alike(g - 2 * phrase, g, phrase)
+                bool pair = PairHeard != 0 && g - a - p >= 2 * phrase && (g - a - p) % (2 * phrase) == 0 && g + phrase <= b && !Alike(g - 2 * phrase, g, phrase)
                     && Enumerable.Range(0, n - phrase + 1).Count(h => Math.Abs(h - g) >= phrase && Alike(g, h, phrase)) >= PairHeard;
                 if (!middle && (ended || Cadence(g) || pair || (BeginShare != 0 && g + phrase <= b && AlwaysBegins(g)))) cuts.Add(g);
             }

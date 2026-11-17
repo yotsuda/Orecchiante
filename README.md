@@ -573,10 +573,28 @@ leaving out boundaries between two sections of the same label (chorus A, chorus 
 | the voice dettato hears (0.6.0, below) | 65.6 / 63.0 / 64.3% | 65.8 / 55.5 / 60.2% |
 | the voice of six parts (0.8.0, "Six parts") | 65.8 / 62.5 / 64.1% | 65.5 / 56.3 / 60.5% |
 | and a cut after a pair of phrases (0.8.1, `PAIR_HEARD`) | 64.6 / 67.2 / 65.9% | 63.5 / 60.7 / 62.1% |
+| and the grid not moved by a turn (0.8.2, `GRID_ANCHOR`) | 65.2 / 67.5 / 66.3% | 63.4 / 61.0 / 62.1% |
 
-Counting every AIST boundary (not only where the label changes), the last two rows are `rwc-dev`
-68.9 / 60.5 / 64.4% → 67.3 / 64.8 / 66.1%, `rwc-test` 67.4 / 54.8 / 60.5% → 65.2 / 59.1 / 62.0%; the
-F of the paragraph below is of every boundary.
+Counting every AIST boundary (not only where the label changes), the 0.8.0 and 0.8.1 rows are `rwc-dev`
+68.9 / 60.5 / 64.4% → 67.3 / 64.8 / 66.1%, `rwc-test` 67.4 / 54.8 / 60.5% → 65.2 / 59.1 / 62.0%, and
+0.8.2 68.1 / 65.2 / 66.6% and 64.9 / 59.2 / 61.9%; the F of the paragraphs below is of every boundary.
+
+**The grid and the turns (2026-11-17, 0.8.2, `GRID_ANCHOR`).** Of the boundaries inside singing still
+missed in `rwc-dev` (verse to verse, chorus to chorus: 95), 34 fall two bars off the four-bar grid of
+their block, and in some songs all of a block's do (RWC_P009, P023, P026). The grid there is not wrong
+but its start is: of the edges the blocks are cut at, where singing begins falls on an AIST boundary's
+bar 114 times in 141, where it stops 68 in 140 (39 a bar late, which 3 s forgives), and a turn of key or
+loudness only 50 in 131 (P023's turns at 22, 26, 30, 34, in the middle of its sections of eight bars at
+20, 28, 36). So a turn still cuts, but the grid inside the block after it counts on from where singing
+last began or stopped, or a block played again whole begins or ends (the latter kept My Life's verse at
+53 to 69, which counted from 39 gained 67, 71, 75): `rwc-dev` 66.1 → 66.6% (verse to verse 60.2 → 60.9%,
+chorus to chorus 50.0 → 51.2%, pre-chorus to chorus 72.3 → 74.5%), within 0.5 s 41.9 → 42.1%, without the
+voice 48.7 → 50.9%; the owner's two songs as before, with the voice and without. `rwc-test` (counted
+only) 62.0 → 61.9%, within 0.5 s 37.3 → 37.6%, without the voice 50.1 → 50.1%: on the songs not chosen on,
+no gain. Not taken: choosing each block's phase where its phrases begin as they do elsewhere
+(`rwc-dev` 62.1 to 63.7%), and moving where singing begins or stops a bar back when a phrase played
+elsewhere begins there (66.0%; `scratch/sec/song_phase.py`, `phase_look.py`). A song keeps one phase
+of four bars for half its AIST boundaries (the median), so the phase is not the song's but the block's.
 
 **The turns inside singing (2026-11-17, `PAIR_HEARD`).** Of AIST's verse-to-verse boundaries (verse A
 to B) in `rwc-dev`, 67 of 133 were missed; 32 of those fall on the four-bar grid of their block, 20 two
@@ -613,7 +631,8 @@ within a bar (`scratch/sep/count.py`, the line chosen on `rwc-dev`).
 As the default (`measure.py form … --ears`, no voice): every bar is written, none said again
 behind a repeat sign; 11.8 sections a song in `rwc-dev` and 11.3 in `rwc-test` (0.7 and 0.9 of
 them a bar or two long; the old sections 6.2 and 5.5), and 3.8, 3.7, 2.9 in `seed1`, `seed7`,
-`seed11`; since 0.8.1 (`PAIR_HEARD`) 14.2 and 13.7, and 4.0, 4.1, 3.0. With that many, the
+`seed11`; since 0.8.1 (`PAIR_HEARD`) 14.2 and 13.7, and 4.0, 4.1, 3.0; since 0.8.2 (`GRID_ANCHOR`) 14.4
+and 13.8 (0.9 and 1.1 a bar or two long: after a turn, the grid's next point can come a bar or two in). With that many, the
 eighteenth letter came: a section is never named R, for its second playing, `R2`, reads in Lily#
 as a whole-bar rest of a half (`LETTERS`). With nothing folded the chords change by a tenth of a point or so (`rwc-dev` root 87.3
 → 87.4%, `rwc-test` 88.8 → 88.9%), and the marks are half a point fewer (`rwc-test` 28.7 → 28.1%
