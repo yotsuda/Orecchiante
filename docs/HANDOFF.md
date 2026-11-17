@@ -94,7 +94,7 @@
 
 **それから、ユーザーの録音で聴いてもらう**: オーナーが譜面にしたい曲（練習の録音は対象外＝オーナー決定）。0.8.5 の糸を変換メニューから読み直して、`time 2/4` の小節（L74）が録音と合って鳴るかを聴いてもらう。
 - **D4 で Dettato 側に作るものは今はない**（読み直しは単に上書き＝オーナー決定、設計メモ §6）。配り直すときは版を 2 か所（`Program.cs`・`extension/package.json`）と CHANGELOG で上げて `tools/deploy-extension.ps1`。
-- **Lily# の依頼（`docs/repro/REQUESTS.md`。セッションの頭に見る）:** 1 は `done`。4 は Lily# が作り中（S1〜S3 済み、次は S4）。**16（パートのオン・オフ）は `fixed`＝オーナーの版で確かめてから `done`。** **5（m4a の `iTunSMPB`）は `fixed`＝実物の m4a で確かめてから `done`。** 7（小数のテンポ。Lily# が 6 と書いたのを振り直した）は 0.3.1 で入れた。
+- **Lily# の依頼（`docs/repro/REQUESTS.md`。セッションの頭に見る）:** **17（`F@or(Bm Dm)` と Ctrl+Shift+Up/Down のローテート、オーナーの案）は `open`＝入ったら `@todo("or …?")` を `@or(…)` に替える（`Writer.cs` と Python の `lys()`、`read_check.py` で一致）。** 1 は `done`。4 は Lily# が作り中（S1〜S3 済み、次は S4）。**16（パートのオン・オフ）は `fixed`＝オーナーの版で確かめてから `done`。** **5（m4a の `iTunSMPB`）は `fixed`＝実物の m4a で確かめてから `done`。** 7（小数のテンポ。Lily# が 6 と書いたのを振り直した）は 0.3.1 で入れた。
   **6（保存先のダイアログ・`audio` の道）・8（`warpFit` を中央値に）・9（`lysc shape`・`LILYSHARP_LYSC_PATH`）は Lily# master で `fixed`、Dettato は 9 を 0.3.2 で使った。Lily# の次の版が入ったら、変換メニューから 3 つとも実物で確かめて `done`**（3・5 も同じく確かめてから）。**この PC の Lily# 拡張（名は 0.16.0、11-17 17:12 に入った master のビルド）には 6・9・11・16 の文字列がある**（`Locate Recording`・`LILYSHARP_LYSC_PATH`・`The score plays`・`"parts"`）＝残るのは変換メニューからの実物の確かめ（VS Code の操作が要る）。
 
 やり残し（急がない）:
