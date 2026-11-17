@@ -71,6 +71,7 @@ static class Reader
     public static readonly Dictionary<int, string> Partial = new() { [1] = "4", [2] = "2", [3] = "2.", [4] = "1", [6] = "1." };
     const double EvenTempo = 0.1;          // the tempo is from the mean of the bars within this share of the middle one
     const double TinyBar = 0.25;            // a bar shorter than this share of the middle one is not a bar (糸: 0.08 s)
+    const double ShortBar = 12.0;            // bars of half the beats are paired where the downbeat logits say (PairRuns)
     static readonly (double Lo, double Hi) HalfBars = (0.35, 0.7);   // bars this share of the middle one are halves (PairHalves)
     const double SlowTwo = 1.5;            // a bar of two beats longer than this is a bar of four
 
@@ -134,6 +135,7 @@ static class Reader
             if (at < 0) counts.Add((d, 1)); else counts[at] = (d, counts[at].Count + 1);
         }
         int per = counts.MaxBy(c => c.Count).Per;       // the first of the commonest
+        if (rows.All(r => r.Length > 2)) downs = PairRuns(downs, [.. rows.Select(r => double.Parse(r[2], inv))], per);
         // a first beat counted in the middle of a bar: two short bars that make one whole are one
         var kept = new List<int> { downs[0] };
         for (int i = 1; i < downs.Length; i++)
@@ -162,6 +164,43 @@ static class Reader
         var lines = downs.Select(i => times[i]).ToList();
         if (end > times[downs[^1]] + 0.5 * per * beat) lines.Add(end);
         return (lines, per);
+    }
+
+    /// <summary>Bars of half the beats, one after the other, paired two by two where the downbeat logits say (those of
+    /// the lines kept less those of the lines dropped), a bar left alone costing ShortBar (糸's M65): read_chords.py's
+    /// pair_runs.</summary>
+    static int[] PairRuns(int[] downs, double[] strength, int per)
+    {
+        if (per % 2 != 0) return downs;
+        var gone = new HashSet<int>();
+        int k = 0;
+        while (k < downs.Length - 1)
+        {
+            if (downs[k + 1] - downs[k] != per / 2) { k++; continue; }
+            int e = k;
+            while (e + 2 < downs.Length && downs[e + 2] - downs[e + 1] == per / 2) e++;
+            int n = e - k + 1;
+            if (n >= 2)
+            {
+                var s = new double[n + 1];
+                for (int j = 0; j <= n; j++) s[j] = strength[downs[k + j]];
+                var best = new double[n + 1];
+                var came = new int[n + 1];
+                for (int j = 1; j <= n; j++) best[j] = double.NegativeInfinity;
+                for (int j = 1; j <= n; j++)
+                {
+                    double gain = j < n ? s[j] : 0.0;
+                    bool free = (j == 1 && k == 0) || (j == n && e + 2 == downs.Length);   // where the tracker began or stopped
+                    double one = best[j - 1] - (free ? 0.0 : ShortBar);
+                    double two = j >= 2 ? best[j - 2] - s[j - 1] : double.NegativeInfinity;
+                    (best[j], came[j]) = two >= one ? (two + gain, 2) : (one + gain, 1);
+                }
+                for (int j = n; j > 0; j -= came[j])
+                    if (came[j] == 2) gone.Add(downs[k + j - 1]);
+            }
+            k = e + 1;
+        }
+        return [.. downs.Where(d => !gone.Contains(d))];
     }
 
     /// <summary>The key of what the chord model says, before any reading: FindKey on the likeliest chord of each

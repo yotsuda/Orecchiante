@@ -14,7 +14,8 @@ static class Beats
     static readonly double[] Window = [.. Enumerable.Range(0, Frame).Select(i => 0.5 - 0.5 * Math.Cos(2 * Math.PI * i / Frame))];
     static readonly float[] Bank = MakeBank();      // [bin * Bands + band]
 
-    /// <summary>The lines of a .beats file: a beat's time and its number in the bar (1 on a bar line, 0 before the first).</summary>
+    /// <summary>The lines of a .beats file: a beat's time, its number in the bar (1 on a bar line, 0 before the first),
+    /// and the downbeat logit there (2026-11-17: which of the lines of bars of half the beats begin bars).</summary>
     public static string Lines(InferenceSession session, double[] mono)
     {
         var spect = LogMel(mono, out int frames);
@@ -27,9 +28,19 @@ static class Beats
         {
             bool isDown = downs.Length > 0 && downs.Min(d => Math.Abs(d - t)) < 0.035;
             number = isDown ? 1 : number > 0 ? number + 1 : 0;
-            lines.Append(string.Create(CultureInfo.InvariantCulture, $"{t:F3}\t{number}\n"));
+            lines.Append(string.Create(CultureInfo.InvariantCulture, $"{t:F3}\t{number}\t{AtBeat(down, t):F2}\n"));
         }
         return lines.ToString();
+    }
+
+    /// <summary>How sure the model is that a bar begins at the beat at <paramref name="t"/> seconds: the largest downbeat
+    /// logit within 2 frames of it (tools/track_beats.py's at_beat).</summary>
+    static float AtBeat(float[] down, double t)
+    {
+        int i = (int)Math.Round(t * 50, MidpointRounding.ToEven);
+        float best = float.NegativeInfinity;
+        for (int j = Math.Max(i - 2, 0); j <= Math.Min(i + 2, down.Length - 1); j++) best = Math.Max(best, down[j]);
+        return best;
     }
 
     static double ToMel(double hz) => hz >= 1000 ? 15 + Math.Log(hz / 1000) / (Math.Log(6.4) / 27) : hz * 3 / 200;

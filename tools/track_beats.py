@@ -6,7 +6,9 @@ trained on recordings, written one file a recording for measure.py --lines.
     .venv-bt/Scripts/python tools/track_beats.py some/folder --out some/beats            # the model for use: final0
 
 It runs in a virtual environment of its own (torch; see the README). <recording>.beats has a
-line a beat: its seconds, a tab, its number in the bar (1 is a bar line).
+line a beat: its seconds, a tab, its number in the bar (1 is a bar line), a tab, and the model's
+downbeat logit there (how sure it is that a bar begins on that beat, whether or not it says one does;
+2026-11-17, for a bar of two beats among bars of four: 糸's M65).
 
 `--rwc <folder>` is for measuring on RWC, which the model for use was trained on: each song is
 then read by the one of the eight cross-validation models that never heard it. The folder holds
@@ -39,6 +41,13 @@ def folds_of(rwc):
     return out
 
 
+def at_beat(logits, t):
+    """How sure the model is that a bar begins at the beat at `t` seconds: the largest downbeat logit
+    within 2 frames of it (50 frames a second)."""
+    i = int(round(t * 50))
+    return float(np.max(logits[max(i - 2, 0):i + 3]))
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     p.add_argument("input", type=Path, help="a .wav, or a folder of them")
@@ -46,7 +55,7 @@ def main():
     p.add_argument("--model", default="final0")
     p.add_argument("--rwc", type=Path, help="measure RWC fairly: the folder of the two annotation clones")
     args = p.parse_args()
-    from beat_this.inference import File2Beats
+    from beat_this.inference import Audio2Frames, File2Beats, load_audio
 
     files = sorted(args.input.glob("*.wav")) if args.input.is_dir() else [args.input]
     folds = folds_of(args.rwc) if args.rwc else {}
@@ -63,13 +72,17 @@ def main():
         name = f"fold{folds[path.stem]}" if folds else args.model
         if name not in models:
             models[name] = File2Beats(checkpoint_path=name, device="cpu", dbn=False)
-        beats, downbeats = models[name](str(path))
+        model = models[name]
+        signal, sr = load_audio(str(path))
+        beat_logits, down_logits = Audio2Frames.__call__(model, signal, sr)    # File2Beats, the logits kept
+        beats, downbeats = model.frames2beats(beat_logits, down_logits)
         beats, downbeats = np.asarray(beats, dtype=float), np.asarray(downbeats, dtype=float)
+        down_logits = np.asarray(down_logits, dtype=float)
         lines, number = [], 0
         for t in beats:
             down = len(downbeats) and float(np.min(np.abs(downbeats - t))) < 0.035
             number = 1 if down else number + 1 if number else 0    # beats before the first bar line are 0
-            lines.append(f"{t:.3f}\t{number}")
+            lines.append(f"{t:.3f}\t{number}\t{at_beat(down_logits, t):.2f}")
         target.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
         print(f"{path.name}: {len(beats)} beats, {len(downbeats)} bar lines ({name})", flush=True)
 

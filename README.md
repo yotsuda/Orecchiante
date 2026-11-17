@@ -307,14 +307,14 @@ crema; the same words hold for BTC, on which the prices and the marks were chose
 
 Counted on 2026-11-14 (`measure.py table rwc-dev rwc-test rwc-p --ears`; the beats of RWC are
 the fold models', as above; the first three columns again after "Two half bars are one bar" below,
-their tempo row after "The tempo to a tenth", their bar lines after "A bar of 0.08 s" and its half bars (0.4.1), and their chords with the two ears
+their tempo row after "The tempo to a tenth", their bar lines after "A bar of 0.08 s", its half bars (0.4.1) and "A bar of two beats" (0.8.4), and their chords with the two ears
 since 0.4.0, "Which model hears the chords"):
 
 | | `rwc-dev` (chosen on) | `rwc-test` (counted only) | `rwc-p`, all 100 | crema as it is, `rwc-p` | with BTC's chords, `rwc-p` |
 |---|---|---|---|---|---|
 | Tempo (within 4%), songs | 47 of 50 | 47 of 50 | 94 | 91 | 93 |
 | Meter, songs | 49 of 50 | 49 of 50 | 98 | 96 | 98 |
-| Bar lines (within 70 ms), F | 93.8% | 95.3% | 94.5% | 93.8% | 93.4% |
+| Bar lines (within 70 ms), F | 94.1% | 95.1% | 94.6% | 93.8% | 93.4% |
 | Chord root, by time | 87.4% | 88.9% | 88.2% | 84.4% | 85.9% |
 | Root and family | 82.9% | 83.9% | 83.4% | 79.8% | 80.6% |
 | Root and quality | 69.4% | 71.3% | 70.4% | 66.5% | 67.1% |
@@ -574,10 +574,11 @@ leaving out boundaries between two sections of the same label (chorus A, chorus 
 | the voice of six parts (0.8.0, "Six parts") | 65.8 / 62.5 / 64.1% | 65.5 / 56.3 / 60.5% |
 | and a cut after a pair of phrases (0.8.1, `PAIR_HEARD`) | 64.6 / 67.2 / 65.9% | 63.5 / 60.7 / 62.1% |
 | and the grid not moved by a turn (0.8.2, `GRID_ANCHOR`) | 65.2 / 67.5 / 66.3% | 63.4 / 61.0 / 62.1% |
+| and bars of two beats paired by the downbeat logits (0.8.4, `SHORT_BAR`) | 64.9 / 67.1 / 66.0% | 63.3 / 61.0 / 62.1% |
 
 Counting every AIST boundary (not only where the label changes), the 0.8.0 and 0.8.1 rows are `rwc-dev`
 68.9 / 60.5 / 64.4% → 67.3 / 64.8 / 66.1%, `rwc-test` 67.4 / 54.8 / 60.5% → 65.2 / 59.1 / 62.0%, and
-0.8.2 68.1 / 65.2 / 66.6% and 64.9 / 59.2 / 61.9%; the F of the paragraphs below is of every boundary.
+0.8.2 68.1 / 65.2 / 66.6% and 64.9 / 59.2 / 61.9%, 0.8.4 67.8 / 64.8 / 66.3% and 64.8 / 59.2 / 61.9%; the F of the paragraphs below is of every boundary.
 
 **The grid and the turns (2026-11-17, 0.8.2, `GRID_ANCHOR`).** Of the boundaries inside singing still
 missed in `rwc-dev` (verse to verse, chorus to chorus: 95), 34 fall two bars off the four-bar grid of
@@ -1203,6 +1204,29 @@ true found 76/79 in both; P062 74 → 63, 62/62; P078 88 → 80, 80/80), and the
 or a quarter of their tempo already lose true lines (P050 103 → 92 found of 180, P095 98 → 89,
 P034 82 → 76, P038 61 → 57): there the short bars were the right ones, and nothing in their
 lengths tells the two apart.
+
+**A bar of two beats (0.8.4, the owner on 糸's M64–65).** Near 糸's end the music has a bar of six
+beats (4 + 2; the owner writes `time 2/4` on the second part), and from 240 s the model counts bars
+of two beats (beats of 0.97 s). `MEND_BARS` paired them from the first, so every bar after the six
+beats was two beats off (`C#m7(b5) C | Dsus4 C`). The model's downbeat logit tells which: at the
+lines of a true bar it is 4 to 6 against 0 to 3 at the line between, and past the six beats pairing
+two beats later puts its mean at 3.5 against 2.3 (`scratch/sec/downs.py`). So `.beats` has a third
+column, the largest downbeat logit within two frames of the beat (`tools/track_beats.py`,
+`Beats.cs`; the beats and their numbers are as before, 318/318 files the same, .NET within 0.04 of
+torch), and (`SHORT_BAR`, `pair_runs` / `PairRuns`) a run of bars of half the beats is paired, before
+`MEND_BARS`, where the logits of the lines kept less those of the lines dropped are most; a bar of
+two left alone costs 12, nothing at the tracker's first or last line (which need not be bar lines:
+糸's run of 16 ends on the last line found and needs a bar of two there and one inside). 糸's bars
+now fall on the music's from 253.96 s on (`G | C#m7(b5) | C Dsus4 | C D | C D | C D`): the bar of two
+is one bar early (the logit is 3.2 at 249.96 s and 2.2 at 251.94 s), its sections are where they were
+(the last one no longer said again: `G` for `D3`). The bar of two is written as long as the rest,
+not `time 2/4`: of the lone bars of half the length in RWC's readings, 9 of 60 have both lines on
+true bar lines (6 of 53 before). The cost: from 2 to 40 the bar lines of `rwc-dev` are 94.0 to
+94.1%; 12 makes fewest bars of two. Bar lines, F, with `--ears`: `rwc-dev` 93.8 → 94.1%, `rwc-test`
+95.3 → 95.1%, the songs made here the same; 10 of RWC's charts and one song made here change.
+Sections against AIST (3 s): with the voice `rwc-dev` 66.6 → 66.3%, `rwc-test` 61.9 → 61.9%; without
+50.9 → 50.7%, 50.1 → 49.7%; the owner's two songs as before. Python and .NET the same (RWC 100/100
+with the voice, the seven sets 168/168).
 
 ### The tempo to a tenth
 

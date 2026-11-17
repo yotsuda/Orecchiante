@@ -2,6 +2,15 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.8.4
+
+- Where the beat tracker counts bars of four beats as bars of two for a while, they are put back
+  together two by two where the tracker is surest a bar begins, not simply from the first; one bar of
+  two beats may be left between them. In 糸 the bars after the six-beat bar near the end (4 + 2) now
+  fall where the music's bars do, not two beats off. The bar of two beats is written as a bar of the
+  chart's meter (no `time 2/4`: of such bars in RWC's songs, few are true). Against RWC's annotated
+  bar lines: 93.8 → 94.1% in the songs used to choose, 95.3 → 95.1% in the others.
+
 ## 0.8.3
 
 - A section whose tempo is its own has it written at its head (`tempo 4 = 100.2`): a slower intro,

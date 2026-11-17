@@ -90,6 +90,8 @@ RING_OUT = 0.2          # ears: a bar past the last one found and this much quie
                         # (rwc-dev and seed1; asking for the same chord too leaves 11 such bars in seed1's 24 songs, this 4)
 PARTIAL = {1: "4", 2: "2", 3: "2.", 4: "1", 6: "1."}   # a pickup of so many quarters, as Lily#'s `partial` takes it
 MEND_BARS = True       # ears: two short bars that together have a bar's beats are one bar (the tracker's slip)
+SHORT_BAR = 12.0       # ears: bars of half the beats are paired where the downbeat logits say (pair_runs), a bar left
+                        # alone costing this much logit. None: paired from the first (before 2026-11-17)
 TINY_BAR = 0.25        # ears: a bar shorter than this share of the middle one is not a bar (糸: 0.08 s, Lily# REQUESTS 10)
 HALF_BARS = (0.35, 0.7)  # ears: bars this share of the middle one are halves, paired as the key says (pair_halves). None: as found
 EVEN_TEMPO = 0.1       # the tempo is from the mean of the bars within this share of the middle one (0: the middle one alone)
@@ -240,16 +242,54 @@ def pair_halves(times, downs, heard):
     return [d for d in downs if d not in gone]
 
 
+def pair_runs(downs, strength, per):
+    """Bars of half the beats, one after the other (the tracker counted a bar of four as two of two),
+    paired two by two where the model is surest a bar begins (the downbeat logit of the lines kept,
+    less that of the lines dropped). A bar of half the beats may be left alone, at SHORT_BAR: 糸's M65,
+    two beats between bars of four (the owner, 2026-11-16); for nothing at the first or last line the
+    tracker found, which need not be bar lines. Before this the pairs ran from the first."""
+    if per % 2:
+        return downs
+    gone, k = set(), 0
+    while k < len(downs) - 1:
+        if downs[k + 1] - downs[k] != per // 2:
+            k += 1
+            continue
+        e = k
+        while e + 2 < len(downs) and downs[e + 2] - downs[e + 1] == per // 2:
+            e += 1
+        n = e - k + 1                       # halves; its lines are downs[k .. e + 1], the first and the last kept
+        if n >= 2:
+            s = [strength[downs[k + j]] for j in range(n + 1)]
+            best, came = [0.0] + [-np.inf] * n, [0] * (n + 1)
+            for j in range(1, n + 1):
+                gain = s[j] if j < n else 0.0
+                free = (j == 1 and k == 0) or (j == n and e + 2 == len(downs))   # where the tracker began or stopped
+                one = best[j - 1] - (0.0 if free else SHORT_BAR)
+                two = best[j - 2] - s[j - 1] if j >= 2 else -np.inf
+                best[j], came[j] = (two + gain, 2) if two >= one else (one + gain, 1)
+            j = n
+            while j > 0:
+                if came[j] == 2:
+                    gone.add(downs[k + j - 1])
+                j -= came[j]
+        k = e + 1
+    return [d for d in downs if d not in gone]
+
+
 def lines_of(path, heard=None):
     """Bar lines found by a beat tracker (tools/track_beats.py: a line a beat, its seconds, a tab,
     its number in the bar), as `read` takes them: the lines in seconds, and the beats in a bar.
     With `heard` (the ears' chords), bars half as long as the rest are paired (pair_halves)."""
     rows = [line.split() for line in Path(path).read_text().splitlines() if line.strip()]
     times, numbers = [float(r[0]) for r in rows], [int(float(r[1])) for r in rows]
+    strength = [float(r[2]) for r in rows] if rows and all(len(r) > 2 for r in rows) else None
     downs = [i for i, n in enumerate(numbers) if n == 1]
     if len(downs) < 2:
         raise ValueError("fewer than two bar lines found")
     per = Counter(b - a for a, b in zip(downs, downs[1:])).most_common(1)[0][0]
+    if MEND_BARS and SHORT_BAR is not None and strength is not None:
+        downs = pair_runs(downs, strength, per)
     if MEND_BARS:       # a first beat counted in the middle of a bar: two short bars that make one whole are one
         kept, i = [downs[0]], 1
         while i < len(downs):

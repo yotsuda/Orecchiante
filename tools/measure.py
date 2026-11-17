@@ -175,7 +175,7 @@ def totals(rows):
 def bar_lines(truth, wav, source, heard=None):
     """Bar lines found by other means, as read_chords.read takes them: (seconds, parts of a bar).
     `source` is "truth" (the true lines: what the chords are worth when the bars are right) or a
-    folder of <recording>.beats files, a line a beat: its seconds, a tab, its number in the bar.
+    folder of <recording>.beats files, a line a beat: its seconds, a tab, its number in the bar (and a tab and the downbeat logit there).
     `heard`, the ears' chords (a loaded <recording>.npz), lets the halves of bars be paired."""
     if source == "truth":
         per = {"6/8": 3}.get(truth["time"], int(truth["time"].split("/")[0]))
