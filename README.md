@@ -705,6 +705,15 @@ The vocals the sections hear are six's too (`scratch/net/voice/` holds them; the
   64.3 → 64.4%, within 0.5 s 42.3 → 41.7%; starts gone 52 (27 within 3 s of AIST), come 43 (22); the
   owner's two songs the same. As with no overlap, right starts go and others come. `rwc-test`
   (counted only): within 3 s 60.1 → 60.5%, within 0.5 s 37.3 → 37.4%.
+- **A guitar and a piano at once (2026-11-17; `scratch/six/duo.py` gives seed1's songs a guitar in `comp`
+  and a piano in a second chord part, another style a fourth higher; `score_duo.py`, `went_duo.py`):** of
+  the piano's sound 16% goes into `piano` (median of 17 songs; the electric pianos mostly into `other` or
+  `guitar`), of the guitar's 67% into `guitar` (acoustic 45%, electric 86%); the two together in guitar +
+  piano 7.4 dB against 2.3 (guitar) and 1.0 (piano) apart. **Not the int8:** the model in float32 (114 MB)
+  gives the same within 0.1 dB, here and on seed1 (guitar 3.1, piano 3.9 dB). **Not mixed bin by bin:**
+  sharing guitar + piano out again by their magnitudes (to the power 1, 2, 4; with `other` too) changes
+  nothing; the piano's sound is in the wrong part, not shared with the guitar's. General MIDI's acoustic
+  grand holding long chords renders at 1/25 of the others' loudness, and is left out of the piano's numbers.
 - Not measured: the quality on recordings (MoisesDB has guitar and piano stems, for non-commercial
   research, by registration; worth it once there are ways to compare, the owner's ears being enough to choose).
 - **The vocals are not the same twice:** with 3 segments at once (`Voice.Parallel`) `RWC_P001`'s
