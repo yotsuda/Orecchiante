@@ -684,7 +684,7 @@ VOICE_GAP = 3          # bars: a silence shorter than this between singing is a 
 TURN_NEAR = 2          # bars: a turn of key or loudness this near where singing begins or stops is that one
 
 
-def voice_turns(sung):
+def voice_turns(sung, begins=False):
     """Where singing begins or stops (`sung`: the share of each bar that sings) and goes on: the bars a
     section begins at. A silence shorter than VOICE_GAP bars between singing is a breath; then singing
     shorter than VOICE_RUN bars is none."""
@@ -707,7 +707,7 @@ def voice_turns(sung):
     for i, j, v in runs():
         if v and j - i < VOICE_RUN:
             on[i:j] = [False] * (j - i)
-    return {i for i, _, _ in runs()[1:]}
+    return {i for i, _, v in runs()[1:] if v or not begins}
 
 
 PAIR_HEARD = 2         # on the grid, also cut after every pair of phrases from the block's start (AIST, rwc-dev: a verse A of 8 bars,
@@ -722,6 +722,9 @@ HELD_SHIFT_LOOSE = 0   # (tried, kept off) ... to where any chord changes, and a
 HELD_REANCHOR = 1      # the grid goes on from the moved cut (0: rwc-dev 66.3%)
 MERGE_SHORT = 2        # a section of fewer bars than this joins the one before (the first: the one after); Open Arms' bar 50, the chorus's
                        # last bar (AIST rwc-dev the same 66.7%, 790 -> 776 starts; 3: 66.5% and My Life's last section lost; 4: 65.8%); 0: never
+SUNG_WHOLE = 2         # phrases: from where singing begins, these phrases, when played the same elsewhere, are not cut inside by singing that
+                       # stops and begins again, nor by a turn of key or loudness TURN_NEAR from it (Open Arms, the owner 2026-11-18: 15, 62, 65 are
+                       # not cuts, 67 is; AIST rwc-dev 66.7 -> 66.8%, rwc-test 62.4 -> 62.2%; 糸 and My Life the same); 0: never
 GRID_ANCHOR = 1        # count a block's grid from where singing last began or stopped, or a block played again whole begins or
                        # ends, not from a turn of key or loudness (AIST, rwc-dev: 66.1 -> 66.6%, without the voice 48.7 -> 50.9%); 0: from the block's start
 
@@ -734,7 +737,7 @@ def section_letter(k):
     return LETTERS[k] if k < len(LETTERS) else f"S{k + 1}"
 
 
-def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset()):
+def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset(), begins=frozenset()):
     """The sections, as the owner cut 糸 (2026-11-16): the music is cut into blocks where it turns (singing
     begins or stops, the key changes, it grows far louder or quieter); a block of WHOLE_BLOCK bars or
     phrases or fewer is one section; a longer one is cut on a grid of `phrase` bars from its start, where a phrase
@@ -772,6 +775,16 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset()):
 
     # a turn a bar after where a phrase played elsewhere begins is that phrase's (My Life: the riff begins on
     # the D its key shares with the song's; the key is seen to change a bar into it)
+    if SUNG_WHOLE:                           # from where singing begins, phrases played the same elsewhere are not cut inside
+        span, kept_s, kept_t, a = SUNG_WHOLE * phrase, set(), set(turns), None
+        for s in sorted(sings):              # and a turn of key or loudness that would stand for the singing dropped goes too
+            if a is not None and a < s < a + span:
+                kept_t -= {t for t in turns if a < t < a + span and abs(t - s) <= TURN_NEAR}
+                continue
+            kept_s.add(s)
+            a = s if s in begins and s + span <= n and any(
+                abs(h - s) >= span and alike(s, h, span) for h in range(n - span + 1)) else None
+        sings, turns = kept_s, kept_t
     moved = {t: t - 1 if begins_again(t - 1) and not begins_again(t) else t for t in turns if 0 < t < n}
     # where singing begins or stops is where the section does, and another turn this near it is the same one, a bar
     # off; but not a turn where a phrase played elsewhere begins (My Life: the riff at 135, the voice ending at 138)
@@ -1417,7 +1430,7 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
         bars[i] = dict(items[:at] + [("beats", beats_of(bar["start"], bar["end"], bar.get("pickup") or tempo_beats))]
                        + items[at:])
     whole = [bar for bar in bars if not bar.get("pickup")]
-    turns, sings = frozenset(), frozenset()
+    turns, sings, begins = frozenset(), frozenset(), frozenset()
     if ears and PHRASE_SECTIONS:
         # what each bar sounds: the notes of the chords the ears hear in it, and how loud it is
         begins = np.array([stamp(e) for e in edges[:-1]])
@@ -1431,6 +1444,7 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
             sung = [float(np.mean(singing[int(bar["start"] * 100):max(int(bar["end"] * 100), int(bar["start"] * 100) + 1)]))
                     for bar in whole]
             sings = frozenset(voice_turns(sung))
+            begins = frozenset(voice_turns(sung, begins=True))
     beats_in_bar = 2 if time == "6/8" else int(time.split("/")[0])
     read_chords = [c for bar in bars for c in bar["chords"]]
     tonic, mode = find_key([(c["end"] - c["start"], c["symbol"][0], c["symbol"][1]) for c in read_chords])
@@ -1439,7 +1453,7 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
                     bar["chords"][-1]) for i in range(beats_in_bar)] for bar in whole]
         bar_seconds = float(np.median([bar["end"] - bar["start"] for bar in whole]))
         phrase = PHRASE_BARS or int(min(max(2 ** round(np.log2(PHRASE_SECONDS / bar_seconds)), 2), 16))
-        form, places = phrase_sections([tuple(c["symbol"][:2] for c in row) for row in on], turns, tonic, mode, phrase, sings)
+        form, places = phrase_sections([tuple(c["symbol"][:2] for c in row) for row in on], turns, tonic, mode, phrase, sings, begins)
         for bar, (section, k) in zip(whole, places):
             bar["section"], bar["barOfSection"] = section, k
     else:

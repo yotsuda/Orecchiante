@@ -579,7 +579,7 @@ leaving out boundaries between two sections of the same label (chorus A, chorus 
 
 Counting every AIST boundary (not only where the label changes), the 0.8.0 and 0.8.1 rows are `rwc-dev`
 68.9 / 60.5 / 64.4% → 67.3 / 64.8 / 66.1%, `rwc-test` 67.4 / 54.8 / 60.5% → 65.2 / 59.1 / 62.0%, and
-0.8.2 68.1 / 65.2 / 66.6% and 64.9 / 59.2 / 61.9%, 0.8.4 67.8 / 64.8 / 66.3% and 64.8 / 59.2 / 61.9%, 0.8.9 68.9 / 64.7 / 66.7% and 66.0 / 59.1 / 62.4%; the F of the paragraphs below is of every boundary.
+0.8.2 68.1 / 65.2 / 66.6% and 64.9 / 59.2 / 61.9%, 0.8.4 67.8 / 64.8 / 66.3% and 64.8 / 59.2 / 61.9%, 0.8.9 68.9 / 64.7 / 66.7% and 66.0 / 59.1 / 62.4%, 0.8.10 69.1 / 64.7 / 66.8% and 66.1 / 58.7 / 62.2%; the F of the paragraphs below is of every boundary.
 
 **The grid and the turns (2026-11-17, 0.8.2, `GRID_ANCHOR`).** Of the boundaries inside singing still
 missed in `rwc-dev` (verse to verse, chorus to chorus: 95), 34 fall two bars off the four-bar grid of
@@ -616,6 +616,23 @@ chord, held home chord too (65.6%), sections of fewer than 3 bars joined (66.5%,
 section lost; 4: 65.8%, Open Arms' 59 lost). Open Arms still has 15 (two bars after singing stops,
 before it starts again: a section of two), 62 and 65 (singing at a third of the bar, read as stopping),
 79 (the dominant going home inside the verse), and 100 for 101 (the chorus's last bar sung at a quarter).
+
+**A verse the singing only pauses in (2026-11-18, 0.8.10, `SUNG_WHOLE`; the owner on Open Arms 0.8.9:
+"still too fine; 15 is no cut, two bars; 62 and 65 are none, and 67 should be one").** The verses are
+eight bars, `D D A Bm Bm A G G`, at 1, 9, 17, 51, 59 and 67 (the owner's heads now 1, 9, 17, 25, 35, 51,
+59, 67, 75, 85, 101). Inside two of them the singing falls low for three bars (14 to 16: 0.12, 0.27,
+0.00; 62 to 64: 0.42, 0.35, 0.38), a silence `VOICE_GAP` (3) no longer calls a breath, so singing
+"stopped" and "began" again inside the verse; and a turn of loudness at 15 stood for the stop at 14.
+So from a bar where singing begins, when the `SUNG_WHOLE` (2) phrases after it are played the same
+elsewhere (`PHRASE_ALIKE` at their starts), singing that stops or begins inside them does not cut, nor
+a turn of key or loudness within `TURN_NEAR` of such a stop. Only from where singing begins: 糸's
+singing stops at 28 for an interlude of four bars and begins again at 32, a cut the owner made. Only
+the turns near a dropped stop: My Life's turn at 136, inside eight bars from 129, is the riff's (the
+owner's 135). `rwc-dev` (every boundary, 3 s) 66.7 → 66.8% (776 → 774 starts), `rwc-test` (counted
+only) 62.4 → 62.2% (701 → 696); without the voice nothing changes; 糸 and My Life as before; Open Arms
+of the owner's 11 heads 2 missed and 6 more → 1 and 3 (101 missed; 79, which the owner can live with,
+100 and 109). Python and .NET the same on RWC's 100 with the voice. Not taken: dropping every turn
+inside the eight bars (My Life gains 26, 48, 100 and 138), from where singing stops too (糸 loses 32).
 
 **The turns inside singing (2026-11-17, `PAIR_HEARD`).** Of AIST's verse-to-verse boundaries (verse A
 to B) in `rwc-dev`, 67 of 133 were missed; 32 of those fall on the four-bar grid of their block, 20 two

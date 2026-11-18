@@ -750,7 +750,7 @@ static class Reader
         }
         var turns = Form.Turns(barNotes, barDb);
         // where singing begins and stops: the share of each bar whose vocals are a quarter of the song's loud end
-        var sings = new List<int>();
+        List<int> sings = [], singsFrom = [];
         if (voice is { Length: > 0 } && (double)Percentile95(voice) >= Form.VoiceFloor * (double)Percentile95(rms))
         {
             float line = (float)(Form.VoiceLoud * (double)Percentile95(voice));
@@ -764,6 +764,7 @@ static class Reader
                 sung[i] = heardOf == 0 ? double.NaN : (double)on / heardOf;
             }
             sings = Form.VoiceTurns(sung);
+            singsFrom = Form.VoiceTurns(sung, begins: true);
         }
         var (tonic, major) = FindKey([.. read.Select(c => (c.End - c.Start, c.Symbol.Root, c.Symbol.Quality))]);
         var keys = full.Select(bar => Enumerable.Range(0, tempoBeats).Select(i =>
@@ -772,7 +773,7 @@ static class Reader
             var c = bar.Chords.FirstOrDefault(c => c.Start <= at && at < c.End) ?? bar.Chords[^1];
             return c.Symbol.Quality * 12 + c.Symbol.Root;
         }).ToArray()).ToArray();
-        var (form, places) = Form.Phrases(keys, turns, tonic, major, Form.PhraseBars, sings);
+        var (form, places) = Form.Phrases(keys, turns, tonic, major, Form.PhraseBars, sings, singsFrom);
         for (int i = 0; i < full.Count; i++) (full[i].Section, full[i].BarOfSection) = places[i];
         if (bars[0].Pickup != 0)        // a section of its own: Lily# lets only the first one open short
         {

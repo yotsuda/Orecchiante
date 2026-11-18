@@ -24,11 +24,12 @@ static class Form
     const int VoiceRun = 2;         // bars: singing, or its silence, has to last this long to turn the music
     const int VoiceGap = 3;         // bars: a silence shorter than this between singing is a breath
     const int TurnNear = 2;         // bars: a turn of key or loudness this near where singing begins or stops is that one
+    const int SungWhole = 2;        // phrases: from where singing begins, these phrases, played the same elsewhere, are not cut inside by singing (Open Arms)
 
     /// <summary>Where singing begins or stops and goes on (<paramref name="sung"/>: the share of each bar that sings):
     /// the bars a section begins at. A silence shorter than VoiceGap bars between singing is a breath; then singing
     /// shorter than VoiceRun bars is none. read_chords.py's voice_turns().</summary>
-    public static List<int> VoiceTurns(double[] sung)
+    public static List<int> VoiceTurns(double[] sung, bool begins = false)
     {
         var on = sung.Select(s => s >= VoiceShare).ToArray();
         List<(int I, int J, bool V)> Runs()
@@ -51,7 +52,7 @@ static class Form
         }
         foreach (var (i, j, v) in Runs())
             if (v && j - i < VoiceRun) for (int x = i; x < j; x++) on[x] = false;
-        return [.. Runs().Skip(1).Select(r => r.I)];
+        return [.. Runs().Skip(1).Where(r => r.V || !begins).Select(r => r.I)];
     }
 
     /// <summary>Where the music turns: the bars a section begins at. <paramref name="notes"/>: each bar's notes heard
@@ -132,7 +133,7 @@ static class Form
     /// elsewhere after another bar. A section that plays
     /// one before it again is named after it (A, A2). <paramref name="keys"/>: the chord (quality * 12 + root) on each
     /// beat of each bar. Returns the form and, for each bar, its section and which bar of it it is.</summary>
-    public static (List<string> Form, List<(string, int)> Places) Phrases(int[][] keys, HashSet<int> turns, int tonic, bool major, int phrase, IReadOnlyList<int> sings)
+    public static (List<string> Form, List<(string, int)> Places) Phrases(int[][] keys, HashSet<int> turns, int tonic, bool major, int phrase, IReadOnlyList<int> sings, IReadOnlyList<int> begins)
     {
         int n = keys.Length;
         var fam = keys.Select(row => row.Select(k => k % 12 * 4 + Reader.Kind[k / 12]).ToArray()).ToArray();
@@ -170,6 +171,26 @@ static class Form
             return heard.Count > 0 && heard.Count(h => !Alike(g - 1, h - 1, 1)) >= BeginShare * heard.Count;
         }
 
+        if (SungWhole != 0)     // from where singing begins, phrases played the same elsewhere are not cut inside
+        {
+            int span = SungWhole * phrase;
+            int? from = null;
+            var keptSings = new List<int>();
+            var keptTurns = new HashSet<int>(turns);
+            foreach (int s in sings.Order())    // and a turn of key or loudness that would stand for the singing dropped goes too
+            {
+                if (from is int a && a < s && s < a + span)
+                {
+                    keptTurns.RemoveWhere(t => a < t && t < a + span && Math.Abs(t - s) <= TurnNear);
+                    continue;
+                }
+                keptSings.Add(s);
+                from = begins.Contains(s) && s + span <= n
+                    && Enumerable.Range(0, n - span + 1).Any(h => Math.Abs(h - s) >= span && Alike(s, h, span)) ? s : null;
+            }
+            sings = keptSings;
+            turns = keptTurns;
+        }
         // a turn a bar after where a phrase played elsewhere begins is that phrase's
         var moved = turns.Where(t => 0 < t && t < n).ToDictionary(t => t, t => BeginsAgain(t - 1) && !BeginsAgain(t) ? t - 1 : t);
         // where singing begins or stops is where the section does, and another turn this near it is the same one, a bar

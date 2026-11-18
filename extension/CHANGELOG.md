@@ -2,6 +2,12 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.8.10
+
+- Fewer sections cut in the middle of a verse: where singing begins, the eight bars after it are not
+  cut where the singing only pauses, when the same eight bars are played elsewhere in the song.
+
+
 ## 0.8.9
 
 - Fewer sections cut in the wrong place: a section no longer begins on a chord held over from the

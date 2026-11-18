@@ -3,7 +3,7 @@
 **毎セッションの終わりに書き換える**（追記しない。200 行以内）。方向づけは [ROADMAP.md](ROADMAP.md)、
 数字と使い方は [README](../README.md)、録音の出典は [DATASETS.md](DATASETS.md)。
 
-最終更新: 2026-11-18（**0.8.9: section の格子の切れ目が「主和音以外の和音を小節線をまたいで保つ」所なら、2 小節以内で主和音が来る所へ動かし格子もそこから（`HELD_SHIFT`）、1 小節の section は前に入れる（`MERGE_SHORT`）**。Open Arms のオーナーの頭 10 のうち落とす 3・余分 11 → 1・6、AIST dev 66.3 → 66.7%（声なし 50.7 → 52.4）、test 61.9 → 62.4%（49.7 → 51.1）、糸・My Life は前と同じ。コードと小節線の数字は動かない。**0.8.6: 迷った和音を `F@or(Bm)` で書く（Lily# 依頼 17、`@todo` は出さない）、孤立した 3 拍の小節に `time 3/4`（オーナー決定）** `THREE_FOUR`・`short_meters`／`ShortMeters`。数字は動かない。`lysc check` は Lily# 依頼 18（`f6256c026` で fixed）の lysc で 1492/1492（`scratch/read-all/` 全部、2026-11-18）。オーナーは 0.8.5 の糸の 2/4 を聴いて「自然に正しく鳴っている」、終わりの rit のずれは許容。RWC-P に「途中で止まる曲」はない（`scratch/c3/stops.py`）。Open Arms（Journey、オーナーの 3 拍子の曲）は曲全体を 3/4・102 で読む（`scratch/c3/arms/`、オーナーの耳での確かめ待ち）。**0.8.5:** `time 2/4`。**0.8.4:** 2 拍の小節が続く所を downbeat の値で組む。0.8.3: section のテンポ。0.8.2: 格子の起点。0.8.1: 歌の中の境目。0.8.0: 6 パート。0.7.0: パート。0.6.0: 歌。0.5.0: 意味で切る section。経緯は `git log`）。
+最終更新: 2026-11-18（**0.8.10: 歌が始まる所から 8 小節がほかでも同じに鳴るなら、中の歌の止み・始まり（とその近くの turn）で切らない（`SUNG_WHOLE`。オーナーの 0.8.9 の Open Arms への評）**。Open Arms のオーナーの頭 11 のうち落とす 2・余分 6 → 1・3（101／79 許容・100・109）、AIST dev 66.7 → 66.8%、test 62.4 → 62.2%、糸・My Life は前と同じ。0.8.9: section の格子の切れ目が「主和音以外の和音を小節線をまたいで保つ」所なら、2 小節以内で主和音が来る所へ動かし格子もそこから（`HELD_SHIFT`）、1 小節の section は前に入れる（`MERGE_SHORT`）**。Open Arms のオーナーの頭 10 のうち落とす 3・余分 11 → 1・6、AIST dev 66.3 → 66.7%（声なし 50.7 → 52.4）、test 61.9 → 62.4%（49.7 → 51.1）、糸・My Life は前と同じ。コードと小節線の数字は動かない。**0.8.6: 迷った和音を `F@or(Bm)` で書く（Lily# 依頼 17、`@todo` は出さない）、孤立した 3 拍の小節に `time 3/4`（オーナー決定）** `THREE_FOUR`・`short_meters`／`ShortMeters`。数字は動かない。`lysc check` は Lily# 依頼 18（`f6256c026` で fixed）の lysc で 1492/1492（`scratch/read-all/` 全部、2026-11-18）。オーナーは 0.8.5 の糸の 2/4 を聴いて「自然に正しく鳴っている」、終わりの rit のずれは許容。RWC-P に「途中で止まる曲」はない（`scratch/c3/stops.py`）。Open Arms（Journey、オーナーの 3 拍子の曲）は曲全体を 3/4・102 で読む（`scratch/c3/arms/`、オーナーの耳での確かめ待ち）。**0.8.5:** `time 2/4`。**0.8.4:** 2 拍の小節が続く所を downbeat の値で組む。0.8.3: section のテンポ。0.8.2: 格子の起点。0.8.1: 歌の中の境目。0.8.0: 6 パート。0.7.0: パート。0.6.0: 歌。0.5.0: 意味で切る section。経緯は `git log`）。
 
 ### D4 の形（2026-11-15、オーナーと話して決めた。依頼 4・[便り](repro/lilysharp-requests-2026-11-15-listening.md)）
 **Lily# の設計メモ `C:\MyProj\LilySharp\docs\recording-design.md`（セッションの頭に読む）:** 紐づけは隣のファイル（形式 2）だけ、m4a は Lily# の LSP が復号。
@@ -13,7 +13,7 @@
 
 **`dettato <録音> [-o <x.lys>] [--force]` が、mp3・m4a・mp4・aac・flac・wma・wav から `.lys` と `.dettato.json` を録音の隣に書く**
 （Python なし。RWC_P001 の mp3 で 6.3 秒）。配る形は .NET＋ONNX の実行ファイルを VS Code 拡張に入れる（Calamo と同じ形）。
-**拡張 `yotsuda.dettato` 0.8.9 をこの PC の VS Code に入れた**（0.8.9: section の held chord と 1 小節の section、入った exe で Open Arms を通しで読んで scratch と同じ頭。0.8.8: 最初の section の上に Join Sections（Ctrl+.）のコメント。0.8.7: 譜面の頭のコメントが `@or` の上での Shift+Ctrl+Up/Down も言う。0.8.6: `@or`・`time 3/4`。0.8.5: `time 2/4`。入った版で糸を通しで読み、scratch の exe と `.lys` が一字一句同じ（`scratch/c3/ito/`）。0.8.4: 2 拍の小節の組み方。0.8.3: section のテンポ。0.6.0: 歌を聞いて section を切る。0.7.0: パートを書く。0.8.0: 6 パート。0.8.1: 歌の中の境目。0.8.2: 格子の起点。入った版の通しで糸・My Life の section は前と同じ）（`extension/`、`tools/deploy-extension.ps1`。.vsix 167 MB、Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
+**拡張 `yotsuda.dettato` 0.8.10 をこの PC の VS Code に入れた**（0.8.10: 歌の止みで 8 小節の verse を割らない `SUNG_WHOLE`、入った exe で Open Arms・糸・My Life を通しで読んで scratch と同じ頭。0.8.9: section の held chord と 1 小節の section、入った exe で Open Arms を通しで読んで scratch と同じ頭。0.8.8: 最初の section の上に Join Sections（Ctrl+.）のコメント。0.8.7: 譜面の頭のコメントが `@or` の上での Shift+Ctrl+Up/Down も言う。0.8.6: `@or`・`time 3/4`。0.8.5: `time 2/4`。入った版で糸を通しで読み、scratch の exe と `.lys` が一字一句同じ（`scratch/c3/ito/`）。0.8.4: 2 拍の小節の組み方。0.8.3: section のテンポ。0.6.0: 歌を聞いて section を切る。0.7.0: パートを書く。0.8.0: 6 パート。0.8.1: 歌の中の境目。0.8.2: 格子の起点。入った版の通しで糸・My Life の section は前と同じ）（`extension/`、`tools/deploy-extension.ps1`。.vsix 167 MB、Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
 「Convert Recording to Lily# (.lys)… (Preview)」で、Lily# が `ext.activate()` で `{path, version, protocol, inputs}` を受け取る。**VS Code の中で動くことはユーザーが確かめた（0.2.0。0.3.x は Lily# のメニューからはまだ）。**
 
 ### コマンドと入力（D3。`Program.cs`・`Audio.cs`。README の「A recording as it comes」、Lily# 向けは便りの §2a）
@@ -43,7 +43,7 @@
 - 耳: wav → `.beats`（Beat This!）と `.npz`（crema と BTC の平均、0.4.0 から）、特徴量: wav → `.feat.npz`。突き合わせは `tools/net_check.py`、`measure.py --net scratch/net` で表は全列同じ。
 - **`--ears` では HPSS を外した**（`use_ears()` が `HARMONIC_FRAMES = 0`。特徴量は `scratch/feat-h0/`）。1 曲 3 分半で `dettato read` 5.5 秒（Beat This! 3.7）。onnxruntime は 8 スレッド（24 だと遅い）。
 
-### 数字（`measure.py all`、2026-11-18 の 0.8.9 の後＝0.8.8 と section の数だけ違う。lysc check 1387/1388（依頼 18。直った lysc では 1492/1492、2026-11-18）、SIDECAR 1388/1388。ログは `scratch/all.log`、前は `all086.log`）
+### 数字（`measure.py all`、2026-11-18 の 0.8.10 の後＝0.8.9 と同じ（`all` は歌なしで読む。歌つきの AIST の F だけ動く）。lysc check 1388/1388（依頼 18 の直った lysc `scratch/lysc-0986`）、SIDECAR 1388/1388。ログは `scratch/all.log`、前は `all089.log`）
 
 | `--ears`（crema＋BTC） | `rwc-dev`（選ぶ側） | `rwc-test`（数えるだけ） | `rwc-p` | seed1 / 7 / 11 |
 |---|---|---|---|---|
@@ -53,7 +53,7 @@
 | 小節線 F | 94.1% | 95.1% | 94.6% | 97.1 / 91.0 / 94.1% |
 | テンポ・拍子 | 47・49 | 47・49 | 94・98 | |
 | 印 → 拾う誤り | 34.9% → 85.9% | 28.1% → 72.0% | 31.5% → 78.9% | 14.9% → 74.0% |
-| section（1 曲あたり、AIST の F は声なし／歌つき） | 14.1、52.4／66.7% | 13.7、51.1／62.4% | 13.9 | 3.9 / 4.0 / 3.0 |
+| section（1 曲あたり、AIST の F は声なし／歌つき） | 14.1、52.4／66.8% | 13.7、51.1／62.2% | 13.9 | 3.9 / 4.0 / 3.0 |
 
 ### 持ち越す知見（README にないもの）
 - 実録音で失っていたのは頭ではなく終わり（Beat This! はドラムが止まる所で拍をやめる）。crema の「コードなし」は両端だけ使う。RWC の正解は両端を語らない。ONNX を書き直すとき: 旧式のトレース直後の torch のモデルは同じプロセスで答えが変わる（比べる前に読み直す）。dynamo は `PYTHONUTF8=1` が要る。
@@ -65,10 +65,10 @@
   **0.6.0（.NET の歌）で 2 曲とも全部、余分なしで出す**（糸は終わり 67 が増えるだけ。入った拡張の通しの読みでも同じ）。声なしだと糸は 9 つ中 5 つを落とす。
   確かめは `scratch/sec/try.py [定数=値 …]`（`VOICEDIR=scratch/net/voice/sec` で .NET の歌、`NOVOICE=1` で声なし）と `tools/aist_sections.py rwc-dev`（既定で .NET の歌）。**規則を触ったら必ず両方を見る**。
 - **Open Arms（Journey、3/4・102、2026-11-17 オーナー）: 「35 小節目が section の頭なのに 33 で切れている」「細切れすぎる」。** 材料は `scratch/sec/arms-in/arms.wav`（ffmpeg）、耳と歌 `scratch/net/voice/sec/arms.*`、見る道具 `scratch/sec/arms.py [定数=値]`（歌の割合・turn・小節ごとのコード）。
-  見立て: 歌の入り（17）から 4 小節の格子が 17・21・25・29・33… と進むが、曲は 33〜34 が前の句の 2 小節の延長（`G | G A` → 35 で D、33 は歌が 0.09 の息つぎ）で、そこから位相が 2 小節ずれる。15〜16（B）も同じ 2 小節の挿入。短い section: B 2・E2 1・A5 3・F 3・A6 2（`WHOLE_BLOCK` 以下の塊がそのまま 1 つの section になる）。オーナーの 2 曲には 4 小節未満の section がない。
-  **オーナーの分け方（`scratch/sec/arms-owner.lys`）: 1・9・17・25・35・51・59・75・85・101**＝8・8・8・10・16・8・16・10・16・10 小節（歌の 8＋延長 2 の 10 小節、サビ 16 小節を 8 で割らない）。`scratch/sec/try.py` の 3 曲目（材料は `scratch/sec/arms.*`、`VOICEDIR=scratch/net/voice/sec`）。小節ごとの表は `scratch/sec/arms_bars.py`（オーナーの頭に *、歌の割合、コード）。
-  **0.8.9 で ①（`HELD_SHIFT` 2＋`HELD_REANCHOR`）と ② の 1 小節版（`MERGE_SHORT` 2）を入れた（README「A cut off a held chord」）**: 35・85 を拾い 33・41・83・91・50 が消えた。**残り: 落とす 101、余分 15・62・65・79・100・109。** 原因: 15＝歌が止んでから次の歌までの 2 小節（`B` 2 小節）、62・65＝59〜64 の歌が 0.35〜0.42 で「止んだ」と読む（`VOICE_GAP` を動かすのは捨てた案）、79＝verse の中の V→I（`Bm A | D`）の cadence、100＝サビの最後の小節の歌が 0.24（歌の止みが 1 小節早い）、109＝最後の 2 小節。
-  次の手の候補（未測定）: 2 小節の section を、歌の止んだ後の器楽の尾なら前に入れる（`MERGE_SHORT` 3 は My Life の最後の section と Open Arms の 59 を壊した＝方向と最後の塊の扱いが要る）、cadence の切れ目を「前の句と同じ長さの区切り」でしか使わない、など。**オーナーに 0.8.9 の Open Arms を見てもらうのが先**（`scratch/sec/arms-ext/arms.lys` が入った exe の通しの読み）。
+  **オーナーの分け方（`scratch/sec/arms-owner.lys`）: 1・9・17・25・35・51・59・67・75・85・101**＝8・8・8・10・16・8・8・8・10・16・10 小節（歌の 8＋延長 2 の 10 小節、サビ 16 小節を 8 で割らない。**67 は 2026-11-18 にオーナーが足した**＝59〜74 は同じ 8 小節 2 回）。`scratch/sec/try.py` の 3 曲目（材料は `scratch/sec/arms.*`、`VOICEDIR=scratch/net/voice/sec`）。小節ごとの表は `scratch/sec/arms_bars.py`（オーナーの頭に *、歌の割合、コード）。
+  0.8.9（`HELD_SHIFT`・`MERGE_SHORT`）で 35・85 を拾った。**オーナーの 0.8.9 への評（2026-11-18）:「前回ほど細切れではないが、まだ細かい」。15＝切れ目ではない（2 小節しかない）、62・65＝切れ目ではない・67 で切るべき、79＝本来は切るほどではないが許容できる（音楽が切れた感が少しある・6 小節）、100＝101 なら素晴らしい・1 小節のずれは手で直せるかも。**
+  **0.8.10 で `SUNG_WHOLE` 2 を入れた（README「A verse the singing only pauses in」）**: 歌が始まる所から、その 8 小節がほかでも同じに鳴るなら、中で歌が止む・始まるのでは切らず、その止みから `TURN_NEAR` 以内の調・音量の turn も捨てる。15・62・65 が消え 67 を拾った。**残り: 落とす 101、余分 79（許容）・100・109。** 入った exe の通しの読み `scratch/sec/arms-ext/arms.lys`（0.8.9 のは `arms-089.lys`）、糸・My Life は `scratch/sec/ext0810/`（前と同じ）。
+  次の手の候補（未測定）: 100→101（サビの最後の小節の歌が 0.24＝歌の止みが 1 小節早い。歌の止みを、16 小節のサビの格子の終わりに 1 小節で寄せる、など）、109＝最後の 2 小節（曲の終わりの器楽の尾を前に入れる。`MERGE_SHORT` 3 は My Life の最後の section と 59 を壊した＝最後の塊だけの扱いが要る）。79 はオーナーが許容。
 - 仕組み（README「Sections by meaning」「The voice in .NET」）: 歌の出入り・調号 2 つ以上・6 dB で塊に切り、丸ごと別の所で鳴る塊の頭と終わり、長い塊の中は 4 小節の句（`PHRASE_BARS`）の格子で
   「同じ句 2 回の終わり」「V→I」「別の所でも始まる句（`BEGIN_SHARE`）」「8 小節ごとの新しい組（`PAIR_HEARD`、0.8.1）」で切る。名前は再演なら A2。fold はしない。.NET は `Form.Turns`・`Form.Phrases`・`Form.VoiceTurns`。
 - **歌の中の境目（0.8.1 `PAIR_HEARD`）と格子の起点（0.8.2 `GRID_ANCHOR`）:** README「The grid and the turns」。dev 64.4 → 66.6%、test 60.5 → 61.9%（0.8.2 は test で効いていない）。
@@ -98,7 +98,6 @@
   **0.8.5 から `time 2/4` を書く（オーナー決定 2026-11-17、前の「書かない」を改めた。README「A bar of 2/4」）**: 前後 4 小節の中央値の 0.4〜0.6 倍で、両隣が 15% 以内、4/4 だけ、弱起・最初・最後でない、section を演奏するたびに同じ小節。次の小節に `time 4/4`（section の最後なら不要＝Lily# は section の終わりで戻る、確かめた）。RWC で 10 曲 14 小節（両端が正解に乗るのは dev 6/10・test 0/8、RWC に本物の 2 拍はほぼない）、合成曲 4 小節。外れても読みの格子では 2 拍の長さ＝録音と同じ速さで鳴り、直す所の印になる。測る道具 `scratch/c3/short_bars.py <譜面の根> <セット> [-iso] [-v]`。**0.8.6 から 3 拍も `time 3/4`（オーナー決定 A、2026-11-17。README「A bar of 3/4」）**: 0.65〜0.85 倍、最後の 2 小節は除く（曲の終わりの rit を短く読んだ小節が 6/7）。RWC に曲の途中の本物の 3/4 はほぼない（P006 だけ読めている）。RWC で 6 曲 7 小節、合成曲 2 曲。道具 `scratch/c3/three_look.py`。依頼 11 は fixed（オーナーの版で確かめたら `done`）、15 は closed。**オーナーは 0.8.5 の糸（`scratch/c3/ito/ito-ext.lys`）の 2/4（64 小節目）を「自然に正しく鳴っている」、70 小節目からの終わりの rit のずれは「許容しても良い」**（rit で長くなる小節を短く・少なく読む＝捨てた案の C3「曲の終わり」と同じ所）。
 - **D4 で Dettato 側に作るものは今はない**（読み直しは単に上書き＝オーナー決定、設計メモ §6）。配り直すときは版を 2 か所（`Program.cs`・`extension/package.json`）と CHANGELOG で上げて `tools/deploy-extension.ps1`。
 - **Lily# の依頼（`docs/repro/REQUESTS.md`。セッションの頭に見る）:** **17（`@or`）は Lily# `f89b01dcd` で fixed、Dettato は 0.8.6 で `@or(候補)` だけを書く＝変換メニューから実物で確かめたら `done`。18（`time 3/4` の小節の `.` の検査）は Lily# `f6256c026` で fixed、19（A-B の旗）も `2882ef7e9` で fixed。lysc は Lily# の HEAD（`098675fb6`）を `git archive` して `dotnet build scratch\lysc-src\LilySharp.Cli -c Release -o scratch\lysc-0986` したもの＝`scratch/read-all/` の 1492 個がすべて通る（`DETTATO_LYSC` をそこに。古い lysc は `@or` を読めず、`lysc-f89` は P012 で偽の警告）。** 1 は `done`。4 は Lily# が作り中（S1〜S3 済み、次は S4）。**16（パートのオン・オフ）は `fixed`＝オーナーの版で確かめてから `done`。** **5（m4a の `iTunSMPB`）は `fixed`＝実物の m4a で確かめてから `done`。** 7（小数のテンポ。Lily# が 6 と書いたのを振り直した）は 0.3.1 で入れた。**6（保存先のダイアログ・`audio` の道）・8（`warpFit` を中央値に）・9（`lysc shape`・`LILYSHARP_LYSC_PATH`）は Lily# master で `fixed`、Dettato は 9 を 0.3.2 で使った。Lily# の次の版が入ったら、変換メニューから 3 つとも実物で確かめて `done`**（3・5 も同じく確かめてから）。**この PC の Lily# 拡張（名は 0.16.0、11-17 17:12 に入った master のビルド）には 6・9・11・16 の文字列がある**（`Locate Recording`・`LILYSHARP_LYSC_PATH`・`The score plays`・`"parts"`）＝残るのは変換メニューからの実物の確かめ（VS Code の操作が要る）。
-
 やり残し（急がない）:
 - **MuScriptor**（github.com/muscriptor/muscriptor、Kyutai×Mirelo、2026-11-17 にオーナーから）: 多楽器の採譜（MIDI・MusicXML、拍・小節線も。コード名は出さない）、torch の 103M〜1.4B。コードは MIT、**重みは CC BY-NC 4.0（HF でゲート）**。精度・学習データは README になし（arXiv 2607.08168 未読）。M5 の候補、配るならオーナー判断。 **music-to-midi**（github.com/mason369/music-to-midi、MIT、オーナーから）: 既存モデルの寄せ集め（YourMT3+・MuScriptor・TransKun・Beat This! final0・ChordMini BTC・BS-RoFormer）。重みのライセンス表が役に立つ: **YourMT3+ は Apache-2.0**（M5 の第一候補）、TransKun（ピアノ）MIT、ByteDance のピアノ CC BY 4.0、Aria-AMT は CC BY-NC-SA。GPU 前提。 ／和音のないイントロの小節（`rwc-dev` の P027）は譜面に入れていない。`fold`・`beat_names`・`lys()` が「和音のない拍」を扱う必要がある（Lily# は `r` で N.C.）。最後の和音の終わりは `.dettato.json` にない。`check` は `lysc check --batch` で速くなる。crema の `chord_root`・`chord_bass`・`chord_pitch` は未使用。
 ## 環境（この PC）
@@ -160,6 +159,7 @@
   歌の割合が次の句で下がる所でも切る（`SUNG_DROP` 0.15: dev +0.3、test 62.0 → 61.4%。test を見てから捨てた）。
   turn の判定（2026-11-17）: 調の turn をやめる（dev 67.0% だが My Life の 6 つを落とす）、`KEY_REGION` 6（dev 67.2%、声なし 50.7 → 49.8%）、同じ調に挟まれた 6 小節未満の調域を数えない（`KEY_DETOUR` 6: dev 66.6 → 67.1%・声なし 50.9%、test 61.9 → 61.8%。7 で声なしの糸、8 で My Life が崩れる）、`LOUD_TURN` 4.5・5・8・なし（dev 66.5・66.6・66.3・66.5%）。ドラムと旋律（2026-11-17、パートから）: 格子点で直前の小節のドラムが前の 4 小節と違う（フィル、16 刻み×3 帯域の余弦）所でも切る＝dev 50 曲で 0.7・0.8・0.9 が 66.2・66.7・66.5%（8 小節前と同じ句で始まる所は除いても My Life の 61・73 を割る。半分の曲では +0.4 に見えた）。格子の外の小節頭のクラッシュ（4 kHz 以上）・グルーヴの変化も、既存の線から 2 小節より遠い所で落とした境目に当たるのは 33〜38%（手がかりなしで約 23%）＝F の半分と同じで足しても動かない。歌の音域（yin の中央値の 4 小節の差）は格子点で境目とそれ以外が同じ分布。`VOICE_SHARE`・`VOICE_GAP` を動かす（オーナーの 2 曲が崩れる）。
   held chord の切れ目の移し方（2026-11-18）: 3・4 小節まで（dev 66.1・65.4%）、主和音でなく「和音が変わる所」へ・主和音を保つ所も（65.6%）、格子を数え直さない（66.3%）。短い section を前に入れるのを 3 小節未満・4 小節未満に（66.5%・65.8%、My Life の 151 と Open Arms の 59 を落とす）。
+  歌が始まる所から 8 小節の中の turn を全部捨てる（2026-11-18、My Life に 26・48・100・138 が増える＝136 の riff の turn）、歌が止む所からも同じ扱い（糸の 32 を落とす）。
   塊ごとの格子の位相を「格子点から始まる句がほかでも同じ頭で始まる」数で選ぶ（dev 62.1〜63.7%）。歌の端を、1 小節前から始まる句がほかでも同じ頭で始まるなら 1 小節前に（66.0%）。曲全体で 4 小節の位相を揃える（AIST 自身が 1 つの位相に乗るのは中央値 52%）。
   歌の分離を重なりなしで（3 分の 1 速いが 15/100 曲の section が変わり、合っていた線を失う。オーナー決定）。荒く読んで出入りの周りだけ詰める（区切り 88%＝12% 減るだけで 5/100 曲が変わる。荒い読みが出入りを丸ごと見落とす。`scratch/sec/coarse_fine.py`、近似）。
 - **C3（2026-11-17）:** section のテンポを条件なしで書く（4〜15% のどの閾値でも、印は半分・倍・3/2 の小節の読み違いばかりで `still/` に偽の印）。
