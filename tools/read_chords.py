@@ -682,6 +682,9 @@ VOICE_SHARE = 0.45     # a bar sings when this share of it sings (糸: a verse 0
 VOICE_RUN = 2          # bars: singing, or its silence, has to last this long to turn the music
 VOICE_GAP = 3          # bars: a silence shorter than this between singing is a breath, or an instrument's answer (My Life)
 TURN_NEAR = 2          # bars: a turn of key or loudness this near where singing begins or stops is that one
+LEAD_IN = 0            # (trying) where singing begins or stops on a bar wholly of a dominant resolving across the bar line, the section begins
+                       # after it; 2: a turn of key or loudness too; 0: never
+VOICE_LATE = 0.0      # (trying) singing begins in the next bar when the first half of the bar it begins in sings less than this share (a pickup); 0: never
 
 
 def voice_turns(sung, begins=False):
@@ -734,6 +737,80 @@ GRID_ANCHOR = 1        # count a block's grid from where singing last began or s
                        # ends, not from a turn of key or loudness (AIST, rwc-dev: 66.1 -> 66.6%, without the voice 48.7 -> 50.9%); 0: from the block's start
 
 
+WHY = {}                 # phrase_sections: the rule each cut came from, by bar (for measuring only)
+CUE_WHYS = ["sing", "turn", "played", "ended", "cadence", "pair", "begins"]
+SECTION_DP = 0           # (trying) choose the cuts whole: section_cues weighed by DP_WEIGHTS, section lengths by DP_LENGTHS (choose_cuts)
+# the bias, then a weight per cue of section_cues (scratch/xsc/dp.py --emit: logistic regression on the owner's dev songs, x001-x145)
+DP_WEIGHTS = [-3.942, 1.554, 3.044, 1.214, 1.433, 0.892, 1.134, 0.523, 0.793, -0.566, -1.300, 0.249, -0.683, -0.259, 1.167, 0.423,
+              0.292, 0.429, 0.284, -0.075, -0.460, 0.646, 0.914, 1.068, 0.962, 0.607, -0.461]
+# how many of the owner's dev sections are so many bars long (8: 696, 16: 204)
+DP_LENGTHS = {1: 1, 2: 14, 3: 9, 4: 91, 5: 14, 6: 50, 7: 26, 8: 696, 9: 92, 10: 86, 11: 27, 12: 90, 13: 16, 14: 28, 15: 30, 16: 204,
+              17: 17, 18: 19, 19: 11, 20: 15, 21: 5, 22: 6, 23: 4, 24: 6, 25: 1, 26: 1, 27: 1, 28: 2, 29: 2, 30: 1, 32: 4, 33: 1, 35: 2,
+              36: 3, 37: 1, 39: 1, 40: 1, 41: 1, 48: 1, 49: 1, 63: 1}
+DP_KEEP = ""             # the rules' cuts of these kinds (CUE_WHYS, joined by +) stay whatever the cues and lengths say
+DP_LAM, DP_OFF = 0.5, -2.0  # what the length prior counts for, against the cues; what a cut costs beyond its cues
+
+
+def section_cues(fam, tonic, home, sung, why, sings, begins, turns):
+    """For each bar line (the bar it begins), what might make it a section's start: the rule that made a cut there,
+    where singing begins or stops, a turn, phrases of 4 and 8 said twice or played elsewhere, the chords across it,
+    and how the singing changes. One row of floats a bar."""
+    n = len(fam)
+    sung = sung or [0.0] * n
+
+    def alike(a, b, length):
+        if a < 0 or b < 0 or a + length > n or b + length > n:
+            return False
+        beats = [x == y for i in range(length) for x, y in zip(fam[a + i], fam[b + i])]
+        return bool(beats) and sum(beats) >= PHRASE_ALIKE * len(beats)
+
+    rows = []
+    for i in range(n):
+        f = [float(why.get(i) == w) for w in CUE_WHYS]
+        f += [float(i in sings), float(i in begins), float(i in turns)]
+        for p in (4, 8):
+            f.append(float(alike(i - 2 * p, i - p, p) and not alike(i - p, i, p)))   # a phrase said twice ended
+            f.append(float(alike(i - p, i, p)))                                         # in the middle of a phrase said twice
+            hs = [h for h in range(1, n - p + 1) if abs(h - i) >= p and alike(i, h, p)] if i + p <= n else []
+            f.append(min(len(hs), 4) / 4)                                               # the phrase from here is played elsewhere
+            f.append(sum(not alike(i - 1, h - 1, 1) for h in hs) / len(hs) if hs else 0.0)   # ... and begins there as here
+        last, first = (fam[i - 1][-1], fam[i][0]) if 0 < i < n else (None, None)
+        f.append(float(bool(last) and last[0] == (tonic + 7) % 12 and last[1] in ("maj", "sus") and first == (tonic, home)))
+        f.append(float(bool(last) and last == first))                                   # a chord held across the bar line
+        f.append(float(bool(first) and first == (tonic, home)))
+        f.append(float(bool(last) and len(set(fam[i - 1])) == 1 and last[1] in ("maj", "sus") and last[0] == (first[0] + 7) % 12))
+        s0, s1 = (sung[i - 1] if i > 0 else 0.0), sung[i]
+        f += [s1 - s0, abs(s1 - s0), s1, s0]
+        rows.append(f)
+    return np.array(rows)
+
+
+def choose_cuts(score, lengths=None, lam=None, off=None):
+    """The cuts (bars 1 .. n-1) that make the most of each cut's score less DP_OFF, and DP_LAM times the log share of
+    each section's length among the owner's."""
+    lengths = DP_LENGTHS if lengths is None else lengths
+    lam = DP_LAM if lam is None else lam
+    off = DP_OFF if off is None else off
+    total = sum(lengths.values()) + 0.2 * 63
+    logp = np.array([-1e9] + [np.log((lengths.get(k, 0) + 0.2) / total) for k in range(1, 64)])
+    n = len(score)
+    best = np.full(n + 1, -1e18)
+    best[0] = 0.0
+    back = np.zeros(n + 1, int)
+    for j in range(1, n + 1):
+        lo = max(0, j - 63)
+        cand = best[lo:j] + lam * logp[j - np.arange(lo, j)]
+        k = int(np.argmax(cand))
+        best[j] = cand[k] + (score[j] - off if j < n else 0.0)
+        back[j] = lo + k
+    cuts, j = [], n
+    while j > 0:
+        j = back[j]
+        if j > 0:
+            cuts.append(j)
+    return sorted(cuts)
+
+
 LETTERS = "ABCDEFGHIJKLMNOPQSTUVWXYZ"   # no R: R2, the second playing of R, reads in Lily# as a whole-bar rest of a half
 
 
@@ -755,6 +832,7 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset(), begin
     n = len(keys)
     fam = [tuple((r, _KIND[q]) for r, q in k) for k in keys]
     home = "maj" if mode == "major" else "min"
+    given = (set(sings), set(begins), set(turns))
 
     def alike(a, b, length):
         beats = [x == y for i in range(length) for x, y in zip(fam[a + i], fam[b + i])]
@@ -778,6 +856,13 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset(), begin
         heard = [h for h in range(1, n - phrase + 1) if abs(h - g) >= phrase and alike(g, h, phrase)]
         return bool(heard) and sum(not alike(g - 1, h - 1, 1) for h in heard) >= BEGIN_SHARE * len(heard)
 
+    if LEAD_IN:                              # a bar wholly on a dominant that resolves across the bar line leads in: the turn is after it
+        def lead(s):
+            return s + 1 if 0 < s < n - 1 and len(set(fam[s])) == 1 and fam[s][0][1] in ("maj", "sus") \
+                and fam[s][0][0] == (fam[s + 1][0][0] + 7) % 12 and fam[s + 1][0][1] in ("maj", "min") else s
+        sings, begins = {lead(s) for s in sings}, {lead(s) for s in begins}
+        if LEAD_IN == 2:
+            turns = {lead(t) for t in turns}
     # a turn a bar after where a phrase played elsewhere begins is that phrase's (My Life: the riff begins on
     # the D its key shares with the song's; the key is seen to change a bar into it)
     if SUNG_WHOLE:                           # from where singing begins, phrases played the same elsewhere are not cut inside
@@ -810,6 +895,9 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset(), begin
         kept |= set(strong)
     edges = sorted({0, n} | {t for t in kept | {moved[t] for t in others} if 0 < t < n})
     cuts = set(edges)
+    WHY.clear()                                  # why each cut is there (for measuring only)
+    WHY.update({t: "turn" for t in edges})
+    WHY.update({t: "sing" for t in kept if t in WHY})
     # a block the turns close in, played again whole elsewhere, is a section there too: its first bar and the bar
     # after its last are cuts (My Life: the verse, 14 bars between where singing begins and the riff, ends where
     # the bridge begins, the second time). Played again right after itself, it is one section (the riff twice).
@@ -843,9 +931,11 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset(), begin
         for h, e in runs:
             if h == b:                           # right after the block itself: one run with it
                 cuts.add(e)
+                WHY.setdefault(e, "played")
                 played_cuts.update((a, e))
             elif next(c for c, d in zip(edges, edges[1:]) if c <= h < d) == h:
                 cuts.update((h, e))
+                WHY.setdefault(h, "played"); WHY.setdefault(e, "played")
                 played_cuts.update((a, b, h, e))
     edges = sorted(c for c in cuts if 0 <= c <= n)
     # a turn of key or loudness cuts, but the grid goes on from where singing last began or stopped, or a block played
@@ -871,11 +961,16 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset(), begin
                     s = next((k for k in range(1, HELD_SHIFT + 1) if g + k < b - 1 and fam[g + k - 1][-1] != fam[g + k][0]
                               and (HELD_SHIFT_LOOSE or fam[g + k][0] == (tonic, home))), 0)
                 cuts.add(g + s)
+                WHY.setdefault(g + s, "ended" if ended else "cadence" if cadence(g) else "pair" if pair else "begins")
                 if HELD_REANCHOR:
                     g += s
                     p += s
     cuts = sorted(cuts)
-    if MERGE_SHORT:                              # a piece of fewer bars than this joins the one before (the first: the one after)
+    if SECTION_DP:                               # the cuts chosen whole: cues weighed per bar line, lengths as the owner's
+        cues = section_cues(fam, tonic, home, sung, WHY, *given)
+        kept_rule = [100.0 if WHY.get(i, "-") in DP_KEEP.split("+") else 0.0 for i in range(n)]
+        cuts = [0] + choose_cuts(cues @ np.array(DP_WEIGHTS[1:]) + DP_WEIGHTS[0] + np.array(kept_rule)) + [n]
+    elif MERGE_SHORT:                            # a piece of fewer bars than this joins the one before (the first: the one after)
         while True:
             short = [i for i in range(1, len(cuts)) if cuts[i] - cuts[i - 1] < MERGE_SHORT]
             if not short or len(cuts) <= 2:
@@ -1458,6 +1553,12 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
                     for bar in whole]
             sings = frozenset(voice_turns(sung))
             begins = frozenset(voice_turns(sung, begins=True))
+            if VOICE_LATE:                  # singing that begins only in the bar's second half is a pickup: the section begins after it
+                head = [float(np.mean(singing[int(bar["start"] * 100):max(int((bar["start"] + bar["end"]) * 50), int(bar["start"] * 100) + 1)]))
+                        for bar in whole]
+                late = {s for s in begins if s + 1 < len(whole) and head[s] < VOICE_LATE}
+                sings = frozenset(s + 1 if s in late else s for s in sings)
+                begins = frozenset(s + 1 if s in late else s for s in begins)
     beats_in_bar = 2 if time == "6/8" else int(time.split("/")[0])
     read_chords = [c for bar in bars for c in bar["chords"]]
     tonic, mode = find_key([(c["end"] - c["start"], c["symbol"][0], c["symbol"][1]) for c in read_chords])
