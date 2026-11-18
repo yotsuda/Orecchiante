@@ -3,7 +3,7 @@
 **毎セッションの終わりに書き換える**（追記しない。200 行以内）。方向づけは [ROADMAP.md](ROADMAP.md)、
 数字と使い方は [README](../README.md)、録音の出典は [DATASETS.md](DATASETS.md)。
 
-最終更新: 2026-11-19（**section を「まとめて選ぶ」`SECTION_DP`（Python だけ、既定は切）。xsc test exact F 38.4 → 66.4%、AIST rwc-test 3 秒 62.2 → 72.3%。次は既定にして .NET へ＝下の「次の一手」の先頭。** 物差しはオーナーの Transcribe! の .xsc（`F:\Transcribe\弾いてみた\xsc`、278 曲が使える。オーナー「セクションの正しい区切りかたは、ここを参考にして」）。`scratch/xsc/`: `index.ps1`→`prep.py`→`dur.py`（録音の長さが違う 11 曲を外す）→`run.ps1`（`dettato ears` を 1 曲 1 プロセス）→`eval.py [dev|test] [--each] [--why] [定数=値]`（オーナーの小節で exact・±1。dev＝x001〜x145 141 曲、test＝137 曲。0.8.12 の基準: dev exact F 34.1%・near 51.8%、test 38.4%・56.8%）。** **0.8.12: 進捗を細かく＝パートの分離を 5% ごとに今の段階と一緒に stderr へ（`the beats; separating the parts 35%`）、モデルを開く行も。Lily# は最新の行を進捗に出すだけなので Lily# 側の変更なし。譜面は同じ。** **0.8.11: `break` は section の終わりだけ（オーナー決定。前は 4 小節ごとにも）＝section が段の頭から始まり、間は Lily# が詰める。テキストは 4 小節で改行のまま。数字は動かない。** **0.8.10: 歌が始まる所から 8 小節がほかでも同じに鳴るなら、中の歌の止み・始まり（とその近くの turn）で切らない（`SUNG_WHOLE`。オーナーの 0.8.9 の Open Arms への評）**。Open Arms のオーナーの頭 11 のうち落とす 2・余分 6 → 1・3（101／79 許容・100・109）、AIST dev 66.7 → 66.8%、test 62.4 → 62.2%、糸・My Life は前と同じ。0.8.9: section の格子の切れ目が「主和音以外の和音を小節線をまたいで保つ」所なら、2 小節以内で主和音が来る所へ動かし格子もそこから（`HELD_SHIFT`）、1 小節の section は前に入れる（`MERGE_SHORT`）**。Open Arms のオーナーの頭 10 のうち落とす 3・余分 11 → 1・6、AIST dev 66.3 → 66.7%（声なし 50.7 → 52.4）、test 61.9 → 62.4%（49.7 → 51.1）、糸・My Life は前と同じ。コードと小節線の数字は動かない。**0.8.6: 迷った和音を `F@or(Bm)` で書く（Lily# 依頼 17、`@todo` は出さない）、孤立した 3 拍の小節に `time 3/4`（オーナー決定）** `THREE_FOUR`・`short_meters`／`ShortMeters`。数字は動かない。`lysc check` は Lily# 依頼 18（`f6256c026` で fixed）の lysc で 1492/1492（`scratch/read-all/` 全部、2026-11-18）。オーナーは 0.8.5 の糸の 2/4 を聴いて「自然に正しく鳴っている」、終わりの rit のずれは許容。RWC-P に「途中で止まる曲」はない（`scratch/c3/stops.py`）。Open Arms（Journey、オーナーの 3 拍子の曲）は曲全体を 3/4・102 で読む（`scratch/c3/arms/`、オーナーの耳での確かめ待ち）。**0.8.5:** `time 2/4`。**0.8.4:** 2 拍の小節が続く所を downbeat の値で組む。0.8.3: section のテンポ。0.8.2: 格子の起点。0.8.1: 歌の中の境目。0.8.0: 6 パート。0.7.0: パート。0.6.0: 歌。0.5.0: 意味で切る section。経緯は `git log`）。
+最終更新: 2026-11-19（**0.9.0: section をまとめて選ぶ（`SECTION_DP`、Python と .NET の既定。オーナー「(c) かな。固有の曲の悪化はあまり気にしない。平均をより向上させる方法を探して」→「進めて」）。** オーナーの Transcribe! の .xsc の test（数えるだけ）exact F 38.4 → 66.4%、AIST rwc-test 3 秒 62.2 → 72.3%・0.5 秒 37.7 → 52.7%。`read_check.py` は 368/368 一致。入った exe で Open Arms を通しで読んで Python と同じ頭。物差しは `F:\Transcribe\弾いてみた\xsc`（278 曲が使える。`scratch/xsc/`: `index.ps1`→`prep.py`→`dur.py`→`run.ps1`→`eval.py [dev|test]`。dev＝x001〜x145 141 曲で選ぶ、test＝137 曲は数えるだけ）。それより前（0.8.12 進捗、0.8.11 `break`、0.8.10 `SUNG_WHOLE`、0.8.9 `HELD_SHIFT`・`MERGE_SHORT`、0.8.6 `@or`・`time 3/4`、0.8.5 `time 2/4`、0.8.4 2 拍の小節、0.8.3 section のテンポ、0.8.0 6 パート、0.6.0 歌、0.5.0 意味で切る section）は README と `git log`）。
 
 ### D4 の形（2026-11-15、オーナーと話して決めた。依頼 4・[便り](repro/lilysharp-requests-2026-11-15-listening.md)）
 **Lily# の設計メモ `C:\MyProj\LilySharp\docs\recording-design.md`（セッションの頭に読む）:** 紐づけは隣のファイル（形式 2）だけ、m4a は Lily# の LSP が復号。
@@ -13,7 +13,7 @@
 
 **`dettato <録音> [-o <x.lys>] [--force]` が、mp3・m4a・mp4・aac・flac・wma・wav から `.lys` と `.dettato.json` を録音の隣に書く**
 （Python なし。RWC_P001 の mp3 で 6.3 秒）。配る形は .NET＋ONNX の実行ファイルを VS Code 拡張に入れる（Calamo と同じ形）。
-**拡張 `yotsuda.dettato` 0.8.12 をこの PC の VS Code に入れた**（0.8.12: 進捗を細かく。0.8.11: `break` は section の終わりだけ。0.8.10: 歌の止みで 8 小節の verse を割らない `SUNG_WHOLE`、入った exe で Open Arms・糸・My Life を通しで読んで scratch と同じ頭。0.8.9: section の held chord と 1 小節の section、入った exe で Open Arms を通しで読んで scratch と同じ頭。0.8.8: 最初の section の上に Join Sections（Ctrl+.）のコメント。0.8.7: 譜面の頭のコメントが `@or` の上での Shift+Ctrl+Up/Down も言う。0.8.6: `@or`・`time 3/4`。0.8.5: `time 2/4`。入った版で糸を通しで読み、scratch の exe と `.lys` が一字一句同じ（`scratch/c3/ito/`）。0.8.4: 2 拍の小節の組み方。0.8.3: section のテンポ。0.6.0: 歌を聞いて section を切る。0.7.0: パートを書く。0.8.0: 6 パート。0.8.1: 歌の中の境目。0.8.2: 格子の起点。入った版の通しで糸・My Life の section は前と同じ）（`extension/`、`tools/deploy-extension.ps1`。.vsix 167 MB、Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
+**拡張 `yotsuda.dettato` 0.9.0 をこの PC の VS Code に入れた**（0.9.0: section をまとめて選ぶ、入った exe で Open Arms を通しで読んで Python と同じ頭。0.8.12: 進捗を細かく。0.8.11: `break` は section の終わりだけ。0.8.10: 歌の止みで 8 小節の verse を割らない `SUNG_WHOLE`、入った exe で Open Arms・糸・My Life を通しで読んで scratch と同じ頭。0.8.9: section の held chord と 1 小節の section、入った exe で Open Arms を通しで読んで scratch と同じ頭。0.8.8: 最初の section の上に Join Sections（Ctrl+.）のコメント。0.8.7: 譜面の頭のコメントが `@or` の上での Shift+Ctrl+Up/Down も言う。0.8.6: `@or`・`time 3/4`。0.8.5: `time 2/4`。入った版で糸を通しで読み、scratch の exe と `.lys` が一字一句同じ（`scratch/c3/ito/`）。0.8.4: 2 拍の小節の組み方。0.8.3: section のテンポ。0.6.0: 歌を聞いて section を切る。0.7.0: パートを書く。0.8.0: 6 パート。0.8.1: 歌の中の境目。0.8.2: 格子の起点。入った版の通しで糸・My Life の section は前と同じ）（`extension/`、`tools/deploy-extension.ps1`。.vsix 167 MB、Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
 「Convert Recording to Lily# (.lys)… (Preview)」で、Lily# が `ext.activate()` で `{path, version, protocol, inputs}` を受け取る。**VS Code の中で動くことはユーザーが確かめた（0.2.0。0.3.x は Lily# のメニューからはまだ）。**
 
 ### コマンドと入力（D3。`Program.cs`・`Audio.cs`。README の「A recording as it comes」、Lily# 向けは便りの §2a）
@@ -37,7 +37,7 @@
 - 耳: wav → `.beats`（Beat This!）と `.npz`（crema と BTC の平均、0.4.0 から）、特徴量: wav → `.feat.npz`。突き合わせは `tools/net_check.py`、`measure.py --net scratch/net` で表は全列同じ。
 - **`--ears` では HPSS を外した**（`use_ears()` が `HARMONIC_FRAMES = 0`。特徴量は `scratch/feat-h0/`）。1 曲 3 分半で `dettato read` 5.5 秒（Beat This! 3.7）。onnxruntime は 8 スレッド（24 だと遅い）。
 
-### 数字（`measure.py all`、2026-11-18 の 0.8.11 の後＝0.8.10・0.8.9 と同じ（`all` は歌なしで読む。0.8.10 は歌つきの AIST の F だけ動く）。lysc check 1388/1388（依頼 18 の直った lysc `scratch/lysc-0986`）、SIDECAR 1388/1388。ログは `scratch/all.log`、前は `all0810.log`）
+### 数字（`measure.py all`、2026-11-19 の 0.9.0＝section の行だけ動いた（`all` は歌なしで読む）。lysc check 1388/1388（依頼 18 の直った lysc `scratch/lysc-0986`）、SIDECAR 1388/1388。ログは `scratch/all.log`、前は `all0812.log`。section が 1 つで `time` の小節がある譜面は section の形で書くようにした＝seed7 の s7-009 が落ちたため）
 
 | `--ears`（crema＋BTC） | `rwc-dev`（選ぶ側） | `rwc-test`（数えるだけ） | `rwc-p` | seed1 / 7 / 11 |
 |---|---|---|---|---|
@@ -47,21 +47,22 @@
 | 小節線 F | 94.1% | 95.1% | 94.6% | 97.1 / 91.0 / 94.1% |
 | テンポ・拍子 | 47・49 | 47・49 | 94・98 | |
 | 印 → 拾う誤り | 34.9% → 85.9% | 28.1% → 72.0% | 31.5% → 78.9% | 14.9% → 74.0% |
-| section（1 曲あたり、AIST の F は声なし／歌つき） | 14.1、52.4／66.8% | 13.7、51.1／62.2% | 13.9 | 3.9 / 4.0 / 3.0 |
+| section（1 曲あたり、AIST 3 秒の F は声なし／歌つき） | 11.4、69.8／76.2% | 10.1、63.0／72.3% | 10.7 | 3.6 / 3.5 / 3.1 |
 
 - **持ち越す知見（README にないもの）:** 実録音で失っていたのは頭ではなく終わり（Beat This! はドラムが止まる所で拍をやめる）。crema の「コードなし」は両端だけ使う。RWC の正解は両端を語らない。ONNX を書き直すとき: 旧式のトレース直後の torch のモデルは同じプロセスで答えが変わる（比べる前に読み直す）。dynamo は `PYTHONUTF8=1` が要る。
 
 ## 次の一手
 
-**section をまとめて選ぶ `SECTION_DP`（2026-11-19、Python の `read_chords.py` だけ、既定 0）。オーナーは「固有の曲の悪化はあまり気にしない、平均を上げる」（同日）。次は既定にして .NET に写す（オーナーに確かめてから）。**
+**section をまとめて選ぶ `SECTION_DP`（2026-11-19、0.9.0 で Python と .NET の既定。`SECTION_DP = 0`／`Form.SectionDp = false` で前の規則の切れ目）。.NET は `Sections.cs`、`Form.Phrases` が `WHY` を記録して呼ぶ。`read_check.py` 368/368（RWC 歌つき 100・歌なし 100、合成曲 7 セット 168）。**
 - 仕組み: 小節線ごとに手がかり 35 個＝`section_cues`（今の規則がそこで切った理由 `WHY`、歌の出入り、4・8 小節の句の繰り返しと再演、主和音・属和音・保った和音、歌の割合）26 個＋`audio_cues`（前後 2・4 小節の音量・鳴る音・和音の違い）9 個、を
   **前後 3 小節ぶんも並べて（245 個）**ロジスティック回帰（C=0.1）で点数にし、`choose_cuts` が動的計画法で選ぶ: 切れ目の点数 − off ＋ λ×log（オーナーの section の長さの分布）＋ μ×（その区間が同じ長さで別の所でも鳴る、`played_again`）。
-  重み・長さ・λ 0.5・off −1.5・μ 0.5 は `tools/sections_dp.json`（`scratch/xsc/dp.py EXTRA=1 NB=3 PH=0 C=0.1 AUDIO=1 MUS=0,0.5 --json`、xsc の dev だけで学んだ）。.NET はこの JSON を読めばよい。
+  重み・長さ・λ 0.5・off −1.5・μ 0.5 は `tools/sections_dp.json`（`scratch/xsc/dp.py EXTRA=1 NB=3 PH=0 C=0.1 AUDIO=1 MUS=0,0.5 --json`、xsc の dev だけで学んだ）。.NET は `Sections.cs` が同じ JSON を exe に埋め込んで読む（`Dettato.csproj` の EmbeddedResource）。点数は小数 9 桁に丸め、対数は `math.log`＝足す順が違っても同じ切れ目。
 - 数字（規則 → `SECTION_DP=1`）: **xsc dev exact F 34.1 → 62.1%**（学んだ曲。5 分割の交差検証で 57.2〜57.9%）・near 51.8 → 67.7%。**xsc test（数えるだけ）exact 38.4 → 66.4%・near 56.8 → 71.8%**（読む 1908 → 1395、オーナー 1531）。
   **AIST（歌つき）rwc-dev 3 秒 66.8 → 76.2%・0.5 秒 42.5 → 58.3%、rwc-test 3 秒 62.2 → 72.3%・0.5 秒 37.7 → 52.7%。** 手で切った 3 曲: 糸は 21・44 を落とす、My Life は 105・151 を落として 8 つ増える、Open Arms は 101 を拾い 43・93 が増える。
 - 交差検証で効いたもの（5 分割×並べ方 2 通りの平均、exact F）: 26 個だけ 44.0%（3 分割）→ 前後 3 小節 55.7% → 音 56.8% → 区間の繰り返し 57.6%。効かない: 位相（歌の出入り・曲頭から 4・8 小節目）、2・12・16 小節の句、勾配ブースティング（同じくらいで学びすぎ）、構造化パーセプトロン（55.4%）、`LEAD_IN` の規則で取り直す。
 - 道具: `scratch/xsc/capture.py`（`phrase_sections` に渡るもの・音量・音を `cap/<id>.pkl` に取る、80 秒。`CAP=<フォルダ>`）→ `dp.py [--cv] [K=5 SEED=1] [--test] [--json] …`（数十秒）。`eval.py [dev|test] [--why]`、`look.py <id>`（小節ごと）、`barshift.py`（オーナーの小節と 1 対 1 か）、`sweep.ps1`。
-- 次の候補: (1) 既定にして .NET（`Form.cs`）へ: `WHY` の記録、`section_cues`・`audio_cues`・`played_again`・`choose_cuts`、`read_check.py` で一致。(2) 配る重みは 278 曲全部で学び直す（test は数え終わった）。(3) 手がかりを足す: ドラムのパート（xsc の耳は歌だけ。`dettato ears` でドラムも取るなら 278 曲を読み直し）。
+- 次の候補: (1) 手がかりを足す: ドラムのパート（xsc の耳は歌だけ＝`dettato ears` でドラムも取るなら 278 曲を読み直し、数時間）。(2) オーナーの xsc の他の情報（小節線＝人の拍、ループ範囲）。(3) 配る重みを 278 曲全部で学び直す手もあるが、そうすると test が物差しとして使えなくなるので、規則を詰めるうちは dev だけのまま（私の判断）。
+  手を変えたら: `capture.py` で取り直す → `dp.py --cv K=5`（2 通りの SEED）→ よければ `--json` → `eval.py test` を 1 回 → .NET の `Sections.cs` に写して `read_check.py`。
 - 規則の側（同日、単独では小さい）: `LEAD_IN`（歌の出入りの小節がまるごと属和音で次で解決するなら次から）は全 141 曲で ±0（前に +2.4 と見えたのは歌のない 16 曲が落ちていたため）、`VOICE_LATE` 0.1 +0.5、`KEY_TURN` 3 +0.9、`MERGE_SHORT` 4 +1.0。
   **直した:** `read()` の `begins` が歌のない曲で和音の時刻の配列のまま `phrase_sections` に渡っていた（`chord_starts` に分けた。今の規則の結果は変わらない）。
 

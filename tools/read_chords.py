@@ -25,6 +25,7 @@ This is the line to beat, written to be measured (tools/score_chords.py), not to
 """
 import argparse
 import json
+import math
 import os
 import subprocess
 import sys
@@ -739,7 +740,8 @@ GRID_ANCHOR = 1        # count a block's grid from where singing last began or s
 
 WHY = {}                 # phrase_sections: the rule each cut came from, by bar (for measuring only)
 CUE_WHYS = ["sing", "turn", "played", "ended", "cadence", "pair", "begins"]
-SECTION_DP = 0           # (trying) choose the cuts whole (section_rows weighed, choose_cuts): what it weighs with is in DP_FILE
+SECTION_DP = 1           # choose the cuts whole (section_rows weighed, choose_cuts; the owner 2026-11-19: the average over the songs the owner cut
+                         # in Transcribe!, not a song of his own): what it weighs with is in DP_FILE. 0: the rules' cuts (MERGE_SHORT)
 DP_FILE = Path(__file__).with_name("sections_dp.json")   # scratch/xsc/dp.py --json: logistic regression on the owner's dev songs
 _DP = {}
 
@@ -757,7 +759,7 @@ def section_cues(fam, tonic, home, sung, why, sings, begins, turns):
     where singing begins or stops, a turn, phrases of 4 and 8 said twice or played elsewhere, the chords across it,
     and how the singing changes. One row of floats a bar."""
     n = len(fam)
-    sung = sung or [0.0] * n
+    sung = [0.0 if s != s else s for s in sung] if sung else [0.0] * n   # a bar past the vocals' end: none
 
     def alike(a, b, length):
         if a < 0 or b < 0 or a + length > n or b + length > n:
@@ -847,7 +849,7 @@ def choose_cuts(score, lengths=None, lam=None, off=None, again=None, mu=None):
     off = model["off"] if off is None else off
     mu = (model["mu"] if again is not None else 0.0) if mu is None else mu
     total = sum(lengths.values()) + 0.2 * 63
-    logp = np.array([-1e9] + [np.log((lengths.get(k, 0) + 0.2) / total) for k in range(1, 64)])
+    logp = np.array([-1e9] + [math.log((lengths.get(k, 0) + 0.2) / total) for k in range(1, 64)])   # math.log: as .NET's
     n = len(score)
     best = np.full(n + 1, -1e18)
     best[0] = 0.0
@@ -1025,7 +1027,8 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset(), begin
     if SECTION_DP:                               # the cuts chosen whole: cues weighed per bar line, lengths as the owner's
         model = dp_model()
         rows = section_rows(fam, tonic, home, sung, WHY, *given, db, notes)
-        cuts = [0] + choose_cuts(rows @ np.array(model["weights"]) + model["bias"], again=played_again(fam)) + [n]
+        score = np.round(rows @ np.array(model["weights"]) + model["bias"], 9)   # rounded: the same in .NET, whatever order it adds in
+        cuts = [0] + choose_cuts(score, again=played_again(fam)) + [n]
     elif MERGE_SHORT:                            # a piece of fewer bars than this joins the one before (the first: the one after)
         while True:
             short = [i for i in range(1, len(cuts)) if cuts[i] - cuts[i - 1] < MERGE_SHORT]
@@ -1771,7 +1774,9 @@ def lys(result, title, shape_of=None):
     ]
     form = result.get("form") or []
     short = result["bars"][0].get("pickup")
-    if len(form) == 1 and not short:    # one section: the chart is the bars in their order
+    # one section: the chart is the bars in their order; but not with a bar of its own time (Lily# takes a time in a row
+    # out of a section for the whole chart: seed7's s7-009, the first chart of one section with a bar of 2/4, 0.9.0)
+    if len(form) == 1 and not short and not any("time" in bar for bar in result["bars"]):
         return "\n".join(head + ["chords harmony {", *rows([[bar] for bar in result["bars"]], "  "), "}", "",
                                  "score {", "  chords harmony", "}", ""])
     sections = {}                       # name: its bars, each a list of the bar each time the section is played

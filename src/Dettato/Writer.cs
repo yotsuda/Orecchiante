@@ -105,7 +105,9 @@ static class Writer
             "",
         };
         int pickup = chart.Bars[0].Pickup;
-        if (chart.Form.Count == 1 && pickup == 0)   // one section: the chart is the bars in their order
+        // one section: the chart is the bars in their order; but not with a bar of its own time (Lily# takes a time in a
+        // row out of a section for the whole chart)
+        if (chart.Form.Count == 1 && pickup == 0 && chart.Bars.All(bar => bar.Meter == null))
         {
             lines.Add("chords harmony {");
             lines.AddRange(Rows([.. chart.Bars.Select(bar => new List<Bar> { bar })], "  "));

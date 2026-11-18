@@ -751,10 +751,11 @@ static class Reader
         var turns = Form.Turns(barNotes, barDb);
         // where singing begins and stops: the share of each bar whose vocals are a quarter of the song's loud end
         List<int> sings = [], singsFrom = [];
+        double[]? sung = null;
         if (voice is { Length: > 0 } && (double)Percentile95(voice) >= Form.VoiceFloor * (double)Percentile95(rms))
         {
             float line = (float)(Form.VoiceLoud * (double)Percentile95(voice));
-            var sung = new double[full.Count];
+            sung = new double[full.Count];
             for (int i = 0; i < full.Count; i++)
             {
                 int a = (int)(full[i].Start * 100), b = Math.Max((int)(full[i].End * 100), a + 1);
@@ -773,7 +774,7 @@ static class Reader
             var c = bar.Chords.FirstOrDefault(c => c.Start <= at && at < c.End) ?? bar.Chords[^1];
             return c.Symbol.Quality * 12 + c.Symbol.Root;
         }).ToArray()).ToArray();
-        var (form, places) = Form.Phrases(keys, turns, tonic, major, Form.PhraseBars, sings, singsFrom);
+        var (form, places) = Form.Phrases(keys, turns, tonic, major, Form.PhraseBars, sings, singsFrom, sung, barDb, barNotes);
         for (int i = 0; i < full.Count; i++) (full[i].Section, full[i].BarOfSection) = places[i];
         if (bars[0].Pickup != 0)        // a section of its own: Lily# lets only the first one open short
         {

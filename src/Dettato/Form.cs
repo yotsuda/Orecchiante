@@ -24,6 +24,7 @@ static class Form
     const int VoiceRun = 2;         // bars: singing, or its silence, has to last this long to turn the music
     const int VoiceGap = 3;         // bars: a silence shorter than this between singing is a breath
     const int TurnNear = 2;         // bars: a turn of key or loudness this near where singing begins or stops is that one
+    public static bool SectionDp = true;   // choose the cuts whole (Sections; read_chords.py's SECTION_DP); false: the rules' cuts
     const int SungWhole = 2;        // phrases: from where singing begins, these phrases, played the same elsewhere, are not cut inside by singing (Open Arms)
 
     /// <summary>Where singing begins or stops and goes on (<paramref name="sung"/>: the share of each bar that sings):
@@ -133,11 +134,14 @@ static class Form
     /// elsewhere after another bar. A section that plays
     /// one before it again is named after it (A, A2). <paramref name="keys"/>: the chord (quality * 12 + root) on each
     /// beat of each bar. Returns the form and, for each bar, its section and which bar of it it is.</summary>
-    public static (List<string> Form, List<(string, int)> Places) Phrases(int[][] keys, HashSet<int> turns, int tonic, bool major, int phrase, IReadOnlyList<int> sings, IReadOnlyList<int> begins)
+    public static (List<string> Form, List<(string, int)> Places) Phrases(int[][] keys, HashSet<int> turns, int tonic, bool major, int phrase, IReadOnlyList<int> sings, IReadOnlyList<int> begins,
+        double[]? sung = null, double[]? db = null, double[][]? notes = null)
     {
         int n = keys.Length;
         var fam = keys.Select(row => row.Select(k => k % 12 * 4 + Reader.Kind[k / 12]).ToArray()).ToArray();
         int home = tonic * 4 + (major ? 0 : 1);
+        var given = (Sings: new HashSet<int>(sings), Begins: new HashSet<int>(begins), Turns: new HashSet<int>(turns));
+        var why = new Dictionary<int, string>();    // the rule each cut came from: what Sections weighs
 
         int Same(int a, int b, int length, out int all)
         {
@@ -207,6 +211,8 @@ static class Form
         }
         var edges = new SortedSet<int>(kept.Concat(others.Select(t => moved[t])).Where(t => 0 < t && t < n)) { 0, n }.ToList();
         var cuts = new HashSet<int>(edges);
+        foreach (int t in edges) why[t] = "turn";
+        foreach (int t in kept) if (why.ContainsKey(t)) why[t] = "sing";
         var blocks = edges.Zip(edges.Skip(1)).Where(p => p.Second - p.First >= phrase).ToList();
 
         List<int> HeardAt(int a, int b)
@@ -238,10 +244,11 @@ static class Form
             foreach (var run in runs)
             {
                 int h = run[0], e = run[1];
-                if (h == b) { cuts.Add(e); playedCuts.Add(a); playedCuts.Add(e); }
+                if (h == b) { cuts.Add(e); why.TryAdd(e, "played"); playedCuts.Add(a); playedCuts.Add(e); }
                 else if (edges.Zip(edges.Skip(1)).First(p => p.First <= h && h < p.Second).First == h)
                 {
                     cuts.Add(h); cuts.Add(e);
+                    why.TryAdd(h, "played"); why.TryAdd(e, "played");
                     playedCuts.UnionWith([a, b, h, e]);
                 }
             }
@@ -270,13 +277,17 @@ static class Form
                         for (int k = 1; k <= HeldShift; k++)
                             if (g + k < b - 1 && fam[g + k - 1][^1] != fam[g + k][0] && fam[g + k][0] == home) { s = k; break; }
                     cuts.Add(g + s);
+                    why.TryAdd(g + s, ended ? "ended" : Cadence(g) ? "cadence" : pair ? "pair" : "begins");
                     g += s;
                     p += s;
                 }
             }
         }
         var sorted = cuts.OrderBy(c => c).ToList();
-        if (MergeShort != 0)   // a piece of fewer bars than this joins the one before (the first: the one after)
+        if (SectionDp)          // the cuts chosen whole: each bar line's cues weighed, the lengths as the owner's (Sections)
+            sorted = [0, .. Sections.Cuts(fam, tonic, home, sung, why, given.Sings, given.Begins, given.Turns,
+                db ?? new double[n], notes ?? [.. Enumerable.Range(0, n).Select(_ => new double[12])]), n];
+        else if (MergeShort != 0)   // a piece of fewer bars than this joins the one before (the first: the one after)
             while (sorted.Count > 2)
             {
                 int i = Enumerable.Range(1, sorted.Count - 1).FirstOrDefault(j => sorted[j] - sorted[j - 1] < MergeShort);

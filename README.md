@@ -561,6 +561,57 @@ the bar line, where the phrase is one played elsewhere that, at two thirds of th
 more, follows a different bar (`BEGIN_SHARE`: a chorus, a verse B), or after every pair of phrases
 from the block's start where a new pair begins (`PAIR_HEARD`, 0.8.1, below). No repeat signs and no `fold`.
 
+#### Sections chosen whole (`SECTION_DP`, 0.9.0, the owner, 2026-11-19)
+
+The rules above now only say where a section might begin. The owner's own Transcribe! files
+(`.xsc`, 278 songs whose recording is on this machine; the section markers and bar markers in
+them) are the measure: the owner's bars, a start counted `exact` on the owner's bar and `near`
+within one, the song's first bar left out. The songs are split by number: x001–x145 (141, `dev`)
+to choose on, the rest (137, `test`) counted once at the end. With the rules alone, dettato read
+about half again as many sections as the owner marks, mostly of four bars or fewer; the owner's
+are of eight bars at 44%, sixteen at 13%, four or fewer at 7%.
+
+Now each bar line gets a score and the cuts are chosen together (`section_rows`, `choose_cuts`,
+in .NET `Sections.cs`):
+
+- per bar line, 35 cues: the rule that made a cut there (singing, a turn, a block played again,
+  a phrase said twice ended, the dominant going home, a new pair, a phrase begun elsewhere), where
+  singing begins or stops, a turn, phrases of 4 and 8 bars said twice or played elsewhere, the
+  chords across the bar line (home chord, a held chord, a bar of the dominant before), the sung
+  share and its change (`section_cues`); and the two and four bars after against those before:
+  loudness, the notes heard, chord families new (`audio_cues`);
+- the same 35 for the three bars before and after (245 in all): this is what helps most, since a
+  strong cue a bar away says "not here";
+- a logistic regression (C 0.1) on the dev songs weighs them; dynamic programming then picks the
+  cuts that make the most of each cut's score, less 1.5, plus 0.5 times the log share of each
+  section's length among the owner's dev sections, plus 0.5 for each section played again as long
+  elsewhere (`played_again`).
+
+The weights, lengths and constants are `tools/sections_dp.json` (`scratch/xsc/dp.py EXTRA=1 NB=3
+PH=0 C=0.1 AUDIO=1 MUS=0,0.5 --json`, from `scratch/xsc/capture.py`'s takings), embedded in
+dettato.exe. The score is rounded to nine decimals so that .NET, adding in another order, picks
+the same cuts: `read_check.py` 100/100 RWC with the voice, 100/100 without, 168/168 songs made here.
+
+| Section starts | the rules (0.8.12) | chosen whole |
+|---|---|---|
+| owner's `.xsc`, `dev`, exact / near | 34.1 / 51.8% | 62.1 / 67.7% (in five folds: 57.2–57.9%) |
+| owner's `.xsc`, `test`, exact / near | 38.4 / 56.8% | **66.4 / 71.8%** (read 1395, owner 1531) |
+| AIST `rwc-dev`, within 3 s / 0.5 s | 66.8 / 42.5% | 76.2 / 58.3% |
+| AIST `rwc-test`, within 3 s / 0.5 s | 62.2 / 37.7% | **72.3 / 52.7%** |
+
+What did not help, in five folds: where the bar falls on a grid of 4 or 8 from the song's start
+or from singing; phrases of 2, 12 or 16 bars; gradient boosting (as good, learns the songs);
+weights learnt through the dynamic programming (a structured perceptron, 55.4%). The songs the
+owner cut by hand lose some of what the rules gave them: 糸 misses 21 and 44, My Life misses 105
+and 151 and gains eight, Open Arms finds 101 and gains 43 and 93; the owner chose the average
+(2026-11-19). `SECTION_DP = 0` (Python) or `Form.SectionDp = false` gives the rules' cuts.
+
+```
+.venv/Scripts/python scratch/xsc/eval.py dev            # or test; --why: how often each rule's cut is the owner's
+.venv/Scripts/python scratch/xsc/capture.py             # what phrase_sections is given, per song (80 s)
+.venv/Scripts/python scratch/xsc/dp.py EXTRA=1 NB=3 PH=0 C=0.1 AUDIO=1 MUS=0,0.5 --cv K=5 SEED=1
+```
+
 To see whether that is what a section means beyond two songs, the section starts are counted
 against AIST's structure annotation of RWC-P (intro, verse A, chorus …; [DATASETS.md](docs/DATASETS.md)),
 leaving out boundaries between two sections of the same label (chorus A, chorus A), by
@@ -672,7 +723,8 @@ behind a repeat sign; 11.8 sections a song in `rwc-dev` and 11.3 in `rwc-test` (
 them a bar or two long; the old sections 6.2 and 5.5), and 3.8, 3.7, 2.9 in `seed1`, `seed7`,
 `seed11`; since 0.8.1 (`PAIR_HEARD`) 14.2 and 13.7, and 4.0, 4.1, 3.0; since 0.8.2 (`GRID_ANCHOR`) 14.4
 and 13.8 (0.9 and 1.1 a bar or two long: after a turn, the grid's next point can come a bar or two in); since 0.8.9
-(`HELD_SHIFT`, `MERGE_SHORT`) 14.1 and 13.7 (0.7 and 0.9 a bar or two long), and 3.9, 4.0, 3.0. With that many, the
+(`HELD_SHIFT`, `MERGE_SHORT`) 14.1 and 13.7 (0.7 and 0.9 a bar or two long), and 3.9, 4.0, 3.0; since 0.9.0
+(`SECTION_DP`, above) 11.4 and 10.1 (none a bar or two long), and 3.6, 3.5, 3.1. With that many, the
 eighteenth letter came: a section is never named R, for its second playing, `R2`, reads in Lily#
 as a whole-bar rest of a half (`LETTERS`). With nothing folded the chords change by a tenth of a point or so (`rwc-dev` root 87.3
 → 87.4%, `rwc-test` 88.8 → 88.9%), and the marks are half a point fewer (`rwc-test` 28.7 → 28.1%

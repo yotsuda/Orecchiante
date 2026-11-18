@@ -2,6 +2,16 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.9.0
+
+- Sections are chosen together: every bar line gets a score from its cues (where singing comes in or
+  stops, phrases said again, the chords across it, how the sound changes) and those of the bars
+  around it, weighed as the owner marks sections in Transcribe!, and the sections take the lengths
+  the owner's do (mostly eight and sixteen bars). Fewer, longer sections: on 137 of the owner's
+  songs not used to choose, 66% of the section starts fall on the owner's (38% before).
+
+
+
 ## 0.8.12
 
 - Finer progress while a recording is read: how much of the parts is separated, by 5% (most of the
