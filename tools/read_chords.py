@@ -725,6 +725,11 @@ MERGE_SHORT = 2        # a section of fewer bars than this joins the one before 
 SUNG_WHOLE = 2         # phrases: from where singing begins, these phrases, when played the same elsewhere, are not cut inside by singing that
                        # stops and begins again, nor by a turn of key or loudness TURN_NEAR from it (Open Arms, the owner 2026-11-18: 15, 62, 65 are
                        # not cuts, 67 is; AIST rwc-dev 66.7 -> 66.8%, rwc-test 62.4 -> 62.2%; 糸 and My Life the same); 0: never
+HELD_SINGS = 0         # (off, the owner to decide) where singing stops on a chord other than the home chord held across the bar line, the cut
+                       # (or the turn standing for it) moves as HELD_SHIFT moves a grid cut (Open Arms, the owner: 100 for 101); 1: where it stops,
+                       # 2: where it begins too; 0: never. Not in .NET. With HELD_SUNG 0.2: Open Arms 101, 糸 and My Life the same, AIST rwc-dev
+                       # 3 s 66.8% the same, 0.5 s 42.5 -> 42.4%, rwc-test 62.2 -> 62.1%; without HELD_SUNG rwc-dev on the bar 368 -> 364
+HELD_SUNG = 0.2        # ... only where the bar singing stops in is still sung this much (the singing trails into it; 0.15 worse, 0.3 misses 101)
 GRID_ANCHOR = 1        # count a block's grid from where singing last began or stopped, or a block played again whole begins or
                        # ends, not from a turn of key or loudness (AIST, rwc-dev: 66.1 -> 66.6%, without the voice 48.7 -> 50.9%); 0: from the block's start
 
@@ -737,7 +742,7 @@ def section_letter(k):
     return LETTERS[k] if k < len(LETTERS) else f"S{k + 1}"
 
 
-def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset(), begins=frozenset()):
+def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset(), begins=frozenset(), sung=None):
     """The sections, as the owner cut 糸 (2026-11-16): the music is cut into blocks where it turns (singing
     begins or stops, the key changes, it grows far louder or quieter); a block of WHOLE_BLOCK bars or
     phrases or fewer is one section; a longer one is cut on a grid of `phrase` bars from its start, where a phrase
@@ -785,6 +790,12 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset(), begin
             a = s if s in begins and s + span <= n and any(
                 abs(h - s) >= span and alike(s, h, span) for h in range(n - span + 1)) else None
         sings, turns = kept_s, kept_t
+    def held_on(g):                          # a cut on a chord other than the home chord held across the bar line: where the home chord comes
+        if not (0 < g < n - 1) or fam[g - 1][-1] != fam[g][0] or fam[g][0] == (tonic, home):
+            return g
+        return g + next((k for k in range(1, HELD_SHIFT + 1) if g + k < n - 1 and fam[g + k - 1][-1] != fam[g + k][0]
+                         and fam[g + k][0] == (tonic, home)), 0)
+
     moved = {t: t - 1 if begins_again(t - 1) and not begins_again(t) else t for t in turns if 0 < t < n}
     # where singing begins or stops is where the section does, and another turn this near it is the same one, a bar
     # off; but not a turn where a phrase played elsewhere begins (My Life: the riff at 135, the voice ending at 138)
@@ -792,6 +803,8 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset(), begin
     for s in sorted(sings):                  # in order, and the turns near in order (the same in .NET)
         near = sorted(t for t in others if abs(t - s) <= TURN_NEAR)
         strong = [moved[t] for t in near if begins_again(moved[t])]
+        if HELD_SINGS and HELD_SHIFT and (HELD_SINGS == 2 or s not in begins) and (sung is None or sung[s] >= HELD_SUNG):
+            s, strong = held_on(s), [held_on(t) for t in strong]
         kept.add(strong[0] if strong else s)
         others -= set(near)
         kept |= set(strong)
@@ -1430,7 +1443,7 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
         bars[i] = dict(items[:at] + [("beats", beats_of(bar["start"], bar["end"], bar.get("pickup") or tempo_beats))]
                        + items[at:])
     whole = [bar for bar in bars if not bar.get("pickup")]
-    turns, sings, begins = frozenset(), frozenset(), frozenset()
+    turns, sings, begins, sung = frozenset(), frozenset(), frozenset(), None
     if ears and PHRASE_SECTIONS:
         # what each bar sounds: the notes of the chords the ears hear in it, and how loud it is
         begins = np.array([stamp(e) for e in edges[:-1]])
@@ -1453,7 +1466,7 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
                     bar["chords"][-1]) for i in range(beats_in_bar)] for bar in whole]
         bar_seconds = float(np.median([bar["end"] - bar["start"] for bar in whole]))
         phrase = PHRASE_BARS or int(min(max(2 ** round(np.log2(PHRASE_SECONDS / bar_seconds)), 2), 16))
-        form, places = phrase_sections([tuple(c["symbol"][:2] for c in row) for row in on], turns, tonic, mode, phrase, sings, begins)
+        form, places = phrase_sections([tuple(c["symbol"][:2] for c in row) for row in on], turns, tonic, mode, phrase, sings, begins, sung)
         for bar, (section, k) in zip(whole, places):
             bar["section"], bar["barOfSection"] = section, k
     else:
@@ -1569,8 +1582,9 @@ def lys(result, title, shape_of=None):
         return " ".join(marks)
 
     def rows(bars, indent, breaks=True, last=True):
-        """Four bars a line, and a line of the page each (`break`: after every four bars and where a
-        section ends, so that a section begins a line; the owner, 2026-11-16). `last`: False when the
+        """Four bars a line of the text, and a `break` only where the section ends, so that a section begins
+        a line of the page and Lily# fills the lines between (the owner, 2026-11-18; from 2026-11-16 to then
+        a `break` after every four bars too). `last`: False when the
         section's last line goes on into the next section, a section of one bar (the owner, 2026-11-16)."""
         out, i = [], 0
         if not noted:                   # the first chords of the chart: how to see a chord's diagram
@@ -1582,7 +1596,7 @@ def lys(result, title, shape_of=None):
                  + slots(said) for j, said in enumerate(bars)]
         sizes = line_sizes(len(bars))
         for k, size in enumerate(sizes):
-            end = " | break" if breaks and (last or k < len(sizes) - 1) else " |"   # the bar line, then the break: easier to read (the owner, 2026-11-16)
+            end = " | break" if breaks and last and k == len(sizes) - 1 else " |"   # the bar line, then the break: easier to read (the owner, 2026-11-16)
             out.append(f"{indent}{' | '.join(texts[i:i + size])}{end}")
             i += size
         return out

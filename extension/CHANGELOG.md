@@ -2,6 +2,12 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.8.11
+
+- A `break` only where a section ends, no longer after every four bars: a section begins a line, and
+  Lily# fills the lines between (the text still has four bars a line).
+
+
 ## 0.8.10
 
 - Fewer sections cut in the middle of a verse: where singing begins, the eight bars after it are not

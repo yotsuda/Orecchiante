@@ -67,8 +67,8 @@ static class Writer
             return string.Join(" ", marks);
         }
 
-        // Four bars a line, and a line of the page each (`break`: after every four bars and where a section ends, so that
-        // a section begins a line; the owner, 2026-11-16). The pickup goes on with the first line.
+        // Four bars a line of the text, and a `break` only where the section ends, so that a section begins a line of the
+        // page and Lily# fills the lines between (the owner, 2026-11-18). The pickup goes on with the first line.
         bool noted = false;     // the note on the diagrams, above the first chords of the chart (the owner, 2026-11-16)
         // `last`: false when the section's last line goes on into the next section, a section of one bar (the owner, 2026-11-16).
         IEnumerable<string> Rows(List<List<Bar>> bars, string indent, bool breaks = true, bool last = true)
@@ -86,7 +86,7 @@ static class Writer
             var sizes = LineSizes(bars.Count);
             for (int k = 0; k < sizes.Count; k++)
             {
-                bool brk = breaks && (last || k < sizes.Count - 1);
+                bool brk = breaks && last && k == sizes.Count - 1;
                 yield return indent + string.Join(" | ", texts.Skip(i).Take(sizes[k])) + (brk ? " | break" : " |");   // the bar line, then the break (the owner, 2026-11-16)
                 i += sizes[k];
             }

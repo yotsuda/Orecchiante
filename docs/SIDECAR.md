@@ -116,10 +116,11 @@ seconds, `fit` and `sure` are each playing's own.
   the other are one section up to 32 bars**; a longer run, and a section played more than once
   that is longer, is cut into as few sections of 32 bars or fewer as can be, at the sections found
   there (where the music turns) or every eight bars, never evenly for its own sake.
-- **Each line of the chart's page is four bars of one section**: `break` after every four bars
-  and at the end of each section (not in the pickup, which goes on with the first line). A last
-  line of one bar joins the line before (five), and four and two are three and three (`line_sizes`:
-  9 bars are 4 5, 10 are 4 3 3, 6 are 3 3).
+- **Each section begins a line of the chart's page**: `break` only at the end of each section (not in
+  the pickup, which goes on with the first line), and Lily# fills the lines between (0.8.11; before, a
+  `break` after every four bars too). The text has four bars a line: a last line of one bar joins the
+  line before (five), and four and two are three and three (`line_sizes`: 9 bars are 4 5, 10 are 4 3 3,
+  6 are 3 3).
 - A chord of the chart is written `X@or(Y)` (0.8.6; `X@todo("or Y?")` before) when the mean `sure` of that chord in that bar,
   over the playings of the bar, is below `doubt`; `Y` is the `other` of the least sure of them. Lily# swaps
   them with Ctrl+Shift+Up/Down and plays the one brought forward (Lily# REQUESTS 17).

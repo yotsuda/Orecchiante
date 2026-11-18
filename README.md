@@ -483,18 +483,19 @@ come one after the other are one section up to 32 bars**, and longer than that (
 more than once too) they are cut into as few as keep each within 32, at the sections found there
 (where the music turns) or every eight bars, never evenly for its own sake. **Sections the form plays
 again right away repeat in the form**, so that the form alone shows how the song goes; the bars
-inside a section are written out. **And each line of the page is four bars of one section**
-(`break` after every four bars and where a section ends: a section begins a line; a last bar
-alone joins the line before, and four and two bars are three and three; since 0.4.2 the line ends
-with its bar line, then the break, `| break`, which reads more easily than `break |` and breaks
-the page in the same places, the owner, 2026-11-16):
+inside a section are written out. **And a section begins a line of the page**: a `break` only
+where a section ends, and Lily# fills the lines between (since 0.8.11, the owner, 2026-11-18;
+from 0.4.2 to 0.8.10 a `break` after every four bars too). The text keeps four bars a line (a last
+bar alone joins the line before, and four and two bars are three and three); the section's last
+line ends with its bar line, then the break, `| break`, which reads more easily than `break |`
+(the owner, 2026-11-16):
 
 ```
 section A {
   chords harmony {
-    D | D | D | D | break
-    D | D | D | D@todo("or Dsus4?") | break
-    D | C7 | F7 | A# Am@todo("or A?") | break
+    D | D | D | D |
+    D | D | D | D@or(Dsus4) |
+    D | C7 | F7 | A# Am@or(A) |
     D | C7 | F | A# C | break
   }
 }
@@ -527,7 +528,7 @@ of one bar goes on the line before (no `break` between them):
   ...
     Dsus4@todo("or C?") D |
   ...
-    D@todo("or Dsus4?") | break
+    D@or(Dsus4) | break
   ...
     Em | Bm7 | Cmaj7 | G D/F# | break
 ```
