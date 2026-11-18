@@ -2,6 +2,12 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.8.12
+
+- Finer progress while a recording is read: how much of the parts is separated, by 5% (most of the
+  time), with the step the reader is on, and a line while the models open.
+
+
 ## 0.8.11
 
 - A `break` only where a section ends, no longer after every four bars: a section begins a line, and

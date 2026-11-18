@@ -32,8 +32,9 @@ static class Voice
     static readonly double[] Window = Enumerable.Range(0, Nfft).Select(n => 0.5 - 0.5 * Math.Cos(2 * Math.PI * n / Nfft)).ToArray();
 
     /// <summary>The vocals' root mean square every 10 ms of <paramref name="mono"/> (at 44100 Hz); with
-    /// <paramref name="partsTo"/>, also each part as &lt;part&gt;.wav there (16 bits, 44100 Hz, one channel).</summary>
-    public static float[] Loudness(IReadOnlyList<InferenceSession> models, double[] mono, string? partsTo = null)
+    /// <paramref name="partsTo"/>, also each part as &lt;part&gt;.wav there (16 bits, 44100 Hz, one channel).
+    /// <paramref name="separated"/> is told (segments done, segments in all) as each segment is separated, from any thread.</summary>
+    public static float[] Loudness(IReadOnlyList<InferenceSession> models, double[] mono, string? partsTo = null, Action<int, int>? separated = null)
     {
         int n = mono.Length;
         double mean = 0;
@@ -66,13 +67,17 @@ static class Voice
             // their segments, and are put together (each sample's sum in the segments' order, as all at once did) and let go.
             var live = new List<(int Offset, float[][] Parts)>();
             int done = 0;                // samples put together
+            int segmentsDone = 0;
             double square = 0;           // the vocals' squares in the frame being filled
             for (int first = 0; first < offsets.Count; first += Batch)
             {
                 int end = Math.Min(offsets.Count, first + Batch);
                 var outs = new float[end - first][][];
                 System.Threading.Tasks.Parallel.For(first, end, new ParallelOptions { MaxDegreeOfParallelism = Parallel }, k =>
-                    outs[k - first] = Segmented(model, x, n, offsets[k], writers != null));
+                {
+                    outs[k - first] = Segmented(model, x, n, offsets[k], writers != null);
+                    separated?.Invoke(Interlocked.Increment(ref segmentsDone), offsets.Count);
+                });
                 for (int k = first; k < end; k++) live.Add((offsets[k], outs[k - first]));
                 int upTo = end < offsets.Count ? offsets[end] : n, length = upTo - done;
                 var sum = new double[writers == null ? 1 : Parts.Length][];

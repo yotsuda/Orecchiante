@@ -45,7 +45,7 @@ using System.Text;
 using Dettato;
 using Microsoft.ML.OnnxRuntime;
 
-const string version = "0.8.11";
+const string version = "0.8.12";
 const int protocol = 1;
 const string usage = "usage: dettato <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]\n"
                    + "       dettato --version [--json]\n"
@@ -105,6 +105,19 @@ Chart Read(string file, Action<string>? say = null, string? partsTo = null)
     string name = Path.GetFileNameWithoutExtension(file);
     var clock = Stopwatch.StartNew();
     say?.Invoke($"listening to {Path.GetFileName(file)}");
+    // The step, and how much of the parts is separated (they are separated while the beats and the chords are read):
+    // a line each time either moves, the separation by 5% (Lily# shows the newest line in its progress).
+    string stage = "";
+    int separatedShare = -1;
+    var gate = new object();
+    void Show() => say?.Invoke(separatedShare < 0 ? (stage == "" ? "separating the parts" : stage)
+        : stage == "" ? $"separating the parts {separatedShare}%" : $"{stage}; separating the parts {separatedShare}%");
+    void Stage(string what) { lock (gate) { stage = what; Show(); } }
+    void Separated(int done, int all)
+    {
+        int share = 100 * done / all / 5 * 5;
+        lock (gate) { if (share <= separatedShare) return; separatedShare = share; Show(); }
+    }
     var (mono, rate) = Audio.Read(file);
     load += clock.Elapsed.TotalSeconds; audio += mono.Length / (double)rate; clock.Restart();
     int seconds = (int)(mono.Length / (double)rate);
@@ -118,20 +131,20 @@ Chart Read(string file, Action<string>? say = null, string? partsTo = null)
     Collect();
     mel += clock.Elapsed.TotalSeconds; clock.Restart();
     // The singing is most of the time: it is separated while the beats and the chords are read (the same vocals).
-    var singing = voiceFrom == null ? Task.Run(() => Voice.Loudness(voiceModels, high!, partsTo)) : null;
+    var singing = voiceFrom == null ? Task.Run(() => Voice.Loudness(voiceModels, high!, partsTo, Separated)) : null;
     var heard = Features.Of(low);
     cqt += clock.Elapsed.TotalSeconds; clock.Restart();
-    say?.Invoke("the beats");
+    Stage("the beats");
     string tracked = linesFrom != null ? File.ReadAllText(Path.Combine(linesFrom, name + ".beats")) : Beats.Lines(beatModel!, low);
     beat += clock.Elapsed.TotalSeconds; clock.Restart();
-    say?.Invoke("the chords");
+    Stage("the chords");
     float[] logp;
     int frames;
     double step = Crema.Step;
     if (heardFrom != null) (logp, frames, step) = Npy.ReadHeard(Path.Combine(heardFrom, name + ".npz"));
     else logp = Heard(high!, low, out frames);       // in half precision, as `dettato ears` writes them
     chord += clock.Elapsed.TotalSeconds; clock.Restart();
-    say?.Invoke("the singing");
+    Stage(singing != null ? "" : "the singing");      // only the parts left, when they are being separated
     float[]? voice = voiceFrom == "none" ? null
         : voiceFrom != null ? (File.Exists(Path.Combine(voiceFrom, name + ".voc.npy")) ? Npy.ReadFloats(Path.Combine(voiceFrom, name + ".voc.npy")) : null)
         : singing!.GetAwaiter().GetResult();
@@ -139,6 +152,7 @@ Chart Read(string file, Action<string>? say = null, string? partsTo = null)
     low = null!;
     Collect();
     sing += clock.Elapsed.TotalSeconds; clock.Restart();
+    lock (gate) { separatedShare = -1; stage = "the bars, the chords and the sections"; Show(); }
     var (lines, beats) = Reader.LinesOf(tracked, logp, frames, step);    // the halves of bars are paired as the key heard says
     var chart = Reader.Read(Path.GetFileName(file), heard, lines, beats, logp, frames, step, voice);
     rules += clock.Elapsed.TotalSeconds;
@@ -189,6 +203,7 @@ if (args[0] is not ("read" or "ears" or "features" or "audio"))
         modelsAt ??= AppContext.BaseDirectory;
         foreach (var model in new[] { "beat-this-final0-dynamo.onnx", "crema-chord.onnx", "btc-large-voca.onnx", Voice.Model })
             if (!File.Exists(Path.Combine(modelsAt, model))) return Fail(3, $"the model {model} is not in {Path.GetFullPath(modelsAt)} (--models <folder>)");
+        Console.Error.WriteLine("opening the models");
         try { Open(modelsAt, threads, true, true, true); }
         catch (Exception e) { return Fail(3, $"the models did not open ({e.Message.Trim()})"); }
         var chart = Read(recording, Console.Error.WriteLine, partsMade);

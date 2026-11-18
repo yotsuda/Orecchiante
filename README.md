@@ -1112,7 +1112,11 @@ dettato song.mp3 -o charts/x.lys    # there, with x.dettato.json ("audio": "../s
 dettato --version --json            # {"version":"0.2.0","protocol":1,"commands":["read"],"inputs":["wav","mp3","m4a","mp4","aac","flac","wma"]}
 ```
 
-stderr says each step as it begins (listening, the beats, the chords) and what was read; on
+stderr says each step as it begins (opening the models, listening, the beats, the chords, the
+bars, the chords and the sections, the parts) and what was read; and, since 0.8.12, how much of the
+parts is separated, by 5%, which is most of the time (`the beats; separating the parts 35%`, then
+`separating the parts 60%` once the chords are read): Lily# shows the newest line in its progress
+(a line about every 2.5 s on a song of 3.5 min, where "the singing" stood for 27 s before). On
 failure its last line says why (`dettato: x.wav was not read: fewer than two bar lines found`).
 stdout has the chart's path alone. Exit codes: 0 written; 1 the recording was not read (not a
 recording, shorter than 5 seconds, no bar lines, no chord); 2 the arguments (no such file, a kind
