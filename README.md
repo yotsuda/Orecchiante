@@ -613,7 +613,8 @@ and 151 and gains eight, Open Arms finds 101 and gains 43 and 93; the owner chos
 ```
 
 **The measure corrected (2026-11-19).** 14 of the 141 dev songs were not songs but a bass part
-separated from one (`<name>-bass-….mp3`: the owner marks sections while playing along to the bass);
+separated from one by Moises (`<name>-bass-<key>-<bpm>bpm-<tuning>hz.mp3`, the owner, 2026-11-19: the
+owner marks sections while playing along to the bass);
 they were 14 of dev's 16 songs where "no singing is heard", and test has none. For 13 the whole mix
 lies beside the part or in `F:\Music` and lines up with it (`scratch/xsc/mixes.py`: the part's
 low end against the mix's, a lag of −25 ms in 12, +48 ms in one; Stayin' Alive's mix is another
