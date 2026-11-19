@@ -65,7 +65,7 @@
 - 学び方: `capture.py` → `dp.py EXTRA=1 NB=3 PH=0 C=0.1 AUDIO=1 MUS=0,0.5 DRUMS=1 [--cv K=5 SEED=1|2] [--json] [--test]`。5 分割×2 で 60.8 → 65.0%（ドラムなし 61.0／60.6、あり 64.3／65.6）。test は dp.py の数え方で 66.2 → 69.8%（1 回だけ）。Python と .NET の確かめは `scratch/drum/check.ps1`（ログ `check.log`）。
 - 試して効かなかった（同日）: 6 パート全部（64.5%）、その小節だけの列（前後を並べない、62.2%）、ドラムの音量だけ（60.6%）。歌のない曲で旋律楽器を声の代わりにする `lead.py` は試す意味がなくなった（歌のない dev 曲はほぼベースのパートだった。test の本物の器楽 6 曲で見るなら）。
 - 物差しの直し（`scratch/xsc/`）: `mixes.py` → `mixprep.ps1`（wav・耳・パート）→ `swapmix.py [--undo]`（`truth-stems.json` が元）→ `capture.py`。x093（Stayin' Alive）はパートのまま。パートは `scratch/xsc/parts/<id>.parts/*.flac`（289 曲）、ドラムの特徴は `scratch/drum/{xsc,rwc-p,sec}/`（`sec` の arms は `dettato ears` の、ito・mylife はパートの flac から）。
-- **FLAC の直し**（0.10.0 に入れた）: 先に Media Foundation を 1 回始め、拒まれたパートは 1 本ずつ作り直す。原因の確証はない。
+- **FLAC の直し**（0.10.0 に入れた）: 先に Media Foundation を 1 回始め、拒まれたパートは 1 本ずつ作り直す。原因の確証はない。**0.10.1: OneDrive の中で変換し直すと「….parts is denied」**（オーナー、糸）＝OneDrive はフォルダに ReadOnly を付け、.NET は読み取り専用のフォルダを消せない。`DeleteFolder` が印を外して消し、古いパートは `.parts.old` に退けて新しいのが入ってから消す（失敗したら戻す）。scratch で ReadOnly を付けて再現→直ったのを確かめた。オーナーの `Transcribe!\source\糸 (Bank Band).parts` は失敗で空になっている（変換し直せば戻る）。
 
 **section をまとめて選ぶ `SECTION_DP`（2026-11-19、0.9.0 で Python と .NET の既定。`SECTION_DP = 0`／`Form.SectionDp = false` で前の規則の切れ目）。.NET は `Sections.cs`、`Form.Phrases` が `WHY` を記録して呼ぶ。`read_check.py` 368/368（RWC 歌つき 100・歌なし 100、合成曲 7 セット 168）。**
 - 仕組み: 小節線ごとに手がかり 35 個＝`section_cues`（今の規則がそこで切った理由 `WHY`、歌の出入り、4・8 小節の句の繰り返しと再演、主和音・属和音・保った和音、歌の割合）26 個＋`audio_cues`（前後 2・4 小節の音量・鳴る音・和音の違い）9 個、を

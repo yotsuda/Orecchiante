@@ -50,7 +50,7 @@ using System.Text;
 using Dettato;
 using Microsoft.ML.OnnxRuntime;
 
-const string version = "0.10.0";
+const string version = "0.10.1";
 const int protocol = 1;
 const string usage = "usage: dettato <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]\n"
                    + "       dettato --version [--json]\n"
@@ -174,6 +174,17 @@ Chart Read(string file, Action<string>? say = null, string? partsTo = null)
 // What a recording that cannot be read throws (the rules' own complaints are InvalidDataException).
 static bool Unread(Exception e) => e is InvalidDataException or IOException or UnauthorizedAccessException;
 
+// A folder and all in it. OneDrive marks the folders it keeps read-only, and Windows will not remove a read-only
+// folder ("Access to the path is denied", a chart converted again in OneDrive, 2026-11-19): the mark is taken off first.
+static void DeleteFolder(string path)
+{
+    if (!Directory.Exists(path)) return;
+    var folder = new DirectoryInfo(path);
+    foreach (var item in folder.EnumerateFileSystemInfos("*", SearchOption.AllDirectories).Append(folder))
+        if (item.Attributes.HasFlag(FileAttributes.ReadOnly)) item.Attributes &= ~FileAttributes.ReadOnly;
+    folder.Delete(true);
+}
+
 if (args[0] is not ("read" or "ears" or "features" or "audio" or "drums"))
 {
     // The user's way in, and Lily#'s.
@@ -205,7 +216,8 @@ if (args[0] is not ("read" or "ears" or "features" or "audio" or "drums"))
     // The parts, to hear one at a time (SIDECAR.md, `parts`): a folder beside the chart, made under another name first.
     string partsPath = chartPath[..^4] + ".parts", partsMade = partsPath + ".part";
     if (File.Exists(chartPath) && !force) return Fail(2, $"{chartPath} is already there (--force to write over it)");
-    void Unmake() { try { if (Directory.Exists(partsMade)) Directory.Delete(partsMade, true); } catch (Exception x) when (Unread(x)) { } }
+    string partsOld = partsPath + ".old";
+    void Unmake() { try { DeleteFolder(partsMade); } catch (Exception x) when (Unread(x)) { } }
 
     string lys, json;
     try
@@ -265,8 +277,16 @@ if (args[0] is not ("read" or "ears" or "features" or "audio" or "drums"))
         Directory.CreateDirectory(Path.GetDirectoryName(chartPath)!);
         File.WriteAllText(sidePath + ".part", json);
         File.WriteAllText(chartPath + ".part", lys);
-        if (Directory.Exists(partsPath)) Directory.Delete(partsPath, true);
-        Directory.Move(partsMade, partsPath);
+        // The parts there before are kept aside until the new ones are in their place, and put back if that fails.
+        DeleteFolder(partsOld);
+        if (Directory.Exists(partsPath)) Directory.Move(partsPath, partsOld);
+        try { Directory.Move(partsMade, partsPath); }
+        catch (Exception e) when (Unread(e))
+        {
+            if (Directory.Exists(partsOld) && !Directory.Exists(partsPath)) Directory.Move(partsOld, partsPath);
+            throw;
+        }
+        try { DeleteFolder(partsOld); } catch (Exception x) when (Unread(x)) { }    // left over: removed next time
         File.Move(sidePath + ".part", sidePath, true);
         File.Move(chartPath + ".part", chartPath, true);
     }

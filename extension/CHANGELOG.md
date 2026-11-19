@@ -2,6 +2,13 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.10.1
+
+- Converting a recording again failed in a OneDrive folder ("Access to the path '….parts' is
+  denied"): OneDrive marks its folders read-only, and Windows does not remove a read-only folder.
+  The mark is now taken off first, and the parts there before are kept until the new ones are in
+  their place (that failure had emptied them).
+
 ## 0.10.0
 
 - The sections also listen to the drums: how loud they are, and how their pattern in the bar changes
