@@ -130,6 +130,7 @@ def feats(wav):
 
 READ = None           # --read: a folder of what `dettato read` wrote, a folder a set (scratch/net/read)
 VOICE = None          # --voice: a folder of <recording>.voc.npy (dettato ears), a folder a set or all in one
+DRUMS = None          # --drums: a folder of <recording>.drum.npy (dettato drums or ears), the same
 
 
 def voice_of(wav):
@@ -137,6 +138,16 @@ def voice_of(wav):
     if not VOICE:
         return None
     for path in (VOICE / wav.parent.name / (wav.stem + ".voc.npy"), VOICE / (wav.stem + ".voc.npy")):
+        if path.exists():
+            return np.load(path)
+    return None
+
+
+def drums_of(wav):
+    """The drums every 10 ms of a recording (--drums, src/Dettato/Drums.cs), for the sections; None: no drums heard."""
+    if not DRUMS:
+        return None
+    for path in (DRUMS / wav.parent.name / (wav.stem + ".drum.npy"), DRUMS / (wav.stem + ".drum.npy")):
         if path.exists():
             return np.load(path)
     return None
@@ -242,7 +253,7 @@ def run(name, hint=False, verbose=False, write=None, lines=None, labs=None, hear
             elif lines:
                 said = np.load(Path(heard) / (wav.stem + ".npz")) if heard else None
                 given, units, per = bar_lines(truth, wav, lines, said)
-                got = rc.read(wav, feats(wav), lines=given, units=units, beats=per, heard=said, voice=voice_of(wav))
+                got = rc.read(wav, feats(wav), lines=given, units=units, beats=per, heard=said, voice=voice_of(wav), drums=drums_of(wav))
             else:
                 got = rc.read(wav, feats(wav), tempo=truth["tempo"]["bpm"] if hint else None)
             r = sc.score(truth, got)
@@ -301,7 +312,7 @@ def doubted(names, ears=False):
             elif ears:
                 said = np.load(heard / (wav.stem + ".npz"))
                 given, units, per = bar_lines(truth, wav, lines, said)
-                got = rc.read(wav, feats(wav), lines=given, units=units, beats=per, heard=said, why=True, voice=voice_of(wav))
+                got = rc.read(wav, feats(wav), lines=given, units=units, beats=per, heard=said, why=True, voice=voice_of(wav), drums=drums_of(wav))
             else:
                 got = rc.read(wav, feats(wav), why=True)
             spans = sc.chords_of(truth)
@@ -350,7 +361,7 @@ def form(names, ears=False, verbose=False):
             elif ears:
                 said = np.load(heard / (wav.stem + ".npz"))
                 given, units, per = bar_lines(truth, wav, lines, said)
-                got = rc.read(wav, feats(wav), lines=given, units=units, beats=per, heard=said, voice=voice_of(wav))
+                got = rc.read(wav, feats(wav), lines=given, units=units, beats=per, heard=said, voice=voice_of(wav), drums=drums_of(wav))
             else:
                 got = rc.read(wav, feats(wav))
             per_bar = 2 if truth["time"] == "6/8" else int(truth["time"].split("/")[0])
@@ -389,7 +400,7 @@ def head(names, ears=False, verbose=False):
             elif ears:
                 said = np.load(heard / (wav.stem + ".npz"))
                 given, units, per = bar_lines(truth, wav, lines, said)
-                got = rc.read(wav, feats(wav), lines=given, units=units, beats=per, heard=said, voice=voice_of(wav))
+                got = rc.read(wav, feats(wav), lines=given, units=units, beats=per, heard=said, voice=voice_of(wav), drums=drums_of(wav))
             else:
                 got = rc.read(wav, feats(wav))
             tb, rb = ([b for b in d["bars"] if not b.get("pickup")] for d in (truth, got))
@@ -598,6 +609,8 @@ def main():
                                                  "a folder with a folder a set of <recording>.dettato.json (scratch/net/read)")
         s.add_argument("--voice", type=Path, help="with --ears: the vocals' loudness for the sections, a folder of <recording>.voc.npy "
                                                   "(dettato ears), with a folder a set or not (scratch/net)")
+        s.add_argument("--drums", type=Path, help="with --ears: the drums for the sections, a folder of <recording>.drum.npy "
+                                                  "(dettato drums or ears), with a folder a set or not (scratch/drum)")
         return s
 
     s = reader(sub.add_parser("table", help="read and score: one line a set"))
@@ -659,8 +672,8 @@ def main():
     if args.what == "keys":
         return keys(args.sets, args.verbose)
 
-    global NET, READ, VOICE
-    NET, READ, VOICE = args.net, args.read, args.voice
+    global NET, READ, VOICE, DRUMS
+    NET, READ, VOICE, DRUMS = args.net, args.read, args.voice, getattr(args, "drums", None)
     if READ and not getattr(args, "ears", False):
         sys.exit("--read needs --ears: dettato.exe reads with the models trained on recordings")
     model = None if args.rules else args.model

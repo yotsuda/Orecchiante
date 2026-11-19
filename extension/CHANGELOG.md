@@ -2,6 +2,15 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.10.0
+
+- The sections also listen to the drums: how loud they are, and how their pattern in the bar changes
+  across a bar line (a fill, a new groove), from the drums already separated for the parts. On 137
+  of the owner's songs not used to choose, 70% of the section starts fall on the owner's (66% in
+  0.9.0).
+- Once in a while Windows refused to write one of the parts' .flac files when the six were written
+  at once; such a part is now written again on its own.
+
 ## 0.9.0
 
 - Sections are chosen together: every bar line gets a score from its cues (where singing comes in or

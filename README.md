@@ -624,14 +624,40 @@ bar times moved by the lag (`--undo` puts the parts back). With the weights as t
 five folds 60.6–61.0% (was 57.2–57.9%). Weights learnt again on the corrected dev: test 65.8%
 against 66.2% for those shipped, so they stay.
 
-**The drums' pattern (tried, not yet in dettato).** From the six parts of each song
-(`scratch/xsc/parts.ps1`, `partcues.py`): the drums' loudness per bar, and their onset strength in
-16 steps of the bar in three bands (below 200 Hz, to 4 kHz, above); as cues, the loudness and the
-pattern's change over two and four bars and from the bar before (`dp.py PARTS=d`, 6 more cues, with
-those of the three bars before and after). In five folds × two orders on dev: 60.8% → **65.0%**
-(the pattern alone 64.0%, the loudness alone 60.6%; all six parts 64.5%; the cues of the bar only,
-not those around it, 62.2%). Test, counted once: exact **66.2 → 69.8%**, near 71.8 → 74.7%. To be
-put in dettato (Python and .NET, the drum part kept in `Voice.Loudness`; HANDOFF).
+**The drums (0.10.0).** The drums Demucs separates for the parts are heard by the sections too.
+Every 10 ms (`Drums.cs`; `<name>.drum.npy` from `dettato ears`, or from parts already separated
+by `dettato drums <folder of <name>.parts>`): the mean square, and the onset strength in three
+bands (below 200 Hz, to 4 kHz, from 4 kHz: the positive spectral flux of log(1 + 100 |X|), 2048
+points, Hann). Per bar (`drum_bars`): the loudness in dB, and the pattern: the onset strength at its
+strongest in each of 16 steps of the bar, per band, as a unit vector. As cues (`drum_cues`, 6 more
+per bar, with those of the three bars before and after: 287 in all): the bar's loudness against the
+song's, over two and four bars the loudness after against before and the cosine distance of the
+mean pattern after from the one before, and the bar's pattern against the bar before's.
+`Voice.Loudness` puts the drums together with the vocals (when the parts are not written, it now
+turns the drums back to sound in place of guitar and piano, which nothing read). With no drums
+given (`measure.py` without `--drums`, the songs made here) the six are 0.
+
+Tried first from the parts in Python (`scratch/xsc/partcues.py`, `dp.py PARTS=d`), then with what
+.NET writes (`dp.py … DRUMS=1`, the capture reading `scratch/drum/xsc`): the same to a float's
+precision, and the same in five folds × two orders on dev: 60.8% → **65.0%** (the pattern alone
+64.0%, the loudness alone 60.6%; all six parts 64.5%; the cues of the bar only, not those around
+it, 62.2%). The weights fitted on all of dev (`dp.py EXTRA=1 NB=3 PH=0 C=0.1 AUDIO=1 MUS=0,0.5
+DRUMS=1 --json`) chose λ 0.5, off −2.0, μ 0 (was −1.5 and 0.5).
+
+| Section starts | 0.9.0 | 0.10.0, the drums too |
+|---|---|---|
+| owner's `.xsc`, `test`, exact / near (`eval.py test`) | 66.4 / 71.8% | **69.8 / 74.4%** (read 1413, owner 1531) |
+| owner's `.xsc`, `dev`, exact (`eval.py dev`; chosen on) | 64.9% | 69.0% |
+| AIST `rwc-dev`, every boundary, within 3 s / 0.5 s | 76.2 / 58.3% | 77.2 / 59.7% |
+| AIST `rwc-test`, every boundary, within 3 s / 0.5 s | 72.3 / 52.7% | **74.3 / 53.6%** |
+| AIST without the voice (and so the drums), `rwc-dev` / `rwc-test`, 3 s | 69.8 / 63.0% | 67.3 / 57.8% |
+
+Without the voice the sections are worse than before: the weights lean on the drums, and six cues
+of 0 are not what they learnt. dettato itself always has both (Demucs gives them together); it is
+only measuring without them (`measure.py all`, AIST's `phrase`) that is hurt. The owner's three
+songs: 糸 now finds 21 and 44 but misses 17 (and adds 69 as before); My Life and Open Arms as in
+0.9.0. Python and .NET the same: `read_check.py` 100/100 RWC with the voice and the drums, 100/100
+without either, 168/168 songs made here (`scratch/drum/check.ps1`).
 
 To see whether that is what a section means beyond two songs, the section starts are counted
 against AIST's structure annotation of RWC-P (intro, verse A, chorus …; [DATASETS.md](docs/DATASETS.md)),
@@ -745,7 +771,8 @@ them a bar or two long; the old sections 6.2 and 5.5), and 3.8, 3.7, 2.9 in `see
 `seed11`; since 0.8.1 (`PAIR_HEARD`) 14.2 and 13.7, and 4.0, 4.1, 3.0; since 0.8.2 (`GRID_ANCHOR`) 14.4
 and 13.8 (0.9 and 1.1 a bar or two long: after a turn, the grid's next point can come a bar or two in); since 0.8.9
 (`HELD_SHIFT`, `MERGE_SHORT`) 14.1 and 13.7 (0.7 and 0.9 a bar or two long), and 3.9, 4.0, 3.0; since 0.9.0
-(`SECTION_DP`, above) 11.4 and 10.1 (none a bar or two long), and 3.6, 3.5, 3.1. With that many, the
+(`SECTION_DP`, above) 11.4 and 10.1 (none a bar or two long), and 3.6, 3.5, 3.1; since 0.10.0 (the
+drums weighed, here none given) 10.7 and 9.2, and 3.5, 3.1, 2.9. With that many, the
 eighteenth letter came: a section is never named R, for its second playing, `R2`, reads in Lily#
 as a whole-bar rest of a half (`LETTERS`). With nothing folded the chords change by a tenth of a point or so (`rwc-dev` root 87.3
 → 87.4%, `rwc-test` 88.8 → 88.9%), and the marks are half a point fewer (`rwc-test` 28.7 → 28.1%

@@ -25,7 +25,7 @@ static class Voice
     const int Frames = (Segment + Hop - 1) / Hop;   // 336
     // the network's order (htdemucs_6s adds guitar and piano after them)
     public static readonly string[] Parts = Model.Contains("_6s") ? ["drums", "bass", "other", "vocals", "guitar", "piano"] : ["drums", "bass", "other", "vocals"];
-    const int Vocals = 3, Other = 2;
+    const int Vocals = 3, Other = 2, Drummed = 0;
     const int Batch = 24;               // segments separated before the samples they finish are put together and written
     const double Overlap = 0.25;       // as apply_model (none is a third quicker, but changed the sections of 15 of RWC's 100 songs, right starts lost; README)
 
@@ -35,7 +35,12 @@ static class Voice
     /// <paramref name="partsTo"/>, also each part as &lt;part&gt;.wav there (16 bits, 44100 Hz, one channel).
     /// <paramref name="separated"/> is told (segments done, segments in all) as each segment is separated, from any thread.</summary>
     public static float[] Loudness(IReadOnlyList<InferenceSession> models, double[] mono, string? partsTo = null, Action<int, int>? separated = null)
+        => Heard(models, mono, partsTo, separated).Vocals;
+
+    /// <summary>Loudness, and what the sections hear of the drums (Drums, every 10 ms).</summary>
+    public static (float[] Vocals, Drums Drums) Heard(IReadOnlyList<InferenceSession> models, double[] mono, string? partsTo = null, Action<int, int>? separated = null)
     {
+        var drums = new Drums();
         int n = mono.Length;
         double mean = 0;
         foreach (double v in mono) mean += v;
@@ -80,8 +85,8 @@ static class Voice
                 });
                 for (int k = first; k < end; k++) live.Add((offsets[k], outs[k - first]));
                 int upTo = end < offsets.Count ? offsets[end] : n, length = upTo - done;
-                var sum = new double[writers == null ? 1 : Parts.Length][];
-                for (int p = 0; p < sum.Length; p++) sum[p] = new double[length];
+                var sum = new double[Parts.Length][];
+                for (int p = 0; p < sum.Length; p++) if (writers != null || p == Vocals || p == Drummed) sum[p] = new double[length];
                 var weights = new double[length];
                 foreach (var (offset, parts) in live)
                 {
@@ -89,17 +94,18 @@ static class Voice
                     for (int j = from; j < to; j++)
                     {
                         int i = j - offset, at = j - done;
-                        if (writers == null) sum[0][at] += weight[i] * parts[Vocals][i];
+                        if (writers == null) { sum[Vocals][at] += weight[i] * parts[Vocals][i]; sum[Drummed][at] += weight[i] * parts[Drummed][i]; }
                         else for (int p = 0; p < Parts.Length; p++) sum[p][at] += weight[i] * parts[p][i];
                         weights[at] += weight[i];
                     }
                 }
-                int vocals = writers == null ? 0 : Vocals;
+                for (int j = done; j < upTo; j++)
+                    drums.Add(sum[Drummed][j - done] / weights[j - done] * std + mean);
                 for (int j = done; j < upTo; j++)
                 {
                     int f = j / Hop10ms;
                     if (f >= frames) break;
-                    double v = sum[vocals][j - done] / weights[j - done] * std + mean;
+                    double v = sum[Vocals][j - done] / weights[j - done] * std + mean;
                     square += v * v;
                     if ((j + 1) % Hop10ms == 0) { rms[f] = (float)Math.Sqrt(square / Hop10ms); square = 0; }
                 }
@@ -132,7 +138,7 @@ static class Voice
         {
             if (writers != null) foreach (var w in writers) w.Dispose();
         }
-        return rms;
+        return (rms, drums);
     }
 
     /// <summary>The parts of the segment at <paramref name="offset"/>, trimmed to the recording (the vocals alone
@@ -202,8 +208,9 @@ static class Voice
         // normalized, then the 3/8 of a window each side taken off; the part is that and the time branch's
         int framesOut = Frames + 4;
         var outputs = new float[Parts.Length][];
-        for (int part = all ? 0 : Vocals; part < Parts.Length; part++)
+        for (int part = 0; part < Parts.Length; part++)
         {
+            if (!all && part != Vocals && part != Drummed) continue;
             var output = outputs[part] = new float[Segment];
             for (int c = 0; c < 2; c++)
             {

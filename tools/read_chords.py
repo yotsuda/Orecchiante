@@ -808,15 +808,66 @@ def audio_cues(db, notes, sets):
     return np.array(rows)
 
 
-def section_rows(fam, tonic, home, sung, why, sings, begins, turns, db, notes):
-    """What SECTION_DP weighs for each bar line: section_cues and audio_cues of the bar, and those of the bars around
-    it (dp_model's neighbours each side)."""
+def drum_bars(drums, bars):
+    """The drums in each bar (`drums`: what `dettato` writes as <name>.drum.npy, every 10 ms the mean square and the
+    onset strength in 3 bands; src/Dettato/Drums.cs): how loud (dB of the mean square), and their pattern: the onset
+    strength at its strongest in each of 16 steps of the bar, band by band, as a unit vector."""
+    db, pattern = np.zeros(len(bars)), np.zeros((len(bars), 48))
+    for i, bar in enumerate(bars):
+        a, b = bar["start"], bar["end"]
+        seg = drums[int(a * 100):max(int(b * 100), int(a * 100) + 1), 0]
+        db[i] = 10 * np.log10((float(np.cumsum(seg, dtype=np.float64)[-1]) / len(seg) if len(seg) else 0.0) + 1e-10)   # summed in order: as .NET
+        v = np.zeros((3, 16))
+        for s in range(16):
+            g0, g1 = a + (b - a) * s / 16, a + (b - a) * (s + 1) / 16
+            lo = int(g0 * 100)
+            seg = drums[lo:max(int(g1 * 100), lo + 1), 1:]
+            if len(seg):
+                v[:, s] = seg.max(0)
+        v = v.ravel()
+        pattern[i] = v / (math.sqrt(float(v @ v)) + 1e-9)
+    return db, pattern
+
+
+def drum_cues(drums, n):
+    """For each bar line, how the drums change across it (`drums`: drum_bars, or None: none heard, all 0): the bar's
+    loudness against the song's, over 2 and 4 bars how much louder after than before and how far the mean pattern after
+    is from the one before (cosine distance), and the bar's pattern against the bar before's. Only when DP_FILE was
+    fitted with them (its "drums")."""
+    if not dp_model().get("drums"):
+        return np.zeros((n, 0))
+    return drum_rows(drums, n)
+
+
+def drum_rows(drums, n):
+    """drum_cues, whatever DP_FILE was fitted with (scratch/xsc/dp.py DRUMS=1)."""
+    if drums is None:
+        return np.zeros((n, 6))
+    db, pattern = drums
+    z = (db - np.median(db)) / (np.std(db) + 1e-9)
+    rows = []
+    for i in range(n):
+        f = [z[i]]
+        for w in (2, 4):
+            if i - w < 0 or i + w > n:
+                f += [0.0, 0.0]
+                continue
+            u, v = pattern[i - w:i].mean(0), pattern[i:i + w].mean(0)
+            f += [z[i:i + w].mean() - z[i - w:i].mean(), 1 - float(u @ v / (math.sqrt(float(u @ u)) * math.sqrt(float(v @ v)) + 1e-9))]
+        f.append(1 - float(pattern[i] @ pattern[i - 1]) if i > 0 else 0.0)
+        rows.append(f)
+    return np.array(rows)
+
+
+def section_rows(fam, tonic, home, sung, why, sings, begins, turns, db, notes, drums=None):
+    """What SECTION_DP weighs for each bar line: section_cues, audio_cues and drum_cues of the bar, and those of the
+    bars around it (dp_model's neighbours each side)."""
     n = len(fam)
     base = section_cues(fam, tonic, home, sung, why, sings, begins, turns)
     if db is None or notes is None:
         db, notes = np.zeros(n), np.zeros((n, 12))
     au = audio_cues(np.asarray(db, float), np.asarray(notes, float), [set(f) for f in fam])
-    x = np.hstack([base, au])
+    x = np.hstack([base, au, drum_cues(drums, n)])
     nb = dp_model()["neighbours"]
     z = np.zeros((nb, x.shape[1]))
     pad = np.vstack([z, x, z])
@@ -877,7 +928,7 @@ def section_letter(k):
     return LETTERS[k] if k < len(LETTERS) else f"S{k + 1}"
 
 
-def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset(), begins=frozenset(), sung=None, db=None, notes=None):
+def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset(), begins=frozenset(), sung=None, db=None, notes=None, drums=None):
     """The sections, as the owner cut 糸 (2026-11-16): the music is cut into blocks where it turns (singing
     begins or stops, the key changes, it grows far louder or quieter); a block of WHOLE_BLOCK bars or
     phrases or fewer is one section; a longer one is cut on a grid of `phrase` bars from its start, where a phrase
@@ -1026,7 +1077,7 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset(), begin
     cuts = sorted(cuts)
     if SECTION_DP:                               # the cuts chosen whole: cues weighed per bar line, lengths as the owner's
         model = dp_model()
-        rows = section_rows(fam, tonic, home, sung, WHY, *given, db, notes)
+        rows = section_rows(fam, tonic, home, sung, WHY, *given, db, notes, drums)
         score = np.round(rows @ np.array(model["weights"]) + model["bias"], 9)   # rounded: the same in .NET, whatever order it adds in
         cuts = [0] + choose_cuts(score, again=played_again(fam)) + [n]
     elif MERGE_SHORT:                            # a piece of fewer bars than this joins the one before (the first: the one after)
@@ -1351,7 +1402,7 @@ def features(path):
     }
 
 
-def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, why=False, voice=None):
+def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, why=False, voice=None, drums=None):
     """The chart of a recording. `tempo`, if told, is about how many beats a minute it has: what
     is heard cannot tell a fast song whose chords last two bars from a slow one, bar by bar.
 
@@ -1626,7 +1677,8 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
                     bar["chords"][-1]) for i in range(beats_in_bar)] for bar in whole]
         bar_seconds = float(np.median([bar["end"] - bar["start"] for bar in whole]))
         phrase = PHRASE_BARS or int(min(max(2 ** round(np.log2(PHRASE_SECONDS / bar_seconds)), 2), 16))
-        form, places = phrase_sections([tuple(c["symbol"][:2] for c in row) for row in on], turns, tonic, mode, phrase, sings, begins, sung, db, notes)
+        form, places = phrase_sections([tuple(c["symbol"][:2] for c in row) for row in on], turns, tonic, mode, phrase, sings, begins, sung, db, notes,
+                                       drum_bars(drums, whole) if drums is not None and ears else None)
         for bar, (section, k) in zip(whole, places):
             bar["section"], bar["barOfSection"] = section, k
     else:
@@ -1863,6 +1915,8 @@ def main():
                         "and <name>.npz (tools/btc_chords.py --probs) of the recordings")
     p.add_argument("--voice", type=Path,
                    help="the folder of <name>.voc.npy: the vocals' loudness every 10 ms (scratch/sep/song.py, Demucs), for the sections")
+    p.add_argument("--drums", type=Path,
+                   help="the folder of <name>.drum.npy (`dettato drums` or `dettato ears`): the drums every 10 ms, for the sections")
     p.add_argument("--old-sections", action="store_true", help="the sections before 2026-11-16 (find_form and fold, repeat signs) instead of by meaning")
     args = p.parse_args()
     global PHRASE_SECTIONS
@@ -1880,8 +1934,10 @@ def main():
                 heard = np.load(args.ears / (path.stem + ".npz"))
                 lines, beats = lines_of(args.ears / (path.stem + ".beats"), heard)
                 voc = args.voice / (path.stem + ".voc.npy") if args.voice else None
+                drum = args.drums / (path.stem + ".drum.npy") if args.drums else None
                 result = read(path, lines=lines, beats=beats, heard=heard,
-                              voice=np.load(voc) if voc is not None and voc.exists() else None)
+                              voice=np.load(voc) if voc is not None and voc.exists() else None,
+                              drums=np.load(drum) if drum is not None and drum.exists() else None)
             else:
                 result = read(path, tempo=args.tempo)
         except Exception as e:  # one recording that cannot be read does not stop the rest

@@ -1,6 +1,6 @@
 """Section starts against the AIST structure annotation of RWC-P (research only, not redistributed).
 
-  .venv/Scripts/python tools/aist_sections.py [rwc-dev|rwc-test] [--each] [modes=base,phrase,voice] [voice=<folder>] [READ_CHORDS_CONSTANT=value ...]
+  .venv/Scripts/python tools/aist_sections.py [rwc-dev|rwc-test] [--each] [modes=base,phrase,voice] [voice=<folder>] [drums=<folder>|none] [READ_CHORDS_CONSTANT=value ...]
 
 Needs the AIST annotation (docs/DATASETS.md) and, for voice, the vocals' loudness: <name>.voc.npy in scratch/net/voice/rwc-p
 (dettato ears) unless voice= says where (scratch/sep/out/htdemucs: Demucs in torch, stereo, a random shift).
@@ -17,6 +17,7 @@ import measure as ms, read_chords as rc
 
 AIST = Path("scratch/real/rwc-annotations-archive/AIST_RWC-MDB-P-2001_CHORUS")
 VOICE = Path("scratch/net/voice/rwc-p")
+DRUMS = Path("scratch/drum/rwc-p")      # with the voice, the drums too (as dettato hears both from Demucs); drums=none: not
 name = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("-") else "rwc-dev"
 each = "--each" in sys.argv
 MODES = ("base", "phrase", "voice")
@@ -25,6 +26,8 @@ for a in sys.argv[2:]:
         MODES = tuple(a[6:].split(","))
     elif a.startswith("voice="):
         VOICE = Path(a[6:])
+    elif a.startswith("drums="):
+        DRUMS = Path(a[6:])
     elif "=" in a:
         k, v = a.split("=")
         setattr(rc, k, type(getattr(rc, k))(float(v) if "." in v else int(v)))
@@ -63,6 +66,9 @@ for t, wav in ms.songs(name):
     for mode in MODES:
         rc.PHRASE_SECTIONS = mode != "base"
         kw = {"voice": np.load(vf)} if mode == "voice" and vf.exists() else {}
+        df = DRUMS / f"{sid}.drum.npy"
+        if mode == "voice" and df.exists():
+            kw["drums"] = np.load(df)
         r = rc.read(wav, ms.feats(wav), lines=given, units=units, beats=per, heard=said, **kw)
         got = [b["start"] for b in r["bars"] if b.get("barOfSection") == 1][1:]
         out[mode] = got

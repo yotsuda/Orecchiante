@@ -11,7 +11,7 @@ static class Sections
     public static readonly string[] Whys = ["sing", "turn", "played", "ended", "cadence", "pair", "begins"];
     const double PhraseAlike = 0.75;
 
-    sealed record Model(double Lam, double Off, double Mu, int Neighbours, double Bias, double[] Weights, Dictionary<int, int> Lengths);
+    sealed record Model(double Lam, double Off, double Mu, int Neighbours, double Bias, double[] Weights, Dictionary<int, int> Lengths, bool Drums);
 
     static readonly Lazy<Model> model = new(() =>
     {
@@ -22,16 +22,17 @@ static class Sections
         return new Model(r.GetProperty("lam").GetDouble(), r.GetProperty("off").GetDouble(), r.GetProperty("mu").GetDouble(),
             r.GetProperty("neighbours").GetInt32(), r.GetProperty("bias").GetDouble(),
             [.. r.GetProperty("weights").EnumerateArray().Select(w => w.GetDouble())],
-            r.GetProperty("lengths").EnumerateObject().ToDictionary(p => int.Parse(p.Name), p => p.Value.GetInt32()));
+            r.GetProperty("lengths").EnumerateObject().ToDictionary(p => int.Parse(p.Name), p => p.Value.GetInt32()),
+            r.TryGetProperty("drums", out var d) && d.GetBoolean());
     });
 
     /// <summary>The cuts (bars 1 .. n-1). <paramref name="fam"/>: each beat's root * 4 + family; <paramref name="why"/>:
     /// the rule each of the rules' cuts came from; the rest as Form.Phrases was given them.</summary>
     public static List<int> Cuts(int[][] fam, int tonic, int home, double[]? sung, Dictionary<int, string> why,
-        HashSet<int> sings, HashSet<int> begins, HashSet<int> turns, double[] db, double[][] notes)
+        HashSet<int> sings, HashSet<int> begins, HashSet<int> turns, double[] db, double[][] notes, (double[] Db, double[][] Pattern)? drums = null)
     {
         var m = model.Value;
-        var rows = Rows(fam, tonic, home, sung, why, sings, begins, turns, db, notes, m.Neighbours);
+        var rows = Rows(fam, tonic, home, sung, why, sings, begins, turns, db, notes, drums, m.Neighbours);
         var score = new double[rows.Length];
         for (int i = 0; i < rows.Length; i++)
         {
@@ -43,13 +44,14 @@ static class Sections
     }
 
     static double[][] Rows(int[][] fam, int tonic, int home, double[]? sung, Dictionary<int, string> why,
-        HashSet<int> sings, HashSet<int> begins, HashSet<int> turns, double[] db, double[][] notes, int nb)
+        HashSet<int> sings, HashSet<int> begins, HashSet<int> turns, double[] db, double[][] notes, (double[] Db, double[][] Pattern)? drums, int nb)
     {
         int n = fam.Length;
         var cues = Cues(fam, tonic, home, sung, why, sings, begins, turns);
         var audio = Audio(db, notes, fam);
+        var drummed = Drummed(drums, n);
         var x = new double[n][];
-        for (int i = 0; i < n; i++) x[i] = [.. cues[i], .. audio[i]];
+        for (int i = 0; i < n; i++) x[i] = [.. cues[i], .. audio[i], .. drummed[i]];
         int width = x.Length > 0 ? x[0].Length : 0;
         var rows = new double[n][];
         for (int i = 0; i < n; i++)
@@ -151,6 +153,45 @@ static class Sections
                 int fresh = heardAfter.Count(c => !heardBefore.Contains(c));
                 f.AddRange([dd, Math.Abs(dd), 1 - cos, (double)fresh / Math.Max(heardAfter.Count, 1)]);
             }
+            rows[i] = [.. f];
+        }
+        return rows;
+    }
+
+    /// <summary>How the drums change across each bar line (when the weights were fitted with them): the bar's loudness
+    /// against the song's, over 2 and 4 bars how much louder after than before and how far the mean pattern after is
+    /// from the one before (cosine), and the bar's pattern against the bar before. None heard: all 0.</summary>
+    static double[][] Drummed((double[] Db, double[][] Pattern)? drums, int n)
+    {
+        var rows = new double[n][];
+        if (!model.Value.Drums) { for (int i = 0; i < n; i++) rows[i] = []; return rows; }
+        if (drums is not var (db, pattern)) { for (int i = 0; i < n; i++) rows[i] = new double[6]; return rows; }
+        double median = Np.Median(db), mean = Np.Mean(db);
+        double std = Math.Sqrt(Np.Mean(db.Select(v => (v - mean) * (v - mean)).ToArray()));
+        var z = db.Select(v => (v - median) / (std + 1e-9)).ToArray();
+        static double[] Mean(double[][] rows, int from, int to)
+        {
+            var m = new double[rows[from].Length];
+            for (int k = from; k < to; k++) for (int c = 0; c < m.Length; c++) m[c] += rows[k][c];
+            for (int c = 0; c < m.Length; c++) m[c] /= to - from;
+            return m;
+        }
+        static double Dot(double[] u, double[] v) { double s = 0; for (int c = 0; c < u.Length; c++) s += u[c] * v[c]; return s; }
+        for (int i = 0; i < n; i++)
+        {
+            var f = new List<double> { z[i] };
+            foreach (int w in (int[])[2, 4])
+            {
+                if (i - w < 0 || i + w > n) { f.AddRange([0.0, 0.0]); continue; }
+                double after = 0, before = 0;
+                for (int k = i; k < i + w; k++) after += z[k];
+                for (int k = i - w; k < i; k++) before += z[k];
+                var u = Mean(pattern, i - w, i);
+                var v = Mean(pattern, i, i + w);
+                f.Add(after / w - before / w);
+                f.Add(1 - Dot(u, v) / (Math.Sqrt(Dot(u, u)) * Math.Sqrt(Dot(v, v)) + 1e-9));
+            }
+            f.Add(i > 0 ? 1 - Dot(pattern[i], pattern[i - 1]) : 0.0);
             rows[i] = [.. f];
         }
         return rows;

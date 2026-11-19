@@ -498,11 +498,53 @@ static class Reader
         return (best.Tonic, best.Major);
     }
 
+    /// <summary>The drums in each bar (Drums' frames): how loud (dB of the mean square), and their pattern: the onset
+    /// strength at its strongest in each of 16 steps of the bar, in each band (band by band), as a unit vector.
+    /// read_chords.py's drum_bars().</summary>
+    static (double[] Db, double[][] Pattern) DrumBars(float[] drums, List<Bar> full)
+    {
+        int frames = drums.Length / Drums.Width, n = full.Count;
+        var db = new double[n];
+        var pattern = new double[n][];
+        for (int i = 0; i < n; i++)
+        {
+            double start = full[i].Start, end = full[i].End;
+            int a = (int)(start * 100), b = Math.Max((int)(end * 100), a + 1);
+            int from = Math.Min(a, frames), to = Math.Min(b, frames);
+            double square = 0;
+            for (int k = from; k < to; k++) square += drums[k * Drums.Width];
+            db[i] = 10 * Math.Log10((to > from ? square / (to - from) : 0.0) + 1e-10);
+            var v = pattern[i] = new double[48];
+            for (int s = 0; s < 16; s++)
+            {
+                double g0 = start + (end - start) * s / 16, g1 = start + (end - start) * (s + 1) / 16;
+                int lo = (int)(g0 * 100), hi = Math.Max((int)(g1 * 100), lo + 1);
+                for (int band = 0; band < 3; band++)
+                {
+                    double top = 0;
+                    bool any = false;
+                    for (int k = lo; k < Math.Min(hi, frames); k++)
+                    {
+                        double x = drums[k * Drums.Width + 1 + band];
+                        if (!any || x > top) { top = x; any = true; }
+                    }
+                    v[band * 16 + s] = any ? top : 0;
+                }
+            }
+            double norm = 0;
+            foreach (double x in v) norm += x * x;
+            norm = Math.Sqrt(norm) + 1e-9;
+            for (int k = 0; k < 48; k++) v[k] /= norm;
+        }
+        return (db, pattern);
+    }
+
     /// <param name="audio">The recording's file name.</param>
     /// <param name="lineSeconds">The bar lines a beat tracker found, in seconds, the end of the last bar too.</param>
     /// <param name="beats">The beats it counted in a bar.</param>
     /// <param name="logp">The chord model's log probabilities, [frame * its chords + chord], a frame every <paramref name="step"/> seconds.</param>
-    public static Chart Read(string audio, Features.Heard f, List<double> lineSeconds, int beats, float[] logp, int frames, double step, float[]? voice = null)
+    /// <param name="drums">What the sections hear of the drums (Drums.Frames), or null: none heard.</param>
+    public static Chart Read(string audio, Features.Heard f, List<double> lineSeconds, int beats, float[] logp, int frames, double step, float[]? voice = null, float[]? drums = null)
     {
         float[] oenv = f.Onsets, rms = f.Loudness, chroma = f.Chroma, bass = f.Bass;
         int n = oenv.Length, chromaFrames = chroma.Length / 12, bassFrames = bass.Length / 12;
@@ -774,7 +816,8 @@ static class Reader
             var c = bar.Chords.FirstOrDefault(c => c.Start <= at && at < c.End) ?? bar.Chords[^1];
             return c.Symbol.Quality * 12 + c.Symbol.Root;
         }).ToArray()).ToArray();
-        var (form, places) = Form.Phrases(keys, turns, tonic, major, Form.PhraseBars, sings, singsFrom, sung, barDb, barNotes);
+        (double[] Db, double[][] Pattern)? drummed = drums == null ? null : DrumBars(drums, full);
+        var (form, places) = Form.Phrases(keys, turns, tonic, major, Form.PhraseBars, sings, singsFrom, sung, barDb, barNotes, drummed);
         for (int i = 0; i < full.Count; i++) (full[i].Section, full[i].BarOfSection) = places[i];
         if (bars[0].Pickup != 0)        // a section of its own: Lily# lets only the first one open short
         {

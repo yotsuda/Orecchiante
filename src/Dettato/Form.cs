@@ -135,7 +135,7 @@ static class Form
     /// one before it again is named after it (A, A2). <paramref name="keys"/>: the chord (quality * 12 + root) on each
     /// beat of each bar. Returns the form and, for each bar, its section and which bar of it it is.</summary>
     public static (List<string> Form, List<(string, int)> Places) Phrases(int[][] keys, HashSet<int> turns, int tonic, bool major, int phrase, IReadOnlyList<int> sings, IReadOnlyList<int> begins,
-        double[]? sung = null, double[]? db = null, double[][]? notes = null)
+        double[]? sung = null, double[]? db = null, double[][]? notes = null, (double[] Db, double[][] Pattern)? drums = null)
     {
         int n = keys.Length;
         var fam = keys.Select(row => row.Select(k => k % 12 * 4 + Reader.Kind[k / 12]).ToArray()).ToArray();
@@ -286,7 +286,7 @@ static class Form
         var sorted = cuts.OrderBy(c => c).ToList();
         if (SectionDp)          // the cuts chosen whole: each bar line's cues weighed, the lengths as the owner's (Sections)
             sorted = [0, .. Sections.Cuts(fam, tonic, home, sung, why, given.Sings, given.Begins, given.Turns,
-                db ?? new double[n], notes ?? [.. Enumerable.Range(0, n).Select(_ => new double[12])]), n];
+                db ?? new double[n], notes ?? [.. Enumerable.Range(0, n).Select(_ => new double[12])], drums), n];
         else if (MergeShort != 0)   // a piece of fewer bars than this joins the one before (the first: the one after)
             while (sorted.Count > 2)
             {
