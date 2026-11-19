@@ -106,12 +106,13 @@ static class Writer
         };
         int pickup = chart.Bars[0].Pickup;
         // one section: the chart is the bars in their order; but not with a bar of its own time (Lily# takes a time in a
-        // row out of a section for the whole chart)
+        // row out of a section for the whole chart). The row is named prog, as Lily#'s own new chart names it (the owner,
+        // 2026-11-20; harmony before 0.10.2).
         if (chart.Form.Count == 1 && pickup == 0 && chart.Bars.All(bar => bar.Meter == null))
         {
-            lines.Add("chords harmony {");
+            lines.Add("chords prog {");
             lines.AddRange(Rows([.. chart.Bars.Select(bar => new List<Bar> { bar })], "  "));
-            lines.AddRange(["}", "", "score {", "  chords harmony", "}", ""]);
+            lines.AddRange(["}", "", "score {", "  chords prog", "}", ""]);
             return string.Join("\n", lines);
         }
         var names = new List<string>();
@@ -134,13 +135,13 @@ static class Writer
             lines.Add($"section {name} {{");
             if (name == "Pickup") lines.Add($"  partial {(chart.Time == "6/8" ? "4." : Reader.Partial[pickup])}");
             if (sections[name][0][0].Tempo is double own) lines.Add($"  tempo {chart.TempoNote} = {Bar.TempoText(own)}");   // Lily# sounds it each time the section is played
-            lines.Add("  chords harmony {");
+            lines.Add("  chords prog {");
             lines.AddRange(Rows(sections[name], "    ", name != "Pickup", last));
             lines.AddRange(["  }", "}", ""]);
         }
         // Repeat signs only in the form, so that the form alone shows how the song goes (the owner, 2026-11-16).
         var shown = chart.Form.Select(s => s.Contains('_') ? "~" + s : s).ToList();   // a short section's name is hidden (read_chords.py --old-sections names them B_1)
-        lines.AddRange(["form { " + FormWithRepeats(shown) + " }", "", "score {", "  chords harmony", "}", ""]);
+        lines.AddRange(["form { " + FormWithRepeats(shown) + " }", "", "score {", "  chords prog", "}", ""]);
         return string.Join("\n", lines);
     }
 

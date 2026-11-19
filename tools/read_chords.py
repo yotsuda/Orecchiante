@@ -1829,8 +1829,8 @@ def lys(result, title, shape_of=None):
     # one section: the chart is the bars in their order; but not with a bar of its own time (Lily# takes a time in a row
     # out of a section for the whole chart: seed7's s7-009, the first chart of one section with a bar of 2/4, 0.9.0)
     if len(form) == 1 and not short and not any("time" in bar for bar in result["bars"]):
-        return "\n".join(head + ["chords harmony {", *rows([[bar] for bar in result["bars"]], "  "), "}", "",
-                                 "score {", "  chords harmony", "}", ""])
+        return "\n".join(head + ["chords prog {", *rows([[bar] for bar in result["bars"]], "  "), "}", "",
+                                 "score {", "  chords prog", "}", ""])
     sections = {}                       # name: its bars, each a list of the bar each time the section is played
     for bar in result["bars"]:
         of = sections.setdefault(bar["section"], [])
@@ -1843,10 +1843,10 @@ def lys(result, title, shape_of=None):
         own = bars[0][0].get("tempo")   # the section's own tempo (section_tempos): Lily# sounds it each time the section is played
         partial += [f"  tempo {result['tempo']['note']} = {own}"] if own is not None else []
         last = w + 1 == len(written) or len(written[w + 1][1]) > 1      # a section of one bar goes on the line before
-        body += [f"section {name} {{", *partial,"  chords harmony {", *rows(bars, "    ", name != "Pickup", last), "  }", "}", ""]
+        body += [f"section {name} {{", *partial,"  chords prog {", *rows(bars, "    ", name != "Pickup", last), "  }", "}", ""]
     # Repeat signs only in the form, so that the form alone shows how the song goes (the owner, 2026-11-16).
     shown = ["~" + s if "_" in s else s for s in form]     # a short section's name is hidden (name_sections)
-    return "\n".join(head + body + ["form { " + form_with_repeats(shown) + " }", "", "score {", "  chords harmony", "}", ""])
+    return "\n".join(head + body + ["form { " + form_with_repeats(shown) + " }", "", "score {", "  chords prog", "}", ""])
 
 
 def line_sizes(bars):

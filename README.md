@@ -398,7 +398,7 @@ the order the sections are played in as the `form`:
 
 ```
 section A {
-  chords harmony {
+  chords prog {
     Abmaj7 | Gm7 | Ab | Bbm7 Eb |
   }
 }
@@ -492,7 +492,7 @@ line ends with its bar line, then the break, `| break`, which reads more easily 
 
 ```
 section A {
-  chords harmony {
+  chords prog {
     D | D | D | D |
     D | D | D | D@or(Dsus4) |
     D | C7 | F7 | A# Am@or(A) |
@@ -935,7 +935,7 @@ the two ends of a chart by what sounds there (2026-11-14):
   ```
   section Pickup {
     partial 2
-    chords harmony {
+    chords prog {
       G |
     }
   }
@@ -1547,7 +1547,7 @@ major or minor (a seventh heard or not is a smaller doubt, and marking it would 
 in four). The mark is Lily#'s `@todo`, with the chord the model would have said next:
 
 ```
-chords harmony {
+chords prog {
   Dm7/A | G7 | C | F |
   Bm7@todo("or Bm7(b5)?") | E7/B | Am7 | Am |
 }

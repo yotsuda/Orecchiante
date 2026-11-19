@@ -2,6 +2,11 @@
 
 Notable changes to Dettato are recorded here, newest first.
 
+## 0.10.2
+
+- The chart's chord row is named `prog` (it was `harmony`), the name Lily# gives it in a new chart.
+  Charts written before keep their name.
+
 ## 0.10.1
 
 - Converting a recording again failed in a OneDrive folder ("Access to the path '….parts' is
