@@ -612,6 +612,26 @@ and 151 and gains eight, Open Arms finds 101 and gains 43 and 93; the owner chos
 .venv/Scripts/python scratch/xsc/dp.py EXTRA=1 NB=3 PH=0 C=0.1 AUDIO=1 MUS=0,0.5 --cv K=5 SEED=1
 ```
 
+**The measure corrected (2026-11-19).** 14 of the 141 dev songs were not songs but a bass part
+separated from one (`<name>-bass-….mp3`: the owner marks sections while playing along to the bass);
+they were 14 of dev's 16 songs where "no singing is heard", and test has none. For 13 the whole mix
+lies beside the part or in `F:\Music` and lines up with it (`scratch/xsc/mixes.py`: the part's
+low end against the mix's, a lag of −25 ms in 12, +48 ms in one; Stayin' Alive's mix is another
+edit and keeps its part). `scratch/xsc/swapmix.py` puts the mixes under the same ids, the owner's
+bar times moved by the lag (`--undo` puts the parts back). With the weights as they are, dev reads
+**64.9 / 69.9%** (was 62.1 / 67.7%; the 13 from about 23% to about 65%, all now heard to sing); in
+five folds 60.6–61.0% (was 57.2–57.9%). Weights learnt again on the corrected dev: test 65.8%
+against 66.2% for those shipped, so they stay.
+
+**The drums' pattern (tried, not yet in dettato).** From the six parts of each song
+(`scratch/xsc/parts.ps1`, `partcues.py`): the drums' loudness per bar, and their onset strength in
+16 steps of the bar in three bands (below 200 Hz, to 4 kHz, above); as cues, the loudness and the
+pattern's change over two and four bars and from the bar before (`dp.py PARTS=d`, 6 more cues, with
+those of the three bars before and after). In five folds × two orders on dev: 60.8% → **65.0%**
+(the pattern alone 64.0%, the loudness alone 60.6%; all six parts 64.5%; the cues of the bar only,
+not those around it, 62.2%). Test, counted once: exact **66.2 → 69.8%**, near 71.8 → 74.7%. To be
+put in dettato (Python and .NET, the drum part kept in `Voice.Loudness`; HANDOFF).
+
 To see whether that is what a section means beyond two songs, the section starts are counted
 against AIST's structure annotation of RWC-P (intro, verse A, chorus …; [DATASETS.md](docs/DATASETS.md)),
 leaving out boundaries between two sections of the same label (chorus A, chorus A), by
