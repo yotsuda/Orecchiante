@@ -1,7 +1,7 @@
 {
- "about": "read_chords.SECTION_DP: logistic regression on the owner's Transcribe! sections, dev songs x001-x145 (scratch/xsc/dp.py EXTRA=1 NB=3 PH=0 C=0.1 AUDIO=1 DRUMS=1 MUS=0.0001 LAMS=0.5 OFFS=-1.5 ONSET=4 ALIGN=2 ALIGN_WIDE=4 PLUS1=1 PLUS1_COST=1 HEADMATCH=1 PASS1FILE=scratch/xsc/pass1A.pkl PASS1JSON=scratch/xsc/dp_A.json JSON_OUT=scratch/xsc/dp_BAW15.json)",
+ "about": "read_chords.SECTION_DP: logistic regression on the owner's Transcribe! sections, dev songs x001-x145 (scratch/xsc/dp.py EXTRA=1 NB=3 PH=0 C=0.1 AUDIO=1 DRUMS=1 MUS=0.0001,0.5 ONSET=4 ALIGN=2 ALIGN_WIDE=4 PLUS1=1 PLUS1_COST=1 HEADMATCH=1 PASS1FILE=scratch/xsc/pass1A.pkl PASS1JSON=scratch/xsc/dp_A.json JSON_OUT=scratch/xsc/dp_BAW.json)",
  "lam": 0.5,
- "off": -1.5,
+ "off": -2.0,
  "mu": 0.0001,
  "neighbours": 3,
  "bias": -2.2946066874426005,

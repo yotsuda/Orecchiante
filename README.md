@@ -724,6 +724,19 @@ and the owner's songs before `test` was seen for it):
 heads now (1 9 21 28 32 44 59) with none added; My Life and Open Arms as 0.13.0. `read_check.py`
 368/368.
 
+**0.13.2 (the owner, 2026-11-20: "平均を重視したい").** λ and off refitted too (off −1.5 → −2.0, more
+heads read: on `test` 1469 for the owner's 1531, 0.13.1 1307; `scratch/xsc/dp_BAW.json`):
+
+| Section starts | 0.13.1 | 0.13.2 |
+|---|---|---|
+| owner's `.xsc`, `test`, exact / near | 70.7 / 74.9% | **72.5 / 77.3%** |
+| owner's `.xsc`, `dev`, exact | 71.5% | 71.6% |
+| AIST `rwc-dev`, 3 s / 0.5 s | 77.5 / 61.7% | 78.7 / 62.5% |
+| AIST `rwc-test`, 3 s / 0.5 s | 73.5 / 53.3% | 75.1 / 54.0% |
+| AIST without the voice, `rwc-dev` / `rwc-test`, 3 s | 60.7 / 53.4% | 67.3 / 61.2% |
+
+今宵 gains 40 (the owner put 49 only), 糸 gains 36, 51 and 67; My Life and Open Arms as before.
+
 To see whether that is what a section means beyond two songs, the section starts are counted
 against AIST's structure annotation of RWC-P (intro, verse A, chorus …; [DATASETS.md](docs/DATASETS.md)),
 leaving out boundaries between two sections of the same label (chorus A, chorus A), by

@@ -2,6 +2,11 @@
 
 Notable changes to Orecchiante (Dettato until 0.10.2) are recorded here, newest first.
 
+## 0.13.2
+
+- Sections are cut a little more readily. On the owner's Transcribe! sections, 70.7 → 72.5% of
+  the heads are found where the owner put them.
+
 ## 0.13.1
 
 - A section after a riff that repeats every two bars is no longer moved a bar late to line up with
