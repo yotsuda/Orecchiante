@@ -1,0 +1,160 @@
+name: Release
+
+# Tag-driven release, after Calamo's release.yml: pushing a tag like v0.13.2 packs the extension
+# (tools/pack-extension.ps1: orecchiante.exe published self-contained for win-x64, the four models
+# beside it, the licenses, the version check, `vsce package --target win32-x64`), attaches the .vsix
+# to a GitHub Release, and publishes it to the VS Code Marketplace.
+#
+# Run by hand (workflow_dispatch) with publish_targets empty, it only packs and keeps the .vsix as a
+# workflow artifact: no Release, no Marketplace. Do that once before the first tag, so that the runner
+# is proven before a version is spent -- THE MARKETPLACE NEVER ACCEPTS A VERSION TWICE.
+# Run by hand with publish_targets (win32-x64), it publishes that target of the current version from
+# its GitHub Release instead: the way to finish a release the Marketplace did not list.
+#
+# The models are not in the repository (scratch/ is ignored; README says how each is made). They are
+# the assets of the GitHub Release `models-1` (a pre-release, not a version of Orecchiante), and
+# tools/models.sha256 says which files they must be: a model changed without its hash changed stops
+# the release. To change a model: put the new .onnx into a new release `models-<n>` (all four), write
+# their hashes into tools/models.sha256, and change MODELS below.
+#
+# Secret: VSCE_PAT, the same Marketplace -> Manage token as Lily#'s and Calamo's (the Microsoft account
+# that OWNS the publisher `yotsuda`; Calamo's release.yml says how it is made). It expires 2027-10-16:
+# when a release fails at verify-pat, renew it and update the secret in all three repositories.
+#
+# Only a tag pushed by the owner or a run by hand starts this workflow, so the secret never reaches a
+# fork's pull request. Lily#'s menu runs the reader: a Lily# with the menu (after its v0.16.0) has to
+# be on the Marketplace for an Orecchiante there to be of use.
+
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      publish_targets:
+        description: 'Finish a release: targets to publish from the GitHub Release (win32-x64). Empty: pack only.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write   # create the GitHub Release + upload the .vsix
+
+env:
+  MODELS: models-1
+
+jobs:
+  vsix:
+    if: github.event.inputs.publish_targets == ''
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Tag matches the version
+        # v0.13.2 must be extension/package.json's 0.13.2 (pack-extension.ps1 then checks that the
+        # reader's own `--version` says the same: Program.cs). The version is not rewritten from the tag.
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          $tag = $env:GITHUB_REF_NAME -replace '^v', ''
+          $pkg = (Get-Content extension/package.json -Raw | ConvertFrom-Json).version
+          if ($tag -ne $pkg) { throw "tag $env:GITHUB_REF_NAME, extension/package.json $pkg : make them one before tagging" }
+          "version $pkg"
+
+      - name: Publish rights
+        # One request before the build: a wrong or expired PAT fails here, not after the pack.
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          $publisher = (Get-Content extension/package.json -Raw | ConvertFrom-Json).publisher
+          npx --yes @vscode/vsce verify-pat $publisher
+          if ($LASTEXITCODE -ne 0) { throw "verify-pat failed for '$publisher': nothing was published" }
+
+      - name: The models
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download $env:MODELS --repo $env:GITHUB_REPOSITORY --pattern '*.onnx' --dir models
+          if ($LASTEXITCODE -ne 0) { throw "no models in the release $env:MODELS" }
+          foreach ($line in Get-Content tools/models.sha256) {
+            $hash, $name = $line -split '\s+', 2
+            $got = (Get-FileHash "models/$name" -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($got -ne $hash) { throw "${name}: $got, tools/models.sha256 says $hash" }
+            "$name ok"
+          }
+
+      - name: Pack
+        # The same script the local deploy uses.
+        run: pwsh -NoProfile -File tools/pack-extension.ps1 -Out "$PWD/out/extension" -Models "$PWD/models"
+
+      - name: Keep the .vsix
+        uses: actions/upload-artifact@v4
+        with:
+          name: orecchiante-vsix
+          path: out/extension/*.vsix
+          if-no-files-found: error
+
+      - name: Extract release notes
+        # The topmost section of extension/CHANGELOG.md is the version being tagged (the Marketplace
+        # shows the same file on its Changelog tab). The heading is dropped: the Release has the tag.
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          $n = 0
+          $notes = foreach ($line in Get-Content extension/CHANGELOG.md) {
+            if ($line -match '^## ') { $n++; continue }
+            if ($n -eq 1) { $line }
+          }
+          Set-Content RELEASE_NOTES.md ($notes -join "`n")
+          Get-Content RELEASE_NOTES.md
+
+      - name: Upload release asset
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: RELEASE_NOTES.md
+          files: out/extension/*.vsix
+
+      - name: Publish to VS Code Marketplace
+        # The packed .vsix as it is (its target is inside it), no --pre-release ("preview": true in
+        # package.json is the Preview label, a different thing). The script waits for the listing.
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: ./tools/publish-marketplace.ps1 -Vsix (Get-ChildItem out/extension/*.vsix).FullName
+
+  finish:
+    # By hand, with publish_targets: the very files the GitHub Release holds.
+    if: github.event.inputs.publish_targets != ''
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Publish rights
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          $publisher = (Get-Content extension/package.json -Raw | ConvertFrom-Json).publisher
+          npx --yes @vscode/vsce verify-pat $publisher
+          if ($LASTEXITCODE -ne 0) { throw "verify-pat failed for '$publisher': nothing was published" }
+
+      - name: Publish the targets from the Release
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          GH_TOKEN: ${{ github.token }}
+          PUBLISH_TARGETS: ${{ github.event.inputs.publish_targets }}
+        run: |
+          $version = (Get-Content extension/package.json -Raw | ConvertFrom-Json).version
+          $files = foreach ($target in $env:PUBLISH_TARGETS -split '[,\s]+' | Where-Object { $_ }) {
+            $name = "orecchiante-$target-$version.vsix"
+            gh release download "v$version" --pattern $name --dir release-vsix
+            if ($LASTEXITCODE -ne 0) { throw "no $name in the release v$version" }
+            "release-vsix/$name"
+          }
+          ./tools/publish-marketplace.ps1 -Vsix $files
