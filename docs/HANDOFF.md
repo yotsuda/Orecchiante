@@ -3,7 +3,7 @@
 **毎セッションの終わりに書き換える**（追記しない。200 行以内）。方向づけは [ROADMAP.md](ROADMAP.md)、
 数字と使い方は [README](../README.md)、録音の出典は [DATASETS.md](DATASETS.md)。
 
-最終更新: 2026-11-21（同日の後: 次の一手だった「曲ごとの細かさ」を測って閉じた＝捨てた案。**0.13.2 をタグで公開した**（2026-11-20、オーナーが `v0.13.2` を push → `.github/workflows/release.yml` が pack → GitHub Release に .vsix → Marketplace、run 44751831158 成功＝159 MB の .vsix が通った。Lily# も同じ日に変換メニュー入りの v0.17.0・v0.17.1 を公開）。**次のリリースの手順:** 版を 2 か所（`Program.cs`・`extension/package.json`）と `extension/CHANGELOG.md` の一番上で上げて commit → オーナーが `git -C C:\MyProj\Orecchiante tag vX.Y.Z` と push（タグと package.json が違えば止まる）。**Lily# のフォルダで打たない**（2026-11-20 に一度 Lily# に `v0.13.2` が打たれ、Lily# のリリースを test の段で取り消してタグを消した）。手で回すと pack だけ、`publish_targets` に `win32-x64` で Release の .vsix を Marketplace へ出し直す。secret `VSCE_PAT` は 2027-10-16 まで（Lily#・Calamo と同じ）。**モデル 4 つはリポジトリの `onnx/`**（GitHub の 1 ファイル 100 MB の上限＝大きいモデルを足すときは Release か LFS。作り直したら scratch/d2 から手で）。**0.13.2: section の λ・off を選び直した（`scratch/xsc/dp_BAW.json`、オーナー「平均を重視したい」）**: xsc test 70.7 → 72.5%（near 77.3）・dev 71.6、AIST 歌つき 3 秒 dev 78.7・test 75.1。オーナーの曲では今宵に 40、糸に 36・51・67 が余分。0.13.1: `align_heads` は ±4 小節の中で 1 通りだけ似るときに結ぶ（JSON の `align_wide` 4、2 回目のモデルだけ）＝今宵の 106 → 105。0.13.0: section を曲の繰り返しに揃える（`onset_cues`・`align_heads`・`plus1`・`head_cues`、2 つのモデルと 2 回の読み。今宵の項）。read_check 368/368（`scratch/sec/check13.ps1`）。各版の数字は README。）
+最終更新: 2026-11-21（同日の最後: 候補 1「声もドラムもないとき」を `off_unheard` で済ませた＝測るときと合成曲だけが変わる、リリースなし。その前に「曲ごとの細かさ」を閉じた。**0.13.2 をタグで公開した**（2026-11-20、オーナーが `v0.13.2` を push → `.github/workflows/release.yml` が pack → GitHub Release に .vsix → Marketplace、run 44751831158 成功＝159 MB の .vsix が通った。Lily# も同じ日に変換メニュー入りの v0.17.0・v0.17.1 を公開）。**次のリリースの手順:** 版を 2 か所（`Program.cs`・`extension/package.json`）と `extension/CHANGELOG.md` の一番上で上げて commit → オーナーが `git -C C:\MyProj\Orecchiante tag vX.Y.Z` と push（タグと package.json が違えば止まる）。**Lily# のフォルダで打たない**（2026-11-20 に一度 Lily# に `v0.13.2` が打たれ、Lily# のリリースを test の段で取り消してタグを消した）。手で回すと pack だけ、`publish_targets` に `win32-x64` で Release の .vsix を Marketplace へ出し直す。secret `VSCE_PAT` は 2027-10-16 まで（Lily#・Calamo と同じ）。**モデル 4 つはリポジトリの `onnx/`**（GitHub の 1 ファイル 100 MB の上限＝大きいモデルを足すときは Release か LFS。作り直したら scratch/d2 から手で）。**0.13.2: section の λ・off を選び直した（`scratch/xsc/dp_BAW.json`、オーナー「平均を重視したい」）**: xsc test 70.7 → 72.5%（near 77.3）・dev 71.6、AIST 歌つき 3 秒 dev 78.7・test 75.1。オーナーの曲では今宵に 40、糸に 36・51・67 が余分。0.13.1: `align_heads` は ±4 小節の中で 1 通りだけ似るときに結ぶ（JSON の `align_wide` 4、2 回目のモデルだけ）＝今宵の 106 → 105。0.13.0: section を曲の繰り返しに揃える（`onset_cues`・`align_heads`・`plus1`・`head_cues`、2 つのモデルと 2 回の読み。今宵の項）。read_check 368/368（`scratch/sec/check13.ps1`）。各版の数字は README。）
 前回より前（0.12.0 ベース音をベースのパートで、0.11.0 改名、0.10.0 ドラム、0.9.0 `SECTION_DP`、0.8.x と 0.5.0〜0.7.0）は README・CHANGELOG・`git log`。
 
 ### D4 の形（2026-11-15、オーナーと話して決めた。依頼 4・[便り](repro/lilysharp-requests-2026-11-15-listening.md)）
@@ -38,7 +38,7 @@
 - 耳: wav → `.beats`（Beat This!）と `.npz`（crema と BTC の平均、0.4.0 から）、特徴量: wav → `.feat.npz`。突き合わせは `tools/net_check.py`、`measure.py --net scratch/net` で表は全列同じ。
 - **`--ears` では HPSS を外した**（`use_ears()` が `HARMONIC_FRAMES = 0`。特徴量は `scratch/feat-h0/`）。1 曲 3 分半で `orecchiante read` 5.5 秒（Beat This! 3.7）。onnxruntime は 8 スレッド（24 だと遅い）。
 
-### 数字（`measure.py all`、2026-11-19 の 0.10.0＝section の数だけ動いた（`all` は歌もドラムもなしで読む）。lysc check 1388/1388（依頼 18 の直った lysc `scratch/lysc-0986`）、SIDECAR 1388/1388。ログは `scratch/all.log`、前は `all090.log`）
+### 数字（`measure.py all`、2026-11-21 の `off_unheard`＝0.10.0 から section の数だけ動いた（`all` は歌もドラムもなしで読む）。lysc check 1388/1388（依頼 18 の直った lysc `scratch/lysc-0986`）、SIDECAR 1388/1388。ログは `scratch/all.log`、前は `all0100.log`）
 
 | `--ears`（crema＋BTC） | `rwc-dev`（選ぶ側） | `rwc-test`（数えるだけ） | `rwc-p` | seed1 / 7 / 11 |
 |---|---|---|---|---|
@@ -48,7 +48,7 @@
 | 小節線 F | 94.1% | 95.1% | 94.6% | 97.1 / 91.0 / 94.1% |
 | テンポ・拍子 | 47・49 | 47・49 | 94・98 | |
 | 印 → 拾う誤り | 34.9% → 85.9% | 28.1% → 72.0% | 31.5% → 78.9% | 14.9% → 74.0% |
-| section（1 曲あたり、AIST 全境界 3 秒の F は声なし／歌＋ドラム） | 10.7、67.3／77.2% | 9.2、57.8／74.3% | 10.0 | 3.5 / 3.1 / 2.9 |
+| section（1 曲あたり、AIST 全境界 3 秒の F は声なし／歌＋ドラム） | 13.5、73.7／78.7% | 12.0、68.9／75.1% | 12.8 | 4.0 / 3.7 / 3.3 |
 
 - **持ち越す知見（README にないもの）:** 実録音で失っていたのは頭ではなく終わり（Beat This! はドラムが止まる所で拍をやめる）。crema の「コードなし」は両端だけ使う。RWC の正解は両端を語らない。ONNX を書き直すとき: 旧式のトレース直後の torch のモデルは同じプロセスで答えが変わる（比べる前に読み直す）。dynamo は `PYTHONUTF8=1` が要る。
 
@@ -57,8 +57,8 @@
 **改名（2026-11-20、オーナー決定）: Dettato → Orecchiante 0.11.0、済み**（同名の kobimusic/dettato が 11-16 に公開されていた。ROADMAP「名前」）。exe・拡張 ID `yotsuda.orecchiante`・`<stem>.orecchiante.json`（鍵 `"orecchiante"`）・`ORECCHIANTE_*`。古い `.dettato.json` は読まない。Lily# は依頼 20（2ce9d2381、内部名まで）。`yotsuda.dettato` は外し、入っている exe で変換を確かめた。フォルダは `C:\MyProj\Orecchiante`（scratch の .ps1・.cmd・.bat のパスも直した。venv の pip.exe などの起動器は旧パスを持つ＝python.exe で直に呼ぶ）。**GitHub: `https://github.com/yotsuda/Orecchiante`（2026-11-20 に push 済み、オーナーの指示で）。** 拡張の発行者の表示名は、Marketplace に無いので `deploy-extension.ps1` が `extensions.json` に `Yoshifumi Tsuda` を書く。**Lily# の画面からの変換はオーナーが確かめた（2026-11-20「すべて OK」）。** docs/repro と CHANGELOG の過去の版は Dettato のまま。
 
 候補（私の勧め順。0.10.2 で譜面のコードの行の名前は `prog`＝Lily# のひな形と同じ、合成曲の正解と `gen_chords.py` は `harmony` のまま）:
-0. **曲ごとの「細かさ」は手がかりにならない（2026-11-21 に閉じた。捨てた案の「曲ごとの細かさ」）**: 曲ごとに off を選ぶ上限 77.2% はほぼ選ぶことの当てはめ過ぎ。0.13.2 の dev の誤り 841 の内訳（`scratch/xsc/errs13.py`）: 小節が同じ長さの 127 曲が 86%＝16 小節の真ん中で割る 213・ほかの余分 254・落とす（前と繋ぐ）208・1 小節ずれ 45、読む 1723 対オーナー 1441。オーナーの曲の残り（今宵 40、糸 36・51・67）は 1 曲ごとの直し＝平均が上がる手のときだけ。
-1. 声もドラムもないときの扱い（測るときだけの問題: AIST 声なし test 63.0 → 57.8%。直すなら手がかり 6 個を 0 でなく dev の平均で埋める、を JSON に持たせる。orecchiante 本体には影響しない）。
+0. **済み（2026-11-21）:** 曲ごとの「細かさ」は手がかりにならない（捨てた案）。0.13.2 の dev の誤り 841 の内訳（`scratch/xsc/errs13.py`）: 同じ長さの小節の 127 曲が 86%＝16 小節の真ん中で割る 213・ほかの余分 254・落とす 208・1 小節ずれ 45。オーナーの曲の残り（今宵 40、糸 36・51・67）は平均が上がる手のときだけ。
+1. **済み（2026-11-21、リリースなし）: パートが聞けないとき（drums なし）は `off_unheard` −2.75**（JSON の両方のモデル、`read_chords.phrase_sections`・`Sections.Cuts`、`dp.py … OFFU=-0.75`）。歌ありと同じ数だけ切る値を rwc-dev で選んだ（歌あり 625、−0.75 で 633）。AIST 声なし 3 秒 dev 67.3 → 73.7%・test 61.2 → 68.9%、歌ありは不変、read_check 368/368。平均で埋める案は逆効果（65.8%）。README「With no parts heard」、道具 `scratch/novoice/`。
 2. 「人が 1 曲を仕上げるまでの時間」の物差し（ROADMAP §5）。**2026-11-20 にオーナーと話した:** xsc の M はオーナーが再生しながら手で打った（多くは等速、一部 1.5 倍）＝小節線は何もなくても曲の長さ（の 1/1.5）で済む。**小節線のタイミングは今の動作で問題ない**（気になるのは変拍子だけ、まれ）、**見てほしいのは xsc の section の位置**。コードの正解はない。
    `scratch/xsc/edits.py [TOL=0.1]`（dev）: section の頭は 1 曲あたり、オーナー 10.2 に対して直す数 7.1（残す 997・1 小節ずらす 77・足す 367・消す 559、141 曲）＝**物差しは section の直しの数（今の exact F と同じ向き）**。小節線は許すずれ 0.05／0.1／0.2 秒で直す数が 54／22／14%（オーナーの打鍵の揺れ）、半分読みの 11 曲は線を 1 本おきに消す（507 本）。
    **ベースの譜で和音を確かめた（2026-11-20、`F:\Transcribe\Xanadu\Score\Ly`＝オーナーが Xanadu で弾く .ly）:** 音符があるのは Uptown Girl・How Deep Is Your Love（Xanadu アレンジ）・Bohemian Rhapsody（一部）だけ。道具 `scratch/bass/ly2beats.py <x.ly> <out>`（LilyPond 2.26 で MIDI→4 分音符ごとのピッチクラス）・`compare.py <x.orecchiante.json> <beats.json> [-v]`（小節のずれを ±12 で探す）。Uptown Girl（`F:\Music\Billy Joel\An Innocent Man\06 …`）1 拍目 98.0%（本当の誤りは「A A B B」の後半の B を落とす 7 小節）、How Deep（`F:\Music\Bee Gees\The Ultimate Bee Gees [Disc 2]\2-01 …`）1 拍目 96.2%（Bb を Ab と読む 2 小節）。2 曲だけ＝規則を選ぶには少ない（確かめ用）。

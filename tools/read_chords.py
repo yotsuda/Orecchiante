@@ -1204,7 +1204,10 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset(), begin
         def chosen(model, heads=None):
             rows = section_rows(fam, tonic, home, sung, WHY, *given, db, notes, drums, keys, quarters, heads, model)
             score = np.round(rows @ np.array(model["weights"]) + model["bias"], 9)   # rounded: the same in .NET, whatever order it adds in
-            redo = lambda s: choose_cuts(s, again=again, model=model)
+            # no parts heard (no drums given: measuring without the voice, the songs made here): the model's off_unheard,
+            # so as many cuts as with them (rwc-dev: 625 with the voice and drums, 498 without at off, 633 at off_unheard)
+            off = model.get("off_unheard", model["off"]) if drums is None and model.get("drums") else None
+            redo = lambda s: choose_cuts(s, again=again, model=model, off=off)
             cuts = redo(score)
             return align_heads(fam, score, cuts, redo, wide=int(model.get("align_wide", 1))) if model.get("align") else cuts
 

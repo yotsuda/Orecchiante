@@ -14,7 +14,7 @@ static class Sections
     /// <param name="Onset">0.13.0: OnsetCues weighed too; <paramref name="Headmatch"/>: HeadCues of the heads of
     /// <paramref name="Pass1"/>'s reading; <paramref name="Align"/>: AlignHeads; <paramref name="Plus1"/>: Choose's one bar more.</param>
     sealed record Model(double Lam, double Off, double Mu, int Neighbours, double Bias, double[] Weights, Dictionary<int, int> Lengths, bool Drums,
-        bool Onset, bool Headmatch, bool Align, bool Plus1, double Plus1Cost, Model? Pass1, int AlignWide = 1);
+        bool Onset, bool Headmatch, bool Align, bool Plus1, double Plus1Cost, Model? Pass1, int AlignWide = 1, double? OffUnheard = null);
 
     static Model Read(JsonElement r)
     {
@@ -26,7 +26,8 @@ static class Sections
             Flag(r, "drums"), Flag(r, "onset"), Flag(r, "headmatch"), Flag(r, "align"), Flag(r, "plus1"),
             r.TryGetProperty("plus1_cost", out var c) ? c.GetDouble() : 0.0,
             r.TryGetProperty("pass1", out var p) ? Read(p) : null,
-            r.TryGetProperty("align_wide", out var w) ? w.GetInt32() : 1);
+            r.TryGetProperty("align_wide", out var w) ? w.GetInt32() : 1,
+            r.TryGetProperty("off_unheard", out var u) ? u.GetDouble() : null);
     }
 
     static readonly Lazy<Model> model = new(() =>
@@ -56,7 +57,10 @@ static class Sections
                 for (int k = 0; k < rows[i].Length; k++) s += rows[i][k] * md.Weights[k];
                 score[i] = Math.Round((s + md.Bias) * 1e9, MidpointRounding.ToEven) / 1e9;   // numpy's round(x, 9)
             }
-            List<int> Redo(double[] s) => Choose(s, md, again);
+            // no parts heard (no drums: measuring without the voice, the songs made here): the model's off_unheard,
+            // so as many cuts as with them (read_chords.phrase_sections)
+            double off = drums == null && md.Drums ? md.OffUnheard ?? md.Off : md.Off;
+            List<int> Redo(double[] s) => Choose(s, md, again, off);
             var cuts = Redo(score);
             return md.Align ? AlignHeads(fam, score, cuts, Redo, wide: md.AlignWide) : cuts;
         }
@@ -344,9 +348,9 @@ static class Sections
         return redo(moved);
     }
 
-    static List<int> Choose(double[] score, Model md, double[][] again)
+    static List<int> Choose(double[] score, Model md, double[][] again, double off)
     {
-        var (lengths, lam, off, mu) = (md.Lengths, md.Lam, md.Off, md.Mu);
+        var (lengths, lam, mu) = (md.Lengths, md.Lam, md.Mu);
         double total = lengths.Values.Sum() + 0.2 * 63;
         var logp = new double[64];
         logp[0] = -1e9;

@@ -737,6 +737,23 @@ heads read: on `test` 1469 for the owner's 1531, 0.13.1 1307; `scratch/xsc/dp_BA
 
 今宵 gains 40 (the owner put 49 only), 糸 gains 36, 51 and 67; My Life and Open Arms as before.
 
+**With no parts heard (2026-11-21, not a release: orecchiante itself always hears them).** Measuring
+without the voice (and so the drums: `measure.py all`, AIST's `phrase`, the songs made here) read too
+few heads: on `rwc-dev` 498 against 625 with the voice, precision 89.6%, recall 53.9%. Six drum cues
+of 0 are what the weights never saw, but filling them with their mean on the owner's dev songs
+(`scratch/novoice/means.py`) read fewer still (480, 65.8%). So when no drums are given, the model's
+`off_unheard` takes the place of `off` (both readings; `tools/sections_dp.json`, `Sections.cs`, and
+`dp.py … OFFU=-0.75` writes it): −2.75 for −2.0, chosen for as many heads as with the voice on
+`rwc-dev` (−0.5 587, −0.75 633, −1.0 668), not for AIST's F (best at −1.5, 76.6%, finer than the
+owner cuts). `scratch/novoice/aist_fill.py` tries other values (`UNHEARD=`, `OFFD=`).
+
+| AIST without the voice, 3 s | 0.13.2 | `off_unheard` |
+|---|---|---|
+| `rwc-dev` (chosen on, by the count) | 67.3% (498 found, 827 in AIST) | **73.7%** (633) |
+| `rwc-test` | 61.2% (422 found, 784) | **68.9%** (557) |
+
+With the voice nothing changes (78.7 / 75.1%). `read_check.py` 368/368 (`scratch/sec/check13.ps1`).
+
 To see whether that is what a section means beyond two songs, the section starts are counted
 against AIST's structure annotation of RWC-P (intro, verse A, chorus …; [DATASETS.md](docs/DATASETS.md)),
 leaving out boundaries between two sections of the same label (chorus A, chorus A), by
