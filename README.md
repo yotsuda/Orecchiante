@@ -695,8 +695,10 @@ ONSET=4 ALIGN=2 PLUS1=1 PLUS1_COST=1 [HEADMATCH=1 PASS1FILE=… PASS1JSON=…] -
 
 Fewer heads are read than the owner put (1306 for 1531 on test). Without the voice it is worse again
 (measuring only; orecchiante always has it). 今宵の月のように: C, C2, E and E2 now right (24, 32, 64, 72),
-but 9 and 80 are added and 40 comes at 49 (with the three alone, all but the last, 106 for 105, were
-right). The owner's three: 糸 misses 17, 40 and 51 (0.10.0: 17, with 69 added), My Life misses 53 and
+and 9 and 80 are found too (the owner, 2026-11-20: right, though not in the read they had marked); still
+40 comes at 49 and 106 for 105 (with the three alone, 9 and 80 are not found, and 40 is right). The
+owner's three: 糸 no longer cuts at 17, 40 and 51, which the owner now says is right (their earlier hand
+cut had them; 0.10.0 cut at 40 and 51, and at 69 too), My Life misses 53 and
 151 (105 found) with 8 added as before, Open Arms finds all with 43 and 93 added as before.
 `read_check.py` 368/368 (`scratch/sec/check13.ps1`).
 
