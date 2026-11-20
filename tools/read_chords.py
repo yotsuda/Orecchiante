@@ -753,6 +753,8 @@ def dp_model():
     if not _DP:
         _DP.update(json.loads(DP_FILE.read_text(encoding="utf-8")))
         _DP["lengths"] = {int(k): v for k, v in _DP["lengths"].items()}
+        if "pass1" in _DP:                       # 0.13.0: the first reading's model, read the same way
+            _DP["pass1"]["lengths"] = {int(k): v for k, v in _DP["pass1"]["lengths"].items()}
     return _DP
 
 
@@ -861,16 +863,121 @@ def drum_rows(drums, n):
     return np.array(rows)
 
 
-def section_rows(fam, tonic, home, sung, why, sings, begins, turns, db, notes, drums=None):
-    """What SECTION_DP weighs for each bar line: section_cues, audio_cues and drum_cues of the bar, and those of the
-    bars around it (dp_model's neighbours each side)."""
+def onset_cues(keys, quarters):
+    """For each bar line, singing that comes in halfway through a bar (its first half quiet, its second sung; `quarters`:
+    the sung share of each quarter of each bar), and where the chords change about it (0.13.0; the owner's sections,
+    dev: singing coming in halfway, the chords changing in that bar and not the next -> the owner's head there 11, the
+    next bar 5; changing in the next and not that one -> there 0, next 27; 今宵の月のように, 2026-11-20): this bar comes in
+    halfway and the chords change here, not next; the bar before came in halfway and they change here, not there; this
+    bar comes in halfway and they change next, not here; the bar before came in halfway and they changed there, not here."""
+    n = len(keys)
+    q = np.zeros((n, 4)) if quarters is None else np.asarray(quarters, float)
+    late = [bool(q[i, :2].mean() < 0.15 and q[i, 2:].mean() > 0.5) for i in range(n)]
+    def chg(j):
+        return 0 < j < n and keys[j][0] != keys[j - 1][-1]
+    rows = []
+    for i in range(n):
+        prev_late = i > 0 and late[i - 1]
+        rows.append([float(late[i] and chg(i) and not chg(i + 1)), float(prev_late and chg(i) and not chg(i - 1)),
+                     float(late[i] and chg(i + 1) and not chg(i)), float(prev_late and chg(i - 1) and not chg(i))])
+    return np.array(rows)
+
+
+def phrase_alike(fam, a, b, length):
+    """The `length` bars from a and from b are the same tune (PHRASE_ALIKE of their beats' roots and families)."""
+    n = len(fam)
+    if a < 0 or b < 0 or a + length > n or b + length > n:
+        return False
+    beats = [x == y for i in range(length) for x, y in zip(fam[a + i], fam[b + i])]
+    return bool(beats) and sum(beats) >= PHRASE_ALIKE * len(beats)
+
+
+def head_cues(fam, heads):
+    """For each bar line, how many of a first reading's section heads (`heads`, elsewhere) the 8 and the 4 bars from here
+    are played as, up to 3 (a third each); and the 8 from the bar before (this bar a bar late) and from the bar after (a
+    bar early). 0.13.0: a section that begins as another begins (the owner, 2026-11-20: from 今宵の月のように's bar 64
+    the chords are C's and C2's)."""
+    n = len(fam)
+    def count(i, length):
+        return min(sum(1 for h in heads if abs(h - i) >= length and phrase_alike(fam, i, h, length)), 3) / 3
+    return np.array([[count(i, 8), count(i, 4), count(i - 1, 8), count(i + 1, 8)] for i in range(n)])
+
+
+def align_heads(fam, score, cuts, redo, length=8):
+    """The heads of one tune put in line (0.13.0; 今宵の月のように: C, C2, E and E2 are one tune, its heads all where the
+    singing comes in and the chords change). Two heads whose `length` bars are alike in just one way of three (as they
+    are, or with the later one a bar earlier or later) are tied, and the tie says how far apart their shifts must be; a
+    group's shifts are then fixed but for one number added to all, so that one head at least stays, chosen for the most
+    score at the shifted heads. A group whose ties disagree is left. The moved heads are kept, the old ones refused, and
+    the rest chosen again (`redo`: choose_cuts of a score)."""
+    n = len(fam)
+    heads = sorted(set([0] + list(cuts)))
+    edges = {h: [] for h in heads}
+    for a in heads:
+        for b in heads:
+            if b <= a or b - a < length:
+                continue
+            ways = [o for o in (-1, 0, 1) if phrase_alike(fam, a, b + o, length)]
+            if len(ways) == 1:
+                edges[a].append((b, ways[0]))
+                edges[b].append((a, -ways[0]))
+    shift, seen = {}, set()
+    for h0 in heads:
+        if h0 in seen or not edges[h0]:
+            continue
+        group, stack, ok = {h0: 0}, [h0], True
+        while stack:
+            u = stack.pop()
+            for v, o in edges[u]:
+                want = group[u] + o
+                if v in group:
+                    ok = ok and group[v] == want
+                else:
+                    group[v] = want
+                    stack.append(v)
+        seen |= set(group)
+        if not ok or len(group) < 2:
+            continue
+        def worth(c):
+            at = [h + d + c for h, d in group.items()]
+            if any(p < 0 or p >= n for p in at) or (0 in group and group[0] + c != 0):
+                return -math.inf
+            return sum(float(score[p]) for p in at if p > 0)
+        options = sorted(set(-d for d in group.values()))
+        c = max(options, key=worth)         # the first of the best (as max does)
+        if worth(c) == -math.inf:
+            continue
+        for h, d in group.items():
+            shift[h] = d + c
+    keep = {h + d for h, d in shift.items() if h + d > 0}
+    drop = {h for h, d in shift.items() if d}
+    if not drop:
+        return cuts
+    moved = np.array(score, dtype=float)
+    for k in keep:
+        moved[k] += 100
+    for k in drop - keep:
+        moved[k] -= 100
+    return redo(moved)
+
+
+def section_rows(fam, tonic, home, sung, why, sings, begins, turns, db, notes, drums=None, keys=None, quarters=None, heads=None, model=None):
+    """What SECTION_DP weighs for each bar line: section_cues, audio_cues, (head_cues, onset_cues,) drum_cues of the
+    bar, and those of the bars around it (the model's neighbours each side; `model`: dp_model() or its "pass1")."""
+    model = dp_model() if model is None else model
     n = len(fam)
     base = section_cues(fam, tonic, home, sung, why, sings, begins, turns)
     if db is None or notes is None:
         db, notes = np.zeros(n), np.zeros((n, 12))
     au = audio_cues(np.asarray(db, float), np.asarray(notes, float), [set(f) for f in fam])
-    x = np.hstack([base, au, drum_cues(drums, n)])
-    nb = dp_model()["neighbours"]
+    parts = [base, au]
+    if model.get("headmatch"):
+        parts.append(head_cues(fam, heads or []))
+    if model.get("onset"):
+        parts.append(onset_cues(keys, quarters))
+    parts.append(drum_rows(drums, n) if model.get("drums") else np.zeros((n, 0)))
+    x = np.hstack(parts)
+    nb = model["neighbours"]
     z = np.zeros((nb, x.shape[1]))
     pad = np.vstack([z, x, z])
     return np.hstack([x] + [pad[nb + k: nb + k + n] for k in range(-nb, nb + 1) if k])
@@ -893,14 +1000,19 @@ def played_again(fam, longest=63):
     return again
 
 
-def choose_cuts(score, lengths=None, lam=None, off=None, again=None, mu=None):
+def choose_cuts(score, lengths=None, lam=None, off=None, again=None, mu=None, model=None):
     """The cuts (bars 1 .. n-1) that make the most of: each cut's score less `off`; `lam` times the log share of each
-    section's length among the owner's; `mu` for each section played again elsewhere (`again`, played_again)."""
-    model = dp_model()
+    section's length among the owner's; `mu` for each section played again elsewhere (`again`, played_again). With the
+    model's plus1 (0.13.0; the owner, 2026-11-20: a tune of 8 bars said again, one section of it a bar longer before
+    the music rises), a section of 8, 16 … bars and one more whose 8, 16 … (or the 8 before the one more) are played
+    again elsewhere has the share of the 8, 16 …, less plus1_cost."""
+    model = dp_model() if model is None else model
     lengths = model["lengths"] if lengths is None else lengths
     lam = model["lam"] if lam is None else lam
     off = model["off"] if off is None else off
     mu = (model["mu"] if again is not None else 0.0) if mu is None else mu
+    plus1 = bool(model.get("plus1")) and again is not None
+    cost = float(model.get("plus1_cost", 0.0))
     total = sum(lengths.values()) + 0.2 * 63
     logp = np.array([-1e9] + [math.log((lengths.get(k, 0) + 0.2) / total) for k in range(1, 64)])   # math.log: as .NET's
     n = len(score)
@@ -911,6 +1023,11 @@ def choose_cuts(score, lengths=None, lam=None, off=None, again=None, mu=None):
         lo = max(0, j - 63)
         a = np.arange(lo, j)
         cand = best[lo:j] + lam * logp[j - a] + (mu * again[a, j - a] if mu else 0.0)
+        if plus1:
+            L = j - a
+            more = (L >= 9) & ((L - 1) % 8 == 0)
+            said = np.maximum(again[a, np.maximum(L - 1, 1)], again[max(j - 9, 0), 8])
+            cand = cand + np.where(more, lam * (logp[np.maximum(L - 1, 1)] - logp[L]) * said - cost * said, 0.0)
         k = int(np.argmax(cand))
         best[j] = cand[k] + (score[j] - off if j < n else 0.0)
         back[j] = lo + k
@@ -930,7 +1047,8 @@ def section_letter(k):
     return LETTERS[k] if k < len(LETTERS) else f"S{k + 1}"
 
 
-def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset(), begins=frozenset(), sung=None, db=None, notes=None, drums=None):
+def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset(), begins=frozenset(), sung=None, db=None, notes=None, drums=None,
+                    quarters=None):
     """The sections, as the owner cut 糸 (2026-11-16): the music is cut into blocks where it turns (singing
     begins or stops, the key changes, it grows far louder or quieter); a block of WHOLE_BLOCK bars or
     phrases or fewer is one section; a longer one is cut on a grid of `phrase` bars from its start, where a phrase
@@ -1078,10 +1196,18 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset(), begin
                     p += s
     cuts = sorted(cuts)
     if SECTION_DP:                               # the cuts chosen whole: cues weighed per bar line, lengths as the owner's
+        again = played_again(fam)
+
+        def chosen(model, heads=None):
+            rows = section_rows(fam, tonic, home, sung, WHY, *given, db, notes, drums, keys, quarters, heads, model)
+            score = np.round(rows @ np.array(model["weights"]) + model["bias"], 9)   # rounded: the same in .NET, whatever order it adds in
+            redo = lambda s: choose_cuts(s, again=again, model=model)
+            cuts = redo(score)
+            return align_heads(fam, score, cuts, redo) if model.get("align") else cuts
+
         model = dp_model()
-        rows = section_rows(fam, tonic, home, sung, WHY, *given, db, notes, drums)
-        score = np.round(rows @ np.array(model["weights"]) + model["bias"], 9)   # rounded: the same in .NET, whatever order it adds in
-        cuts = [0] + choose_cuts(score, again=played_again(fam)) + [n]
+        first = [0] + chosen(model["pass1"]) if "pass1" in model else None   # 0.13.0: a first reading, whose heads head_cues sees
+        cuts = [0] + chosen(model, first) + [n]
     elif MERGE_SHORT:                            # a piece of fewer bars than this joins the one before (the first: the one after)
         while True:
             short = [i for i in range(1, len(cuts)) if cuts[i] - cuts[i - 1] < MERGE_SHORT]
@@ -1657,7 +1783,7 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
         bars[i] = dict(items[:at] + [("beats", beats_of(bar["start"], bar["end"], bar.get("pickup") or tempo_beats))]
                        + items[at:])
     whole = [bar for bar in bars if not bar.get("pickup")]
-    turns, sings, begins, sung, db, notes = frozenset(), frozenset(), frozenset(), None, None, None
+    turns, sings, begins, sung, db, notes, quarters = frozenset(), frozenset(), frozenset(), None, None, None, None
     if ears and PHRASE_SECTIONS:
         # what each bar sounds: the notes of the chords the ears hear in it, and how loud it is
         chord_starts = np.array([stamp(e) for e in edges[:-1]])
@@ -1672,6 +1798,15 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
                     for bar in whole]
             sings = frozenset(voice_turns(sung))
             begins = frozenset(voice_turns(sung, begins=True))
+            quarters = []                   # the sung share of each quarter of each bar (onset_cues, 0.13.0)
+            for bar in whole:
+                a, b = bar["start"], bar["end"]
+                row = []
+                for k in range(4):
+                    lo = int((a + k * (b - a) / 4) * 100)
+                    part = singing[lo:max(int((a + k * (b - a) / 4 + (b - a) / 4) * 100), lo + 1)]
+                    row.append(float(part.mean()) if len(part) else 0.0)
+                quarters.append(row)
             if VOICE_LATE:                  # singing that begins only in the bar's second half is a pickup: the section begins after it
                 head = [float(np.mean(singing[int(bar["start"] * 100):max(int((bar["start"] + bar["end"]) * 50), int(bar["start"] * 100) + 1)]))
                         for bar in whole]
@@ -1687,7 +1822,7 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
         bar_seconds = float(np.median([bar["end"] - bar["start"] for bar in whole]))
         phrase = PHRASE_BARS or int(min(max(2 ** round(np.log2(PHRASE_SECONDS / bar_seconds)), 2), 16))
         form, places = phrase_sections([tuple(c["symbol"][:2] for c in row) for row in on], turns, tonic, mode, phrase, sings, begins, sung, db, notes,
-                                       drum_bars(drums, whole) if drums is not None and ears else None)
+                                       drum_bars(drums, whole) if drums is not None and ears else None, quarters)
         for bar, (section, k) in zip(whole, places):
             bar["section"], bar["barOfSection"] = section, k
     else:

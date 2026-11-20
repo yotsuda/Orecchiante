@@ -2,6 +2,15 @@
 
 Notable changes to Orecchiante (Dettato until 0.10.2) are recorded here, newest first.
 
+## 0.13.0
+
+- Sections line up with the tune: a section that begins as another one begins (the same chords
+  from its head) is cut at the same place in the tune, and the heads of a tune played several
+  times are put in line together. Singing that comes in halfway through a bar begins the section
+  where the chords change, and a section of 8 or 16 bars with one bar more before the music rises
+  is no longer cut short. On the owner's Transcribe! sections, 69.8 → 71.0% of the heads are found
+  where the owner put them.
+
 ## 0.12.0
 
 - The bass note under a chord (`F#/A#`) is heard in the separated bass part, not in the whole

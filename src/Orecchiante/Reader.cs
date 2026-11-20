@@ -795,6 +795,7 @@ static class Reader
         // where singing begins and stops: the share of each bar whose vocals are a quarter of the song's loud end
         List<int> sings = [], singsFrom = [];
         double[]? sung = null;
+        double[][]? quarters = null;
         if (voice is { Length: > 0 } && (double)Percentile95(voice) >= Form.VoiceFloor * (double)Percentile95(rms))
         {
             float line = (float)(Form.VoiceLoud * (double)Percentile95(voice));
@@ -809,6 +810,20 @@ static class Reader
             }
             sings = Form.VoiceTurns(sung);
             singsFrom = Form.VoiceTurns(sung, begins: true);
+            // the sung share of each quarter of each bar (Sections.OnsetCues, 0.13.0), as read_chords.py takes it
+            quarters = new double[full.Count][];
+            for (int i = 0; i < full.Count; i++)
+            {
+                double a = full[i].Start, b = full[i].End;
+                quarters[i] = new double[4];
+                for (int k = 0; k < 4; k++)
+                {
+                    int lo = (int)((a + k * (b - a) / 4) * 100), hi = Math.Max((int)((a + k * (b - a) / 4 + (b - a) / 4) * 100), lo + 1);
+                    int from = Math.Min(lo, voice.Length), to = Math.Min(hi, voice.Length), on = 0;
+                    for (int t = from; t < to; t++) if (voice[t] >= line) on++;
+                    quarters[i][k] = to > from ? (double)on / (to - from) : 0.0;
+                }
+            }
         }
         var (tonic, major) = FindKey([.. read.Select(c => (c.End - c.Start, c.Symbol.Root, c.Symbol.Quality))]);
         var keys = full.Select(bar => Enumerable.Range(0, tempoBeats).Select(i =>
@@ -818,7 +833,7 @@ static class Reader
             return c.Symbol.Quality * 12 + c.Symbol.Root;
         }).ToArray()).ToArray();
         (double[] Db, double[][] Pattern)? drummed = drums == null ? null : DrumBars(drums, full);
-        var (form, places) = Form.Phrases(keys, turns, tonic, major, Form.PhraseBars, sings, singsFrom, sung, barDb, barNotes, drummed);
+        var (form, places) = Form.Phrases(keys, turns, tonic, major, Form.PhraseBars, sings, singsFrom, sung, barDb, barNotes, drummed, quarters);
         for (int i = 0; i < full.Count; i++) (full[i].Section, full[i].BarOfSection) = places[i];
         if (bars[0].Pickup != 0)        // a section of its own: Lily# lets only the first one open short
         {

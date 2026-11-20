@@ -659,6 +659,47 @@ songs: 糸 now finds 21 and 44 but misses 17 (and adds 69 as before); My Life an
 0.9.0. Python and .NET the same: `read_check.py` 100/100 RWC with the voice and the drums, 100/100
 without either, 168/168 songs made here (`scratch/drum/check.ps1`).
 
+**In line with the tune (0.13.0, the owner, 2026-11-20).** On 今宵の月のように the owner found E and E2
+a bar late ("anyone would cut them right"): from bar 64 the chords are C's and C2's (G G G E Am Am
+Am D), and the singing comes in on beat 3 of 64 and 72. Three things, in `tools/sections_dp.json`'s
+flags and the same in `Sections.cs`:
+
+- `onset_cues` (4 more per bar): singing that comes in halfway through a bar (its first half quiet,
+  its second sung; the sung share of each quarter of each bar), and where the chords change about it.
+  On the owner's dev songs, where singing comes in halfway and the chords change in that bar and not
+  the next, the owner's head is that bar 11 times and the next 5; where they change in the next and
+  not that one, 0 and 27: singing that comes in halfway goes to where the chords change.
+- `align_heads`: heads whose 8 bars are alike in just one way of three (as they are, or with the later
+  one a bar off) are tied; a group of ties is shifted as one, by the amount (one head at least
+  staying) whose heads have the most score, and the rest is chosen again with those kept.
+- `plus1`: a section of 8, 16 … bars and one more ("the bar before the music rises", the owner),
+  whose 8, 16 … or whose 8 before the one more are played elsewhere, has the 8, 16 …'s share of the
+  lengths, less 1.
+- `head_cues` (4 more per bar), on a second reading: how many heads of a first reading (made by a
+  model with the three above, the `pass1` inside the JSON) the 8 and 4 bars from here are played as,
+  and the 8 from a bar before and after. The second model is fitted with first readings made
+  without each song (five folds, `dp.py … PASS1OUT=`), so none sees its own answers.
+
+On the dev songs in five folds (three orders): 64.9% → 65.0% with the three, **68.2%** with the
+second reading too; heads tied to the first reading's taken from a model that had seen all of dev
+gave 67.7%, so little leaks. Fitted: `dp.py EXTRA=1 NB=3 PH=0 C=0.1 AUDIO=1 DRUMS=1 MUS=0.0001,0.5
+ONSET=4 ALIGN=2 PLUS1=1 PLUS1_COST=1 [HEADMATCH=1 PASS1FILE=… PASS1JSON=…] --json`.
+
+| Section starts | 0.10.0 | 0.13.0 |
+|---|---|---|
+| owner's `.xsc`, `test`, exact / near (`eval.py test`) | 69.8 / 74.4% | **71.0 / 75.1%** (read 1306, owner 1531) |
+| owner's `.xsc`, `dev`, exact (`eval.py dev`; chosen on) | 69.0% | 71.5% |
+| AIST `rwc-dev`, every boundary, within 3 s / 0.5 s | 77.2 / 59.7% | 77.5 / 61.7% |
+| AIST `rwc-test`, every boundary, within 3 s / 0.5 s | 74.3 / 53.6% | 73.3 / 53.2% |
+| AIST without the voice, `rwc-dev` / `rwc-test`, 3 s | 67.3 / 57.8% | 60.7 / 53.4% |
+
+Fewer heads are read than the owner put (1306 for 1531 on test). Without the voice it is worse again
+(measuring only; orecchiante always has it). 今宵の月のように: C, C2, E and E2 now right (24, 32, 64, 72),
+but 9 and 80 are added and 40 comes at 49 (with the three alone, all but the last, 106 for 105, were
+right). The owner's three: 糸 misses 17, 40 and 51 (0.10.0: 17, with 69 added), My Life misses 53 and
+151 (105 found) with 8 added as before, Open Arms finds all with 43 and 93 added as before.
+`read_check.py` 368/368 (`scratch/sec/check13.ps1`).
+
 To see whether that is what a section means beyond two songs, the section starts are counted
 against AIST's structure annotation of RWC-P (intro, verse A, chorus …; [DATASETS.md](docs/DATASETS.md)),
 leaving out boundaries between two sections of the same label (chorus A, chorus A), by
