@@ -59,7 +59,9 @@
 **オーナーに 0.10.0〜0.10.2 を試してもらう**（0.10.2: コードの行の名前を `harmony` → `prog`＝Lily# の新しい譜面のひな形と同じ、オーナー決定 2026-11-20。`Writer.cs`・`read_chords.py`・README。合成曲の正解 `.lys` と `gen_chords.py` は `harmony` のまま。read_check 368/368。VS Code を Reload して、Lily# の変換メニューから。section の切れ目がドラムで変わる。糸は 21・44 を拾い 17 を落とす、My Life・Open Arms は 0.9.0 と同じ）。その後の候補（私の勧め順）:
 1. ~~小節を半分で読む曲の section~~ **2026-11-20 に測って見送り**（`捨てた案` の section の最後）。
 2. 声もドラムもないときの扱い（測るときだけの問題: AIST 声なし test 63.0 → 57.8%。直すなら手がかり 6 個を 0 でなく dev の平均で埋める、を JSON に持たせる。orecchiante 本体には影響しない）。
-3. 「人が 1 曲を仕上げるまでの時間」の物差し（ROADMAP §5、未着手）。
+3. 「人が 1 曲を仕上げるまでの時間」の物差し（ROADMAP §5）。**2026-11-20 にオーナーと話した:** xsc の M はオーナーが再生しながら手で打った（多くは等速、一部 1.5 倍）＝小節線は何もなくても曲の長さ（の 1/1.5）で済む。**小節線のタイミングは今の動作で問題ない**（気になるのは変拍子だけ、まれ）、**見てほしいのは xsc の section の位置**。コードの正解はない。
+   `scratch/xsc/edits.py [TOL=0.1]`（dev）: section の頭は 1 曲あたり、オーナー 10.2 に対して直す数 7.1（残す 997・1 小節ずらす 77・足す 367・消す 559、141 曲）＝**物差しは section の直しの数（今の exact F と同じ向き）**。小節線は許すずれ 0.05／0.1／0.2 秒で直す数が 54／22／14%（オーナーの打鍵の揺れ）、半分読みの 11 曲は線を 1 本おきに消す（507 本）。
+   **ベースの譜（`F:\Transcribe\Xanadu\Score\Ly`、オーナーが Xanadu で吹く・弾くための .ly と .mid）:** 多くはテナーサックスのパート。`inst Bass` の譜表があるのは 115・All I Want For Christmas Is You・Aoi Sangosho・Bohemian Rhapsody（chordmode のコード名もある）・Christmas Song・How Deep Is Your Love（3 つ）・Uptown Girl・Hello の 8 曲ほど。繰り返し・D.S. があり（`\unfoldRepeats` の MIDI あり）、録音の秒とは揃っていない＝使うなら私たちの小節線と小節の番号で合わせる。xsc と重なるのは All I Want・How Deep・Just The Way（サックス）くらい。元の録音は F:\Music を探す。ベース音の参考（RWC の「ベース音まで」65% の別の物差し）に使える見込み、未着手。
 
 **ドラムの手がかり（0.10.0、README「The drums (0.10.0)」）**
 - 流れ: `Voice.Heard`（`Loudness` は歌だけを返す薄い包み）が vocals と drums を足し合わせ（パートを書かないときは guitar・piano の逆 STFT をやめ drums をする）、drums を 1 標本ずつ `Drums.Add` に流す（1 時間の録音も持たない）→ `Frames`＝[10 ms, 4]（mean square、3 帯域の正のスペクトル流束: 2048 点 numpy の hanning、`log(1+100|X|)`、<200 Hz・<4 kHz・それ以上）。`Reader.DrumBars`／`drum_bars`→`Sections.Drummed`／`drum_cues`。JSON の `"drums": true` のときだけ列が足される（false なら前と同じ 245 列）。ドラムが無い（合成曲、`--voice none`）なら 6 列とも 0。
