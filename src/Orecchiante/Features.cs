@@ -14,7 +14,26 @@ static class Features
     /// brought down in rate first (to a 32nd for the bass), the length rounded up.</summary>
     /// <param name="Cents">How far the recording is from A = 440 Hz, in cents (-50 .. 49): the same pitches as
     /// <paramref name="Tuning"/>'s, placed among the semitones.</param>
-    public sealed record Heard(float[] Onsets, float[] Chroma, float[] Bass, float[] Loudness, double Tuning, double Cents);
+    /// <param name="BassPart">Whether <paramref name="Bass"/> is the separated bass part's (BassOf), not the recording's.</param>
+    public sealed record Heard(float[] Onsets, float[] Chroma, float[] Bass, float[] Loudness, double Tuning, double Cents, bool BassPart = false);
+
+    /// <summary>The bass chroma of the separated bass part (at 22050 Hz), as librosa.feature.chroma_cqt of it from C1
+    /// over two octaves, its tuning its own (0.12.0: the chords' bass notes are heard in it; `orecchiante bass`).</summary>
+    public static float[] BassOf(double[] y)
+    {
+        var spectra = Spectra(y, out _);
+        return Chroma(y, C1, 2, Tuning(spectra).Bins);
+    }
+
+    /// <summary><paramref name="f"/> with the bass chroma of the bass part (BassOf), as long as the recording's.</summary>
+    public static Heard WithBassPart(Heard f, float[] part)
+    {
+        int frames = f.Bass.Length / 12, partFrames = part.Length / 12;
+        var bass = new float[f.Bass.Length];
+        for (int c = 0; c < 12; c++)
+            Array.Copy(part, c * partFrames, bass, c * frames, Math.Min(frames, partFrames));
+        return f with { Bass = bass, BassPart = true };
+    }
 
     /// <param name="y">The recording at 22050 Hz.</param>
     public static Heard Of(double[] y)

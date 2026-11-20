@@ -910,6 +910,30 @@ The vocals the sections hear are six's too (`scratch/net/voice/` holds them; the
   onnxruntime gives the same answer at once and alone. The sections did not change with it before
   (above, "not by chance").
 
+#### The chords' bass notes from the bass part (0.12.0, 2026-11-20)
+
+The bass note under a chord (`F#/A#`) was heard in the recording's own low chroma (two octaves from
+C1), where the other instruments' low notes are too. Since 0.12.0 it is heard in the bass part the
+conversion has just separated (`bass.wav`, before it becomes `bass.flac`): `Features.BassOf`, the same
+chroma of it (librosa's `chroma_cqt`, the part's own tuning), and a bass note that is not the root has
+to be 4 times as loud as the root there (`SLASH_PART`; 2 in the recording's chroma, `SLASH_RATIO`).
+Nothing else changes: the roots and qualities are the ears', and weighing the part's chroma into the
+path (`BASS_WEIGHT` 0.05 to 0.4) read the roots no better (87.4 → 87.4 … 86.7% on `rwc-dev`).
+
+| bass notes right | `rwc-dev` | `rwc-test` (counted once) |
+|---|---|---|
+| the recording's chroma, 2 (0.11.0) | 65.1% | 66.6% |
+| the recording's chroma, 4 | 65.3% | |
+| the part's chroma, 2 | 65.8% | 67.1% |
+| **the part's chroma, 4 (0.12.0)** | **66.2%** | **67.5%** |
+
+(No slash at all is 64.5% on `rwc-dev`; 3 and 6 with the part 66.1%.) To measure: `orecchiante bass
+<a folder of <name>.parts> --out <folder>` writes `<name>.bass.npy` from parts already separated
+(`scratch/parts/rwc`, 100 songs in 18 s), `orecchiante read … --bass <folder>` and `measure.py … --bass
+scratch/bass/chroma` read them (librosa's chroma of the FLAC gives the same table). Without a bass part (the
+songs made here, `orecchiante read` without `--bass`) the reading is 0.11.0's. The part is separated
+with 3 segments at once, so its notes differ a little between two conversions, as the vocals do (above).
+
 
 ### How a chart begins and ends
 

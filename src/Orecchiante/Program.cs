@@ -29,6 +29,11 @@
 //
 // writes <name>.drum.npy (Drums: what the sections hear of the drums) from parts already separated.
 //
+//   orecchiante bass <a folder of <name>.parts folders, or recordings of a bass part> --out <folder>
+//
+// writes <name>.bass.npy (Features.BassOf: the bass part's chroma, where the chords' bass notes are heard) from parts
+// already separated; `read --bass <folder>` and tools/measure.py --bass take them.
+//
 //   orecchiante ears <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--cqt]
 //
 // writes <name>.beats (as tools/track_beats.py does), <name>.npz (as tools/crema_chords.py does), <name>.voc.npy
@@ -50,14 +55,15 @@ using System.Text;
 using Orecchiante;
 using Microsoft.ML.OnnxRuntime;
 
-const string version = "0.11.0";
+const string version = "0.12.0";
 const int protocol = 1;
 const string usage = "usage: orecchiante <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]\n"
                    + "       orecchiante --version [--json]\n"
-                   + "       orecchiante read <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--lines <folder>] [--heard <folder>] [--voice <folder>|none] [--drums <folder>]\n"
+                   + "       orecchiante read <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--lines <folder>] [--heard <folder>] [--voice <folder>|none] [--drums <folder>] [--bass <folder>]\n"
                    + "       orecchiante ears <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--cqt]\n"
                    + "       orecchiante features <a recording or a folder of them> --out <folder>\n"
                    + "       orecchiante drums <a folder of <name>.parts folders, or recordings of drums> --out <folder>\n"
+                   + "       orecchiante bass <a folder of <name>.parts folders, or recordings of a bass part> --out <folder>\n"
                    + "       orecchiante audio <a recording or a folder of them> --out <folder>";
 Console.OutputEncoding = new UTF8Encoding(false);
 if (args.Length > 0 && args[0] == "--version")
@@ -78,7 +84,7 @@ var started = Stopwatch.StartNew();
 double load = 0, mel = 0, beat = 0, cqt = 0, chord = 0, sing = 0, audio = 0, rules = 0;
 InferenceSession? beatModel = null, chordModel = null, btcModel = null;
 InferenceSession[] voiceModels = [];
-string? linesFrom = null, heardFrom = null, voiceFrom = null, drumsFrom = null;     // voiceFrom "none": no singing heard; drumsFrom the same
+string? linesFrom = null, heardFrom = null, voiceFrom = null, drumsFrom = null, bassFrom = null;     // voiceFrom "none": no singing heard; drumsFrom the same
 
 int Fail(int code, string why) { Console.Error.WriteLine("orecchiante: " + why); return code; }
 
@@ -160,6 +166,13 @@ Chart Read(string file, Action<string>? say = null, string? partsTo = null)
         drums = drummed.Frames(out _);
     }
     else (voice, drums) = (From(voiceFrom, name + ".voc.npy"), From(drumsFrom, name + ".drum.npy"));
+    // The chords' bass notes are heard in the separated bass part (0.12.0): the one just written, or --bass's.
+    if (partsTo != null && File.Exists(Path.Combine(partsTo, "bass.wav")))
+    {
+        var (part, partRate) = Audio.Read(Path.Combine(partsTo, "bass.wav"));
+        heard = Features.WithBassPart(heard, Features.BassOf(Resample.To(part, Features.Rate, partRate)));
+    }
+    else if (From(bassFrom, name + ".bass.npy") is { } bassPart) heard = Features.WithBassPart(heard, bassPart);
     high = null;
     low = null!;
     Collect();
@@ -185,7 +198,7 @@ static void DeleteFolder(string path)
     folder.Delete(true);
 }
 
-if (args[0] is not ("read" or "ears" or "features" or "audio" or "drums"))
+if (args[0] is not ("read" or "ears" or "features" or "audio" or "drums" or "bass"))
 {
     // The user's way in, and Lily#'s.
     string? recording = null, chartPath = null, modelsAt = null;
@@ -342,6 +355,22 @@ if (args[0] == "drums")
     return 0;
 }
 
+if (args[0] == "bass")
+{
+    // From parts already separated: a folder of <name>.parts folders (each with bass.flac), or recordings of a bass part.
+    var sources = Directory.Exists(args[1]) && Directory.GetDirectories(args[1], "*.parts").Length > 0
+        ? Directory.GetDirectories(args[1], "*.parts").Order().Select(d => (Path.GetFileName(d)[..^6], Path.Combine(d, "bass.flac"))).Where(s => File.Exists(s.Item2)).ToArray()
+        : files.Select(f => (Path.GetFileNameWithoutExtension(f), f)).ToArray();
+    foreach (var (name, file) in sources)
+    {
+        var (mono, rate) = Audio.Read(file);
+        var chroma = Features.BassOf(Resample.To(mono, Features.Rate, rate));
+        Npy.Write(Path.Combine(output, name + ".bass.npy"), chroma, 12, chroma.Length / 12);
+    }
+    Console.WriteLine($"{sources.Length} bass parts in {started.Elapsed.TotalSeconds:F1} s");
+    return 0;
+}
+
 if (args[0] == "features")
 {
     foreach (var file in files)
@@ -364,7 +393,7 @@ if (args[0] == "features")
     return 0;
 }
 
-if (args[0] == "read") { linesFrom = Option("--lines"); heardFrom = Option("--heard"); voiceFrom = Option("--voice"); drumsFrom = Option("--drums"); }
+if (args[0] == "read") { linesFrom = Option("--lines"); heardFrom = Option("--heard"); voiceFrom = Option("--voice"); drumsFrom = Option("--drums"); bassFrom = Option("--bass"); }
 Open(Option("--models") ?? AppContext.BaseDirectory, int.Parse(Option("--threads") ?? "8"), linesFrom == null, heardFrom == null, voiceFrom == null);
 Console.WriteLine($"start and open the models: {started.Elapsed.TotalSeconds:F2} s");
 

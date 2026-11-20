@@ -56,6 +56,8 @@ TIGHTNESS = 100         # how strictly the beat tracker keeps its tempo (librosa
 TEMPO_RATIOS = (2 / 3, 3 / 2)   # the other beats tried: half as fast again, and a third slower
 SLIDE = 0.07            # a beat this much longer or shorter than the rest is the tracker changing its mind
 SLASH_RATIO = 2.0       # a bass note that is not the root has to be this much louder than it
+SLASH_PART = 4.0        # the same, heard in the separated bass part (features' "basspart", 0.12.0): rwc-dev's bass notes
+                        # 65.1% (the mix, 2.0) -> 65.8% (the part, 2.0) -> 66.2% (the part, 4.0); the mix at 4.0 65.3%
 
 # The prices of the path, in the unit of the fit: one second of a chord that fits perfectly is 1.
 STAY_COST = 0.20        # a bar line the chord does not change at
@@ -1416,6 +1418,13 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
     ears = heard is not None
     f = f or features(path)
     oenv, chroma, bass, rms = f["oenv"], f["chroma"], f["bass"], f["rms"]
+    slash_ratio = SLASH_RATIO
+    if f.get("basspart") is not None:   # the bass part's own chroma (orecchiante bass): the bass notes are its
+        part = np.asarray(f["basspart"], dtype=np.float32)
+        bass = np.zeros_like(bass)
+        n = min(bass.shape[1], part.shape[1])
+        bass[:, :n] = part[:, :n]
+        slash_ratio = SLASH_PART
     if lines is not None:
         marks = np.asarray(lines, dtype=float) * SR / HOP + BEAT_LAG
         marks = marks[marks < len(oenv)]
@@ -1576,7 +1585,7 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
             vb = unit(over(bass, a, a + (b - a) / 4, np.median))
             lowest = int(np.argmax(vb))
             tones = [(root + i) % 12 for i in QUALITIES[quality]]
-            slash = lowest != root and lowest in tones and vb[lowest] > SLASH_RATIO * vb[root]
+            slash = lowest != root and lowest in tones and vb[lowest] > slash_ratio * vb[root]
             fit = float(np.mean(TEMPLATES[path[t][1]] @ treble[:, t:end]))
             chord = {
                 "start": stamp(a), "end": stamp(b),

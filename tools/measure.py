@@ -109,6 +109,26 @@ NET = None            # --net: a folder of what `orecchiante features` wrote, a 
 
 
 def feats(wav):
+    """The features of a recording, with --bass the bass part's chroma beside them (bass_part)."""
+    f = own_feats(wav)
+    b = bass_part(wav)
+    if b is not None:
+        f = dict(f)
+        f["basspart"] = b
+    return f
+
+
+def bass_part(wav):
+    """The chroma of the separated bass part (--bass: <recording>.bass.npy, orecchiante bass), or None."""
+    if not BASS:
+        return None
+    for path in (BASS / wav.parent.name / (wav.stem + ".bass.npy"), BASS / (wav.stem + ".bass.npy")):
+        if path.exists():
+            return np.load(path)
+    return None
+
+
+def own_feats(wav):
     """The features of a recording, kept between runs. Sets that share song names (the same seed
     through another sound font) are told apart by the folder above the set's. With --net, the
     features are orecchiante.exe's instead (src/Orecchiante): <folder>/<the recordings' folder>/<name>.feat.npz."""
@@ -131,6 +151,7 @@ def feats(wav):
 READ = None           # --read: a folder of what `orecchiante read` wrote, a folder a set (scratch/net/read)
 VOICE = None          # --voice: a folder of <recording>.voc.npy (orecchiante ears), a folder a set or all in one
 DRUMS = None          # --drums: a folder of <recording>.drum.npy (orecchiante drums or ears), the same
+BASS = None           # --bass: a folder of <recording>.bass.npy (orecchiante bass), the same
 
 
 def voice_of(wav):
@@ -611,6 +632,8 @@ def main():
                                                   "(orecchiante ears), with a folder a set or not (scratch/net)")
         s.add_argument("--drums", type=Path, help="with --ears: the drums for the sections, a folder of <recording>.drum.npy "
                                                   "(orecchiante drums or ears), with a folder a set or not (scratch/drum)")
+        s.add_argument("--bass", type=Path, help="the bass chroma of the separated bass part, in place of the mix's: a folder of "
+                                                 "<recording>.bass.npy (orecchiante bass), with a folder a set or not (scratch/bass/chroma)")
         return s
 
     s = reader(sub.add_parser("table", help="read and score: one line a set"))
@@ -672,8 +695,8 @@ def main():
     if args.what == "keys":
         return keys(args.sets, args.verbose)
 
-    global NET, READ, VOICE, DRUMS
-    NET, READ, VOICE, DRUMS = args.net, args.read, args.voice, getattr(args, "drums", None)
+    global NET, READ, VOICE, DRUMS, BASS
+    NET, READ, VOICE, DRUMS, BASS = args.net, args.read, args.voice, getattr(args, "drums", None), getattr(args, "bass", None)
     if READ and not getattr(args, "ears", False):
         sys.exit("--read needs --ears: orecchiante.exe reads with the models trained on recordings")
     model = None if args.rules else args.model

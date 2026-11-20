@@ -2,6 +2,12 @@
 
 Notable changes to Orecchiante (Dettato until 0.10.2) are recorded here, newest first.
 
+## 0.12.0
+
+- The bass note under a chord (`F#/A#`) is heard in the separated bass part, not in the whole
+  recording's low notes: on RWC's songs the bass notes are right a point more often (65.1 → 66.2%
+  and 66.6 → 67.5%). The chords' roots are as before.
+
 ## 0.11.0
 
 - Dettato is now Orecchiante (Italian for one who plays by ear): another project had published a

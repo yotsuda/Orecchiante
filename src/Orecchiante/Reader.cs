@@ -60,6 +60,7 @@ static class Reader
 
     const double BeatLag = 2.0;             // frames by which the onset strength peaks after the sound begins
     const double SlashRatio = 2.0;          // a bass note that is not the root has to be this much louder than it
+    const double SlashPart = 4.0;           // the same, heard in the separated bass part (Features.BassPart, 0.12.0)
     // The prices of the path that go with a model trained on recordings (read_chords.py's use_ears)
     const double StayCost = 0.1, MidCost = 0.1, ElseCost = 0.25, EmitScale = 0.2;
     const double LogFloor = -8.0;
@@ -686,7 +687,7 @@ static class Reader
                 int lowest = 0;
                 for (int c = 1; c < 12; c++) if (vb[c] > vb[lowest]) lowest = c;
                 bool tone = Intervals[quality].Any(i => (root + i) % 12 == lowest);
-                bool slash = lowest != root && tone && vb[lowest] > (float)SlashRatio * vb[root];
+                bool slash = lowest != root && tone && vb[lowest] > (float)(f.BassPart ? SlashPart : SlashRatio) * vb[root];
 
                 var fits = new double[Chords][];        // this reader's own hearing of each chord in each unit
                 for (int j = 0; j < Chords; j++)
