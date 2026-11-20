@@ -54,7 +54,7 @@
 
 ## 次の一手
 
-**改名（2026-11-20、オーナー決定）: Dettato → Orecchiante 0.11.0**（同名の kobimusic/dettato が 11-16 に公開されていた。ROADMAP「名前」）。exe・拡張 ID `yotsuda.orecchiante`・`<stem>.orecchiante.json`（鍵 `"orecchiante"`）・`ORECCHIANTE_*`。古い `.dettato.json` は読まない（オーナーの PC にしかない）。read_check 368/368、vsix は作れる。**VS Code には未導入**: Lily# が新しい名前で探すまで入れない＝**依頼 20**（`docs/repro/lilysharp-requests-2026-11-20-rename.md`）。Lily# が fixed にしたら: `yotsuda.dettato` を外す → `tools/deploy-extension.ps1` → Lily# から変換して確かめる → 依頼 20 を done → フォルダを `C:\MyProj\Orecchiante` に変える（新しい会話から。下の作業メモのパスは置換済みで、フォルダ名を変えるまでは今の `C:\MyProj\Dettato`）→ オーナーが `yotsuda/Orecchiante` を作って push。docs/repro と CHANGELOG の過去の版は Dettato のまま。
+**改名（2026-11-20、オーナー決定）: Dettato → Orecchiante 0.11.0、済み**（同名の kobimusic/dettato が 11-16 に公開されていた。ROADMAP「名前」）。exe・拡張 ID `yotsuda.orecchiante`・`<stem>.orecchiante.json`（鍵 `"orecchiante"`）・`ORECCHIANTE_*`。古い `.dettato.json` は読まない。Lily# は依頼 20（2ce9d2381、内部名まで）。`yotsuda.dettato` は外し、入っている exe で変換を確かめた。フォルダは `C:\MyProj\Orecchiante`（scratch のスクリプトのパスも直した。scratch の古い venv の activate.bat は旧パスのまま）。**残り: Lily# の画面からの変換をオーナーが確かめる、オーナーが `yotsuda/Orecchiante` を作って push。** docs/repro と CHANGELOG の過去の版は Dettato のまま。
 
 **オーナーに 0.10.0〜0.10.2 を試してもらう**（0.10.2: コードの行の名前を `harmony` → `prog`＝Lily# の新しい譜面のひな形と同じ、オーナー決定 2026-11-20。`Writer.cs`・`read_chords.py`・README。合成曲の正解 `.lys` と `gen_chords.py` は `harmony` のまま。read_check 368/368。VS Code を Reload して、Lily# の変換メニューから。section の切れ目がドラムで変わる。糸は 21・44 を拾い 17 を落とす、My Life・Open Arms は 0.9.0 と同じ）。その後の候補（私の勧め順）:
 1. **小節を半分で読む曲の section**（`errs.py`: dev 11 曲が 34.4%＝誤りの 11%。秒では見分けられない＝小節の読みの問題。Beat This! が半分のテンポで追う＝C4 と同じ根）。

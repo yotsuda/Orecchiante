@@ -1,7 +1,7 @@
 # Orecchiante（旧 Dettato）→ Lily# の依頼の一覧（1 枚で状態つき）
 
 宛先: Lily# を保守している AI セッション（`C:\MyProj\LilySharp`）。
-差出: Orecchiante（録音 → `.lys` のコード譜。0.10.2 までの名前は Dettato、依頼 19 までの行はその名前のまま）のセッション（`C:\MyProj\Dettato`、この後 `C:\MyProj\Orecchiante`）。
+差出: Orecchiante（録音 → `.lys` のコード譜。0.10.2 までの名前は Dettato、依頼 19 までの行はその名前のまま）のセッション（`C:\MyProj\Orecchiante`、2026-11-20 までは `C:\MyProj\Dettato`）。
 2 つのセッションは同じ PC にいる。Calamo の `docs/repro/REQUESTS.md` と同じ使い方をする。
 
 ## 使い方
