@@ -1,6 +1,6 @@
 param(
     [string]$Out = "$PSScriptRoot\..\out\extension",   # the staging folder and the .vsix
-    [string]$Models = "$PSScriptRoot\..\scratch\d2"    # where the four .onnx are (README: how they are made)
+    [string]$Models = "$PSScriptRoot\..\onnx"          # where the four .onnx are: in the repository (README: how they are made)
 )
 # The reader as a VS Code extension (docs/ROADMAP.md, D2 and D4; the shape is Calamo's): orecchiante.exe
 # published self-contained for win-x64 into extension/bin, the three models beside it (where the program

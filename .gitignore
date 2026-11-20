@@ -35,6 +35,9 @@ venv/
 # Models are never committed: they are large, and most are not ours.
 models/
 *.onnx
+# ...but the four the reader runs, which the extension carries (the owner, 2026-11-20: in the repository;
+# README, "Without torch and TensorFlow", says how each is made in scratch/d2)
+!onnx/*.onnx
 *.onnx.data
 *.pt
 *.pth

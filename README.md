@@ -1098,7 +1098,9 @@ pickup alone.
 A chart now takes three Python environments (3.7 GB: torch for Beat This!, TensorFlow for crema,
 librosa for the reader). Measured on 2026-11-14, for the choice of what to ship (a Python
 command, or a .NET one as Lily#'s and Calamo's are); nothing is chosen yet. The scripts are in
-`tools/d2/`, what they write in `scratch/d2/`.
+`tools/d2/`, what they write in `scratch/d2/`. The four the reader runs (`beat-this-final0-dynamo`,
+`crema-chord`, `btc-large-voca`, `htdemucs_6s-mm8`) are committed in `onnx/`, which the extension is
+packed from (the owner, 2026-11-20): a model made again goes there by hand.
 
 **Both models run in onnxruntime and say the same.**
 
@@ -1761,7 +1763,7 @@ What it gives another extension is the reader's path and its `--version --json` 
 written when the package is made). The package is 113 MB (the beat model is 83 MB of it).
 
 ```
-tools/pack-extension.ps1       # out/extension/orecchiante-win32-x64-<version>.vsix (the models from scratch/d2)
+tools/pack-extension.ps1       # out/extension/orecchiante-win32-x64-<version>.vsix (the models from onnx/)
 tools/deploy-extension.ps1     # packs, and installs it into this PC's VS Code; publishes nothing
 ```
 
