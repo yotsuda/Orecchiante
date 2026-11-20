@@ -903,7 +903,7 @@ def head_cues(fam, heads):
     return np.array([[count(i, 8), count(i, 4), count(i - 1, 8), count(i + 1, 8)] for i in range(n)])
 
 
-def align_heads(fam, score, cuts, redo, length=8):
+def align_heads(fam, score, cuts, redo, length=8, wide=1):
     """The heads of one tune put in line (0.13.0; 今宵の月のように: C, C2, E and E2 are one tune, its heads all where the
     singing comes in and the chords change). Two heads whose `length` bars are alike in just one way of three (as they
     are, or with the later one a bar earlier or later) are tied, and the tie says how far apart their shifts must be; a
@@ -917,8 +917,11 @@ def align_heads(fam, score, cuts, redo, length=8):
         for b in heads:
             if b <= a or b - a < length:
                 continue
-            ways = [o for o in (-1, 0, 1) if phrase_alike(fam, a, b + o, length)]
-            if len(ways) == 1:
+            # wide (0.13.1, the model's "align_wide"; the second reading's 4): no tie when the bars are alike at another
+            # offset too, out to this many bars (今宵の月のように's last section: the 2-bar riff of B is alike a bar late
+            # and 3 bars late, which is the real one)
+            ways = [o for o in range(-wide, wide + 1) if phrase_alike(fam, a, b + o, length)]
+            if len(ways) == 1 and abs(ways[0]) <= 1:
                 edges[a].append((b, ways[0]))
                 edges[b].append((a, -ways[0]))
     shift, seen = {}, set()
@@ -1203,7 +1206,7 @@ def phrase_sections(keys, turns, tonic, mode, phrase=4, sings=frozenset(), begin
             score = np.round(rows @ np.array(model["weights"]) + model["bias"], 9)   # rounded: the same in .NET, whatever order it adds in
             redo = lambda s: choose_cuts(s, again=again, model=model)
             cuts = redo(score)
-            return align_heads(fam, score, cuts, redo) if model.get("align") else cuts
+            return align_heads(fam, score, cuts, redo, wide=int(model.get("align_wide", 1))) if model.get("align") else cuts
 
         model = dp_model()
         first = [0] + chosen(model["pass1"]) if "pass1" in model else None   # 0.13.0: a first reading, whose heads head_cues sees

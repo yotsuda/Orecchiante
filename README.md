@@ -702,6 +702,28 @@ cut had them; 0.10.0 cut at 40 and 51, and at 69 too), My Life misses 53 and
 151 (105 found) with 8 added as before, Open Arms finds all with 43 and 93 added as before.
 `read_check.py` 368/368 (`scratch/sec/check13.ps1`).
 
+**0.13.1 (the owner, 2026-11-20: 今宵's 9, 80 and 49 are right, 糸 is better without 17, 40 and 51; the
+last section of 今宵 begins at 105).** 106 came from `align_heads`: B's 2-bar riff (G F G F …) makes
+the 8 bars from 106 (B Em, A D, G, F, G …) alike B's at 16 and 56 a bar off, so 105 was tied to them
+and moved; the bars are alike 3 bars off too (from 108, the riff itself). A tie now needs the 8 bars
+to be alike at only one offset out to ±4 (`align_wide` 4 in the JSON, the second reading's model;
+the first reading keeps ±1). In five folds (three orders, the first readings as before) 68.2 →
+68.4% (±2 and ±3: 68.1%, ±5: 68.0%, ±7: 68.4%: noise); with the first reading ±4 too, 67.8%, so only
+the second. Refitted with λ and off held at 0.13.0's (refitting them chose off −2.0, which reads
+more heads: `dev` 71.6%, and on `test` 72.5%, but 糸 gains 36, 51 and 67 and 今宵 40; chosen on `dev`
+and the owner's songs before `test` was seen for it):
+
+| Section starts | 0.13.0 | 0.13.1 |
+|---|---|---|
+| owner's `.xsc`, `test`, exact / near | 71.0 / 75.1% | 70.7 / 74.9% (read 1307) |
+| owner's `.xsc`, `dev`, exact | 71.5% | 71.5% |
+| AIST `rwc-dev`, 3 s / 0.5 s | 77.5 / 61.7% | 77.5 / 61.7% |
+| AIST `rwc-test`, 3 s / 0.5 s | 73.3 / 53.2% | 73.5 / 53.3% |
+
+今宵の月のように all 13 heads right (1 9 16 24 32 49 56 64 72 80 89 97 105); 糸 all 7 of the owner's
+heads now (1 9 21 28 32 44 59) with none added; My Life and Open Arms as 0.13.0. `read_check.py`
+368/368.
+
 To see whether that is what a section means beyond two songs, the section starts are counted
 against AIST's structure annotation of RWC-P (intro, verse A, chorus …; [DATASETS.md](docs/DATASETS.md)),
 leaving out boundaries between two sections of the same label (chorus A, chorus A), by

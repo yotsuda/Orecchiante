@@ -2,6 +2,12 @@
 
 Notable changes to Orecchiante (Dettato until 0.10.2) are recorded here, newest first.
 
+## 0.13.1
+
+- A section after a riff that repeats every two bars is no longer moved a bar late to line up with
+  that riff (今宵の月のように's last section). Repeats are lined up only when their chords match at
+  a single offset.
+
 ## 0.13.0
 
 - Sections line up with the tune: a section that begins as another one begins (the same chords

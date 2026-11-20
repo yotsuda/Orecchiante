@@ -14,7 +14,7 @@ static class Sections
     /// <param name="Onset">0.13.0: OnsetCues weighed too; <paramref name="Headmatch"/>: HeadCues of the heads of
     /// <paramref name="Pass1"/>'s reading; <paramref name="Align"/>: AlignHeads; <paramref name="Plus1"/>: Choose's one bar more.</param>
     sealed record Model(double Lam, double Off, double Mu, int Neighbours, double Bias, double[] Weights, Dictionary<int, int> Lengths, bool Drums,
-        bool Onset, bool Headmatch, bool Align, bool Plus1, double Plus1Cost, Model? Pass1);
+        bool Onset, bool Headmatch, bool Align, bool Plus1, double Plus1Cost, Model? Pass1, int AlignWide = 1);
 
     static Model Read(JsonElement r)
     {
@@ -25,7 +25,8 @@ static class Sections
             r.GetProperty("lengths").EnumerateObject().ToDictionary(p => int.Parse(p.Name), p => p.Value.GetInt32()),
             Flag(r, "drums"), Flag(r, "onset"), Flag(r, "headmatch"), Flag(r, "align"), Flag(r, "plus1"),
             r.TryGetProperty("plus1_cost", out var c) ? c.GetDouble() : 0.0,
-            r.TryGetProperty("pass1", out var p) ? Read(p) : null);
+            r.TryGetProperty("pass1", out var p) ? Read(p) : null,
+            r.TryGetProperty("align_wide", out var w) ? w.GetInt32() : 1);
     }
 
     static readonly Lazy<Model> model = new(() =>
@@ -57,7 +58,7 @@ static class Sections
             }
             List<int> Redo(double[] s) => Choose(s, md, again);
             var cuts = Redo(score);
-            return md.Align ? AlignHeads(fam, score, cuts, Redo) : cuts;
+            return md.Align ? AlignHeads(fam, score, cuts, Redo, wide: md.AlignWide) : cuts;
         }
         List<int>? first = m.Pass1 is { } p1 ? [0, .. Chosen(p1, null)] : null;
         return Chosen(m, first);
@@ -274,8 +275,9 @@ static class Sections
         return rows;
     }
 
-    /// <summary>The heads of one tune put in line (read_chords.align_heads), in its order of looking.</summary>
-    static List<int> AlignHeads(int[][] fam, double[] score, List<int> cuts, Func<double[], List<int>> redo, int length = 8)
+    /// <summary>The heads of one tune put in line (read_chords.align_heads), in its order of looking. <paramref name="wide"/>
+    /// (0.13.1, the model's align_wide): no tie when the bars are alike at another offset too, out to this many.</summary>
+    static List<int> AlignHeads(int[][] fam, double[] score, List<int> cuts, Func<double[], List<int>> redo, int length = 8, int wide = 1)
     {
         int n = fam.Length;
         var heads = new SortedSet<int>(cuts.Prepend(0)).ToList();
@@ -284,8 +286,8 @@ static class Sections
             foreach (int b in heads)
             {
                 if (b <= a || b - a < length) continue;
-                var ways = new[] { -1, 0, 1 }.Where(o => Alike(fam, a, b + o, length)).ToList();
-                if (ways.Count == 1) { edges[a].Add((b, ways[0])); edges[b].Add((a, -ways[0])); }
+                var ways = Enumerable.Range(-wide, 2 * wide + 1).Where(o => Alike(fam, a, b + o, length)).ToList();
+                if (ways.Count == 1 && Math.Abs(ways[0]) <= 1) { edges[a].Add((b, ways[0])); edges[b].Add((a, -ways[0])); }
             }
         var shift = new Dictionary<int, int>();
         var shiftOrder = new List<int>();
