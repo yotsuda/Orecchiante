@@ -78,6 +78,8 @@
 - 物差しの直し（`scratch/xsc/`）: `mixes.py` → `mixprep.ps1`（wav・耳・パート）→ `swapmix.py [--undo]`（`truth-stems.json` が元）→ `capture.py`。x093（Stayin' Alive）はパートのまま。パートは `scratch/xsc/parts/<id>.parts/*.flac`（289 曲）、ドラムの特徴は `scratch/drum/{xsc,rwc-p,sec}/`（`sec` の arms は `orecchiante ears` の、ito・mylife はパートの flac から）。
 - **FLAC の直し**（0.10.0 に入れた）: 先に Media Foundation を 1 回始め、拒まれたパートは 1 本ずつ作り直す。原因の確証はない。**0.10.1: OneDrive の中で変換し直すと「….parts is denied」**（オーナー、糸）＝OneDrive はフォルダに ReadOnly を付け、.NET は読み取り専用のフォルダを消せない。`DeleteFolder` が印を外して消し、古いパートは `.parts.old` に退けて新しいのが入ってから消す（失敗したら戻す）。scratch で ReadOnly を付けて再現→直ったのを確かめた。オーナーの `Transcribe!\source\糸 (Bank Band).parts` は失敗で空になっている（変換し直せば戻る）。
 
+**今宵の月のように（2026-11-20 オーナー、0.12.0 の変換: `C:\Users\ytsud\OneDrive\Documents\Transcribe!\source\今宵の月のように.mp3`）: 「E・E2 の頭が 1 小節早い（66・74 が正しい）。ほかは上手に切れている」。** Python で同じ form を再現（`scratch/sec/koyoi/look.py <wav> <ears> [FROM= TO=] [PAIRS=65-66,73-74]`、耳は `orecchiante ears` で `scratch/sec/koyoi/ears`）。65・73 が勝つ主因は歌の立ち上がり（`sung up`: 歌の割合 64→65 が 0.41→0.96、72→73 が 0.52→0.96＝歌が丸 1 小節前から入る）、点差 1.23・0.83。dev で 1 小節早い頭は 24（遅い 28）、うち歌が前の小節から入る形は 5 曲ほど（`scratch/xsc/early.py`）。小節の 4 分の 1 ごとの歌（`VQ`）は前に試して平均で効かなかった＝この曲だけの規則は入れていない（オーナーに報告）。
+
 **section をまとめて選ぶ `SECTION_DP`（2026-11-19、0.9.0 で Python と .NET の既定。`SECTION_DP = 0`／`Form.SectionDp = false` で前の規則の切れ目）。.NET は `Sections.cs`、`Form.Phrases` が `WHY` を記録して呼ぶ。`read_check.py` 368/368（RWC 歌つき 100・歌なし 100、合成曲 7 セット 168）。**
 - 仕組み: 小節線ごとに手がかり 35 個＝`section_cues`（今の規則がそこで切った理由 `WHY`、歌の出入り、4・8 小節の句の繰り返しと再演、主和音・属和音・保った和音、歌の割合）26 個＋`audio_cues`（前後 2・4 小節の音量・鳴る音・和音の違い）9 個、を
   **前後 3 小節ぶんも並べて（245 個）**ロジスティック回帰（C=0.1）で点数にし、`choose_cuts` が動的計画法で選ぶ: 切れ目の点数 − off ＋ λ×log（オーナーの section の長さの分布）＋ μ×（その区間が同じ長さで別の所でも鳴る、`played_again`）。
