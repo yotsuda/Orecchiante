@@ -754,6 +754,23 @@ owner cuts). `scratch/novoice/aist_fill.py` tries other values (`UNHEARD=`, `OFF
 
 With the voice nothing changes (78.7 / 75.1%). `read_check.py` 368/368 (`scratch/sec/check13.ps1`).
 
+**The edits a draft leaves (2026-11-21).** What is worth measuring is the time a person takes to
+finish a song, not F (ROADMAP §5). The owner placed the `.xsc` markers by hand while the song
+played, so from scratch every mark costs about the song's length; what a draft can save is the
+marks to touch. `scratch/xsc/edits.py HEADS=<eval.py's got.json> [--test]` counts them: a section
+head one bar off is one move, the rest are adds and deletes (the first bar left out). Bar lines
+are not the question (the owner: they are right as they are, only a change of meter would need a
+hand; of the owner's 16410 bar lines on `dev`, 53 / 18 / 9% are to touch at 0.05 / 0.1 / 0.2 s,
+most of them moves within the owner's own tapping).
+
+| Section heads per song | owner from scratch | to touch, 0.10.0 model | to touch, 0.13.2 | songs with 0 / 1–2 / 3–5 / 6–10 / more |
+|---|---|---|---|---|
+| `dev` (141, chosen on) | 10.2 | 7.1 (median 7) | **6.0** (median 6; move 57, add 251, delete 533) | 11 / 19 / 38 / 47 / 26 |
+| `test` (137, counted once) | 11.2 | | **5.5** (median 5; move 71, add 372, delete 310) | 10 / 27 / 43 / 39 / 18 |
+
+The count moves with exact F (it is the owner's heads plus ours less twice those that agree, less
+the moves), so choosing on F already chooses on it.
+
 To see whether that is what a section means beyond two songs, the section starts are counted
 against AIST's structure annotation of RWC-P (intro, verse A, chorus …; [DATASETS.md](docs/DATASETS.md)),
 leaving out boundaries between two sections of the same label (chorus A, chorus A), by
