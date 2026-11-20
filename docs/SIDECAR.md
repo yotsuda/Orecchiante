@@ -156,7 +156,10 @@ The file is the reading as it was written; nothing rewrites it.
   the n-th of `bars` (the owner, 2026-11-16: a chart being cut into sections or mended bar by bar is
   still to be heard to its end; before 2026-11-16 this said not to play at all). The bars after the
   one added or taken out are then a bar off, which the person is in the middle of putting right.
-  Lining the two up again is not built.
+  Lining the two up again is not built, with one exception: Lily#'s Join Bars in Pairs (request 21,
+  2026-11-21, for a chart read at half the bar's length) joins two bars of the chart into one and
+  the same two of `bars` in the same edit (the first's `start`, the second's `end`, every other
+  beat, the chords side by side, the bars numbered again), writing the file in Lily#'s format 2.
 - `symbol`, `sure` and `other` are the reader's, not the corrected chart's.
 
 ## What is not in it
