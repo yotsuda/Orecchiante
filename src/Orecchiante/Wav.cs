@@ -1,4 +1,4 @@
-namespace Dettato;
+namespace Orecchiante;
 
 static class Wav
 {
@@ -46,7 +46,7 @@ static class Wav
         throw new InvalidDataException("no samples: " + path);
     }
 
-    /// <summary>One channel as a 32-bit float .wav (`dettato audio`: what the reader heard of a recording).</summary>
+    /// <summary>One channel as a 32-bit float .wav (`orecchiante audio`: what the reader heard of a recording).</summary>
     public static void Write(string path, double[] mono, int rate)
     {
         using var w = new BinaryWriter(File.Create(path));

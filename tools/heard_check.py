@@ -2,7 +2,7 @@
 
     python tools/heard_check.py <folder of *.heard.wav> <the file to compare with, e.g. song.wav>
 
-`dettato audio <folder> --out <folder>` writes the .heard.wav. For each other file of the same rate: how many
+`orecchiante audio <folder> --out <folder>` writes the .heard.wav. For each other file of the same rate: how many
 samples later the same sound comes (the peak of the cross-correlation over the first 30 seconds), and how much
 of it differs once that is taken out (the difference's energy against the sound's, in dB).
 """

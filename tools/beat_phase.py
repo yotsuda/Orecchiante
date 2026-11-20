@@ -1,8 +1,8 @@
 """Do a chart's beats keep step with the recording to its end? Every four bars, the grid of eighth notes
-the .dettato.json's beats make is moved up to half an eighth either way, to where the recording's onsets
+the .orecchiante.json's beats make is moved up to half an eighth either way, to where the recording's onsets
 fit it best (Lily#'s REQUESTS 15: the beats of My Life fell 2.4 ms a second behind the music).
 
-  .venv/Scripts/python tools/beat_phase.py <recording> <x.dettato.json> [--scale K]
+  .venv/Scripts/python tools/beat_phase.py <recording> <x.orecchiante.json> [--scale K]
 
 Prints the best shift (ms; minus: the music is earlier) along the song, and the slope of a line through
 them (ms a second). --scale K divides every time of the chart by K first.

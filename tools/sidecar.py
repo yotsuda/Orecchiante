@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Checks .dettato.json files against docs/SIDECAR.md, and against the chart beside each.
+"""Checks .orecchiante.json files against docs/SIDECAR.md, and against the chart beside each.
 
-    py tools/sidecar.py scratch/read/seed1            # every <name>.dettato.json of a folder
-    py tools/sidecar.py song.dettato.json --no-lysc   # the file alone
+    py tools/sidecar.py scratch/read/seed1            # every <name>.orecchiante.json of a folder
+    py tools/sidecar.py song.orecchiante.json --no-lysc   # the file alone
 
 What is checked of a file: every item is there and is what the specification says; the bars are
 numbered in the order they are played and follow one another in time; the chords of a bar fill it;
 the sections and the form say the same as the bars do.
 
-What is checked against the chart (<name>.lys beside the file, through `lysc midi`; DETTATO_LYSC
+What is checked against the chart (<name>.lys beside the file, through `lysc midi`; ORECCHIANTE_LYSC
 names lysc): Lily# plays as many bars as the file has, its repeats played (a chart may write a bar
 once between repeat signs that is played twice). The n-th bar Lily# plays is the n-th of
 `bars`: that is how an editor finds the seconds of the bar the caret is in.
@@ -33,12 +33,12 @@ JOIN = 0.001            # seconds two times that should be one may differ by (th
 
 
 def faults(doc):
-    """What is wrong with a .dettato.json, as sentences; none when it is as docs/SIDECAR.md says."""
+    """What is wrong with a .orecchiante.json, as sentences; none when it is as docs/SIDECAR.md says."""
     said = []
     wrong = said.append
     number = lambda v: isinstance(v, (int, float)) and not isinstance(v, bool)
-    if doc.get("dettato") != FORMAT:
-        return [f'"dettato" is {doc.get("dettato")!r}: this checks format {FORMAT}']
+    if doc.get("orecchiante") != FORMAT:
+        return [f'"orecchiante" is {doc.get("orecchiante")!r}: this checks format {FORMAT}']
     if not isinstance(doc.get("audio"), str) or not doc["audio"] or "\\" in doc["audio"] or doc["audio"].endswith("/"):
         wrong('"audio" is not a file name, or a way to one parted by "/"')
     if not number(doc.get("duration")) or doc["duration"] <= 0:
@@ -193,7 +193,7 @@ def lysc_bars(charts):
     {chart: bars}. `charts`: {chart: (its time, its pickup's beats or 0)}. Through `lysc midi
     --batch`, a few processes at once: the bars are as many as the chords last, the pickup's beats
     and then whole bars. A chart Lily# cannot play is not in it."""
-    lysc = os.environ.get("DETTATO_LYSC", "lysc")
+    lysc = os.environ.get("ORECCHIANTE_LYSC", "lysc")
     listed = [(Path(c).resolve(), told) for c, told in charts.items()]
     workers = max(1, min(os.cpu_count() or 4, 8, len(listed) // 20 or 1))
     found = {}
@@ -227,7 +227,7 @@ def check(files, lysc=True):
     returns how many files are."""
     docs = {Path(f): json.loads(Path(f).read_text(encoding="utf-8")) for f in files}
     wrong = {f: faults(doc) for f, doc in docs.items()}
-    charts = {f: f.with_name(f.name[:-len(".dettato.json")] + ".lys") for f in docs}
+    charts = {f: f.with_name(f.name[:-len(".orecchiante.json")] + ".lys") for f in docs}
     told = "the specification"
     if lysc:
         there = {f: c.resolve() for f, c in charts.items() if c.exists()}
@@ -252,12 +252,12 @@ def check(files, lysc=True):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    p.add_argument("input", type=Path, nargs="+", help="a .dettato.json, or a folder of them")
+    p.add_argument("input", type=Path, nargs="+", help="a .orecchiante.json, or a folder of them")
     p.add_argument("--no-lysc", action="store_true", help="do not ask Lily# how many bars the chart beside each file plays")
     args = p.parse_args()
-    files = [f for path in args.input for f in (sorted(path.glob("*.dettato.json")) if path.is_dir() else [path])]
+    files = [f for path in args.input for f in (sorted(path.glob("*.orecchiante.json")) if path.is_dir() else [path])]
     if not files:
-        sys.exit("no .dettato.json")
+        sys.exit("no .orecchiante.json")
     sys.exit(1 if check(files, lysc=not args.no_lysc) else 0)
 
 

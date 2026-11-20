@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Two ears for the chords (the owner, 2026-11-16): crema's and BTC's probabilities, averaged, BTC's frames brought to
-crema's (each crema frame takes the BTC frame its middle falls in). What dettato does inside (Btc.cs, Program.cs);
+crema's (each crema frame takes the BTC frame its middle falls in). What orecchiante does inside (Btc.cs, Program.cs);
 the files are what read_chords.py --ears and measure.py --ears crema+btc read.
 
     py -3.12 tools/two_ears.py scratch/chords-crema/seed1 scratch/chords-btc/seed1 --out scratch/chords-crema+btc/seed1

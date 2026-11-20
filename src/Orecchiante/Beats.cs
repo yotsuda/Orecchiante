@@ -2,7 +2,7 @@ using System.Globalization;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 
-namespace Dettato;
+namespace Orecchiante;
 
 /// <summary>The beats and bar lines of a recording as Beat This! hears them: 22050 Hz -> log mel -> the model
 /// (ONNX) -> peaks. What tools/track_beats.py does with torch, and tools/d2/ears_onnx.py with numpy.</summary>

@@ -4,9 +4,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>Dettato</RootNamespace>
-    <!-- dettato.exe in development as in an extension's bin (as calamo.exe is) -->
-    <AssemblyName>dettato</AssemblyName>
+    <RootNamespace>Orecchiante</RootNamespace>
+    <!-- orecchiante.exe in development as in an extension's bin (as calamo.exe is) -->
+    <AssemblyName>orecchiante</AssemblyName>
     <InvariantGlobalization>true</InvariantGlobalization>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>

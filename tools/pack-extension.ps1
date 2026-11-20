@@ -2,9 +2,9 @@ param(
     [string]$Out = "$PSScriptRoot\..\out\extension",   # the staging folder and the .vsix
     [string]$Models = "$PSScriptRoot\..\scratch\d2"    # where the four .onnx are (README: how they are made)
 )
-# The reader as a VS Code extension (docs/ROADMAP.md, D2 and D4; the shape is Calamo's): dettato.exe
+# The reader as a VS Code extension (docs/ROADMAP.md, D2 and D4; the shape is Calamo's): orecchiante.exe
 # published self-contained for win-x64 into extension/bin, the three models beside it (where the program
-# looks for them), its `dettato --version --json` (bin/dettato.json, which extension.js hands to Lily#),
+# looks for them), its `orecchiante --version --json` (bin/orecchiante.json, which extension.js hands to Lily#),
 # the licenses of what is bundled, and `vsce package --target win32-x64`.
 # Packages only: it publishes nothing. The icon and the LICENSE are the repository's own (one copy of each).
 $ErrorActionPreference = 'Stop'
@@ -20,20 +20,20 @@ $stage = "$Out\stage"
 Copy-Item $ext $stage -Recurse
 Copy-Item "$root\icon.png", "$root\LICENSE" $stage
 $bin = "$stage\bin"
-cmd /d /s /c "dotnet publish `"$root\src\Dettato`" -c Release -r win-x64 --self-contained -o `"$bin`" -v q -nologo < NUL"
+cmd /d /s /c "dotnet publish `"$root\src\Orecchiante`" -c Release -r win-x64 --self-contained -o `"$bin`" -v q -nologo < NUL"
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed" }
 Get-ChildItem $bin -Include *.pdb, *.lib -Recurse | Remove-Item
 foreach ($name in $onnx) { Copy-Item "$Models\$name" $bin }
 
 # The licenses of what is bundled: the VSIX is all a user receives, and the packages' copies stay on this machine.
 $packages = if ($env:NUGET_PACKAGES) { $env:NUGET_PACKAGES } else { "$HOME\.nuget\packages" }
-$libraries = (Get-Content "$bin\dettato.deps.json" -Raw | ConvertFrom-Json).libraries.PSObject.Properties.Name
+$libraries = (Get-Content "$bin\orecchiante.deps.json" -Raw | ConvertFrom-Json).libraries.PSObject.Properties.Name
 function PackageDir([string]$id) {
     $found = $libraries | Where-Object { $_ -like "$id/*" } | Select-Object -First 1
     if (-not $found) { throw "$id is not among the reader's libraries" }
     "$packages\$($id.ToLowerInvariant())\$($found.Split('/')[1])"
 }
-$runtime = (Get-Content "$bin\dettato.runtimeconfig.json" -Raw | ConvertFrom-Json).runtimeOptions.includedFrameworks[0].version
+$runtime = (Get-Content "$bin\orecchiante.runtimeconfig.json" -Raw | ConvertFrom-Json).runtimeOptions.includedFrameworks[0].version
 $copies = @{
     'dotnet-LICENSE.txt'                = "$packages\microsoft.netcore.app.runtime.win-x64\$runtime\LICENSE.TXT"
     'dotnet-THIRD-PARTY-NOTICES.txt'    = "$packages\microsoft.netcore.app.runtime.win-x64\$runtime\THIRD-PARTY-NOTICES.TXT"
@@ -50,11 +50,11 @@ $recordings = Get-ChildItem $stage -Recurse -File | Where-Object Extension -in '
 if ($recordings) { throw "recordings in the package: $($recordings.FullName -join ', ')" }
 
 # What the reader says of itself, beside it: extension.js hands it to Lily# without starting anything.
-$info = & "$bin\dettato.exe" --version --json
-if ($LASTEXITCODE -ne 0) { throw "dettato --version --json failed" }
+$info = & "$bin\orecchiante.exe" --version --json
+if ($LASTEXITCODE -ne 0) { throw "orecchiante --version --json failed" }
 $version = (Get-Content "$stage\package.json" -Raw | ConvertFrom-Json).version
 if ($version -ne ($info | ConvertFrom-Json).version) { throw "extension/package.json is $version, the reader $(($info | ConvertFrom-Json).version): make them one" }
-[IO.File]::WriteAllText("$bin\dettato.json", $info)
+[IO.File]::WriteAllText("$bin\orecchiante.json", $info)
 
 $size = (Get-ChildItem $bin -Recurse -File | Measure-Object Length -Sum).Sum / 1MB
 "reader {0}, bin {1:F1} MB" -f $version, $size

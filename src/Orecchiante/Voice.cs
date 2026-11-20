@@ -2,7 +2,7 @@ using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using NAudio.Wave;
 
-namespace Dettato;
+namespace Orecchiante;
 
 /// <summary>How loud the singing is, every 10 ms: the vocals Demucs (htdemucs_6s, MIT) separates from the recording;
 /// and, for the user to hear one at a time, the six parts it separates (drums, bass, other, vocals, guitar, piano) as files.
@@ -13,8 +13,8 @@ namespace Dettato;
 static class Voice
 {
     // htdemucs_6s (guitar and piano too; 0.8.0, the owner), its matrix products in int8 (64 MB; tools/d2/demucs_onnx.py
-    // --model htdemucs_6s; README, "Six parts"); DETTATO_VOICE_MODEL tries another, such as htdemucs-mm8.onnx (the four, 0.6.0 to 0.7.0)
-    public static readonly string Model = Environment.GetEnvironmentVariable("DETTATO_VOICE_MODEL") is { Length: > 0 } m ? m : "htdemucs_6s-mm8.onnx";
+    // --model htdemucs_6s; README, "Six parts"); ORECCHIANTE_VOICE_MODEL tries another, such as htdemucs-mm8.onnx (the four, 0.6.0 to 0.7.0)
+    public static readonly string Model = Environment.GetEnvironmentVariable("ORECCHIANTE_VOICE_MODEL") is { Length: > 0 } m ? m : "htdemucs_6s-mm8.onnx";
     // segments at once, on the session's threads: 3 was the fastest (1, 2, or 6 of 4 threads were slower), and each
     // more holds about 2 GB: so as many as the memory takes (a song of 3.5 min peaked at 8.4 GB with 3, 6.6 GB with 2)
     public static readonly int Parallel = Math.Clamp((int)((GC.GetGCMemoryInfo().TotalAvailableMemoryBytes / (1L << 30) - 4) / 4), 1, 3);      // segments at once, each on the session's 8 threads (2 at once or 6 of 4 threads were slower)

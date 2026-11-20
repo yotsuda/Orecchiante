@@ -3,7 +3,7 @@
   .venv/Scripts/python tools/aist_sections.py [rwc-dev|rwc-test] [--each] [modes=base,phrase,voice] [voice=<folder>] [drums=<folder>|none] [READ_CHORDS_CONSTANT=value ...]
 
 Needs the AIST annotation (docs/DATASETS.md) and, for voice, the vocals' loudness: <name>.voc.npy in scratch/net/voice/rwc-p
-(dettato ears) unless voice= says where (scratch/sep/out/htdemucs: Demucs in torch, stereo, a random shift).
+(orecchiante ears) unless voice= says where (scratch/sep/out/htdemucs: Demucs in torch, stereo, a random shift).
 Modes: base (the old sections, --old-sections), phrase (by meaning, no voice), voice (by meaning, with the voice).
 A boundary counts within 0.5 s and within 3 s; the song's first start and the end are left out.
 'all' takes every AIST boundary, 'change' only those where the label changes (chorus A, chorus A is one).
@@ -17,7 +17,7 @@ import measure as ms, read_chords as rc
 
 AIST = Path("scratch/real/rwc-annotations-archive/AIST_RWC-MDB-P-2001_CHORUS")
 VOICE = Path("scratch/net/voice/rwc-p")
-DRUMS = Path("scratch/drum/rwc-p")      # with the voice, the drums too (as dettato hears both from Demucs); drums=none: not
+DRUMS = Path("scratch/drum/rwc-p")      # with the voice, the drums too (as orecchiante hears both from Demucs); drums=none: not
 name = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("-") else "rwc-dev"
 each = "--each" in sys.argv
 MODES = ("base", "phrase", "voice")

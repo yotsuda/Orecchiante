@@ -3,7 +3,7 @@
 
     .venv/Scripts/python tools/read_chords.py data/synth/seed1 --out scratch/read/seed1
 
-For each .wav it writes <name>.lys (a Lily# chord chart) and <name>.dettato.json (every bar and
+For each .wav it writes <name>.lys (a Lily# chord chart) and <name>.orecchiante.json (every bar and
 chord with its seconds, its section and which bar of it it is, in the shape of gen_chords.py's
 truth: docs/SIDECAR.md is its specification, tools/sidecar.py checks a file against it). The steps:
 
@@ -37,7 +37,7 @@ import numpy as np
 
 SR = 22050
 HOP = 512
-FORMAT = 1              # the .dettato.json written here (docs/SIDECAR.md): raised when a reader of it must change
+FORMAT = 1              # the .orecchiante.json written here (docs/SIDECAR.md): raised when a reader of it must change
 
 QUALITIES = {
     "": [0, 4, 7], "m": [0, 3, 7], "7": [0, 4, 7, 10], "maj7": [0, 4, 7, 11],
@@ -369,7 +369,7 @@ def short_meters(bars, time):
     pickup, not the first or the last bar (a bar of 3/4 not the last THREE_FOUR[2] bars either: there
     the bars read short are the ritardando's, read wrong). Of 2/4 the tracker counted two beats there
     and the downbeats said a bar begins after them (pair_runs): 糸's M65, two beats between bars of four
-    (the owner, 2026-11-17: "Dettato should write it"). Right or not, the bar is as long as the
+    (the owner, 2026-11-17: "Orecchiante should write it"). Right or not, the bar is as long as the
     recording's: written in its meter it plays at the recording's pace, and marks where to look.
     3/4 the owner chose on 2026-11-17 though RWC-P has next to none in the middle of a song (P006)."""
     if not TWO_FOUR or time != "4/4":
@@ -809,8 +809,8 @@ def audio_cues(db, notes, sets):
 
 
 def drum_bars(drums, bars):
-    """The drums in each bar (`drums`: what `dettato` writes as <name>.drum.npy, every 10 ms the mean square and the
-    onset strength in 3 bands; src/Dettato/Drums.cs): how loud (dB of the mean square), and their pattern: the onset
+    """The drums in each bar (`drums`: what `orecchiante` writes as <name>.drum.npy, every 10 ms the mean square and the
+    onset strength in 3 bands; src/Orecchiante/Drums.cs): how loud (dB of the mean square), and their pattern: the onset
     strength at its strongest in each of 16 steps of the bar, band by band, as a unit vector."""
     db, pattern = np.zeros(len(bars)), np.zeros((len(bars), 48))
     for i, bar in enumerate(bars):
@@ -1721,7 +1721,7 @@ def read(path, f=None, tempo=None, lines=None, units=8, beats=None, heard=None, 
                 bar["tempo"] = tempos[bar["section"]]
             last = bar["section"]
     return {                                    # docs/SIDECAR.md says what each of these is
-        "dettato": FORMAT,
+        "orecchiante": FORMAT,
         "audio": name,
         "duration": round((len(oenv) - 1) * HOP / SR, 2),
         "tempo": {"note": tempo_note, "bpm": bpm},
@@ -1916,7 +1916,7 @@ def main():
     p.add_argument("--voice", type=Path,
                    help="the folder of <name>.voc.npy: the vocals' loudness every 10 ms (scratch/sep/song.py, Demucs), for the sections")
     p.add_argument("--drums", type=Path,
-                   help="the folder of <name>.drum.npy (`dettato drums` or `dettato ears`): the drums every 10 ms, for the sections")
+                   help="the folder of <name>.drum.npy (`orecchiante drums` or `orecchiante ears`): the drums every 10 ms, for the sections")
     p.add_argument("--old-sections", action="store_true", help="the sections before 2026-11-16 (find_form and fold, repeat signs) instead of by meaning")
     args = p.parse_args()
     global PHRASE_SECTIONS
@@ -1944,7 +1944,7 @@ def main():
             failed += 1
             print(f"{path.name}: {e}", file=sys.stderr)
             continue
-        (args.out / (path.stem + ".dettato.json")).write_text(
+        (args.out / (path.stem + ".orecchiante.json")).write_text(
             json.dumps(result, indent=2) + "\n", encoding="utf-8", newline="\n")
         (args.out / (path.stem + ".lys")).write_text(lys(result, path.stem, lysc_shape), encoding="utf-8", newline="\n")
         read_chords = [c for bar in result["bars"] for c in bar["chords"]]

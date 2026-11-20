@@ -1,9 +1,9 @@
 using System.Text;
 
-namespace Dettato;
+namespace Orecchiante;
 
 /// <summary>A chart as the two files beside a recording: the Lily# chord chart (.lys) and what it was read from
-/// (.dettato.json, docs/SIDECAR.md). As tools/read_chords.py writes them, to the letter.</summary>
+/// (.orecchiante.json, docs/SIDECAR.md). As tools/read_chords.py writes them, to the letter.</summary>
 static class Writer
 {
     const string JoinNote = "// Ctrl+. on a section's name offers Join Sections (with the next one, or all the sections selected)";
@@ -94,7 +94,7 @@ static class Writer
 
         var lines = new List<string>
         {
-            $"// read from {chart.Audio} by dettato",
+            $"// read from {chart.Audio} by orecchiante",
             $"title \"{title}\"",
             $"tempo {chart.TempoNote} = {chart.BpmText}",
             $"time {chart.Time}",
@@ -212,7 +212,7 @@ static class Writer
     public static string Json(Chart chart)
     {
         var s = new StringBuilder();
-        s.Append("{\n  \"dettato\": 1,\n");
+        s.Append("{\n  \"orecchiante\": 1,\n");
         s.Append($"  \"audio\": {Quoted(chart.Audio)},\n");
         s.Append($"  \"duration\": {Np.Repr(chart.Duration)},\n");
         s.Append($"  \"tempo\": {{\n    \"note\": {Quoted(chart.TempoNote)},\n    \"bpm\": {chart.BpmText}\n  }},\n");

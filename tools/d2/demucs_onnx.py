@@ -2,7 +2,7 @@
 do in complex numbers: they are done outside (in .NET, Voice.cs). The network takes one segment of the
 mix (2 channels, 7.8 s at 44.1 kHz) and its spectrogram with the real and imaginary parts as channels,
 and gives the spectrogram of each source the same way and the time branch's waveform of each source.
-Then checks it against torch's forward on a segment of a recording, and writes the copy dettato ships,
+Then checks it against torch's forward on a segment of a recording, and writes the copy orecchiante ships,
 htdemucs-mm8.onnx: its matrix products in int8 (85 MB; with the convolutions in int8 too the vocals come out
 half as loud, so they are not).
 

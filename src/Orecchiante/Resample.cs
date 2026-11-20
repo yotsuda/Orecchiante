@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace Dettato;
+namespace Orecchiante;
 
 /// <summary>A signal at another rate: a low-pass (windowed sinc, Kaiser) read at the new sample times.
 /// The pass band ends at 0.913 of the lower of the two Nyquist frequencies and the stop band begins at it,

@@ -1,4 +1,4 @@
-namespace Dettato;
+namespace Orecchiante;
 
 /// <summary>The sections of a chart, by meaning: where the music turns, and the phrases between. tools/read_chords.py's
 /// turns_of() and phrase_sections(), step for step (its --old-sections, find_form and fold, stays in Python).</summary>

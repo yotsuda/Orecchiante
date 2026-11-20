@@ -1,4 +1,4 @@
-namespace Dettato;
+namespace Orecchiante;
 
 /// <summary>The constant-Q transform as librosa 1.0 computes it (librosa.cqt with its defaults: Hann windows,
 /// filters of unit L1 norm, the smallest hundredth of each filter's spectrum dropped, zeros beyond the ends,

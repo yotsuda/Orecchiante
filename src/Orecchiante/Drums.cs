@@ -1,4 +1,4 @@
-namespace Dettato;
+namespace Orecchiante;
 
 /// <summary>What the sections hear of the drums (0.10.0): every 10 ms of the drums Demucs separates, four numbers:
 /// the mean square of the frame's 441 samples, and the onset strength in three bands (below 200 Hz, to 4 kHz, from

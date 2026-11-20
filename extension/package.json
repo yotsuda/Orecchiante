@@ -1,8 +1,8 @@
 {
-  "name": "dettato",
-  "displayName": "Dettato Chord Chart Transcriber",
+  "name": "orecchiante",
+  "displayName": "Orecchiante Chord Chart Transcriber",
   "description": "Reads a recording into an editable Lily# (.lys) chord chart: tempo, meter, key, bar lines and the chord of every bar, with the uncertain places marked. Open source (Apache-2.0). Runs locally on Windows; no cloud.",
-  "version": "0.10.2",
+  "version": "0.11.0",
   "publisher": "yotsuda",
   "icon": "icon.png",
   "author": "Yoshifumi Tsuda",
@@ -10,12 +10,12 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yotsuda/Dettato.git"
+    "url": "https://github.com/yotsuda/Orecchiante.git"
   },
   "bugs": {
-    "url": "https://github.com/yotsuda/Dettato/issues"
+    "url": "https://github.com/yotsuda/Orecchiante/issues"
   },
-  "homepage": "https://github.com/yotsuda/Dettato#readme",
+  "homepage": "https://github.com/yotsuda/Orecchiante#readme",
   "engines": {
     "vscode": "^1.90.0"
   },

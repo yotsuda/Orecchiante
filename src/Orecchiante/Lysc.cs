@@ -1,9 +1,9 @@
 using System.Diagnostics;
 
-namespace Dettato;
+namespace Orecchiante;
 
 /// <summary>What Lily#'s own command line says, where Lily# tells us where it is: the environment variable
-/// LILYSHARP_LYSC_PATH, set when Lily#'s Convert Recording runs dettato (Lily# REQUESTS 9, 2026-11-16). Nothing of
+/// LILYSHARP_LYSC_PATH, set when Lily#'s Convert Recording runs orecchiante (Lily# REQUESTS 9, 2026-11-16). Nothing of
 /// Lily#'s rules is copied here (the owner: no code twice); without the variable, or when lysc fails, nothing.</summary>
 static class Lysc
 {

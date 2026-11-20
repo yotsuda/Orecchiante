@@ -1,4 +1,4 @@
-namespace Dettato;
+namespace Orecchiante;
 
 /// <summary>What the rules read beside the two models, as tools/read_chords.py's features() takes it from librosa 1.0
 /// with nothing taken out of the recording (--ears): the onset strength, the loudness, and two chromas (five octaves

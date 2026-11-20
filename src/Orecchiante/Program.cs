@@ -1,23 +1,23 @@
-// dettato: a recording, read into a chart (docs/ROADMAP.md, D2: the reader moved here from tools/read_chords.py;
+// orecchiante: a recording, read into a chart (docs/ROADMAP.md, D2: the reader moved here from tools/read_chords.py;
 // D3: the command a user and Lily# call).
 //
-//   dettato <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]
+//   orecchiante <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]
 //
 // writes <name>.lys (a Lily# chord chart) beside the recording, or where -o says, and beside the chart
-// <name>.dettato.json (docs/SIDECAR.md), and the recording's six parts in <name>.parts/ (drums, bass, other,
+// <name>.orecchiante.json (docs/SIDECAR.md), and the recording's six parts in <name>.parts/ (drums, bass, other,
 // vocals, guitar and piano .flac, to hear one at a time; SIDECAR.md, `parts`). A chart already there is not written over without --force: it may hold
 // corrections. Both files are written at the end, whole or not at all. stderr says what is being done, a line a
 // step, and on failure why in its last line; stdout has the chart's path alone. Exit codes: 0 written, 1 the
 // recording was not read, 2 the arguments (no such file, a kind not read, a chart in the way), 3 the reader itself.
 //
-//   dettato --version [--json]
+//   orecchiante --version [--json]
 //
-// the version, and with --json also the protocol (the arguments, the exit codes and .dettato.json: raised when
+// the version, and with --json also the protocol (the arguments, the exit codes and .orecchiante.json: raised when
 // they change incompatibly), the commands and the kinds of recording read (Audio.Inputs).
 //
 // And for measuring, on one recording or a folder of them, each part to a file:
 //
-//   dettato read <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--lines <folder>] [--heard <folder>] [--voice <folder>|none] [--drums <folder>]
+//   orecchiante read <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--lines <folder>] [--heard <folder>] [--voice <folder>|none] [--drums <folder>]
 //
 // the same reading into a folder, written over whatever is there. --lines and --heard take the beats and the
 // chords' probabilities from folders of <name>.beats and <name>.npz, as the two commands below and the tools in
@@ -25,40 +25,40 @@
 // the vocals' loudness from <name>.voc.npy (none: no singing heard, as read_chords.py without --voice); with --voice,
 // the drums from <name>.drum.npy in the --drums folder (without it, or with no such file: no drums heard).
 //
-//   dettato drums <a folder of <name>.parts folders, or recordings of drums> --out <folder>
+//   orecchiante drums <a folder of <name>.parts folders, or recordings of drums> --out <folder>
 //
 // writes <name>.drum.npy (Drums: what the sections hear of the drums) from parts already separated.
 //
-//   dettato ears <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--cqt]
+//   orecchiante ears <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--cqt]
 //
 // writes <name>.beats (as tools/track_beats.py does), <name>.npz (as tools/crema_chords.py does), <name>.voc.npy
 // (the vocals' loudness every 10 ms, as scratch/sep/song.py does with Demucs in torch) and <name>.drum.npy (Drums);
 // with --cqt, also <name>.cqt.npy, what the chord model was given. The models are beat-this-final0-dynamo.onnx
 // crema-chord.onnx, btc-large-voca.onnx and htdemucs_6s-mm8.onnx (README: how they are made), beside the program unless --models says where.
 //
-//   dettato features <a recording or a folder of them> --out <folder>
+//   orecchiante features <a recording or a folder of them> --out <folder>
 //
 // writes <name>.feat.npz: oenv, chroma, bass and rms as read_chords.py's features() makes them for --ears,
 // and tuning (tools/measure.py --net reads them in place of its own).
 //
-//   dettato audio <a recording or a folder of them> --out <folder>
+//   orecchiante audio <a recording or a folder of them> --out <folder>
 //
 // writes <file's name>.heard.wav (song.mp3.heard.wav): the samples as the reader takes them from the file (one channel, 32-bit float, the
 // recording's rate), to compare what two kinds of file of one recording give.
 using System.Diagnostics;
 using System.Text;
-using Dettato;
+using Orecchiante;
 using Microsoft.ML.OnnxRuntime;
 
-const string version = "0.10.2";
+const string version = "0.11.0";
 const int protocol = 1;
-const string usage = "usage: dettato <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]\n"
-                   + "       dettato --version [--json]\n"
-                   + "       dettato read <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--lines <folder>] [--heard <folder>] [--voice <folder>|none] [--drums <folder>]\n"
-                   + "       dettato ears <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--cqt]\n"
-                   + "       dettato features <a recording or a folder of them> --out <folder>\n"
-                   + "       dettato drums <a folder of <name>.parts folders, or recordings of drums> --out <folder>\n"
-                   + "       dettato audio <a recording or a folder of them> --out <folder>";
+const string usage = "usage: orecchiante <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]\n"
+                   + "       orecchiante --version [--json]\n"
+                   + "       orecchiante read <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--lines <folder>] [--heard <folder>] [--voice <folder>|none] [--drums <folder>]\n"
+                   + "       orecchiante ears <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--cqt]\n"
+                   + "       orecchiante features <a recording or a folder of them> --out <folder>\n"
+                   + "       orecchiante drums <a folder of <name>.parts folders, or recordings of drums> --out <folder>\n"
+                   + "       orecchiante audio <a recording or a folder of them> --out <folder>";
 Console.OutputEncoding = new UTF8Encoding(false);
 if (args.Length > 0 && args[0] == "--version")
 {
@@ -80,7 +80,7 @@ InferenceSession? beatModel = null, chordModel = null, btcModel = null;
 InferenceSession[] voiceModels = [];
 string? linesFrom = null, heardFrom = null, voiceFrom = null, drumsFrom = null;     // voiceFrom "none": no singing heard; drumsFrom the same
 
-int Fail(int code, string why) { Console.Error.WriteLine("dettato: " + why); return code; }
+int Fail(int code, string why) { Console.Error.WriteLine("orecchiante: " + why); return code; }
 
 void Open(string models, int threads, bool beats, bool chords, bool voice)
 {
@@ -148,7 +148,7 @@ Chart Read(string file, Action<string>? say = null, string? partsTo = null)
     int frames;
     double step = Crema.Step;
     if (heardFrom != null) (logp, frames, step) = Npy.ReadHeard(Path.Combine(heardFrom, name + ".npz"));
-    else logp = Heard(high!, low, out frames);       // in half precision, as `dettato ears` writes them
+    else logp = Heard(high!, low, out frames);       // in half precision, as `orecchiante ears` writes them
     chord += clock.Elapsed.TotalSeconds; clock.Restart();
     Stage(singing != null ? "" : "the singing");      // only the parts left, when they are being separated
     static float[]? From(string? folder, string file) => folder is null or "none" || !File.Exists(Path.Combine(folder, file)) ? null : Npy.ReadFloats(Path.Combine(folder, file));
@@ -212,7 +212,7 @@ if (args[0] is not ("read" or "ears" or "features" or "audio" or "drums"))
     recording = Path.GetFullPath(recording);
     chartPath = Path.GetFullPath(chartPath ?? Path.ChangeExtension(recording, ".lys"));
     if (!chartPath.EndsWith(".lys", StringComparison.OrdinalIgnoreCase)) return Fail(2, $"-o wants a .lys file, not {chartPath}");
-    string sidePath = chartPath[..^4] + ".dettato.json";
+    string sidePath = chartPath[..^4] + ".orecchiante.json";
     // The parts, to hear one at a time (SIDECAR.md, `parts`): a folder beside the chart, made under another name first.
     string partsPath = chartPath[..^4] + ".parts", partsMade = partsPath + ".part";
     if (File.Exists(chartPath) && !force) return Fail(2, $"{chartPath} is already there (--force to write over it)");
@@ -378,7 +378,7 @@ if (args[0] == "read")
         {
             var chart = Read(file);
             var clock = Stopwatch.StartNew();
-            File.WriteAllText(Path.Combine(output, name + ".dettato.json"), Writer.Json(chart));
+            File.WriteAllText(Path.Combine(output, name + ".orecchiante.json"), Writer.Json(chart));
             File.WriteAllText(Path.Combine(output, name + ".lys"), Writer.Lys(chart, name));
             rules += clock.Elapsed.TotalSeconds;
         }

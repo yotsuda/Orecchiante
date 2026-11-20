@@ -2,7 +2,7 @@ using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Dettato;
+namespace Orecchiante;
 
 /// <summary>numpy's files, for the tools in Python that measure: an array as .npy, several in an .npz.</summary>
 static class Npy
@@ -57,7 +57,7 @@ static class Npy
         return (logp, shape[0], step);
     }
 
-    /// <summary>A float32 .npy of any shape (the vocals' loudness, `dettato ears` and scratch/sep/song.py), flat.</summary>
+    /// <summary>A float32 .npy of any shape (the vocals' loudness, `orecchiante ears` and scratch/sep/song.py), flat.</summary>
     public static float[] ReadFloats(string path)
     {
         using var file = File.OpenRead(path);

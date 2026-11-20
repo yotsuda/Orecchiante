@@ -465,8 +465,8 @@ def main():
     p.add_argument("--seed", type=int, default=1)
     p.add_argument("--count", type=int, default=24)
     p.add_argument("--out", type=Path, required=True)
-    p.add_argument("--lysc", default=os.environ.get("DETTATO_LYSC", "lysc"),
-                   help="Lily#'s compiler (default: DETTATO_LYSC, else lysc on the PATH)")
+    p.add_argument("--lysc", default=os.environ.get("ORECCHIANTE_LYSC", "lysc"),
+                   help="Lily#'s compiler (default: ORECCHIANTE_LYSC, else lysc on the PATH)")
     p.add_argument("--soundfont", default=os.environ.get("LILYSHARP_SOUNDFONT"),
                    help="a SoundFont 2 file (default: LILYSHARP_SOUNDFONT)")
     p.add_argument("--no-render", action="store_true", help="write the .lys and the truth only")

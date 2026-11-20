@@ -2,7 +2,7 @@
 
     py -3.12 tools/kinds_check.py <folder of charts, e.g. from .wav> <folder of charts, e.g. from .mp3>
 
-Compares the .dettato.json of the same name: how many have the same number of bars, in those how far each bar's
+Compares the .orecchiante.json of the same name: how many have the same number of bars, in those how far each bar's
 start is from the other's (seconds), and how many chords are written the same.
 """
 import json
@@ -12,7 +12,7 @@ from pathlib import Path
 a_dir, b_dir = Path(sys.argv[1]), Path(sys.argv[2])
 songs = same_bars = same_charts = chords = same_chords = 0
 moves = []
-for a_path in sorted(a_dir.glob("*.dettato.json")):
+for a_path in sorted(a_dir.glob("*.orecchiante.json")):
     b_path = b_dir / a_path.name
     if not b_path.exists():
         print(f"{a_path.name}: not in {b_dir}")

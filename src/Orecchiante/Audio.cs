@@ -1,13 +1,13 @@
 using System.Runtime.InteropServices;
 using NAudio.Wave;
 
-namespace Dettato;
+namespace Orecchiante;
 
 /// <summary>A recording's samples, whatever it is kept in: a plain .wav by this program's own reading (Wav),
 /// anything else by Windows' Media Foundation, which has the decoders (README: "A recording as it comes").</summary>
 static class Audio
 {
-    /// <summary>The kinds of file read, by extension (`dettato --version --json` lists them).</summary>
+    /// <summary>The kinds of file read, by extension (`orecchiante --version --json` lists them).</summary>
     public static readonly string[] Inputs = ["wav", "mp3", "m4a", "mp4", "aac", "flac", "wma"];
 
     public static bool Reads(string path) => Inputs.Contains(Path.GetExtension(path).TrimStart('.').ToLowerInvariant());

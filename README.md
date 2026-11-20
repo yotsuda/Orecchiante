@@ -1,9 +1,9 @@
-# Dettato
+# Orecchiante
 
 Audio to score for [Lily#](https://yotsuda.github.io/LilySharp/): listens to a recording and
 writes editable Lily# text (`.lys`), with the places it is unsure of marked for a look.
 
-*Dettato* is Italian for dictation, the exercise of writing down music as it is heard.
+*Orecchiante* is Italian for one who plays by ear, without reading music. (It was named Dettato, Italian for dictation, until 0.11.0.)
 
 **Status: a chord chart of a recording, to be mended by hand; not yet a tool.**
 `tools/read_chords.py --ears` puts a chart together from what two published models hear (the
@@ -11,8 +11,8 @@ beats and bar lines of Beat This!, the chords of crema). On 100 studio recording
 it has the tempo of 93, 93% of the bar lines, the chord's root right 87% of the time and its
 root and family 82%, and it marks 28% of the chords for a look, among them three in four of
 the wrong ones (see [Recordings](#recordings)). A song of three and a half minutes takes 18
-seconds in three Python environments. The same reader is one program in .NET, `dettato read`
-(`src/Dettato`), which writes the same charts letter for letter and takes 5.5 seconds
+seconds in three Python environments. The same reader is one program in .NET, `orecchiante read`
+(`src/Orecchiante`), which writes the same charts letter for letter and takes 5.5 seconds
 ([In .NET: the rules](#in-net-the-rules)); it reads a `.wav` and is not yet in an editor.
 The reader with nothing but its own hearing, which the work began with, is kept for comparison.
 
@@ -30,7 +30,7 @@ From a recording of a song, read three things and write them as a Lily# `chords`
 A chord the reader doubts is written with the chord it would have said next (`F@or(Bm)`, 0.8.6; before, `@todo("or Bm?")`), which Lily# swaps with Ctrl+Shift+Up/Down and plays, as
 [Calamo](https://github.com/yotsuda/Calamo) marks a note it doubts. Beside the `.lys`, a file holds
 where each bar is in the recording, so an editor can play that bar of the original while it is
-corrected: `<name>.dettato.json`, every bar played in the order Lily# plays it, with its seconds,
+corrected: `<name>.orecchiante.json`, every bar played in the order Lily# plays it, with its seconds,
 its beats and its chords, and how many cents the recording is off A = 440 Hz (an old tape run
 fast or slow). [docs/SIDECAR.md](docs/SIDECAR.md) is its specification, and
 `py tools/sidecar.py <folder>` checks files against it and against the charts beside them (Lily#
@@ -58,7 +58,7 @@ For each song it writes three files:
   end in seconds.
 
 The `.lys` and the truth are committed; the recordings are not (the same seed and sound font make
-them again). `--lysc` or `DETTATO_LYSC` names Lily#'s compiler. `lysc wav` reads SoundFont 2
+them again). `--lysc` or `ORECCHIANTE_LYSC` names Lily#'s compiler. `lysc wav` reads SoundFont 2
 (`.sf2`), not `.sf3`.
 
 `--pickup 0.5 --silence 3` makes songs that do not begin at 0 s on a bar line: every recording
@@ -90,9 +90,9 @@ keeps each recording's features between runs (`scratch/feat-h31/`, and `scratch/
 `--ears`; seconds a song the first time):
 
 ```
-$env:DETTATO_LYSC = "<LilySharp>/LilySharp.Cli/bin/Release/net10.0/win-x64/lysc.exe"
-$env:DETTATO_SOUNDFONT_ALT = "<a second .sf2>"      # the tables of "another sound font"
-$env:DETTATO_SAMPLES = "<LilySharp>/samples"        # the table of "songs it was not made on"
+$env:ORECCHIANTE_LYSC = "<LilySharp>/LilySharp.Cli/bin/Release/net10.0/win-x64/lysc.exe"
+$env:ORECCHIANTE_SOUNDFONT_ALT = "<a second .sf2>"      # the tables of "another sound font"
+$env:ORECCHIANTE_SAMPLES = "<LilySharp>/samples"        # the table of "songs it was not made on"
 .venv/Scripts/python tools/measure.py make          # renders the sets that are missing (15 sets, 628 songs)
 .venv/Scripts/python tools/train_chords.py data/synth/seed100 --features scratch/feat-h31 --out models/chords.joblib
 .venv/Scripts/python tools/measure.py all           # every table here, and every chart through lysc check
@@ -104,7 +104,7 @@ $env:DETTATO_SAMPLES = "<LilySharp>/samples"        # the table of "songs it was
 `beats seed7 s7-005`, `table seed1 rwc-dev --ears`, `doubt rwc-dev --ears`, `form rwc-dev --ears` and
 `head seed41 rwc-dev --ears` (with models trained on recordings, below).
 `all` takes about fifteen minutes once the features are kept (the recordings below among them),
-and last passed all 1388 charts it wrote through `lysc check` (2026-11-14); the `.dettato.json`
+and last passed all 1388 charts it wrote through `lysc check` (2026-11-14); the `.orecchiante.json`
 beside each of the 1388 was as [docs/SIDECAR.md](docs/SIDECAR.md) says, with as many bars as
 Lily# plays of the chart.
 
@@ -254,7 +254,7 @@ the rules as they were:
 | Marked → of the wrong in root or family caught (`rwc-dev`, `rwc-test`, `seed1` together) | 26.9% → 73.3%, now 30.9% → 79.5% | | |
 
 The other sets made here go up as well (`seed21` root 94.8 → 97.0%, `seed41` quality 72.4 →
-78.5%), but for `seed31`'s family (93.1 → 92.6%). Read inside dettato (its own CQT and models)
+78.5%), but for `seed31`'s family (93.1 → 92.6%). Read inside orecchiante (its own CQT and models)
 against Python's files: `seed1` the same numbers, `.lys` 22 of 24 the same (the `sure` of a few
 chords differs in the third decimal); RWC with the fold models' beats, the same numbers but for
 `rwc-test`'s quality, 71.3%. A song's chords take 0.8 s instead of 0.35.
@@ -287,7 +287,7 @@ and takes only the spectrum from its own pipeline. The sets made here go the sam
 
 `read_chords.py --ears` puts a chart together from what two such models hear (Beat This! and
 crema; the same words hold for BTC, on which the prices and the marks were chosen), and writes the
-`.lys` and the `.dettato.json` as before:
+`.lys` and the `.orecchiante.json` as before:
 
 - the bars are Beat This!'s, and so is the meter: the beats it counts in a bar, where two beats
   are the two dotted quarters of 6/8 when the sound between them falls in threes, and the halves
@@ -414,7 +414,7 @@ form { A B C D A C E }
 - Every playing of a section then says the same: on each beat, the chord the playings are surest
   of together. Where they differed in root or family the chord is marked, and the chord offered
   is the other reading.
-- In the `.dettato.json` every bar played is still there with its own seconds, and has its
+- In the `.orecchiante.json` every bar played is still there with its own seconds, and has its
   `section` and `barOfSection`; `form` is the order. A chart in which nothing comes twice is
   written as before, with no sections.
 
@@ -505,7 +505,7 @@ form { A |: B C B [1. D] :| [2. E] B F }
 
 That is `|: A :|`, `|: A B :|`, `|: A :|*3`, or `|: A [1. B] :| [2. C]` with one section in each
 ending and a body of one section or more (`|: B C B [1. D] :| [2. E]`) (the rules: [SIDECAR.md](docs/SIDECAR.md), "The chart and the file"). The bars in
-`.dettato.json` are as played, and Lily# plays each chart as many bars as the file has
+`.orecchiante.json` are as played, and Lily# plays each chart as many bars as the file has
 (`tools/sidecar.py` counts them from `lysc midi`, the repeats played). Of the charts `--ears`
 writes, signs are in 76 of the 100 RWC songs and in 79 of the 168 songs made here (the seven
 sets `read_check.py` compares). A passage that comes again later, not right away (a verse after
@@ -567,7 +567,7 @@ The rules above now only say where a section might begin. The owner's own Transc
 (`.xsc`, 278 songs whose recording is on this machine; the section markers and bar markers in
 them) are the measure: the owner's bars, a start counted `exact` on the owner's bar and `near`
 within one, the song's first bar left out. The songs are split by number: x001–x145 (141, `dev`)
-to choose on, the rest (137, `test`) counted once at the end. With the rules alone, dettato read
+to choose on, the rest (137, `test`) counted once at the end. With the rules alone, orecchiante read
 about half again as many sections as the owner marks, mostly of four bars or fewer; the owner's
 are of eight bars at 44%, sixteen at 13%, four or fewer at 7%.
 
@@ -589,7 +589,7 @@ in .NET `Sections.cs`):
 
 The weights, lengths and constants are `tools/sections_dp.json` (`scratch/xsc/dp.py EXTRA=1 NB=3
 PH=0 C=0.1 AUDIO=1 MUS=0,0.5 --json`, from `scratch/xsc/capture.py`'s takings), embedded in
-dettato.exe. The score is rounded to nine decimals so that .NET, adding in another order, picks
+orecchiante.exe. The score is rounded to nine decimals so that .NET, adding in another order, picks
 the same cuts: `read_check.py` 100/100 RWC with the voice, 100/100 without, 168/168 songs made here.
 
 | Section starts | the rules (0.8.12) | chosen whole |
@@ -625,8 +625,8 @@ five folds 60.6–61.0% (was 57.2–57.9%). Weights learnt again on the correcte
 against 66.2% for those shipped, so they stay.
 
 **The drums (0.10.0).** The drums Demucs separates for the parts are heard by the sections too.
-Every 10 ms (`Drums.cs`; `<name>.drum.npy` from `dettato ears`, or from parts already separated
-by `dettato drums <folder of <name>.parts>`): the mean square, and the onset strength in three
+Every 10 ms (`Drums.cs`; `<name>.drum.npy` from `orecchiante ears`, or from parts already separated
+by `orecchiante drums <folder of <name>.parts>`): the mean square, and the onset strength in three
 bands (below 200 Hz, to 4 kHz, from 4 kHz: the positive spectral flux of log(1 + 100 |X|), 2048
 points, Hann). Per bar (`drum_bars`): the loudness in dB, and the pattern: the onset strength at its
 strongest in each of 16 steps of the bar, per band, as a unit vector. As cues (`drum_cues`, 6 more
@@ -653,7 +653,7 @@ DRUMS=1 --json`) chose λ 0.5, off −2.0, μ 0 (was −1.5 and 0.5).
 | AIST without the voice (and so the drums), `rwc-dev` / `rwc-test`, 3 s | 69.8 / 63.0% | 67.3 / 57.8% |
 
 Without the voice the sections are worse than before: the weights lean on the drums, and six cues
-of 0 are not what they learnt. dettato itself always has both (Demucs gives them together); it is
+of 0 are not what they learnt. orecchiante itself always has both (Demucs gives them together); it is
 only measuring without them (`measure.py all`, AIST's `phrase`) that is hurt. The owner's three
 songs: 糸 now finds 21 and 44 but misses 17 (and adds 69 as before); My Life and Open Arms as in
 0.9.0. Python and .NET the same: `read_check.py` 100/100 RWC with the voice and the drums, 100/100
@@ -669,7 +669,7 @@ leaving out boundaries between two sections of the same label (chorus A, chorus 
 | the old sections (`find_form`, `--old-sections`) | 58.5 / 28.2 / 38.1% | 52.8 / 25.6 / 34.5% |
 | `--phrase`, no voice | 54.9 / 39.2 / 45.8% | 58.5 / 40.8 / 48.1% |
 | `--phrase` with the voice (torch's Demucs, stereo) | 67.1 / 63.4 / 65.2% | 66.1 / 56.1 / 60.7% |
-| the voice dettato hears (0.6.0, below) | 65.6 / 63.0 / 64.3% | 65.8 / 55.5 / 60.2% |
+| the voice orecchiante hears (0.6.0, below) | 65.6 / 63.0 / 64.3% | 65.8 / 55.5 / 60.2% |
 | the voice of six parts (0.8.0, "Six parts") | 65.8 / 62.5 / 64.1% | 65.5 / 56.3 / 60.5% |
 | and a cut after a pair of phrases (0.8.1, `PAIR_HEARD`) | 64.6 / 67.2 / 65.9% | 63.5 / 60.7 / 62.1% |
 | and the grid not moved by a turn (0.8.2, `GRID_ANCHOR`) | 65.2 / 67.5 / 66.3% | 63.4 / 61.0 / 62.1% |
@@ -780,7 +780,7 @@ marked, catching 72.5 → 72.0% of the wrong roots and families).
 
 ### The voice in .NET
 
-Since 0.6.0 (the owner) dettato hears the singing itself: Demucs's `htdemucs` (demucs 4.1.0, MIT)
+Since 0.6.0 (the owner) orecchiante hears the singing itself: Demucs's `htdemucs` (demucs 4.1.0, MIT)
 written out as ONNX without its Fourier transforms (`tools/d2/demucs_onnx.py`), which `Voice.cs`
 does, with the recording split and put back together as `demucs.apply.apply_model` does (7.8 s
 segments, a quarter overlapping, a triangle of weights) but with no random shift. (Two runs on the
@@ -802,7 +802,7 @@ same recording are not quite the same: ONNX Runtime's threads add in another ord
   turns of singing even without it (their vocals are the rest leaking, as loud all through).
 - The rules are .NET's too (`Form.VoiceTurns`, the turns near where singing begins or stops in
   `Form.Phrases`): given the same `.voc.npy`, the charts of `rwc-dev` and `rwc-test` are the same
-  as Python's letter for letter (`dettato read … --voice <folder>`, `measure.py … --voice <folder>`).
+  as Python's letter for letter (`orecchiante read … --voice <folder>`, `measure.py … --voice <folder>`).
   Python went through the turns near singing in the order of its set; it now goes in order.
 - The time, most of it the separation: `RWC_P001` (3 min 27 s) from the `.wav` to the chart in
   33.6 to 33.9 s (0.6.1), against about 6 s before; 3 segments at once on the session's 8 threads
@@ -826,18 +826,18 @@ same recording are not quite the same: ONNX Runtime's threads add in another ord
 ```
 scratch/sep/venv/Scripts/python tools/d2/demucs_onnx.py scratch/real/rwc-p/RWC_P001.wav     # scratch/d2/htdemucs-mm8.onnx (the four)
 scratch/sep/venv/Scripts/python tools/d2/demucs_onnx.py scratch/real/rwc-p/RWC_P001.wav --model htdemucs_6s     # htdemucs_6s-mm8.onnx (0.8.0)
-scratch/net/out/dettato.exe ears scratch/real/rwc-p --out scratch/net/voice/rwc-p --models scratch/d2     # <name>.voc.npy too
+scratch/net/out/orecchiante.exe ears scratch/real/rwc-p --out scratch/net/voice/rwc-p --models scratch/d2     # <name>.voc.npy too
 .venv/Scripts/python tools/aist_sections.py rwc-dev modes=voice voice=scratch/net/voice/rwc-p
 .venv/Scripts/python tools/measure.py table rwc-dev --ears --net scratch/net --voice scratch/net/voice --write scratch/pyread-nv
-scratch/net/out/dettato.exe read scratch/real/rwc-p --out scratch/net/read-nv/rwc-p --lines scratch/real/beats-bt-folds --heard scratch/real/chords-crema+btc --voice scratch/net/voice/rwc-p
+scratch/net/out/orecchiante.exe read scratch/real/rwc-p --out scratch/net/read-nv/rwc-p --lines scratch/real/beats-bt-folds --heard scratch/real/chords-crema+btc --voice scratch/net/voice/rwc-p
 ```
 
 ### The parts
 
 Demucs separates four parts, and since 0.7.0 (the owner, 2026-11-17: to transcribe by ear, one
-part alone or all but one; whatever instrument the user plays, not one above the others) `dettato <recording>` writes them all, not the vocals' loudness
+part alone or all but one; whatever instrument the user plays, not one above the others) `orecchiante <recording>` writes them all, not the vocals' loudness
 alone: `<name>.parts/drums.flac`, `bass.flac`, `other.flac`, `vocals.flac` beside the chart, and
-their ways in `.dettato.json`'s `parts` (SIDECAR.md). Lily# turns each on and off where the recording
+their ways in `.orecchiante.json`'s `parts` (SIDECAR.md). Lily# turns each on and off where the recording
 plays (REQUESTS 16, as many parts as are listed). **Since 0.8.0 they are six, `guitar.flac` and
 `piano.flac` after the four ("Six parts", below); what follows was measured on the four.**
 
@@ -865,7 +865,7 @@ plays (REQUESTS 16, as many parts as are listed). **Since 0.8.0 they are six, `g
 Demucs's `htdemucs_6s` (the same repository and licence as `htdemucs`; its authors call the guitar
 "okay" and the piano weak, with a lot of bleeding) separates guitar and piano out of `other`. It is
 the default since 0.8.0 (the owner, having listened to 糸 and My Life: "very well made for a free tool;
-guitar and piano not quite apart"); `DETTATO_VOICE_MODEL=htdemucs-mm8.onnx` gives the four again.
+guitar and piano not quite apart"); `ORECCHIANTE_VOICE_MODEL=htdemucs-mm8.onnx` gives the four again.
 The vocals the sections hear are six's too (`scratch/net/voice/` holds them; the four's are in `voice4/`).
 
 - To ONNX as the four (`demucs_onnx.py --model htdemucs_6s`): against torch 0.0004 at most; with its
@@ -930,7 +930,7 @@ the two ends of a chart by what sounds there (2026-11-14):
   found, a bar a fifth as loud as the one before it is the last chord ringing out, and no bar.
 - **A pickup is a short bar.** Whole beats of chord before the first bar line (a first bar that
   begins with silence is such a one) are written as a section of their own, which is how Lily#
-  lets a piece open short; in the `.dettato.json` it is a bar numbered 0 with `"pickup": <beats>`:
+  lets a piece open short; in the `.orecchiante.json` it is a bar numbered 0 with `"pickup": <beats>`:
 
   ```
   section Pickup {
@@ -1090,7 +1090,7 @@ scratch/d2/spike/out/Spike.exe data/synth/seed1 scratch/d2/beat-this-final0-dyna
 
 What ships is to be a program a VS Code extension carries, as Calamo's is (2026-11-14), so the
 reader is being moved to .NET, a part at a time, each checked against the Python it replaces.
-The first part is both ears (`src/Dettato`, 636 lines, `dettato ears`): a `.wav` to the
+The first part is both ears (`src/Orecchiante`, 636 lines, `orecchiante ears`): a `.wav` to the
 `.beats` and `.npz` that `track_beats.py` and `crema_chords.py` write. It has librosa's
 constant-Q transform (`Cqt.cs`: the filters of an octave over the spectra of frames, the rate
 halved, the octave below; the early halving, the sparse filters and the scaling as librosa 1.0
@@ -1113,11 +1113,11 @@ in one process), rates other than 44100 Hz (the resampler takes any; no recordin
 another), and the bar lines of RWC, which need the fold models as ONNX to count.
 
 ```
-dotnet build src/Dettato -c Release -o scratch/net/out
-scratch/net/out/dettato.exe ears data/synth/seed1 --out scratch/net/seed1 --models scratch/d2 --cqt
+dotnet build src/Orecchiante -c Release -o scratch/net/out
+scratch/net/out/orecchiante.exe ears data/synth/seed1 --out scratch/net/seed1 --models scratch/d2 --cqt
 scratch/d2/venv-onnx/Scripts/python tools/net_check.py data/synth/seed1 scratch/net/seed1 --heard scratch/chords-crema+btc/seed1 --beats scratch/beats-bt/seed1
 .venv/Scripts/python tools/measure.py table seed1 --lines scratch/net/seed1 --heard scratch/net/seed1
-scratch/net/out/dettato.exe ears scratch/real/rwc-p --out scratch/net/rwc-p --models scratch/d2 --cqt     # 9 minutes
+scratch/net/out/orecchiante.exe ears scratch/real/rwc-p --out scratch/net/rwc-p --models scratch/d2 --cqt     # 9 minutes
 scratch/d2/venv-onnx/Scripts/python tools/net_check.py scratch/real/rwc-p scratch/net/rwc-p --heard scratch/real/chords-crema+btc
 .venv/Scripts/python tools/measure.py table rwc-dev rwc-test --lines scratch/real/beats-bt-folds --heard scratch/net/rwc-p
 ```
@@ -1125,7 +1125,7 @@ scratch/d2/venv-onnx/Scripts/python tools/net_check.py scratch/real/rwc-p scratc
 ### In .NET: what the rules read
 
 The second part (2026-11-14) is what the rules read beside the two models: `read_chords.py`'s
-`features()` as `--ears` has it, the recording as it is. `dettato features` writes
+`features()` as `--ears` has it, the recording as it is. `orecchiante features` writes
 `<name>.feat.npz` with the same four arrays (`Features.cs`, 179 lines; 808 in all): one
 short-time spectrum gives librosa's onset strength (128 mel bands in dB, the rise from frame to
 frame) and its tuning (`piptrack`'s peaks, the commonest distance from a 36th of an octave, in
@@ -1156,16 +1156,16 @@ This writes the same. One song (`RWC_P001`), cold: 0.43 s in all, where librosa 
 once warm and 3.0 s the first time.
 
 ```
-scratch/net/out/dettato.exe features data/synth/seed1 --out scratch/net/seed1
+scratch/net/out/orecchiante.exe features data/synth/seed1 --out scratch/net/seed1
 .venv/Scripts/python tools/net_check.py data/synth/seed1 scratch/net/seed1 --no-cqt --feats scratch/feat-h0
-scratch/net/out/dettato.exe features scratch/real/rwc-p --out scratch/net/rwc-p        # 33 s
+scratch/net/out/orecchiante.exe features scratch/real/rwc-p --out scratch/net/rwc-p        # 33 s
 .venv/Scripts/python tools/measure.py table seed1 rwc-dev rwc-test --ears --net scratch/net
 ```
 
 ### In .NET: the rules
 
-The third part (2026-11-14) is the reader itself: `dettato read` takes a `.wav` and writes the
-`.lys` and the `.dettato.json`, with nothing of Python in between. It is `read_chords.py` as it
+The third part (2026-11-14) is the reader itself: `orecchiante read` takes a `.wav` and writes the
+`.lys` and the `.orecchiante.json`, with nothing of Python in between. It is `read_chords.py` as it
 runs with `--ears`, step for step (`Reader.cs`, 753 lines: the bars carried to both ends, the
 search, the two ends and the pickup, the bass note, the marks, the key; `Form.cs`, 255: the
 sections, by meaning; `Voice.cs`, 178: the singing; `Writer.cs`, 251: the two files; 3052 lines in all). The reader with nothing learnt
@@ -1176,15 +1176,15 @@ floor division and its rounding to decimals), so the two can be compared letter 
 
 | Against `read_chords.py` (`tools/read_check.py`) | The songs made here | RWC, 100 songs |
 |---|---|---|
-| `.dettato.json`, letter for letter | the same in 168/168 (`seed1`, `seed7`, `seed11`, `seed21`, `seed31`, `seed41`, `head/seed141`) | the same in 100/100 |
+| `.orecchiante.json`, letter for letter | the same in 168/168 (`seed1`, `seed7`, `seed11`, `seed21`, `seed31`, `seed41`, `head/seed141`) | the same in 100/100 |
 | `.lys`, but the line that names the program | the same in 168/168 | the same in 100/100 |
-| `measure.py table`, `doubt`, `form` and `head`, counting dettato's charts (`--read`) | the same (`table` on `seed1`, `seed7`, `seed11`; `form` on `seed1`; `head` on `seed41`) | the same (`table` on `rwc-dev` and `rwc-test`; `doubt` and `form` on `rwc-dev`; `head` on `rwc-test`) |
+| `measure.py table`, `doubt`, `form` and `head`, counting orecchiante's charts (`--read`) | the same (`table` on `seed1`, `seed7`, `seed11`; `form` on `seed1`; `head` on `seed41`) | the same (`table` on `rwc-dev` and `rwc-test`; `doubt` and `form` on `rwc-dev`; `head` on `rwc-test`) |
 | `lysc check`, and the files against SIDECAR.md | 168/168, 168/168 | 100/100, 100/100 |
 
 Both read the same beats and probabilities there (`--lines`, `--heard`: for RWC the fold
 models' beats, which only Python has) and the same features (.NET's: Python with `--net`).
-With the two models run inside (`dettato read` alone), `seed1` is the same in 24/24 as from the
-files `dettato ears` writes. One song (3 min 27 s, `RWC_P001`), cold, from the `.wav` to the
+With the two models run inside (`orecchiante read` alone), `seed1` is the same in 24/24 as from the
+files `orecchiante ears` writes. One song (3 min 27 s, `RWC_P001`), cold, from the `.wav` to the
 chart: 5.5 s (0.3 s to start and open the models, 0.1 s to load and resample, 0.3 s the
 features, 3.7 s Beat This!, 1.0 s the transforms and crema, 0.1 s the rules), on 8 threads.
 Not done: `--tempo`, the reasons of a mark (`why`, which `measure.py doubt` shows when Python
@@ -1192,10 +1192,10 @@ reads). Other kinds of file than `.wav`: the next section. Not looked at: RWC fr
 heard those songs, so its bar lines are not to be counted).
 
 ```
-scratch/net/out/dettato.exe read song.wav --out charts --models scratch/d2      # song.lys and song.dettato.json
+scratch/net/out/orecchiante.exe read song.wav --out charts --models scratch/d2      # song.lys and song.orecchiante.json
 .venv/Scripts/python tools/measure.py table seed1 rwc-dev rwc-test --ears --net scratch/net --write scratch/pyread
-scratch/net/out/dettato.exe read data/synth/seed1 --out scratch/net/read/seed1 --lines scratch/beats-bt/seed1 --heard scratch/chords-crema+btc/seed1 --voice none
-scratch/net/out/dettato.exe read scratch/real/rwc-p --out scratch/net/read/rwc-p --lines scratch/real/beats-bt-folds --heard scratch/real/chords-crema+btc --voice none   # 27 s
+scratch/net/out/orecchiante.exe read data/synth/seed1 --out scratch/net/read/seed1 --lines scratch/beats-bt/seed1 --heard scratch/chords-crema+btc/seed1 --voice none
+scratch/net/out/orecchiante.exe read scratch/real/rwc-p --out scratch/net/read/rwc-p --lines scratch/real/beats-bt-folds --heard scratch/real/chords-crema+btc --voice none   # 27 s
 py -3.12 tools/read_check.py scratch/pyread/seed1 scratch/net/read/seed1
 py -3.12 tools/read_check.py scratch/pyread/rwc-dev scratch/net/read/rwc-p
 .venv/Scripts/python tools/measure.py table seed1 rwc-dev rwc-test --ears --read scratch/net/read
@@ -1207,9 +1207,9 @@ py -3.12 tools/read_check.py scratch/pyread/rwc-dev scratch/net/read/rwc-p
 The command a user calls (2026-11-14, D3), and Lily# when it has the menu:
 
 ```
-dettato song.mp3                    # song.lys and song.dettato.json beside it
-dettato song.mp3 -o charts/x.lys    # there, with x.dettato.json ("audio": "../song.mp3"); --force writes over a chart
-dettato --version --json            # {"version":"0.2.0","protocol":1,"commands":["read"],"inputs":["wav","mp3","m4a","mp4","aac","flac","wma"]}
+orecchiante song.mp3                    # song.lys and song.orecchiante.json beside it
+orecchiante song.mp3 -o charts/x.lys    # there, with x.orecchiante.json ("audio": "../song.mp3"); --force writes over a chart
+orecchiante --version --json            # {"version":"0.2.0","protocol":1,"commands":["read"],"inputs":["wav","mp3","m4a","mp4","aac","flac","wma"]}
 ```
 
 stderr says each step as it begins (opening the models, listening, the beats, the chords, the
@@ -1217,7 +1217,7 @@ bars, the chords and the sections, the parts) and what was read; and, since 0.8.
 parts is separated, by 5%, which is most of the time (`the beats; separating the parts 35%`, then
 `separating the parts 60%` once the chords are read): Lily# shows the newest line in its progress
 (a line about every 2.5 s on a song of 3.5 min, where "the singing" stood for 27 s before). On
-failure its last line says why (`dettato: x.wav was not read: fewer than two bar lines found`).
+failure its last line says why (`orecchiante: x.wav was not read: fewer than two bar lines found`).
 stdout has the chart's path alone. Exit codes: 0 written; 1 the recording was not read (not a
 recording, shorter than 5 seconds, no bar lines, no chord); 2 the arguments (no such file, a kind
 not read, a chart already there without `--force`); 3 the reader itself (a model missing, a fault).
@@ -1228,14 +1228,14 @@ When `LILYSHARP_LYSC_PATH` names Lily#'s `lysc` (Lily#'s Convert Recording sets 
 the first chord of the chart is written with its guitar shape, `D(xx0232)`, so that its diagram
 shows: the shape Lily#'s editor offers first, as `lysc shape D` says it (`Lysc.cs`, `lysc_shape`;
 nothing of Lily#'s shapes is kept here). Without the variable, or with a `lysc` that does not know
-`shape`, the name alone, as before. `dettato read` and the measuring never ask.
+`shape`, the name alone, as before. `orecchiante read` and the measuring never ask.
 
 A plain `.wav` (16 or 24 bit, float) is read by the program itself, as before; every other kind
 by Windows' Media Foundation, through NAudio (MIT), so no decoder is carried. Media Foundation
 leaves in front the silence an encoder adds, which a browser or ffmpeg takes out; so does the
 reader then, where the file says how much (`Audio.cs`: an mp3's Xing/Info frame and LAME's delay,
 an MPEG-4 sound track's edit list). One song made here, written by ffmpeg in each kind and read
-back (`dettato audio`, `tools/heard_check.py`: where the cross-correlation with the `.wav` peaks):
+back (`orecchiante audio`, `tools/heard_check.py`: where the cross-correlation with the `.wav` peaks):
 
 | Kind (ffmpeg's encoder) | As Windows gives it | As the reader takes it |
 |---|---|---|
@@ -1279,9 +1279,9 @@ is 2112 samples; mp3 from other encoders), a file with pictures in it, anything 
 minutes (the whole recording is held in memory), the accuracy on recordings as mp3.
 
 ```
-scratch/net/out/dettato.exe audio kinds --out heard                 # kinds/: one song as a.wav, a.mp3, a.m4a ...
+scratch/net/out/orecchiante.exe audio kinds --out heard                 # kinds/: one song as a.wav, a.mp3, a.m4a ...
 .venv/Scripts/python tools/heard_check.py heard a.wav
-scratch/net/out/dettato.exe read mp3/seed1 --out read-mp3/seed1 --models scratch/d2
+scratch/net/out/orecchiante.exe read mp3/seed1 --out read-mp3/seed1 --models scratch/d2
 py -3.12 tools/kinds_check.py read-wav/seed1 read-mp3/seed1
 .venv/Scripts/python tools/measure.py table seed1 --ears --read read-mp3
 ```
@@ -1337,7 +1337,7 @@ over, at its first or its last, and the key says which (the key of the ears' lik
 by frame; the lines are where its home chord comes in the beat after, worth twice as much after
 its dominant in the beat before). Letting the key choose for an even run too kept 糸's bars 58 and
 59 apart (`C | G D/F#`, the home chord on the line inside a plagal bar), so it does not.
-糸 (`dettato` from its mp3): 89 → 71 bars, from 3.6 to 5.0 s; its form
+糸 (`orecchiante` from its mp3): 89 → 71 bars, from 3.6 to 5.0 s; its form
 `A |: B [1. C] :| [2. D] |: E [1. F] :| [2. G]`.
 
 Bar lines, F, with `--ears`: `rwc-dev` 93.7 → 93.8%, `rwc-test` 95.0 → 95.3%; the songs made
@@ -1371,7 +1371,7 @@ Sections against AIST (3 s): with the voice `rwc-dev` 66.6 → 66.3%, `rwc-test`
 50.9 → 50.7%, 50.1 → 49.7%; the owner's two songs as before. Python and .NET the same (RWC 100/100
 with the voice, the seven sets 168/168).
 
-**A bar of 2/4 (0.8.5, the owner 2026-11-17: "Dettato should write it in").** A bar about half as
+**A bar of 2/4 (0.8.5, the owner 2026-11-17: "Orecchiante should write it in").** A bar about half as
 long as the bars around it (0.4 to 0.6 of the median of four each side), between two bars within
 15% of theirs, is written `time 2/4` at its head, and the bar after it `time 4/4` (Lily# takes a
 `time` at a bar's head to the end of its section, so a section's last bar needs no way back:
@@ -1651,15 +1651,15 @@ They are written to be measured and replaced, not shipped.
 
 ## The VS Code extension
 
-`extension/` is the reader as a VS Code extension (`yotsuda.dettato`, Windows x64): `dettato.exe`
-published self-contained, the two models beside it, and one command, **Dettato: Transcribe
-Recording to Lily# Chord Chart (.lys)…**, which reads a recording (`dettato <recording> -o
+`extension/` is the reader as a VS Code extension (`yotsuda.orecchiante`, Windows x64): `orecchiante.exe`
+published self-contained, the two models beside it, and one command, **Orecchiante: Transcribe
+Recording to Lily# Chord Chart (.lys)…**, which reads a recording (`orecchiante <recording> -o
 <chart> --force`, after asking when a chart is there) and opens the chart written beside it.
-What it gives another extension is the reader's path and its `--version --json` (`bin/dettato.json`,
+What it gives another extension is the reader's path and its `--version --json` (`bin/orecchiante.json`,
 written when the package is made). The package is 113 MB (the beat model is 83 MB of it).
 
 ```
-tools/pack-extension.ps1       # out/extension/dettato-win32-x64-<version>.vsix (the models from scratch/d2)
+tools/pack-extension.ps1       # out/extension/orecchiante-win32-x64-<version>.vsix (the models from scratch/d2)
 tools/deploy-extension.ps1     # packs, and installs it into this PC's VS Code; publishes nothing
 ```
 
@@ -1669,7 +1669,7 @@ tools/deploy-extension.ps1     # packs, and installs it into this PC's VS Code; 
 - [Calamo](https://github.com/yotsuda/Calamo): reads a page image into `.lys`.
 - [Cantoria](https://github.com/yotsuda/Cantoria): sings a part's notes and words.
 
-Dettato is a program of its own, as they are. It writes `.lys` text and calls Lily#'s `lysc` to
+Orecchiante is a program of its own, as they are. It writes `.lys` text and calls Lily#'s `lysc` to
 check it; Lily# does not depend on it.
 
 ## License

@@ -1,4 +1,4 @@
-# Dettato ロードマップ
+# Orecchiante ロードマップ
 
 複数のセッションにまたがる作業の方向づけ。**毎セッションの最初に、これと
 [HANDOFF.md](HANDOFF.md) を読む。** ここ（ゴール・原則・作業の順番）はめったに変えない。
@@ -59,8 +59,8 @@ M2 の数字の根拠（2026-11-14、RWC-P 100 曲の最初の測定）:
 
 1 項目がおおよそ 1 セッション。各項目の「終わり」を満たしたら commit し、HANDOFF を書き換える。
 A、B0〜B3、C1、C2、D1 は 2026-11-14 に終わった。D2 の判断材料も同日に測った。
-**D2 は終わった（2026-11-14）: 読み取り器は .NET の 1 コマンド（`dettato read`）になり、Python と一字一句同じ譜面を書く。
-D3 も作る所は終わった（同日）: `dettato <録音>` が mp3・m4a・flac なども読む。残るのはユーザーの曲で試すことと D4（HANDOFF）。**
+**D2 は終わった（2026-11-14）: 読み取り器は .NET の 1 コマンド（`orecchiante read`）になり、Python と一字一句同じ譜面を書く。
+D3 も作る所は終わった（同日）: `orecchiante <録音>` が mp3・m4a・flac なども読む。残るのはユーザーの曲で試すことと D4（HANDOFF）。**
 
 実録音の扱い: RWC-P の **P001〜P050 は見て決める側、P051〜P100 は決めるときに見ない側**。
 変更のたびに 100 曲全部を測って README に載せるが、値を選ぶ・誤りを調べるのは前半だけで行う
@@ -84,7 +84,7 @@ D3 も作る所は終わった（同日）: `dettato <録音>` が mp3・m4a・f
 ### B. 実録音で学習したモデルを耳にする（M2）
 
 2026-11-14 に方針を変えた（ユーザー了承）。**耳（拍・小節頭・コードの聞き分け）は、実録音で学習された
-公開のローカルモデルを土台にする。Dettato が作るのは、それを直せる譜面に組み立てる側**（小節に揃える、
+公開のローカルモデルを土台にする。Orecchiante が作るのは、それを直せる譜面に組み立てる側**（小節に揃える、
 印を付ける、繰り返しをまとめる、`.lys` に書く）。自作の拍追跡と、合成曲だけで学習したクロマのモデルは、
 合成曲用の比較対象として残すが、これ以上は磨かない。原則 2 の「聞き分けは学習、組み立ては規則」は変わらない。
 
@@ -96,7 +96,7 @@ D3 も作る所は終わった（同日）: `dettato <録音>` が mp3・m4a・f
   当初の項目: `read_chords.py` が (a) Beat This! の拍と小節頭、(b) 実録音のコードモデルの
   フレームごとの確率、を受け取り、今の探索（コードは小節線で変わりやすい・小節の途中は高くつく）で組み立てる。
   拍子は拍の番号と拍の中の刻みから決める（いまは 6/8 が 2 拍子に、合成曲でテンポ・拍子が 17〜20/24 に落ちる）。
-  `.lys` と `.dettato.json` を書き、`lysc check` に通す。
+  `.lys` と `.orecchiante.json` を書き、`lysc check` に通す。
   終わり: `rwc-dev` で B0 の素の数字（ルート 81.9%・長短 76.3%・小節線 93.3%）以上。合成曲の全セットで今の読み取り器と
   同等以上、または落ちる理由の記録。使うときのモデルは Beat This! の `final0`（RWC を学習済みなので、測るときは fold のモデル）。
 - **B2 印の質（完了、2026-11-14。目標には届かず、理由と届く所を記録）。** `rwc-test` で印 23.2%・誤りの 64.2%
@@ -132,30 +132,30 @@ D3 も作る所は終わった（同日）: `dettato <録音>` が mp3・m4a・f
 - **D1 横に置くファイルの仕様を決める（完了、2026-11-14）。** 仕様は [SIDECAR.md](SIDECAR.md)（形式 1）。`bars[]` の n 番目が
   Lily# の鳴らす n 番目の小節。`tools/sidecar.py` が仕様と、`lysc layout` の小節数との一致を検査し、`measure.py` が書いた
   譜面すべてに掛ける。Lily# のエディタ側で確かめていない 2 点（弱起の拍、`placeAt` の小節番号）は D4 の最初に。
-  当初の項目: `.dettato.json` の項目を確定し、Lily# 側と突き合わせる。
+  当初の項目: `.orecchiante.json` の項目を確定し、Lily# 側と突き合わせる。
 - **D2 配る形（決定・移植とも完了、2026-11-14）: .NET＋ONNX の実行ファイルを、VS Code 拡張に入れて配る**（Calamo と同じ形。
   ユーザーの答えは「VS code extension」の一言で、.NET と読んだのは Claude。違っていたら HANDOFF の「未決」を見て直す）。
   移植は 4 段で、段ごとに Python と突き合わせる（進み具合は HANDOFF）:
-  (1) 耳＝拍と CQT と crema（**完了**、`src/Dettato`、README の「In .NET: the ears」）、
+  (1) 耳＝拍と CQT と crema（**完了**、`src/Orecchiante`、README の「In .NET: the ears」）、
   (2) onset strength・rms・2 つのクロマ（調律の推定を含む。**完了**、`Features.cs`、README の「In .NET: what the rules read」）、
   (3) `read_chords.py` の規則（**完了**、`--ears` の道だけ。`Reader.cs`・`Form.cs`・`Writer.cs`、README の「In .NET: the rules」）、
-  (4) `measure.py` が .NET の書いた譜面を読んで表が一致（**完了**、`measure.py --read`。`.dettato.json` と `.lys` は 268 曲で
+  (4) `measure.py` が .NET の書いた譜面を読んで表が一致（**完了**、`measure.py --read`。`.orecchiante.json` と `.lys` は 268 曲で
   Python と一字一句同じ、`tools/read_check.py`）。規則を変えるときは Python で試して測り、.NET に写して `read_check.py` で確かめる。
   判断材料（2026-11-14。README の「Without torch and TensorFlow」）:
   2 つのモデルは ONNX で同じ答えを出す。1 曲（3 分半）は 3 つの venv で 18 秒、1 つの venv＋ONNX で 11 秒、
   .NET は拍の経路だけ試作して 3.6 秒。組み立ての時間の 9 割だった HPSS は `--ears` では外した（精度は同じ、ベースは上がる）。
 - **D3 mp3 などの入力、コマンドの体裁、エラーの言い方。** Lily# との約束もここで固める: 引数、終了コード、
-  `dettato --version --json`（版と `protocol`。Calamo の `omr --version --json` に当たるもの）。
-  **作った（2026-11-14、拡張 0.2.0）:** `dettato <録音> [-o <x.lys>] [--force]`。wav 以外は Windows の Media Foundation
+  `orecchiante --version --json`（版と `protocol`。Calamo の `omr --version --json` に当たるもの）。
+  **作った（2026-11-14、拡張 0.2.0）:** `orecchiante <録音> [-o <x.lys>] [--force]`。wav 以外は Windows の Media Foundation
   （NAudio 経由）で読み、mp3・AAC の頭の無音を取り除く。終了コード 0〜3、失敗の理由は stderr の最後の行（README の
   「A recording as it comes」）。Lily# の希望は聞けていない（便りの §2a に入れた形を書いた）。**残り: ユーザーの録音で試す。**
 - **D4 VS Code の Lily# 拡張から呼ぶ。** 録音を選ぶ → `.lys` が開く → 小節を選ぶと原音が鳴る。
   **録音を `.lys` に変換するメニューは Lily# 本体が持つ**（ユーザー決定、2026-11-14。理由は §5）。Lily# に
-  メニューと原音再生を入れるのと同時に、Dettato の拡張のコマンド（`dettato.transcribe`）を外す（二重に出さない）。
-  それまでは Dettato の拡張が仮に持つ。拡張そのもの（`yotsuda.dettato` 0.1.0）は 2026-11-14 に作った。
-  **2026-11-16: Lily# に「Convert Recording to Lily# (.lys)… (Preview)」が入り、Dettato の拡張 0.3.0 で `dettato.transcribe` を外した（オーナーの指示）。**
+  メニューと原音再生を入れるのと同時に、Orecchiante の拡張のコマンド（`orecchiante.transcribe`）を外す（二重に出さない）。
+  それまでは Orecchiante の拡張が仮に持つ。拡張そのもの（`yotsuda.orecchiante` 0.1.0）は 2026-11-14 に作った。
+  **2026-11-16: Lily# に「Convert Recording to Lily# (.lys)… (Preview)」が入り、Orecchiante の拡張 0.3.0 で `orecchiante.transcribe` を外した（オーナーの指示）。**
   **2026-11-15 に形を広げた（オーナーの希望）: 原音を聴きながら直す所は Transcribe! と同じ体験にする**（マーカーを打って直す・ループ・速度・
-  セント単位の音高と速度の連動。人の打った小節線が正）。Lily# への依頼 4、Dettato 側の用意は HANDOFF の「D4 の形」。
+  セント単位の音高と速度の連動。人の打った小節線が正）。Lily# への依頼 4、Orecchiante 側の用意は HANDOFF の「D4 の形」。
 
 ### E. コードの先（M5）
 
@@ -203,7 +203,7 @@ D3 も作る所は終わった（同日）: `dettato <録音>` が mp3・m4a・f
 - **M2 の印の目安。** 「誤りの 8 割に印、印は 3 割以下」は `rwc-test` で届かなかった（B2）。繰り返しの照合（C2）も
   印には効かなかった。2 つ目の耳（BTC、0.4.0）で近づいた（数字は HANDOFF）。下げるか、印を増やすかは HANDOFF の「未決」。
 - **和音のないイントロ・旋律だけの弱起を譜面に書くか。** いまは最初の和音の小節から書く（C1）。書くなら N.C. の小節として。
-- **決まったこと（2026-11-19）: 入力は元の録音だけ**（オーナー）。Moises などで抜いたパート（`-bass-…hz.mp3`）はオーナーがパート譜を耳コピするための音源で、dettato には入れない。パートを入力にした扱いは考えない。物差し（xsc）のパートは元のミックスに差し替えて測る。
+- **決まったこと（2026-11-19）: 入力は元の録音だけ**（オーナー）。Moises などで抜いたパート（`-bass-…hz.mp3`）はオーナーがパート譜を耳コピするための音源で、orecchiante には入れない。パートを入力にした扱いは考えない。物差し（xsc）のパートは元のミックスに差し替えて測る。
 - **決まったこと（2026-11-16）: section は意味で切る**（オーナー了承。0.5.0）。歌の出入り・調や音量の変わる所・4 小節の句で切り、繰り返し記号は使わない。前の分け方（C2）は Python の `--old-sections` に残す。
 - **決まったこと（2026-11-17）: 立ち位置**（オーナーと話して）。自動採譜の精度では先行するプロジェクト（MuScriptor、YourMT3+ など）と競わない。耳は公開モデルを借り続け、
   力を入れるのは、組み立て（小節・調・コードの制約の中で楽譜にする）、読みやすさ、直す体験、テキストの形式であること（`.lys` は MusicXML より可能性がある、オーナーも同意）。
@@ -215,10 +215,10 @@ D3 も作る所は終わった（同日）: `dettato <録音>` が mp3・m4a・f
 - **決まったこと（2026-11-16）: BTC を 2 つ目の耳にする**（オーナー決定。0.4.0）。リポジトリの MIT のもとで、表示を付けて同梱する。
   作者には尋ねない（12 件の issue に返事は 2020 年の 1 件だけ、ほかのアプリも組み込んで公開している）。重みについて作者が何も言っていない曖昧さは残る。
 - **決まったこと（2026-11-14）:** 配る形（D2）は VS Code 拡張に入れる .NET の実行ファイル。
-  拡張は Lily# とは別（`yotsuda.dettato`。Calamo の `yotsuda.calamo` と同じ形）。
-- **決まったこと（2026-11-14）:** 録音を `.lys` に変換するメニューは Lily# 本体が持つ。Dettato の拡張は読み取り器を運び、
+  拡張は Lily# とは別（`yotsuda.orecchiante`。Calamo の `yotsuda.calamo` と同じ形）。
+- **決まったこと（2026-11-14）:** 録音を `.lys` に変換するメニューは Lily# 本体が持つ。Orecchiante の拡張は読み取り器を運び、
   場所と版を返すだけにする。理由: 変換の後の作業（プレビュー、`@todo` の表示、小節の原音を鳴らす）がすべて Lily# のもの。
   Calamo の「Convert Image/PDF to Lily# (.lys)…」と並ぶ。Lily# なしでは `.lys` は描けず鳴らせないので、単独で動く利点がない。
   代償は、メニューを変えるたびに Lily# のリリースが要ることと、両者の約束を決める必要があること（D3）。移す順は §3 の D3・D4。
-- **名前。** 「Dettato」の重複は Web 検索で見ただけ。Marketplace・GitHub・NuGet・商標は未確認。
-- **リモート。** `https://github.com/yotsuda/Dettato.git` を作って push するのはユーザー。
+- **名前（決定 2026-11-20）: Orecchiante**（「楽譜を読まず耳で弾く人」。0.10.2 までは Dettato。同名の kobimusic/dettato（録音 → MIDI、2026-11-16 公開）があったので改名。orecchiante は GitHub・PyPI・VS Code Marketplace とも 0 件（2026-11-20）。Treccani では「聞きかじりの素人」「盗み聞きする人」の意味もあるが、検索で見つかりやすいのを取った（オーナー）。商標は未確認。
+- **リモート。** `https://github.com/yotsuda/Orecchiante.git` を作って push するのはユーザー。

@@ -1,4 +1,4 @@
-namespace Dettato;
+namespace Orecchiante;
 
 /// <summary>A chord as the reader names it before the key says how it is spelt: the root and the bass as pitch
 /// classes (no bass note of its own: -1), the quality as its place in <see cref="Reader.Qualities"/>.</summary>
@@ -37,7 +37,7 @@ sealed class Chart
     public string BpmText => Bar.TempoText(Bpm);
     public int? Tuning;                         // in cents from A = 440 Hz
     /// <summary>The parts the recording was separated into (Voice.Parts order), each the way to its file as `audio` is;
-    /// null when none were written (dettato read, and so read_chords.py, write none).</summary>
+    /// null when none were written (orecchiante read, and so read_chords.py, write none).</summary>
     public List<(string Part, string Path)>? Parts;
     public List<string> Form = [];
     public List<Bar> Bars = [];

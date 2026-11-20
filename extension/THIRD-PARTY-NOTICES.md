@@ -1,6 +1,6 @@
 # Third-party notices
 
-Dettato contains the following third-party components. Each is used under its own
+Orecchiante contains the following third-party components. Each is used under its own
 license, reproduced or referenced below.
 
 ## Beat This!

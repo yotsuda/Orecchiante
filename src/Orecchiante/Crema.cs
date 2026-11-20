@@ -1,7 +1,7 @@
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 
-namespace Dettato;
+namespace Orecchiante;
 
 /// <summary>The chords of a recording as crema's model hears them: 44100 Hz -> the constant-Q magnitudes of two
 /// harmonics, in dB under the loudest (pumpp's HCQTMag) -> the model (ONNX) -> a probability for each of 170

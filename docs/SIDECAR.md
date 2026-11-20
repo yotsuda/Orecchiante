@@ -1,12 +1,12 @@
-# The file beside a chart: `<name>.dettato.json`
+# The file beside a chart: `<name>.orecchiante.json`
 
-Dettato writes two files for a recording `<name>.wav`: the chart `<name>.lys`, which a person
-corrects, and `<name>.dettato.json`, which says **where in the recording every bar of that chart
+Orecchiante writes two files for a recording `<name>.wav`: the chart `<name>.lys`, which a person
+corrects, and `<name>.orecchiante.json`, which says **where in the recording every bar of that chart
 is**. An editor reads it to play the recording's own bar while the bar is being corrected; the
 measuring tools read it to count a reading against the truth.
 
 This is format **1** (2026-11-14; `tuning` and the bars' `beats` added 2026-11-16, for listening
-to the recording beside the chart in Lily#; `parts` added 2026-11-17, to hear one part of it at a time). `dettato` and `tools/read_chords.py` write it, `tools/sidecar.py` checks a
+to the recording beside the chart in Lily#; `parts` added 2026-11-17, to hear one part of it at a time). `orecchiante` and `tools/read_chords.py` write it, `tools/sidecar.py` checks a
 file against this page and against the chart beside it, and `tools/measure.py` runs that check on
 every chart it writes.
 
@@ -14,7 +14,7 @@ every chart it writes.
 
 ```json
 {
-  "dettato": 1,
+  "orecchiante": 1,
   "audio": "song.wav",
   "duration": 53.52,
   "tempo": { "note": "4", "bpm": 117 },
@@ -51,14 +51,14 @@ comes"; an mp3 with no such note and a bare `.aac` keep theirs, 13 and 23 ms as 
 
 | Item | | What it is |
 |---|---|---|
-| `dettato` | always | The format's number: 1. |
-| `audio` | always | The recording, as found from the folder of this file: its file name when it is beside this file (as `dettato <recording>` writes it); when the chart was written elsewhere (`-o`), the way there from this file's folder, folders parted by `/` (`../Music/x.mp3`), or the whole path when the two are on different drives (`F:/Music/x.mp3`). (Before 2026-11-16, 0.3.0: always the file name alone. The owner chose the way to it over copying the recording beside the chart, 2026-11-16.) |
+| `orecchiante` | always | The format's number: 1. |
+| `audio` | always | The recording, as found from the folder of this file: its file name when it is beside this file (as `orecchiante <recording>` writes it); when the chart was written elsewhere (`-o`), the way there from this file's folder, folders parted by `/` (`../Music/x.mp3`), or the whole path when the two are on different drives (`F:/Music/x.mp3`). (Before 2026-11-16, 0.3.0: always the file name alone. The owner chose the way to it over copying the recording beside the chart, 2026-11-16.) |
 | `duration` | always | The recording's length in seconds, right to within 0.03 s. |
 | `tempo` | always | `note` is the beat, `"4"` or (in 6/8) `"4."`; `bpm` is how many of them a minute, to a tenth (`131.8`; a whole number is written bare, `117`), from the bars about as long as the median one. The chart's `tempo` line, the same number (Lily# sounds the tenth and prints "♩ ≈ 132"). (Before 2026-11-16, 0.3.1: always a whole number. Not the written bars' beats over their span: that drifts with a bar read wrong and with the rests of a long recording; Lily# is asked to set the recording's pace from the bars one by one, REQUESTS 8.) |
 | `time` | always | The meter: `"4/4"`, `"3/4"`, `"2/4"`, `"6/8"`, or another number of quarters. One for the whole recording. |
 | `key` | always | `"<tonic> major"` or `"<tonic> minor"`, the tonic a letter with `#` or `b`. It is what the chords are spelled by. |
-| `tuning` | when measured | How far the recording's pitches are from A = 440 Hz, in whole cents, -50 to 49: -12 is 12 cents flat. The commonest distance of its louder spectral peaks from a semitone (librosa's `estimate_tuning`, 12 bins to the octave). Half a semitone is as far as it can tell: 70 cents sharp reads as -30. For an old tape run fast or slow, the editor turns the pitch by this to bring it back. `dettato` always writes it (2026-11-16 on); `read_chords.py` from features made before then does not. |
-| `parts` | when written | The recording separated into parts, for a player to turn each on or off (to hear the bass alone, or all but the singing): `{"drums": …, "bass": …, "other": …, "vocals": …, "guitar": …, "piano": …}`, in that order (0.8.0; 0.7.0 wrote the first four, guitar and piano then in `other`: a player takes the parts as they are listed), each the way to a FLAC file as `audio` is found (`dettato <recording>` writes them into a folder beside this file named like it, `<name>.parts/bass.flac`). Each part is one channel, 16 bits at 44100 Hz, as long as the recording and **on its seconds** (the first sample is the recording's first: FLAC puts nothing before it), and they add up to the recording (in mono): `other` is whatever the others are not (Demucs `htdemucs_6s`, what none of its parts takes put in `other`; README, "The parts", "Six parts"). `dettato` writes them on every reading (2026-11-17, 0.7.0, the owner); `dettato read` and `read_chords.py` do not. A recording read again with `--force` has its parts written over. |
+| `tuning` | when measured | How far the recording's pitches are from A = 440 Hz, in whole cents, -50 to 49: -12 is 12 cents flat. The commonest distance of its louder spectral peaks from a semitone (librosa's `estimate_tuning`, 12 bins to the octave). Half a semitone is as far as it can tell: 70 cents sharp reads as -30. For an old tape run fast or slow, the editor turns the pitch by this to bring it back. `orecchiante` always writes it (2026-11-16 on); `read_chords.py` from features made before then does not. |
+| `parts` | when written | The recording separated into parts, for a player to turn each on or off (to hear the bass alone, or all but the singing): `{"drums": …, "bass": …, "other": …, "vocals": …, "guitar": …, "piano": …}`, in that order (0.8.0; 0.7.0 wrote the first four, guitar and piano then in `other`: a player takes the parts as they are listed), each the way to a FLAC file as `audio` is found (`orecchiante <recording>` writes them into a folder beside this file named like it, `<name>.parts/bass.flac`). Each part is one channel, 16 bits at 44100 Hz, as long as the recording and **on its seconds** (the first sample is the recording's first: FLAC puts nothing before it), and they add up to the recording (in mono): `other` is whatever the others are not (Demucs `htdemucs_6s`, what none of its parts takes put in `other`; README, "The parts", "Six parts"). `orecchiante` writes them on every reading (2026-11-17, 0.7.0, the owner); `orecchiante read` and `read_chords.py` do not. A recording read again with `--force` has its parts written over. |
 | `strange` | when true | The reader's own model did not know the sound, and the bar lines are the rules' (the reader without `--ears` only). |
 | `doubt` | with `sure` | A chord whose `sure` is below this is doubted. |
 | `form` | always | The names of the sections in the order they are played. `"Pickup"` is first when the first bar is a pickup. A section of three bars or more is a letter, `"A"`, `"B"` … in the order they come, with no `"R"` (`"R2"` reads in Lily# as a whole-bar rest; 0.8.1), and `"S26"` … past Z; a shorter one is named after the section played before it, `"B_1"`, `"B_2"` … (after the next one, `"A_1"`, when none is before it), and the chart hides its name (`~B_1` in its `form`; 2026-11-16, 0.3.4, the owner). |
@@ -172,13 +172,13 @@ A reader of the file takes the items it knows and leaves the rest: an item may b
 a new number. The number is raised when an item changes what it means or goes away, and a reader
 refuses a number it does not know (`tools/score_chords.py`, `tools/sidecar.py`).
 
-Files written before 2026-11-14 have no `dettato`, `duration` or `doubt`, and are otherwise this.
+Files written before 2026-11-14 have no `orecchiante`, `duration` or `doubt`, and are otherwise this.
 
 ## The truth files
 
 `tools/gen_chords.py` writes `<id>.truth.json` in the same shape (`audio`, `tempo`, `time`, `key`,
 `form`, and `bars` with `bar`, `pickup`, `start`, `end`, `section`, `barOfSection` and `chords` of
 `start`, `end`, `symbol`), with items of its own (`id`, `musicSeconds`, `chordSeconds`, `silence`,
-`band`, a bar's `bpm` where the tempo steps) and without `dettato`, `duration`, `doubt`, `fit` or
+`band`, a bar's `bpm` where the tempo steps) and without `orecchiante`, `duration`, `doubt`, `fit` or
 `sure`. A true pickup of melody alone has no chords. The truths made from annotations
 (`tools/rwc_truth.py`) have no sections. `tools/sidecar.py` does not check truth files.

@@ -1,8 +1,8 @@
-"""What dettato.exe (src/Dettato) hears, against what the tools in Python hear from the same recordings.
+"""What orecchiante.exe (src/Orecchiante) hears, against what the tools in Python hear from the same recordings.
 
     scratch/d2/venv-onnx/Scripts/python tools/net_check.py data/synth/seed1 scratch/net/seed1 --heard scratch/chords-crema/seed1
 
-The second folder is what `dettato ears <recordings> --out <folder> --cqt` wrote. Compared: the input of the
+The second folder is what `orecchiante ears <recordings> --out <folder> --cqt` wrote. Compared: the input of the
 chord model (<name>.cqt.npy) with librosa's constant-Q transform as tools/d2/ears_onnx.py makes it, and, with
 --heard, the chords' probabilities (<name>.npz) with that folder's; with --beats, the beats with that folder's.
 """
@@ -23,10 +23,10 @@ def beats_of(path):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("recordings", type=Path)
-    p.add_argument("net", type=Path, help="what dettato ears wrote")
+    p.add_argument("net", type=Path, help="what orecchiante ears wrote")
     p.add_argument("--heard", type=Path, help="a folder of <name>.npz from tools/crema_chords.py or tools/d2/ears_onnx.py")
     p.add_argument("--beats", type=Path, help="a folder of <name>.beats from tools/track_beats.py")
-    p.add_argument("--feats", type=Path, help="compare <name>.feat.npz (dettato features) with tools/measure.py's features "
+    p.add_argument("--feats", type=Path, help="compare <name>.feat.npz (orecchiante features) with tools/measure.py's features "
                                               "in this folder (scratch/feat-h0); the tuning with librosa's, found here (.venv)")
     p.add_argument("--songs", type=int)
     p.add_argument("--no-cqt", action="store_true")

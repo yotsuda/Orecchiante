@@ -1,7 +1,7 @@
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 
-namespace Dettato;
+namespace Orecchiante;
 
 /// <summary>The chords of a recording as BTC hears them (Park et al., ISMIR 2019; MIT), the second ear (the owner,
 /// 2026-11-16): 22050 Hz, cut in 10-second pieces -> log(|CQT| + 1e-6) of each (144 bins from C1, 24 to the octave,

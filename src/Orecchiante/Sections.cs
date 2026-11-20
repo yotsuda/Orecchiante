@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 
-namespace Dettato;
+namespace Orecchiante;
 
 /// <summary>The sections' cuts chosen whole: each bar line's cues, weighed as the owner cut sections in Transcribe!
 /// (sections_dp.json, tools/sections_dp.json embedded), and the owner's section lengths. tools/read_chords.py's

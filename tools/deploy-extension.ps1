@@ -19,9 +19,9 @@ if (-not $Code) {
 }
 if (-not (Test-Path $Code)) { throw "no VS Code CLI at ${Code}: pass -Code <path to code.cmd>" }
 
-# (a reader still running from the installed extension holds its dettato.exe: the old folder cannot go)
-$running = Get-Process dettato -ErrorAction SilentlyContinue | Where-Object { $_.Path -like '*yotsuda.dettato*' }
-if ($running) { throw "dettato.exe is running from the installed extension (pid $($running.Id -join ', ')): let it finish first" }
+# (a reader still running from the installed extension holds its orecchiante.exe: the old folder cannot go)
+$running = Get-Process orecchiante -ErrorAction SilentlyContinue | Where-Object { $_.Path -like '*yotsuda.orecchiante*' }
+if ($running) { throw "orecchiante.exe is running from the installed extension (pid $($running.Id -join ', ')): let it finish first" }
 
 "installing {0} into {1}" -f $vsix.Name, $Code
 cmd /d /s /c "`"$Code`" --install-extension `"$($vsix.FullName)`" --force < NUL"

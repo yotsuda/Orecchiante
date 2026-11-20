@@ -1,6 +1,13 @@
 # Changelog
 
-Notable changes to Dettato are recorded here, newest first.
+Notable changes to Orecchiante (Dettato until 0.10.2) are recorded here, newest first.
+
+## 0.11.0
+
+- Dettato is now Orecchiante (Italian for one who plays by ear): another project had published a
+  transcriber named Dettato. The extension is `yotsuda.orecchiante`, the reader `orecchiante.exe`, the
+  file beside a chart `<name>.orecchiante.json` (its format number under `"orecchiante"`), and the
+  settings `ORECCHIANTE_*`. Files named `.dettato.json` are no longer read: convert the recording again.
 
 ## 0.10.2
 

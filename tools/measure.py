@@ -21,9 +21,9 @@ each recording (the slow part, seconds a song) are kept in scratch/feat-h<N>/ an
 the recording is newer than they are.
 
 The sets, the model and the features are not committed. `make` renders the sets with Lily#
-(DETTATO_LYSC) through the sound fonts named by DETTATO_SOUNDFONT (default
-soundfonts/MuseScore_General.sf2) and DETTATO_SOUNDFONT_ALT (the `tim/` sets); the `samples` set
-needs DETTATO_SAMPLES, the folder of Lily#'s sample songs.
+(ORECCHIANTE_LYSC) through the sound fonts named by ORECCHIANTE_SOUNDFONT (default
+soundfonts/MuseScore_General.sf2) and ORECCHIANTE_SOUNDFONT_ALT (the `tim/` sets); the `samples` set
+needs ORECCHIANTE_SAMPLES, the folder of Lily#'s sample songs.
 """
 import argparse
 import ast
@@ -42,8 +42,8 @@ import sidecar
 
 ROOT = Path(__file__).resolve().parent.parent
 MODEL = ROOT / "models" / "chords.joblib"
-SOUNDFONT = os.environ.get("DETTATO_SOUNDFONT", str(ROOT / "soundfonts" / "MuseScore_General.sf2"))
-SOUNDFONT_ALT = os.environ.get("DETTATO_SOUNDFONT_ALT")
+SOUNDFONT = os.environ.get("ORECCHIANTE_SOUNDFONT", str(ROOT / "soundfonts" / "MuseScore_General.sf2"))
+SOUNDFONT_ALT = os.environ.get("ORECCHIANTE_SOUNDFONT_ALT")
 
 # name: (folder, gen_chords.py's arguments or None for sample_songs.py, the other sound font?, what it is for)
 SETS = {
@@ -105,13 +105,13 @@ def songs(name):
         yield truth, path.parent / truth["audio"]
 
 
-NET = None            # --net: a folder of what `dettato features` wrote, a folder a set (scratch/net)
+NET = None            # --net: a folder of what `orecchiante features` wrote, a folder a set (scratch/net)
 
 
 def feats(wav):
     """The features of a recording, kept between runs. Sets that share song names (the same seed
     through another sound font) are told apart by the folder above the set's. With --net, the
-    features are dettato.exe's instead (src/Dettato): <folder>/<the recordings' folder>/<name>.feat.npz."""
+    features are orecchiante.exe's instead (src/Orecchiante): <folder>/<the recordings' folder>/<name>.feat.npz."""
     if NET:
         return dict(np.load(NET / wav.parent.name / (wav.stem + ".feat.npz")))
     d = ROOT / "scratch" / f"feat-h{rc.HARMONIC_FRAMES}"
@@ -128,9 +128,9 @@ def feats(wav):
     return f
 
 
-READ = None           # --read: a folder of what `dettato read` wrote, a folder a set (scratch/net/read)
-VOICE = None          # --voice: a folder of <recording>.voc.npy (dettato ears), a folder a set or all in one
-DRUMS = None          # --drums: a folder of <recording>.drum.npy (dettato drums or ears), the same
+READ = None           # --read: a folder of what `orecchiante read` wrote, a folder a set (scratch/net/read)
+VOICE = None          # --voice: a folder of <recording>.voc.npy (orecchiante ears), a folder a set or all in one
+DRUMS = None          # --drums: a folder of <recording>.drum.npy (orecchiante drums or ears), the same
 
 
 def voice_of(wav):
@@ -144,7 +144,7 @@ def voice_of(wav):
 
 
 def drums_of(wav):
-    """The drums every 10 ms of a recording (--drums, src/Dettato/Drums.cs), for the sections; None: no drums heard."""
+    """The drums every 10 ms of a recording (--drums, src/Orecchiante/Drums.cs), for the sections; None: no drums heard."""
     if not DRUMS:
         return None
     for path in (DRUMS / wav.parent.name / (wav.stem + ".drum.npy"), DRUMS / (wav.stem + ".drum.npy")):
@@ -154,8 +154,8 @@ def drums_of(wav):
 
 
 def net_reading(wav):
-    """The reading of a recording that dettato.exe wrote, in place of read_chords.py's own."""
-    return json.loads((READ / wav.parent.name / (wav.stem + ".dettato.json")).read_text(encoding="utf-8"))
+    """The reading of a recording that orecchiante.exe wrote, in place of read_chords.py's own."""
+    return json.loads((READ / wav.parent.name / (wav.stem + ".orecchiante.json")).read_text(encoding="utf-8"))
 
 
 def set_constant(key, value):
@@ -263,7 +263,7 @@ def run(name, hint=False, verbose=False, write=None, lines=None, labs=None, hear
         if write and not labs:
             d = Path(write) / name.replace("/", "-").replace("@", "-")
             d.mkdir(parents=True, exist_ok=True)
-            (d / (wav.stem + ".dettato.json")).write_text(json.dumps(got, indent=2) + "\n", encoding="utf-8", newline="\n")
+            (d / (wav.stem + ".orecchiante.json")).write_text(json.dumps(got, indent=2) + "\n", encoding="utf-8", newline="\n")
             (d / (wav.stem + ".lys")).write_text(rc.lys(got, wav.stem), encoding="utf-8", newline="\n")
             written.append(d / (wav.stem + ".lys"))
         rows.append(r)
@@ -281,7 +281,7 @@ def run(name, hint=False, verbose=False, write=None, lines=None, labs=None, hear
 def check(charts):
     """Every chart through `lysc check`. Its "No errors found" has `error` in it: the exit code
     and the words `warning` and `: error` are what say."""
-    lysc = os.environ.get("DETTATO_LYSC", "lysc")
+    lysc = os.environ.get("ORECCHIANTE_LYSC", "lysc")
     from concurrent.futures import ThreadPoolExecutor
     one = lambda chart: subprocess.run([lysc, "check", str(chart)], capture_output=True, text=True, encoding="utf-8",
                                        stdin=subprocess.DEVNULL)      # lysc check takes one file
@@ -295,7 +295,7 @@ def check(charts):
             print(f"lysc check {chart}: {said.strip()[:300]}")
     print(f"lysc check: {len(charts) - bad} of {len(charts)} charts pass")
     # and the file beside each chart: as docs/SIDECAR.md says, with as many bars as Lily# plays
-    return bad + sidecar.check([c.with_name(c.stem + ".dettato.json") for c in charts])
+    return bad + sidecar.check([c.with_name(c.stem + ".orecchiante.json") for c in charts])
 
 
 def doubted(names, ears=False):
@@ -522,16 +522,16 @@ def make(names):
             continue
         font = SOUNDFONT_ALT if alt else SOUNDFONT
         if not font or not Path(font).exists():
-            print(f"{name}: skipped, no sound font ({'DETTATO_SOUNDFONT_ALT' if alt else 'DETTATO_SOUNDFONT'})")
+            print(f"{name}: skipped, no sound font ({'ORECCHIANTE_SOUNDFONT_ALT' if alt else 'ORECCHIANTE_SOUNDFONT'})")
             continue
         if gen:
             cmd = [sys.executable, str(ROOT / "tools" / "gen_chords.py"), *gen, "--out", str(d), "--soundfont", font]
         else:
-            samples = os.environ.get("DETTATO_SAMPLES")
+            samples = os.environ.get("ORECCHIANTE_SAMPLES")
             if not samples:
-                print(f"{name}: skipped, DETTATO_SAMPLES does not name Lily#'s samples folder")
+                print(f"{name}: skipped, ORECCHIANTE_SAMPLES does not name Lily#'s samples folder")
                 continue
-            cmd = [sys.executable, str(ROOT / "tools" / "sample_songs.py"), samples, os.environ.get("DETTATO_LYSC", "lysc"), font, str(d)]
+            cmd = [sys.executable, str(ROOT / "tools" / "sample_songs.py"), samples, os.environ.get("ORECCHIANTE_LYSC", "lysc"), font, str(d)]
         print(f"{name}: making ...", flush=True)
         done = subprocess.run(cmd, stdin=subprocess.DEVNULL)
         if done.returncode != 0:
@@ -603,14 +603,14 @@ def main():
         s.add_argument("--model", type=Path, default=MODEL, help="what train_chords.py learnt (default: models/chords.joblib)")
         s.add_argument("--rules", action="store_true", help="the reader with nothing learnt")
         s.add_argument("--set", action="append", default=[], metavar="NAME=VALUE", help="a constant of read_chords.py, for this run")
-        s.add_argument("--net", type=Path, help="read from the features dettato.exe made (dettato features), not librosa's: "
+        s.add_argument("--net", type=Path, help="read from the features orecchiante.exe made (orecchiante features), not librosa's: "
                                                 "a folder with a folder a set of <recording>.feat.npz (scratch/net)")
-        s.add_argument("--read", type=Path, help="with --ears: count the charts dettato.exe wrote (dettato read), not read_chords.py's: "
-                                                 "a folder with a folder a set of <recording>.dettato.json (scratch/net/read)")
+        s.add_argument("--read", type=Path, help="with --ears: count the charts orecchiante.exe wrote (orecchiante read), not read_chords.py's: "
+                                                 "a folder with a folder a set of <recording>.orecchiante.json (scratch/net/read)")
         s.add_argument("--voice", type=Path, help="with --ears: the vocals' loudness for the sections, a folder of <recording>.voc.npy "
-                                                  "(dettato ears), with a folder a set or not (scratch/net)")
+                                                  "(orecchiante ears), with a folder a set or not (scratch/net)")
         s.add_argument("--drums", type=Path, help="with --ears: the drums for the sections, a folder of <recording>.drum.npy "
-                                                  "(dettato drums or ears), with a folder a set or not (scratch/drum)")
+                                                  "(orecchiante drums or ears), with a folder a set or not (scratch/drum)")
         return s
 
     s = reader(sub.add_parser("table", help="read and score: one line a set"))
@@ -655,7 +655,7 @@ def main():
     s.add_argument("sets", nargs="*", help="default: all of them")
     sub.add_parser("sets", help="list the sets")
     s = sub.add_parser("check", help="charts already written through lysc check, and the files beside them against docs/SIDECAR.md")
-    s.add_argument("folders", nargs="+", type=Path, help="folders of <name>.lys and <name>.dettato.json")
+    s.add_argument("folders", nargs="+", type=Path, help="folders of <name>.lys and <name>.orecchiante.json")
     args = p.parse_args()
 
     if args.what == "check":
@@ -675,7 +675,7 @@ def main():
     global NET, READ, VOICE, DRUMS
     NET, READ, VOICE, DRUMS = args.net, args.read, args.voice, getattr(args, "drums", None)
     if READ and not getattr(args, "ears", False):
-        sys.exit("--read needs --ears: dettato.exe reads with the models trained on recordings")
+        sys.exit("--read needs --ears: orecchiante.exe reads with the models trained on recordings")
     model = None if args.rules else args.model
     if model and not Path(model).exists():
         sys.exit(f"{model} is not there: train it (tools/train_chords.py), or read with --rules")

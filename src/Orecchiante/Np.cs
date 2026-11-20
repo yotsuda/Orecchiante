@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace Dettato;
+namespace Orecchiante;
 
 /// <summary>numpy's and Python's arithmetic where it is not the plain one, so that the rules here (Reader.cs) read
 /// what tools/read_chords.py reads, to the last bit where that is cheap: sums in numpy's order, medians, Python's

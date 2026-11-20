@@ -1,4 +1,4 @@
-namespace Dettato;
+namespace Orecchiante;
 
 /// <summary>The discrete Fourier transform of a power of two of samples, in place, on separate real and imaginary parts.</summary>
 sealed class Fft

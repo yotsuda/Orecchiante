@@ -4,7 +4,7 @@
     py tools/score_chords.py data/synth/seed1 scratch/read/seed1
 
 The truth is gen_chords.py's <id>.truth.json; the reading is read_chords.py's
-<audio name>.dettato.json. What is counted:
+<audio name>.orecchiante.json. What is counted:
 
 - tempo: right within 4%; otherwise its ratio to the truth is shown (2 = read twice as fast);
 - meter, key: the same or not; the key signature too, which a key and its relative share;
@@ -109,13 +109,13 @@ def main():
     rows = []
     for path in sorted(args.truth.glob("*.truth.json")):
         truth = json.loads(path.read_text(encoding="utf-8"))
-        read_path = args.reading / (Path(truth["audio"]).stem + ".dettato.json")
+        read_path = args.reading / (Path(truth["audio"]).stem + ".orecchiante.json")
         if not read_path.exists():
             print(f"{truth['id']}: not read", file=sys.stderr)
             continue
         reading = json.loads(read_path.read_text(encoding="utf-8"))
-        if reading.get("dettato", 1) != 1:      # docs/SIDECAR.md: a file with no number is one from before it
-            sys.exit(f"{read_path}: format {reading['dettato']} is not one this scores")
+        if reading.get("orecchiante", 1) != 1:      # docs/SIDECAR.md: a file with no number is one from before it
+            sys.exit(f"{read_path}: format {reading['orecchiante']} is not one this scores")
         rows.append(score(truth, reading))
     if not rows:
         sys.exit("nothing to score")
