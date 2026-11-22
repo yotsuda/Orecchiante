@@ -63,6 +63,7 @@ git clone --depth 1 https://github.com/rwc-music/rwc-annotations-archive scratch
 |---|---|
 | 中身 | オーナーが録音を耳コピして書いた LilyPond のベースのパート譜（`F:\Transcribe` の下の `.ly`、75 本のうちベースの音符があるもの 17 本）と、同じ録音の Transcribe! の小節の印（`.xsc` の S・M） |
 | 使う曲 | `scratch/bass/truth/songs.json`（15 曲。pop 9・クラシックの合奏の編曲 4、同じ編曲の古い版 1 と書きかけ 1 は数えない） |
+| **YouTube の譜（主な答え）** | `F:\Dropbox\youtube` の `.ly` 284 本（オーナーの YouTube 用のベースのパート譜、LilyPond 2.24）のうちベースの音符があるもの 280 本。xsc の物差しの曲（録音・小節の印・分けたパートがある）に題名で結んだ 165 曲を `scratch/bass/truth-yt/songs.json` に（`map_xsc.py`）。**ベースでは dev を偶数の番号・test を奇数の番号にする**（85・80 曲。xsc の分け方 x001〜x145 では dev が 42 曲しかない。section の規則とは別の課題なので、section の test を汚さない）。録音の小節の 95% に答えが載る（17478/18388 小節、86,285 音、dev 42,244 音）。載らないのは 4 曲（譜が別の調・別の版の編曲） |
 | 条件 | オーナーの作ったもの。録音は市販の CD など。**commit も配布もしない**（譜・録音・そこから作った `truth.json`） |
 
 作り方（道具は `scratch/bass/`、commit の外）:
@@ -72,10 +73,16 @@ git clone --depth 1 https://github.com/rwc-music/rwc-annotations-archive scratch
 pwsh -File scratch/bass/truth/read_all.ps1                  # 各録音を orecchiante 0.13.2 で読む（6 パート）
 .venv/Scripts/python scratch/bass/align.py                  # 譜の小節を録音の小節の印に載せる → truth/<id>/truth.json
 .venv/Scripts/python scratch/bass/listen.py b03             # 耳で確かめる wav（右に譜の音）
+# YouTube の譜:
+.venv/Scripts/python scratch/bass/render.py F:\Dropbox\youtube scratch/bass/owner-yt
+.venv/Scripts/python scratch/bass/match_audio.py scratch/bass/owner-yt > scratch/bass/owner-yt/match.tsv
+.venv/Scripts/python scratch/bass/map_xsc.py
+pwsh -File scratch/bass/truth-yt/run_all.ps1                # align.py TRUTH=truth-yt OWNER=owner-yt と読み取り 2 つ
+.venv/Scripts/python scratch/bass/score.py pyin TRUTH=truth-yt
 ```
 
 - 譜の小節と録音の小節の対応は、分けたベースの音のクロマ（小節を 8 つに分けて）と譜の音で Viterbi（D.S. の飛び・譜にない小節を許す、移調と弱起も探す）。
-  順に 4 小節以上続き、よく合う（または 1〜2 小節ずらしたより明らかに合う）区間だけを答えにする。
+  順に 4 小節以上続き、よく合う（または 1〜2 小節ずらしたより明らかに合う、または譜の半分以上を順に覆う）区間だけを答えにする。
 - 譜はバンドの編曲のことがある（録音より音を省く・移調する）。省いた所で読み取りが拾った音は「余分」に数えられる。
 
 ## 候補（まだ使っていない）
