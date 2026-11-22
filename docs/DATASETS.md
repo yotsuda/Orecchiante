@@ -57,6 +57,27 @@ git clone --depth 1 https://github.com/rwc-music/rwc-annotations-archive scratch
 .venv/Scripts/python tools/aist_sections.py rwc-dev      # rwc-test は数えるだけ
 ```
 
+### オーナーのベースの譜（ベースの採譜の答え。2026-11-23 から）
+
+| | |
+|---|---|
+| 中身 | オーナーが録音を耳コピして書いた LilyPond のベースのパート譜（`F:\Transcribe` の下の `.ly`、75 本のうちベースの音符があるもの 17 本）と、同じ録音の Transcribe! の小節の印（`.xsc` の S・M） |
+| 使う曲 | `scratch/bass/truth/songs.json`（15 曲。pop 9・クラシックの合奏の編曲 4、同じ編曲の古い版 1 と書きかけ 1 は数えない） |
+| 条件 | オーナーの作ったもの。録音は市販の CD など。**commit も配布もしない**（譜・録音・そこから作った `truth.json`） |
+
+作り方（道具は `scratch/bass/`、commit の外）:
+
+```
+.venv/Scripts/python scratch/bass/render.py                 # 全 .ly を LilyPond 2.26 で MIDI に（繰り返しは展開、D.S. は文字だけなので追わない）
+pwsh -File scratch/bass/truth/read_all.ps1                  # 各録音を orecchiante 0.13.2 で読む（6 パート）
+.venv/Scripts/python scratch/bass/align.py                  # 譜の小節を録音の小節の印に載せる → truth/<id>/truth.json
+.venv/Scripts/python scratch/bass/listen.py b03             # 耳で確かめる wav（右に譜の音）
+```
+
+- 譜の小節と録音の小節の対応は、分けたベースの音のクロマ（小節を 8 つに分けて）と譜の音で Viterbi（D.S. の飛び・譜にない小節を許す、移調と弱起も探す）。
+  順に 4 小節以上続き、よく合う（または 1〜2 小節ずらしたより明らかに合う）区間だけを答えにする。
+- 譜はバンドの編曲のことがある（録音より音を省く・移調する）。省いた所で読み取りが拾った音は「余分」に数えられる。
+
 ## 候補（まだ使っていない）
 
 | データ | 中身 | 音源 | ライセンス | 見立て |
