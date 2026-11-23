@@ -78,7 +78,8 @@ pwsh -File scratch/bass/truth/read_all.ps1                  # 各録音を orecc
 .venv/Scripts/python scratch/bass/match_audio.py scratch/bass/owner-yt > scratch/bass/owner-yt/match.tsv
 .venv/Scripts/python scratch/bass/map_xsc.py
 pwsh -File scratch/bass/truth-yt/run_all.ps1                # align.py TRUTH=truth-yt OWNER=owner-yt と読み取り 2 つ
-.venv/Scripts/python scratch/bass/score.py pyin TRUTH=truth-yt
+.venv/Scripts/python scratch/bass/refine.py dev                 # 答えの時刻を小節ごとに立ち上がりへ（"fine"）
+.venv/Scripts/python scratch/bass/score.py pyin TRUTH=truth-yt dev FINE=1 -q -d
 ```
 
 - 譜の小節と録音の小節の対応は、分けたベースの音のクロマ（小節を 8 つに分けて）と譜の音で Viterbi（D.S. の飛び・譜にない小節を許す、移調と弱起も探す）。
