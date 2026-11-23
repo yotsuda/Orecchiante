@@ -45,9 +45,10 @@ static class Features
 
     /// <summary>librosa.stft with its defaults (frames of 2048 under a Hann window, centred every 512 samples, zeros
     /// beyond the ends), magnitudes [frame][bin]; and librosa.feature.rms of the same frames.</summary>
-    static float[][] Spectra(double[] y, out float[] loudness)
+    /// <param name="hop">Samples between frames (the bass reader's onsets: 256).</param>
+    internal static float[][] Spectra(double[] y, out float[] loudness, int hop = Hop)
     {
-        int n = y.Length, frames = 1 + n / Hop, half = Size / 2;
+        int n = y.Length, frames = 1 + n / hop, half = Size / 2;
         var window = new double[Size];
         for (int i = 0; i < Size; i++) window[i] = 0.5 - 0.5 * Math.Cos(2 * Math.PI * i / Size);
         var fft = new Fft(Size);
@@ -56,7 +57,7 @@ static class Features
         Parallel.For(0, frames, () => (new double[Size], new double[Size]), (t, _, buffers) =>
         {
             var (re, im) = buffers;
-            int first = t * Hop - half;
+            int first = t * hop - half;
             double power = 0;
             for (int i = 0; i < Size; i++)
             {
@@ -77,17 +78,19 @@ static class Features
 
     /// <summary>librosa.onset.onset_strength: the power in 128 mel bands, in dB no lower than 80 under the loudest;
     /// how much each band rose since the frame before, averaged over the bands; three frames later (one for the
-    /// difference, two for the half frame a centred spectrum looks ahead).</summary>
-    static float[] Onsets(float[][] spectra)
+    /// difference, two for the half frame a centred spectrum looks ahead: at a hop of 256, four).</summary>
+    /// <param name="hop">The spectra's hop; <paramref name="mels"/> bands from 0 Hz to <paramref name="fmax"/> (the bass
+    /// reader: 64 to 2000 Hz).</param>
+    internal static float[] Onsets(float[][] spectra, int hop = Hop, int mels = Mels, double fmax = Rate / 2.0)
     {
         int frames = spectra.Length;
-        var bands = MelBands();
+        var bands = MelBands(mels, fmax);
         var db = new float[frames][];
         Parallel.For(0, frames, t =>
         {
             var row = spectra[t];
-            var mine = db[t] = new float[Mels];
-            for (int m = 0; m < Mels; m++)
+            var mine = db[t] = new float[mels];
+            for (int m = 0; m < mels; m++)
             {
                 var (from, weights) = bands[m];
                 double sum = 0;
@@ -97,31 +100,31 @@ static class Features
         });
         float floor = db.Max(row => row.Max()) - 80;
         var onsets = new float[frames];
-        const int late = 3;
+        int late = Size / (2 * hop) + 1;
         for (int t = late; t < frames; t++)
         {
             float[] now = db[t - late + 1], before = db[t - late];
             double rise = 0;
-            for (int m = 0; m < Mels; m++) rise += Math.Max(0, Math.Max(now[m], floor) - Math.Max(before[m], floor));
-            onsets[t] = (float)(rise / Mels);
+            for (int m = 0; m < mels; m++) rise += Math.Max(0, Math.Max(now[m], floor) - Math.Max(before[m], floor));
+            onsets[t] = (float)(rise / mels);
         }
         return onsets;
     }
 
-    /// <summary>librosa.filters.mel (Slaney's scale and areas, 0 Hz to half the rate): each band's first bin and weights.</summary>
-    static (int From, double[] Weights)[] MelBands()
+    /// <summary>librosa.filters.mel (Slaney's scale and areas, 0 Hz to <paramref name="fmax"/>): each band's first bin and weights.</summary>
+    static (int From, double[] Weights)[] MelBands(int mels, double fmax)
     {
         const double step = 200.0 / 3, bend = 1000, bendMel = bend / step;
         double log = Math.Log(6.4) / 27;
-        double top = bendMel + Math.Log(Rate / 2.0 / bend) / log;
-        var hz = new double[Mels + 2];
+        double top = fmax >= bend ? bendMel + Math.Log(fmax / bend) / log : fmax / step;
+        var hz = new double[mels + 2];
         for (int i = 0; i < hz.Length; i++)
         {
-            double mel = top * i / (Mels + 1);
+            double mel = top * i / (mels + 1);
             hz[i] = mel >= bendMel ? bend * Math.Exp(log * (mel - bendMel)) : step * mel;
         }
-        var bands = new (int, double[])[Mels];
-        for (int m = 0; m < Mels; m++)
+        var bands = new (int, double[])[mels];
+        for (int m = 0; m < mels; m++)
         {
             var weights = new List<double>();
             int from = -1;

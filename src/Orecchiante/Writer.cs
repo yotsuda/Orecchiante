@@ -105,10 +105,11 @@ static class Writer
             "",
         };
         int pickup = chart.Bars[0].Pickup;
+        bool bass = chart.Bars.Any(bar => bar.Bass != null), kit = chart.Bars.Any(bar => bar.Hands != null);
         // one section: the chart is the bars in their order; but not with a bar of its own time (Lily# takes a time in a
-        // row out of a section for the whole chart). The row is named prog, as Lily#'s own new chart names it (the owner,
-        // 2026-11-20; harmony before 0.10.2).
-        if (chart.Form.Count == 1 && pickup == 0 && chart.Bars.All(bar => bar.Meter == null))
+        // row out of a section for the whole chart), nor with a bass staff (a part's music is a section's). The row is
+        // named prog, as Lily#'s own new chart names it (the owner, 2026-11-20; harmony before 0.10.2).
+        if (chart.Form.Count == 1 && pickup == 0 && chart.Bars.All(bar => bar.Meter == null) && !bass && !kit)
         {
             lines.Add("chords prog {");
             lines.AddRange(Rows([.. chart.Bars.Select(bar => new List<Bar> { bar })], "  "));
@@ -127,6 +128,9 @@ static class Writer
             if (bar.BarOfSection > of.Count) of.Add([]);
             of[bar.BarOfSection - 1].Add(bar);
         }
+        // The bass staff (Bass.Read): pitches as they are written (absolute octaves), the part a bass guitar's.
+        if (bass) lines.AddRange(["octave absolute", "part bass { instrument bass }", ""]);
+        if (kit) lines.AddRange(["part kit { clef percussion }", ""]);       // the drum staff (Kit.Read)
         lines.Add(JoinNote);                         // above the first section (the owner, 2026-11-17)
         for (int w = 0; w < names.Count; w++)
         {
@@ -137,12 +141,47 @@ static class Writer
             if (sections[name][0][0].Tempo is double own) lines.Add($"  tempo {chart.TempoNote} = {Bar.TempoText(own)}");   // Lily# sounds it each time the section is played
             lines.Add("  chords prog {");
             lines.AddRange(Rows(sections[name], "    ", name != "Pickup", last));
-            lines.AddRange(["  }", "}", ""]);
+            lines.Add("  }");
+            if (bass)
+            {
+                lines.Add("  bass {");
+                lines.AddRange(BassRows(sections[name], chart.Time, "    ", bar => bar.Bass));
+                lines.Add("  }");
+            }
+            if (kit)
+            {
+                // two voices, the hands stems up and the feet down, each a run of the section's bars
+                lines.AddRange(["  kit {", "    voice {"]);
+                lines.AddRange(BassRows(sections[name], chart.Time, "      ", bar => bar.Hands));
+                lines.Add("    } {");
+                lines.AddRange(BassRows(sections[name], chart.Time, "      ", bar => bar.Feet));
+                lines.AddRange(["    }", "  }"]);
+            }
+            lines.AddRange(["}", ""]);
         }
         // Repeat signs only in the form, so that the form alone shows how the song goes (the owner, 2026-11-16).
         var shown = chart.Form.Select(s => s.Contains('_') ? "~" + s : s).ToList();   // a short section's name is hidden (read_chords.py --old-sections names them B_1)
-        lines.AddRange(["form { " + FormWithRepeats(shown) + " }", "", "score {", "  chords prog", "}", ""]);
+        lines.AddRange(["form { " + FormWithRepeats(shown) + " }", "", "score {", "  chords prog"]);
+        if (bass) lines.Add("  staff bass");
+        if (kit) lines.Add("  staff kit");
+        lines.AddRange(["}", ""]);
         return string.Join("\n", lines);
+    }
+
+    /// <summary>A section's bass staff, its bars as the section is first played (a section played again is written once),
+    /// lined as the chords are; a bar of its own time says so at its head as the chord row does. A tie out of the section's
+    /// last bar is dropped (what comes after it differs from one playing to the next).</summary>
+    static IEnumerable<string> BassRows(List<List<Bar>> bars, string time, string indent, Func<Bar, string?> music)
+    {
+        var texts = bars.Select((said, j) => (said[0].Meter != null ? $"time {said[0].Meter} " : j > 0 && bars[j - 1][0].Meter != null ? $"time {time} " : "")
+                                             + (music(said[0]) ?? "")).ToList();
+        if (texts[^1].EndsWith('~')) texts[^1] = texts[^1][..^1];
+        int i = 0;
+        foreach (int size in LineSizes(bars.Count))
+        {
+            yield return indent + string.Join(" | ", texts.Skip(i).Take(size)) + " |";
+            i += size;
+        }
     }
 
     /// <summary>How many bars each line of a section has, as tools/read_chords.py's line_sizes: four, but a last line of
@@ -245,6 +284,8 @@ static class Writer
             b.Append("\n      ]");
             if (bar.Section is string section) b.Append($",\n      \"section\": {Quoted(section)},\n      \"barOfSection\": {bar.BarOfSection}");
             if (bar.Tempo is double tempo) b.Append($",\n      \"tempo\": {Bar.TempoText(tempo)}");
+            if (bar.Bass is string music) b.Append($",\n      \"bass\": {Quoted(music)}");
+            if (bar.Hands is string hands) b.Append($",\n      \"drums\": {{\n        \"hands\": {Quoted(hands)},\n        \"feet\": {Quoted(bar.Feet ?? "")}\n      }}");
             return b.Append("\n    }").ToString();
         })));
         s.Append("\n  ]\n}\n");

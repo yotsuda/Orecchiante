@@ -2,6 +2,20 @@
 
 Notable changes to Orecchiante (Dettato until 0.10.2) are recorded here, newest first.
 
+## 0.14.0
+
+- A bass staff: when the recording has a bass, the chart has a `bass` part under the chords, read
+  from the separated bass part (pYIN, rounded onto the chart's 16ths; a note held over a bar line is
+  tied unless the bass strikes it again). On the owner's ear-copied bass parts of 85 songs, 79% of
+  the notes start on the right 16th and 68% have the right pitch too. A section played more than
+  once is written as it is first played.
+- A drum staff: when the recording has drums, a `kit` part (hi-hat and snare stems up, bass drum
+  down), read from the separated drum part by how much each band grows louder. A first try, with no
+  truth yet to measure it on.
+- The file beside the chart keeps each bar's bass and drums as they were read (`bass`, `drums`), so
+  that a bar put right in Lily# can be reported against them.
+- No bass heard, no bass staff (the part is more than 21 dB quieter than the recording); no drums, no drum staff (30 dB).
+
 ## 0.13.2
 
 - Sections are cut a little more readily. On the owner's Transcribe! sections, 70.7 → 72.5% of

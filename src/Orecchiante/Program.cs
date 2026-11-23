@@ -55,7 +55,7 @@ using System.Text;
 using Orecchiante;
 using Microsoft.ML.OnnxRuntime;
 
-const string version = "0.13.2";
+const string version = "0.14.0";
 const int protocol = 1;
 const string usage = "usage: orecchiante <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]\n"
                    + "       orecchiante --version [--json]\n"
@@ -166,11 +166,23 @@ Chart Read(string file, Action<string>? say = null, string? partsTo = null)
         drums = drummed.Frames(out _);
     }
     else (voice, drums) = (From(voiceFrom, name + ".voc.npy"), From(drumsFrom, name + ".drum.npy"));
-    // The chords' bass notes are heard in the separated bass part (0.12.0): the one just written, or --bass's.
+    // The chords' bass notes are heard in the separated bass part (0.12.0): the one just written, or --bass's. The
+    // same part is read into the bass staff once the bars are known (Bass.Read).
+    double[]? bassSamples = null;
     if (partsTo != null && File.Exists(Path.Combine(partsTo, "bass.wav")))
     {
         var (part, partRate) = Audio.Read(Path.Combine(partsTo, "bass.wav"));
-        heard = Features.WithBassPart(heard, Features.BassOf(Resample.To(part, Features.Rate, partRate)));
+        var samples = Resample.To(part, Features.Rate, partRate);
+        heard = Features.WithBassPart(heard, Features.BassOf(samples));
+        if (Bass.Heard(samples, low)) bassSamples = samples;      // else no bass staff (a song with no bass)
+    }
+    // The drum part, read into a drum staff the same way (Kit.Read).
+    double[]? drumSamples = null;
+    if (partsTo != null && File.Exists(Path.Combine(partsTo, "drums.wav")))
+    {
+        var (part, partRate) = Audio.Read(Path.Combine(partsTo, "drums.wav"));
+        var samples = Resample.To(part, Features.Rate, partRate);
+        if (Bass.Heard(samples, low, Kit.HeardDb)) drumSamples = samples;
     }
     else if (From(bassFrom, name + ".bass.npy") is { } bassPart) heard = Features.WithBassPart(heard, bassPart);
     high = null;
@@ -181,6 +193,16 @@ Chart Read(string file, Action<string>? say = null, string? partsTo = null)
     var (lines, beats) = Reader.LinesOf(tracked, logp, frames, step);    // the halves of bars are paired as the key heard says
     var chart = Reader.Read(Path.GetFileName(file), heard, lines, beats, logp, frames, step, voice, drums);
     rules += clock.Elapsed.TotalSeconds;
+    if (bassSamples != null)
+    {
+        Stage("the bass");
+        Bass.Read(bassSamples, chart);
+    }
+    if (drumSamples != null)
+    {
+        Stage("the drums");
+        Kit.Read(drumSamples, chart);
+    }
     return chart;
 }
 

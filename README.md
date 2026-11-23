@@ -1046,6 +1046,37 @@ scratch/bass/chroma` read them (librosa's chroma of the FLAC gives the same tabl
 songs made here, `orecchiante read` without `--bass`) the reading is 0.11.0's. The part is separated
 with 3 segments at once, so its notes differ a little between two conversions, as the vocals do (above).
 
+### The bass and the drums written out (0.14.0)
+
+When a recording has a bass, the chart has a bass staff under the chords (`part bass { instrument bass }`,
+`bass { … }` in every section); with drums, a drum staff (`part kit { clef percussion }`, the hands — snare
+and hi-hat — stems up and the feet down). The file beside the chart keeps each bar's reading (`bass`,
+`drums`; SIDECAR.md), for a bar put right in Lily# to be reported against (Lily# REQUESTS 23).
+
+- **The bass** (`src/Orecchiante/Bass.cs`, its Python side `tools/bass.py`, which says each step): librosa's
+  pYIN on the separated bass part (B0 to C4); notes where the rounded pitch changes and holds 0.12 s, or where
+  an onset falls while it holds; each note onto the chart's 16ths (each beat of the file's bars cut in four;
+  a 16th off the eighths only within a quarter of a 16th of it), to the next note across a gap of a 16th or
+  less; a note held over a bar line tied unless the part's onset strength there is 0.4 of the note's own or
+  more. On the owner's ear-copied bass parts (DATASETS.md, the 85 even-numbered songs; scored as a score —
+  bar, 16th, pitch, length — by `scratch/bass/grid.py`): **79% of the notes start on the right 16th, 68% have
+  the right pitch, 47% the right length too; 13% of the bars are right whole.** The test half (80 odd songs)
+  is not counted yet. The .NET reader is not the Python one to the letter (the part comes down to 22050 Hz by
+  `Resample`, not soxr): `tools/bass_check.py` on 6 songs, 692 of 693 bars the same.
+- **The drums** (`Kit.cs`, `tools/drums.py`): on the separated drum part, the rise in dB of three bands (under
+  150 Hz, 200 to 3000 Hz, from 6000 Hz) at each 16th: a bass drum where the low band rises half its song's
+  strong hits or more, a hi-hat where the high band rises 6 dB, a snare where the middle band rises 0.7 of its
+  strong hits and the high band 0.85 of its own (or there is no bass drum). **No truth for recordings yet**: on
+  the songs made here (GM drums, `scratch/drum/try_rule.py`) bass drum 0.90, snare 0.67, hi-hat 0.98 (F).
+- **Heard or not:** a staff only when its part's mean square is within 21 dB (the bass) or 30 dB (the drums)
+  of the recording's. The bass part of 165 songs with a bass is at -17.8 dB and up; mixing 8 of them again
+  without their bass and separating that, the bass part falls to -24.6 dB and below (`scratch/bass/nobass/`).
+  Without their drums, the same 8 songs' drum part is at -42.6 dB and below, and neither has a drum staff;
+  162 of the 165 songs' drum parts are at -20.6 dB and up, the other three (no drums, it seems) at -44.5 and
+  below (`scratch/drum/nodrums/`).
+- **What it costs:** about 2 seconds of a conversion (Like A Virgin, 4 minutes with the parts: 0.13.2 46.0 s,
+  0.14.0 48.1 s, one run each).
+
 
 ### How a chart begins and ends
 
