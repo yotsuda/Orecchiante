@@ -1049,8 +1049,10 @@ with 3 segments at once, so its notes differ a little between two conversions, a
 ### The bass and the drums written out (0.14.0)
 
 When a recording has a bass, the chart has a bass staff under the chords (`part bass { instrument bass }`,
-`bass { … }` in every section); with drums, a drum staff (`part kit { clef percussion }`, the hands — snare
-and hi-hat — stems up and the feet down). The file beside the chart keeps each bar's reading (`bass`,
+`bass { … }` in every section); with drums, a drum staff (`part kit { clef percussion }`) written in the
+song's grooves: each once as one-bar phrases, a line a drum (`phrase hatsA { hh8 8 8 8 8 8 8 8 | }`,
+`phrase beatA { drums { hatsA backA kickA } }`), and each bar as its groove's name (`kit { beatA | % | % |
+beatB | }`), a bar near no groove written out (`drums { { hh8 8 … } { bd4 … } }`). The file beside the chart keeps each bar's reading (`bass`,
 `drums`; SIDECAR.md), for a bar put right in Lily# to be reported against (Lily# REQUESTS 23).
 
 - **The bass** (`src/Orecchiante/Bass.cs`, its Python side `tools/bass.py`, which says each step): librosa's
@@ -1068,6 +1070,13 @@ and hi-hat — stems up and the feet down). The file beside the chart keeps each
   strong hits or more, a hi-hat where the high band rises 6 dB, a snare where the middle band rises 0.7 of its
   strong hits and the high band 0.85 of its own (or there is no bass drum). **No truth for recordings yet**: on
   the songs made here (GM drums, `scratch/drum/try_rule.py`) bass drum 0.90, snare 0.67, hi-hat 0.98 (F).
+  The grooves (the owner, 2026-11-23: a simpler way to write drums): the bars' sets of hits, commonest first,
+  start a groove unless within 4 hits of one already started; three rounds of each bar to its nearest groove
+  and each groove to the hits more than half its bars have; a groove of 3 bars or more is named. On the songs
+  made here this moves nothing (0.90, 0.66, 0.99: their errors are the same every bar) and writes 679 of 680
+  bars as a groove; Like A Virgin 7 grooves and 11 of 93 bars written out, Disco Inferno 5 and 4 of 114 (with
+  4 hits and 3 bars rather than 2 and 2, the text of the staff a third shorter). `tools/drums_check.py`: on
+  those two, every bar and groove the same as Python's.
 - **Heard or not:** a staff only when its part's mean square is within 21 dB (the bass) or 30 dB (the drums)
   of the recording's. The bass part of 165 songs with a bass is at -17.8 dB and up; mixing 8 of them again
   without their bass and separating that, the bass part falls to -24.6 dB and below (`scratch/bass/nobass/`).

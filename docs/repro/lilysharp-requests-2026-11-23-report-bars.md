@@ -12,20 +12,22 @@
   octave absolute
   part bass { instrument bass }
   part kit { clef percussion }
+  phrase hatsA { hh8 8 8 8 8 8 8 8 | }          // ドラムは曲の型（groove）を 1 回だけ、太鼓ごとに 1 行
+  phrase backA { r4 sn r sn | }
+  phrase kickA { bd4 4 4 4 | }
+  phrase beatA { drums { hatsA backA kickA } }
   section A {
     chords prog { … }
     bass { r8 c8 g8 c8 ees8 f8 bes,8 c8~ | … }
-    kit {
-      voice { hh8 hh8 <sn hh>8 hh8 hh8 hh8 <sn hh>8 hh8 | … }    // 手（スネア・ハイハット）
-          { bd4 bd4 bd4 bd4 | … }                             // 足（バスドラム）
-    }
+    kit { beatA | % | % | beatB | drums { { hh8 8 … } { bd4 … } } | }   // 型に近くない小節は書き出す
   }
   score { chords prog  staff bass  staff kit }
   ```
 
   section を 2 回以上演奏するときは、`.lys` には 1 回目の演奏の読みを書く（譜面は 1 つしか書けないため）。
 - 隣のファイル（`x.orecchiante.json`、SIDECAR.md）の各小節に、**読んだままの中身**を足す（演奏した小節ごと＝2 回目以降の演奏の分も）:
-  `"bass": "r8 c8 g8 …"`、`"drums": { "hands": "hh8 …", "feet": "bd4 …" }`。小節の `start`・`end`・`beats`（秒）は今までどおり。
+  `"bass": "r8 c8 g8 …"`、`"drums": { "hh": "hh8 8 …", "sn": "r4 sn r sn", "bd": "bd4 4 4 4" }`（型にまとめる前の、その小節の読み）。
+  小節の `start`・`end`・`beats`（秒）は今までどおり。
 
 ## 2. 依頼: 「Report to Orecchiante…」
 
@@ -47,6 +49,10 @@ Calamo の「Report Misread to OMR」（`omrSeedCore.ts`）と同じ形で、**�
   | `note` | オーナーの一言（無ければ `""`） |
   | `recording` | 録音のパス（写さなくてよい。Orecchiante の側で、隣のファイルの写しの `start`・`end` で切り出す） |
 
+- **ドラムの型（phrase）を直したとき**: `kit` の小節の多くは型の名前（`beatA`・`%`）なので、オーナーは型の phrase
+  （`hatsA` など）を直すことが多いはず。そのときは、その型を使う小節すべてを報告の対象にしてほしい（`seed.json` に直した
+  phrase の名前と中身、その型を書いた小節の番号）。どの小節が本当にその型どおりかはオーナーが聴いて決めるので、
+  「型を直した」報告と「小節を確かめた」報告を分けられると良い。
 - **あると正解づくりが速いもの（オーナーと Lily# の判断）**: 1 小節ずつではなく、**section を丸ごと「確かめた」として報告**する。
   その section の各小節を（直したものも直していないものも）正解として 1 つのフォルダに入れる。直していない小節も正解になるので、
   オーナーが聴いて正しいと思った小節を 1 回で渡せる。

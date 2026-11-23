@@ -9,9 +9,11 @@ Notable changes to Orecchiante (Dettato until 0.10.2) are recorded here, newest 
   tied unless the bass strikes it again). On the owner's ear-copied bass parts of 85 songs, 79% of
   the notes start on the right 16th and 68% have the right pitch too. A section played more than
   once is written as it is first played.
-- A drum staff: when the recording has drums, a `kit` part (hi-hat and snare stems up, bass drum
-  down), read from the separated drum part by how much each band grows louder. A first try, with no
-  truth yet to measure it on.
+- A drum staff: when the recording has drums, a `kit` part read from the separated drum part by how
+  much each band grows louder (hi-hat, snare, bass drum). A first try, with no truth yet to measure
+  it on. Written in grooves: the song's commonest bars are found and written once as phrases (one
+  line a drum, `phrase hatsA { hh8 8 8 8 8 8 8 8 | }`), each bar as its groove's name, `%` for a bar
+  the same as the one before; a bar near no groove is written out.
 - The file beside the chart keeps each bar's bass and drums as they were read (`bass`, `drums`), so
   that a bar put right in Lily# can be reported against them.
 - No bass heard, no bass staff (the part is more than 21 dB quieter than the recording); no drums, no drum staff (30 dB).

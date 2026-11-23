@@ -105,7 +105,7 @@ static class Writer
             "",
         };
         int pickup = chart.Bars[0].Pickup;
-        bool bass = chart.Bars.Any(bar => bar.Bass != null), kit = chart.Bars.Any(bar => bar.Hands != null);
+        bool bass = chart.Bars.Any(bar => bar.Bass != null), kit = chart.Bars.Any(bar => bar.Kit != null);
         // one section: the chart is the bars in their order; but not with a bar of its own time (Lily# takes a time in a
         // row out of a section for the whole chart), nor with a bass staff (a part's music is a section's). The row is
         // named prog, as Lily#'s own new chart names it (the owner, 2026-11-20; harmony before 0.10.2).
@@ -130,7 +130,18 @@ static class Writer
         }
         // The bass staff (Bass.Read): pitches as they are written (absolute octaves), the part a bass guitar's.
         if (bass) lines.AddRange(["octave absolute", "part bass { instrument bass }", ""]);
-        if (kit) lines.AddRange(["part kit { clef percussion }", ""]);       // the drum staff (Kit.Read)
+        if (kit)
+        {
+            // the drum staff (Kit.Read): each groove once, a one-bar phrase a drum and the chart playing them together
+            // (the owner, 2026-11-23: a simpler way to write drums)
+            lines.Add("part kit { clef percussion }");
+            foreach (var g in chart.Grooves ?? [])
+            {
+                foreach (var (phrase, line) in g.Phrases) lines.Add($"phrase {phrase} {{ {line} | }}");
+                lines.Add($"phrase {g.Name} {{ drums {{ {string.Join(" ", g.Phrases.Select(p => p.Phrase))} }} }}");
+            }
+            lines.Add("");
+        }
         lines.Add(JoinNote);                         // above the first section (the owner, 2026-11-17)
         for (int w = 0; w < names.Count; w++)
         {
@@ -150,12 +161,9 @@ static class Writer
             }
             if (kit)
             {
-                // two voices, the hands stems up and the feet down, each a run of the section's bars
-                lines.AddRange(["  kit {", "    voice {"]);
-                lines.AddRange(BassRows(sections[name], chart.Time, "      ", bar => bar.Hands));
-                lines.Add("    } {");
-                lines.AddRange(BassRows(sections[name], chart.Time, "      ", bar => bar.Feet));
-                lines.AddRange(["    }", "  }"]);
+                lines.Add("  kit {");
+                lines.AddRange(BassRows(sections[name], chart.Time, "    ", bar => bar.Kit, again: true));
+                lines.Add("  }");
             }
             lines.AddRange(["}", ""]);
         }
@@ -171,10 +179,14 @@ static class Writer
     /// <summary>A section's bass staff, its bars as the section is first played (a section played again is written once),
     /// lined as the chords are; a bar of its own time says so at its head as the chord row does. A tie out of the section's
     /// last bar is dropped (what comes after it differs from one playing to the next).</summary>
-    static IEnumerable<string> BassRows(List<List<Bar>> bars, string time, string indent, Func<Bar, string?> music)
+    /// <param name="again">A bar the same as the bar before it (neither saying a time) is `%` (the drum staff).</param>
+    static IEnumerable<string> BassRows(List<List<Bar>> bars, string time, string indent, Func<Bar, string?> music, bool again = false)
     {
         var texts = bars.Select((said, j) => (said[0].Meter != null ? $"time {said[0].Meter} " : j > 0 && bars[j - 1][0].Meter != null ? $"time {time} " : "")
                                              + (music(said[0]) ?? "")).ToList();
+        if (again)
+            for (int j = texts.Count - 1; j > 0; j--)
+                if (texts[j] == texts[j - 1] && !texts[j].StartsWith("time ")) texts[j] = "%";
         if (texts[^1].EndsWith('~')) texts[^1] = texts[^1][..^1];
         int i = 0;
         foreach (int size in LineSizes(bars.Count))
@@ -285,7 +297,9 @@ static class Writer
             if (bar.Section is string section) b.Append($",\n      \"section\": {Quoted(section)},\n      \"barOfSection\": {bar.BarOfSection}");
             if (bar.Tempo is double tempo) b.Append($",\n      \"tempo\": {Bar.TempoText(tempo)}");
             if (bar.Bass is string music) b.Append($",\n      \"bass\": {Quoted(music)}");
-            if (bar.Hands is string hands) b.Append($",\n      \"drums\": {{\n        \"hands\": {Quoted(hands)},\n        \"feet\": {Quoted(bar.Feet ?? "")}\n      }}");
+            if (bar.Drums is { } drums)
+                b.Append(drums.Count == 0 ? ",\n      \"drums\": {}"
+                    : ",\n      \"drums\": {\n" + string.Join(",\n", drums.Select(d => $"        {Quoted(d.Key)}: {Quoted(d.Value)}")) + "\n      }");
             return b.Append("\n    }").ToString();
         })));
         s.Append("\n  ]\n}\n");
