@@ -106,7 +106,9 @@ static partial class Words
     /// <param name="english">The words are English syllables (English.Read) and the model English's letters: a syllable
     /// is its letters, the word break "|" between words (scratch/align/align_en.py WB=1), no lag; a syllable going on to
     /// the next of its word ends in "-" (Lily#'s `Hap- py`).</param>
-    public static List<Note> Align(InferenceSession model, float[] vocals16, double[] f0, bool[] voiced, double[] rmsDb, List<(double On, double Off, int Midi)> heard, List<Mora> morae, bool english = false)
+    /// <param name="strength">The vocals' onset strength on f0's frames (64 mel bands to 8000 Hz): in English each
+    /// syllable's onset moves to where the voice starts near it (Refine).</param>
+    public static List<Note> Align(InferenceSession model, float[] vocals16, double[] f0, bool[] voiced, double[] rmsDb, List<(double On, double Off, int Midi)> heard, List<Mora> morae, bool english = false, float[]? strength = null)
     {
         var (lp, tokens) = Emit(model, vocals16);
         int T = lp.GetLength(0), K = tokens.Length;
@@ -144,6 +146,11 @@ static partial class Words
         for (int j = 0; j < owner.Count; j++) if (owner[j] >= 0) start.TryAdd(owner[j], first[j]);
         var times = start.Select(p => (Mora: morae[p.Key], At: p.Value * step + Centre + (english ? 0 : Lag),
                                        Goes: english && p.Key + 1 < morae.Count && morae[p.Key + 1].Joined)).ToList();
+        if (english && strength != null)
+        {
+            var moved = Refine([.. times.Select(x => x.At)], strength);
+            for (int i = 0; i < times.Count; i++) times[i] = times[i] with { At = moved[i] };
+        }
         // which morae are notes: っ joins the mora before; ー sings that mora's vowel again
         var ons = new List<(Mora Mora, double At, string Syllable)>();
         foreach (var (m, at, goes) in times)
@@ -185,6 +192,53 @@ static partial class Words
             notes.Add(new Note(t, Math.Max(end * (double)HHop / HRate, t + 0.03), (int)Math.Round(midi, MidpointRounding.ToEven), syllable));
         }
         return notes;
+    }
+
+    const double Reach = 0.25, PeakLate = 0.02, PerSecond = 10;
+
+    /// <summary>English onsets moved to where the voice starts (scratch/align/refine.py, REFINE=0.25 RLAG=-0.02): each
+    /// to the best peak of the onset strength within Reach s of it and not past the middle to the next onset, a peak's
+    /// worth its strength over the median peak's less PerSecond a second away, peaks under the median left out; the
+    /// onset PeakLate before the peak. On RWC's English songs the onsets on the right 16th 0.659 to 0.713 (odd and
+    /// even songs alike); in Japanese it does harm (0.831 to 0.81 and less), the alignment being nearer already.</summary>
+    static double[] Refine(double[] ons, float[] env)
+    {
+        var pt = new List<double>();
+        var pv = new List<double>();
+        var all = new List<double>();
+        for (int i = 1; i + 1 < env.Length; i++)
+            if (env[i] > env[i - 1] && env[i] >= env[i + 1]) all.Add(env[i]);
+        if (all.Count == 0) return ons;
+        double med = Median([.. all]);
+        for (int i = 1; i + 1 < env.Length; i++)
+            if (env[i] > env[i - 1] && env[i] >= env[i + 1] && env[i] / Math.Max(med, 1e-9) >= 1.0)
+            {
+                pt.Add(i * (double)HHop / HRate);
+                pv.Add(env[i] / Math.Max(med, 1e-9));
+            }
+        var res = new double[ons.Length];
+        for (int k = 0; k < ons.Length; k++)
+        {
+            double t = ons[k];
+            double lo = Math.Max(t - Reach, k > 0 ? (ons[k - 1] + t) / 2 : double.NegativeInfinity);
+            double hi = Math.Min(t + Reach, k + 1 < ons.Length ? (t + ons[k + 1]) / 2 : double.PositiveInfinity);
+            int best = -1;
+            double score = double.NegativeInfinity;
+            for (int j = LowerBound(pt, lo); j < pt.Count && pt[j] < hi; j++)
+            {
+                double s = pv[j] - PerSecond * Math.Abs(pt[j] - t);
+                if (s > score) { score = s; best = j; }
+            }
+            res[k] = best >= 0 ? pt[best] - PeakLate : t;
+        }
+        return res;
+    }
+
+    static int LowerBound(List<double> v, double x)
+    {
+        int lo = 0, hi = v.Count;
+        while (lo < hi) { int m = (lo + hi) / 2; if (v[m] < x) lo = m + 1; else hi = m; }
+        return lo;
     }
 
     static double Interp(double[] v, double x)

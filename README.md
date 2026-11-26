@@ -1234,12 +1234,21 @@ reader (`w2v-english-mm8.onnx`: facebook/wav2vec2-base-960h, Apache-2.0, 122 MB 
   scratch\parts\rwc --lyrics scratch\align\plain --out <tag> --models onnx` (`--none`: 0.15.0's reading), then
   `scratch/sep/score_sep.ps1 -Tag <tag>` (`dur.py all SRC=align LEGATO=1 PULL=0.25 ONLY=…`, none `PULL=0`):
 
-| | no words (0.15.0) | words |
-|---|---|---|
-| bars with the truth's number of notes, 21 songs | 0.265 | **0.364** |
-| ... the 13 whose lyrics have 90% of the truth's notes | 0.253 | **0.401** |
-| onset on the right 16th (F), 21 songs | **0.692** | 0.659 |
-| ... the 13 | 0.691 | 0.691 |
+| | no words (0.15.0) | words | words, onsets moved (shipped) |
+|---|---|---|---|
+| bars with the truth's number of notes, 21 songs | 0.265 | 0.364 | **0.371** |
+| ... the 13 whose lyrics have 90% of the truth's notes | 0.253 | **0.401** | 0.397 |
+| onset on the right 16th (F), 21 songs | 0.692 | 0.659 | **0.715** |
+| ... the 13 | 0.691 | 0.691 | **0.749** |
+| bars whose onsets are all the truth's, the 13 | 0.088 | 0.133 | **0.209** |
+
+  **The onsets moved** (`Words.Refine`, `scratch/align/refine.py` `REFINE=0.25 RLAG=-0.02`): each syllable's
+  onset to the best peak of the vocals' onset strength within 0.25 s (not past the middle to the next), a
+  peak's worth its strength over the song's median peak less 10 a second away, the onset 20 ms before the
+  peak. Chosen on all 21 songs; odd and even songs apart both gain (onsets 0.595 → 0.643, 0.715 → 0.779; the
+  bars 0.330 → 0.325, 0.398 → 0.418). The English alignment is off by 0.1 to 0.2 s for 15% of its notes
+  (Japanese 4.5%; `scratch/align/miss_dist.py`). In Japanese it does harm (Python, dev: onsets 0.831 → 0.70
+  to 0.81 with any reach and shift): there the alignment is nearer than the peaks, so English only.
 
   (A first count had 0.152 and 0.607 for no words: that was `dur.py`'s own pYIN reading, `SRC=pyin`, not
   0.15.0's; corrected the same day.) Less than Japanese (0.29 → 0.59), and the onsets no better: 79% of the

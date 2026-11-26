@@ -20,12 +20,12 @@ static class Melody
     /// <summary>Each bar's music (Bar.Vocal) and the part's instrument (Chart.Singer) from the vocal part at 22050 Hz;
     /// with words, the notes are the words' (Words.Align) and each bar's syllables are Bar.Lyrics.</summary>
     /// <summary>The voice's pitch (pYIN), loudness (dB) and notes as heard (NotesOf), from the vocal part at 22050 Hz.</summary>
-    static (double[] F0, bool[] Voiced, double[] Db, List<(double On, double Off, int Midi)> Heard) Hear(double[] part)
+    static (double[] F0, bool[] Voiced, double[] Db, List<(double On, double Off, int Midi)> Heard, float[] Strength) Hear(double[] part)
     {
         var (f0, voiced) = Bass.Pyin(part, Frame, Fmin, Fmax);
         var strength = Features.Onsets(Features.Spectra(part, out _, Hop), Hop, 64, 8000);
         var db = Loudness(part, f0.Length);
-        return (f0, voiced, db, NotesOf(f0, voiced, Bass.OnsetFrames(strength, Delta), db));
+        return (f0, voiced, db, NotesOf(f0, voiced, Bass.OnsetFrames(strength, Delta), db), strength);
     }
 
     /// <summary>The notes as heard without words (NotesOf), in seconds: for measuring (`orecchiante words --none`).</summary>
@@ -34,10 +34,10 @@ static class Melody
     /// <summary>The words' notes on the vocal part (Words.Align), in seconds: for measuring (`orecchiante words`) and Read.</summary>
     internal static List<Words.Note> WordsOf(double[] part, Sung sung) => WordsOf(Hear(part), sung);
 
-    static List<Words.Note> WordsOf((double[] F0, bool[] Voiced, double[] Db, List<(double On, double Off, int Midi)> Heard) h, Sung sung)
+    static List<Words.Note> WordsOf((double[] F0, bool[] Voiced, double[] Db, List<(double On, double Off, int Midi)> Heard, float[] Strength) h, Sung sung)
     {
         double loud = Percentile(h.Db, 95);
-        return Words.Align(sung.Model, sung.Vocals, h.F0, h.Voiced, [.. h.Db.Select(d => d - loud)], h.Heard, sung.Morae, sung.English);
+        return Words.Align(sung.Model, sung.Vocals, h.F0, h.Voiced, [.. h.Db.Select(d => d - loud)], h.Heard, sung.Morae, sung.English, h.Strength);
     }
 
     public static void Read(double[] part, Chart chart, Sung? sung = null)
