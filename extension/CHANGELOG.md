@@ -9,8 +9,10 @@ Notable changes to Orecchiante (Dettato until 0.10.2) are recorded here, newest 
   a bar line tied). On the sung notes of 99 RWC songs, about 73% of the notes start on the right 16th;
   the pitch is a guide. An instrumental's lead is often read as the melody; delete the part if not
   wanted.
-- Each note is sung "ら" (`singer on vocal sings "ら"`), so that whatever reads the singing (Lily#'s
-  timeline, Shosa's dances) has a syllable on every note until the words are written in.
+- Each note is sung "la" (`language english`, `singer on vocal sings "la"`), or "ら" when the title is
+  written in Japanese, so that whatever reads the singing (Lily#'s timeline, Shosa's dances) has a
+  syllable on every note until the words are written in. Which voice sings is the machine's: Lily#
+  picks an installed voice that sings the language, and with none the part's instrument plays.
 - The file beside the chart keeps each bar's melody as it was read (`vocal`).
 
 ## 0.14.0

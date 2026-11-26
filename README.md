@@ -1089,10 +1089,16 @@ beatB | }`), a bar near no groove written out (`drums { { hh8 8 … } { bd4 … 
 ### The melody written out (0.15.0)
 
 When a voice is heard, the chart has a voice staff above the bass (`part vocal { instrument tenor }` or
-`soprano`, `vocal { … }` in every section) and a line `singer on vocal sings "ら"`: one syllable a note, so
-that what reads the singing has a syllable on each note before any words are written in — Lily#'s
-`lysc timeline` (`sung`) and through it Shosa's dances (Shosa's request 1, 2026-11-26: "the melody of the
-singing in the .lys"). The file beside the chart keeps each bar's reading (`vocal`; SIDECAR.md).
+`soprano`, `vocal { … }` in every section) and a line `singer on vocal sings "la"` after `language english`:
+one syllable a note, so that what reads the singing has a syllable on each note before any words are
+written in — Lily#'s `lysc timeline` (`sung`) and through it Shosa's dances (Shosa's request 1, 2026-11-26:
+"the melody of the singing in the .lys"). A title written in Japanese (kana or kanji) gets `"ら"` and no
+`language` line instead (the owner, 2026-11-26: the tool is for the whole world, so English "la" unless the
+song is Japanese; the title is the only clue before the words are known). Which voice sings is the
+machine's, not the chart's: Lily# and Cantoria pick an installed voice for the language, and where none
+sings it the part's instrument plays (`lysc check --singer <cantoria>` says who would sing). On the
+owner's machine (2026-11-26) "la" goes to diffsinger/TIGER and "ら" to neutrino/AKANE. The file beside the
+chart keeps each bar's reading (`vocal`; SIDECAR.md).
 
 - **How** (`src/Orecchiante/Melody.cs`, its Python side `tools/melody.py`, which says each step): the bass's
   pYIN on the separated vocal part, C2 to C6 in frames of 2048; the pitch rounded after the voice's own
@@ -1112,6 +1118,18 @@ singing in the .lys"). The file beside the chart keeps each bar's reading (`voca
   words, when they are written in, tell how many syllables there are. Tried and no better: the recording's
   tuning instead of the voice's, a rise in loudness as the onset, an onset only with a dip in loudness,
   the pitch as each note's commonest, 16ths off the eighths.
+- **Note values, what the words need** (`scratch/vocal/dur.py`, 2026-11-26, after the owner found the
+  values "quite poor" on We're An American Band: the words go into the bars, so a bar needs as many notes as
+  it has syllables). On 1-50: the 16th a note ends on is right for 0.366 of the notes (within a 16th 0.585);
+  **a bar has the truth's number of notes in 29% of the bars** (within one 70%), too many in 38% and too
+  few in 32%. The grid's own limit, the truth itself put through it: 77% on the eighths (two 16ths fall on
+  one eighth and one is lost), 94% when such a note goes on its free 16th. Given the truth's number of notes
+  in each phrase (what pasted words would tell), keeping that many of the strongest onsets reaches only
+  31% (36% with the free 16th): the onsets the reader finds are wrong, not merely too many — repeated
+  syllables on one pitch and syllables where pYIN hears no voice are not among them. Spotify's Basic Pitch
+  (Apache-2.0, ONNX) on the same vocals is worse (onsets 0.60-0.63 against 0.74, bars 17-19%); openvpi's
+  SOME and GAME, made for singing, publish their weights under CC BY-NC-SA 4.0. Syllables start with their
+  consonants, which a pitch tracker does not hear: the next step is to place the words themselves.
 - **Heard or not:** a staff when the vocal part's mean square is within 30 dB of the recording's. The quietest
   sung songs of xsc and RWC-P are at -24.5 dB (Viva La Vida) and -21.0; instrumentals' lead (strings, a
   synth, the guitar's tune) is separated as the voice at -18 to -26 dB and is read as the melody, as a synth

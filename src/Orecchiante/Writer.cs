@@ -22,6 +22,11 @@ static class Writer
         return names;
     }
 
+    /// <summary>Whether a title is written in Japanese: it has kana or kanji (CJK ideographs; a Chinese title is taken
+    /// for Japanese too, there being no better guess before the words are known).</summary>
+    internal static bool Japanese(string title) =>
+        title.Any(c => c is >= '぀' and <= 'ヿ' or >= '㐀' and <= '䶿' or >= '一' and <= '鿿' or >= 'ｦ' and <= 'ﾟ');
+
     /// <param name="shapeOf">The guitar shape of a chord name (Lily#'s default, `lysc shape`), or null for none: the
     /// first chord of the chart is written with it, so that its diagram shows (the owner, 2026-11-16).</param>
     public static string Lys(Chart chart, string title, Func<string, string?>? shapeOf = null)
@@ -129,10 +134,13 @@ static class Writer
             of[bar.BarOfSection - 1].Add(bar);
         }
         // The voice and bass staves (Melody.Read, Bass.Read): pitches as they are written (absolute octaves). The voice
-        // sings one "ら" a note, so that what reads the singing (Lily#'s `lysc timeline` `sung`, Shosa's dances) has a
-        // syllable on each note until the words are written in (Shosa's request 1, 2026-11-26).
+        // sings one syllable a note, so that what reads the singing (Lily#'s `lysc timeline` `sung`, Shosa's dances) has a
+        // syllable on each note until the words are written in (Shosa's request 1, 2026-11-26): "ら" where the title is
+        // written in Japanese, else "la" in English (the owner: the tool is for the whole world). Which voice sings is
+        // the machine's (Lily# and Cantoria pick one that sings the language; with none, the part's instrument plays).
         if (vocal || bass) lines.Add("octave absolute");
-        if (vocal) lines.AddRange([$"part vocal {{ instrument {chart.Singer ?? "tenor"} }}", "singer on vocal sings \"ら\""]);
+        if (vocal && !Japanese(title)) lines.Add("language english");
+        if (vocal) lines.AddRange([$"part vocal {{ instrument {chart.Singer ?? "tenor"} }}", $"singer on vocal sings \"{(Japanese(title) ? "ら" : "la")}\""]);
         if (bass) lines.Add("part bass { instrument bass }");
         if (vocal || bass) lines.Add("");
         if (kit)
