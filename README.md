@@ -1216,10 +1216,11 @@ staff's notes are the words' (`src/Orecchiante/Words.cs`, `Kana.cs`; `Melody.Rea
 
 The owner, 2026-11-27: 今宵の月のように's "Ah" failed the singing voice. A Japanese song's English words that
 IPAdic does not read are looked up in a small dictionary (`Kana.Sung`: ah, oh, uh, ooh, yeah, hey, la, baby,
-love, you, I, ...; in lower case, marks left out) and written with their kana as Lily#'s reading, a note each
-(`Ah[あぁ]`, `Oh[おぅ]~yeah[いぇー]`); a word not in it is as before (the melody's notes, sung as written). The
-particles は and へ (IPAdic's 助詞) are written as sung, `は[わ]`, `へ[え]`. Both are put to the voice by the
-kana sung (わ, あぁ), not as `＊`. On RWC-P the bars with the truth's number of notes: Japanese dev 0.589 →
+love, you, I, ...; in lower case, marks left out) and put to the voice by their kana, a note each, but written
+as they are (`Ah`, `Oh~yeah`): the owner chose the singing voice to make them singable, not the chart (Lily#
+REQUESTS 29; a first try wrote `Ah[あぁ]`). A word not in it is as before (the melody's notes, sung as written).
+The particles は and へ (IPAdic's 助詞) are written with the kana sung as Lily#'s reading, `は[わ]`, `へ[え]`
+(one syllable does not tell a particle; the reading of the sentence does), and put to the voice by わ and え. On RWC-P the bars with the truth's number of notes: Japanese dev 0.589 →
 0.596, test 0.637 → 0.642 (`scratch/sep/score_sep.ps1 -Tag kana27`). 今宵の月のように (LRCLIB's words): `lysc
 check` clean, 415 syllables in `sung`, none in Latin letters.
 

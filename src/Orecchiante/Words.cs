@@ -189,8 +189,10 @@ static partial class Words
             var pitches = new List<double>();
             for (int j = a; j < end; j++) if (voiced[j]) pitches.Add(69 + 12 * Math.Log2(f0[j] / 440));
             double midi = pitches.Count > 0 ? Median(pitches) : 60.0;
-            // printed one way and sung another (Mora.Shown): Lily#'s reading, `Ah[あぁ]`, `は[わ]`
-            string label = m.Shown != null ? $"{m.Shown}[{syllable}]" : syllable;
+            // printed one way and sung another (Mora.Shown): the particles with Lily#'s reading, `は[わ]`; a word of
+            // Kana.Sung ("Ah") as written, its kana only for the alignment — the singing voice makes it singable (the
+            // owner, 2026-11-27: Lily#'s voice to correct it, not the chart; Lily# REQUESTS 29)
+            string label = m.Shown == null ? syllable : m.Shown.Any(char.IsAsciiLetter) ? m.Shown : $"{m.Shown}[{syllable}]";
             notes.Add(new Note(t, Math.Max(end * (double)HHop / HRate, t + 0.03), (int)Math.Round(midi, MidpointRounding.ToEven), label));
         }
         return notes;
