@@ -1230,21 +1230,26 @@ reader (`w2v-english-mm8.onnx`: facebook/wav2vec2-base-960h, Apache-2.0, 122 MB 
   Japanese rules. A syllable going on to the next of its word is written `Lit-`, so the chart says
   `Lit- tle~Rock` (Lily#'s hyphen; two syllables on one 16th elide as in Japanese), and the chart says
   `language english`.
-- **Measured** on RWC-P's 21 English songs (P031, P081 to P100; `dur.py all SRC=align TAG=en LEGATO=1
-  PULL=0.25 ONLY=…`, none with `PULL=0`):
+- **Measured** on RWC-P's 21 English songs (P031, P081 to P100) as the Japanese are: `orecchiante words
+  scratch\parts\rwc --lyrics scratch\align\plain --out <tag> --models onnx` (`--none`: 0.15.0's reading), then
+  `scratch/sep/score_sep.ps1 -Tag <tag>` (`dur.py all SRC=align LEGATO=1 PULL=0.25 ONLY=…`, none `PULL=0`):
 
-| | no words | words |
+| | no words (0.15.0) | words |
 |---|---|---|
-| bars with the truth's number of notes, 21 songs | 0.152 | **0.368** (.NET 0.365) |
-| ... the 13 whose lyrics have 90% of the truth's notes | 0.155 | **0.404** |
-| onset on the right 16th (F) | 0.607 | **0.660** |
+| bars with the truth's number of notes, 21 songs | 0.265 | **0.364** |
+| ... the 13 whose lyrics have 90% of the truth's notes | 0.253 | **0.401** |
+| onset on the right 16th (F), 21 songs | **0.692** | 0.659 |
+| ... the 13 | 0.691 | 0.691 |
 
-  Less than Japanese (0.29 → 0.59): 79% of the syllables start within 0.1 s of the truth's onset (90% in
-  Japanese), and RWC's English lyrics leave out repeats (918 of the 1207 notes missing fall where the lyrics
-  say nothing for 1.5 s). Tried and not kept: no word break (0.350), a word a note (0.231), the melody's notes
-  where the lyrics say nothing (`FILL`, 0.381, as in Japanese not taken), splitting a syllable where the pitch
-  moves (0.21 to 0.32), the onset at the first vowel (0.317), lag 0.05 (0.336). The 8-bit model is the torch
-  one's (0.370).
+  (A first count had 0.152 and 0.607 for no words: that was `dur.py`'s own pYIN reading, `SRC=pyin`, not
+  0.15.0's; corrected the same day.) Less than Japanese (0.29 → 0.59), and the onsets no better: 79% of the
+  syllables start within 0.1 s of the truth's onset (90% in Japanese), and RWC's English lyrics leave out
+  repeats (918 of the 1207 notes missing fall where the lyrics say nothing for 1.5 s), where the alignment
+  goes astray; with the lyrics whole the onsets are 0.15.0's. Tried and not kept (Python, 21 songs, words
+  0.368): no word break (0.350), a word a note (0.231), the melody's notes where the lyrics say nothing
+  (`FILL`, 0.381, as in Japanese not taken), splitting a syllable where the pitch moves (0.21 to 0.32), the
+  onset at the first vowel (0.317), lag 0.05 (0.336), each onset moved to the melody's nearest within 0.05 to
+  0.12 s (`SNAP`, 0.335 to 0.370, the onsets 0.656 to 0.661). The 8-bit model is the torch one's (0.370).
 - We're An American Band with LRCLIB's words: 361 syllables, 337 in `lysc timeline`'s `sung`, `lysc check`
   clean. The Japanese words are as before (RWC P001 to P003 to the byte).
 
