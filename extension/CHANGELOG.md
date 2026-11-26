@@ -17,6 +17,9 @@ Notable changes to Orecchiante (Dettato until 0.10.2) are recorded here, newest 
   the voice staff, sung in English). On RWC's 21 English songs the bars with the right number of notes
   go from 27% to 37% (25% to 40% where the lyrics are whole), and 72% of the notes start on the right
   16th (69% before; 75% where the lyrics are whole): each syllable starts where the voice does near it.
+- The words of a song can be chosen when they are not found, or the wrong ones are: `orecchiante lyrics
+  <recording> --list [--query <words>]` lists the songs LRCLIB has for the title and artist, or for any
+  words, and `--id <number>` fetches the one chosen (for Lily#'s list to choose from).
 - New in the package: an English speech model (facebook/wav2vec2-base-960h, Apache-2.0, 122 MB in 8-bit).
 
 ## 0.17.0

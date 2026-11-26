@@ -1324,6 +1324,17 @@ LRCLIB, and only when this command is run. Nothing else in Orecchiante goes on t
   chooses, and 今宵の月のように found a cover (10-FEET, 254 s against 255) before the original; with
   `--artist エレファントカシマシ` the original. With tags (mp3, m4a and flac made with ffmpeg) the title, the
   artist, the album and the length are read from each.
+- **To choose (0.18.0, the owner: "a person should not have to type the exact title"):** `orecchiante lyrics
+  <recording> --list [--query <words>]` writes nothing and puts on stdout, as JSON, the songs to choose among —
+  `{"title", "artist", "query", "seconds" (the recording's), "songs": [{"id", "title", "artist", "album",
+  "seconds", "timed", "words"}]}`, at most 20 — those LRCLIB's searches give for the title and artist (by both,
+  by both as words, by the title's words), or for `--query`'s words alone; not cut to the length but those within
+  2 s first, then with words, with timed lines, nearer in length. Exit 0 even with none, 3 when LRCLIB is not
+  reached. `orecchiante lyrics <recording> --id <LRCLIB's number>` then writes the one chosen, whatever its length
+  (1 when LRCLIB has no such number). `--version --json` names `lyrics-choose` among the commands. The search is of
+  titles, artists and albums, not of the words: wab.mp3 (no tags) finds nothing by its name, and with `--query
+  "american band grand funk"` the original first (208 s against 209), "out on the road for days" nothing. Lily#'s
+  list to choose from and its own search: Lily# REQUESTS 28.
 
 
 ### How a chart begins and ends

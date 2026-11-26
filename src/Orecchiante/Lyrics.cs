@@ -30,13 +30,14 @@ public static class Lyrics
         return client;
     }
 
-    // The lyrics LRCLIB has for this recording, or null; `say` is told each request. Throws Unreached when LRCLIB
-    // cannot be asked (no network, an answer it should not give).
-    public static Song? Find(string title, string? artist, double seconds, string version, Action<string>? say = null)
+    /// <summary>Requests to LRCLIB one at a time, 300 ms apart, a 429 or 503 waited out as its Retry-After says; null
+    /// for a 404. Throws Unreached when LRCLIB cannot be asked (no network, an answer it should not give).</summary>
+    sealed class Asker(string version, Action<string>? say) : IDisposable
     {
-        using var client = Client(version);
+        readonly HttpClient client = Client(version);
         bool first = true;
-        JsonElement? Ask(string query)
+
+        public JsonElement? Ask(string query)
         {
             if (!first) Thread.Sleep(300);
             first = false;
@@ -67,7 +68,55 @@ public static class Lyrics
                 }
             }
         }
-        static string E(string s) => Uri.EscapeDataString(s);
+
+        /// <summary>The songs a search answers.</summary>
+        public List<Song> Songs(string query) =>
+            Ask(query) is { ValueKind: JsonValueKind.Array } list ? [.. list.EnumerateArray().Select(Of).OfType<Song>()] : [];
+
+        public void Dispose() => client.Dispose();
+    }
+
+    static string E(string s) => Uri.EscapeDataString(s);
+
+    /// <summary>The songs a person may choose among (`orecchiante lyrics --list`): with `query`, LRCLIB's search for
+    /// those words alone; else every search Find makes for the title and artist (by both, by both as words, by the
+    /// title's words), not cut to the length. Each once; those within Within s of the recording first, then with words,
+    /// with times on their lines, nearer in length; at most `most`.</summary>
+    public static List<Song> Candidates(string title, string? artist, double seconds, string? query, string version, Action<string>? say = null, int most = 20)
+    {
+        using var ask = new Asker(version, say);
+        var found = new List<Song>();
+        if (query != null) found.AddRange(ask.Songs($"/api/search?q={E(query)}"));
+        else
+        {
+            if (artist != null)
+            {
+                found.AddRange(ask.Songs($"/api/search?track_name={E(title)}&artist_name={E(artist)}"));
+                found.AddRange(ask.Songs($"/api/search?q={E(artist + " " + title)}"));
+            }
+            found.AddRange(ask.Songs($"/api/search?q={E(title)}"));
+        }
+        return [.. found.DistinctBy(s => s.Id)
+            .OrderBy(s => !Fits(s, seconds))
+            .ThenBy(s => s.Instrumental || (s.Synced == null && s.Plain == null))
+            .ThenBy(s => s.Synced == null)
+            .ThenBy(s => seconds > 0 ? Math.Abs(s.Seconds - seconds) : 0)
+            .Take(most)];
+    }
+
+    /// <summary>The song LRCLIB has under this number (`orecchiante lyrics --id`), or null.</summary>
+    public static Song? ById(long id, string version, Action<string>? say = null)
+    {
+        using var ask = new Asker(version, say);
+        return ask.Ask($"/api/get/{id}") is { } one ? Of(one) : null;
+    }
+
+    // The lyrics LRCLIB has for this recording, or null; `say` is told each request. Throws Unreached when LRCLIB
+    // cannot be asked (no network, an answer it should not give).
+    public static Song? Find(string title, string? artist, double seconds, string version, Action<string>? say = null)
+    {
+        using var asker = new Asker(version, say);
+        JsonElement? Ask(string query) => asker.Ask(query);
         string length = seconds > 0 ? $"&duration={Math.Round(seconds):0}" : "";
 
         // The one LRCLIB matches itself, when the artist is known. Not by the album: with one LRCLIB does not have (a

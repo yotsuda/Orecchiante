@@ -24,6 +24,14 @@
 // them. Exit codes: 0 written, 1 none found (or LRCLIB says there is no singing), 2 the arguments (an .lrc in the way
 // too), 3 LRCLIB was not reached. stdout has the .lrc's path alone.
 //
+//   orecchiante lyrics <recording> --list [--query <words>]      (0.18.0: `lyrics-choose` in --version --json)
+//   orecchiante lyrics <recording> --id <LRCLIB's number> [-o <x.lrc>] [--force]
+//
+// for a person to choose the words when none are found, or the wrong ones: --list writes nothing and puts the songs
+// to choose among on stdout as JSON (those LRCLIB's searches give for the title and artist, or for --query's words
+// alone; not cut to the length, those within 2 s first; README "The words, from LRCLIB"), exit 0 even with none;
+// --id writes the one chosen, whatever its length. Exit 3 when LRCLIB is not reached.
+//
 // And for measuring, on one recording or a folder of them, each part to a file:
 //
 //   orecchiante read <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--lines <folder>] [--heard <folder>] [--voice <folder>|none] [--drums <folder>]
@@ -76,6 +84,8 @@ const int protocol = 1;
 const string usage = "usage: orecchiante <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]\n"
                    + "       orecchiante --version [--json]\n"
                    + "       orecchiante lyrics <recording> [-o <x.lrc>] [--title <title>] [--artist <artist>] [--force]\n"
+                   + "       orecchiante lyrics <recording> --list [--title <title>] [--artist <artist>] [--query <words>]\n"
+                   + "       orecchiante lyrics <recording> --id <LRCLIB's number> [-o <x.lrc>] [--force]\n"
                    + "       orecchiante read <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--lines <folder>] [--heard <folder>] [--voice <folder>|none] [--drums <folder>] [--bass <folder>]\n"
                    + "       orecchiante ears <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--cqt]\n"
                    + "       orecchiante features <a recording or a folder of them> --out <folder>\n"
@@ -87,7 +97,7 @@ if (args.Length > 0 && args[0] == "--version")
 {
     static string List(string[] items) => "[" + string.Join(",", items.Select(i => $"\"{i}\"")) + "]";
     Console.WriteLine(args.Contains("--json")
-        ? $"{{\"version\":\"{version}\",\"protocol\":{protocol},\"commands\":{List(["read", "lyrics"])},\"inputs\":{List(Audio.Inputs)}}}"
+        ? $"{{\"version\":\"{version}\",\"protocol\":{protocol},\"commands\":{List(["read", "lyrics", "lyrics-choose"])},\"inputs\":{List(Audio.Inputs)}}}"
         : version);
     return 0;
 }
@@ -264,19 +274,24 @@ static void DeleteFolder(string path)
 
 if (args[0] == "lyrics")
 {
-    string? recording = null, lrcPath = null, title = null, artist = null;
-    bool force = false;
+    string? recording = null, lrcPath = null, title = null, artist = null, query = null;
+    bool force = false, list = false;
+    long? id = null;
     for (int i = 1; i < args.Length; i++)
     {
         string a = args[i];
-        if (a is "-o" or "--title" or "--artist")
+        if (a is "-o" or "--title" or "--artist" or "--query" or "--id")
         {
             if (++i >= args.Length) return Fail(2, $"{a} wants a value\n{usage}");
             if (a == "-o") lrcPath = args[i];
             else if (a == "--title") title = args[i];
-            else artist = args[i];
+            else if (a == "--artist") artist = args[i];
+            else if (a == "--query") query = args[i];
+            else if (long.TryParse(args[i], out long number) && number > 0) id = number;
+            else return Fail(2, $"--id wants LRCLIB's number of the song, not {args[i]}");
         }
         else if (a == "--force") force = true;
+        else if (a == "--list") list = true;
         else if (a.StartsWith('-')) return Fail(2, $"unknown option {a}\n{usage}");
         else if (recording != null) return Fail(2, $"one recording at a time: {recording}, {a}");
         else recording = a;
@@ -284,10 +299,12 @@ if (args[0] == "lyrics")
     if (recording == null) return Fail(2, "no recording\n" + usage);
     if (!File.Exists(recording)) return Fail(2, $"no file {recording}");
     if (!Audio.Reads(recording)) return Fail(2, $"{Path.GetFileName(recording)}: not a kind of recording this reads ({string.Join(", ", Audio.Inputs)})");
+    if (query != null && !list) return Fail(2, "--query goes with --list");
+    if (list && id != null) return Fail(2, "--list or --id, not both");
     recording = Path.GetFullPath(recording);
     lrcPath = Path.GetFullPath(lrcPath ?? Path.ChangeExtension(recording, ".lrc"));
     if (!lrcPath.EndsWith(".lrc", StringComparison.OrdinalIgnoreCase)) return Fail(2, $"-o wants a .lrc file, not {lrcPath}");
-    if (File.Exists(lrcPath) && !force) return Fail(2, $"{lrcPath} is already there (--force to write over it)");
+    if (!list && File.Exists(lrcPath) && !force) return Fail(2, $"{lrcPath} is already there (--force to write over it)");
 
     var tags = Tags.Of(recording);
     title ??= tags.Title ?? Path.GetFileNameWithoutExtension(recording);
@@ -301,9 +318,24 @@ if (args[0] == "lyrics")
     }
     int whole = (int)Math.Round(seconds);
     Console.Error.WriteLine($"{title}" + (artist != null ? $" by {artist}" : "") + (tags.Album != null ? $" ({tags.Album})" : "") + $", {whole / 60}:{whole % 60:D2}");
+    if (list)
+    {
+        // The songs to choose among, written nowhere: JSON on stdout for Lily#'s list (README "The words, from LRCLIB")
+        List<Song> songs;
+        try { songs = Lyrics.Candidates(title, artist, seconds, query, version, Console.Error.WriteLine); }
+        catch (Lyrics.Unreached e) { return Fail(3, e.Message); }
+        string R(double x) => Math.Round(x, 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        string Q(string? s) => s == null ? "null" : Writer.Quoted(s);
+        Console.WriteLine($"{{\"title\": {Q(title)}, \"artist\": {Q(artist)}, \"query\": {Q(query)}, \"seconds\": {R(seconds)}, \"songs\": [" + string.Join(",", songs.Select(s =>
+            $"\n  {{\"id\": {s.Id}, \"title\": {Q(s.Title)}, \"artist\": {Q(s.Artist)}, \"album\": {Q(s.Album)}, \"seconds\": {R(s.Seconds)}, "
+            + $"\"timed\": {(s.Synced != null ? "true" : "false")}, \"words\": {(!s.Instrumental && (s.Synced != null || s.Plain != null) ? "true" : "false")}}}")) + (songs.Count > 0 ? "\n" : "") + "]}");
+        Console.Error.WriteLine($"  {songs.Count} songs, {songs.Count(s => Math.Abs(s.Seconds - seconds) <= Lyrics.Within)} within {Lyrics.Within:0} s");
+        return 0;
+    }
     Song? song;
-    try { song = Lyrics.Find(title, artist, seconds, version, Console.Error.WriteLine); }
+    try { song = id is long chosen ? Lyrics.ById(chosen, version, Console.Error.WriteLine) : Lyrics.Find(title, artist, seconds, version, Console.Error.WriteLine); }
     catch (Lyrics.Unreached e) { return Fail(3, e.Message); }
+    if (song == null && id != null) return Fail(1, $"LRCLIB has no song numbered {id}");
     if (song == null) return Fail(1, $"LRCLIB has no lyrics for {title}" + (artist != null ? $" by {artist}" : "") + $" within {Lyrics.Within:0} s of {whole / 60}:{whole % 60:D2}" + (artist == null ? " (--artist may find them)" : ""));
     if (song.Instrumental || (song.Synced == null && song.Plain == null)) return Fail(1, $"LRCLIB says {song.Title} by {song.Artist} has no singing");
     Console.Error.WriteLine($"  {song.Title} by {song.Artist}" + (song.Album != "" ? $" ({song.Album})" : "") + $", {song.Seconds:F0} s, "
