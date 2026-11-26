@@ -1250,6 +1250,19 @@ reader (`w2v-english-mm8.onnx`: facebook/wav2vec2-base-960h, Apache-2.0, 122 MB 
   (`FILL`, 0.381, as in Japanese not taken), splitting a syllable where the pitch moves (0.21 to 0.32), the
   onset at the first vowel (0.317), lag 0.05 (0.336), each onset moved to the melody's nearest within 0.05 to
   0.12 s (`SNAP`, 0.335 to 0.370, the onsets 0.656 to 0.661). The 8-bit model is the torch one's (0.370).
+- **Where the words lose** (`scratch/align/lose.py`, a note found when one read starts within 0.1 s): the grid
+  itself would allow 0.955 (Japanese dev) and 0.916 (English) of the bars (`dur.py ORACLE=1`). Of the truth's
+  notes, Japanese dev 87.1% found, 7.5% missed inside a note read (a mora over several notes), 5.4% where
+  nothing is read (mostly lyrics left out), and 8.1% of the notes read extra; English (the 13 whole) 71.9%
+  found, 23.4% missed inside a note read and 22.2% extra — about as many notes as the truth, put in the wrong
+  places: the English model, read speech, is the weak part.
+- **Another separation does little** (2026-11-26, the owner's strategy paper: change the part alone, score what
+  is read): RWC-P's vocals separated again by htdemucs_ft's vocals model (`scratch/sep/ft_vocals.py`, 44 s a
+  song, torch), against the shipped htdemucs_6s in int8; `orecchiante words` on each, `scratch/sep/score_sep.ps1`.
+  Bars with the truth's number of notes, words / no words: Japanese dev 0.589 → 0.597 / 0.294 → 0.296, test
+  0.637 → 0.650 / 0.326 → 0.330, English 0.364 → 0.365 / 0.265 → 0.283; found notes 87.1 → 87.5% and 71.9 →
+  72.5%. Not worth a second separation (another model and 40 s a song): within Demucs the separation is not
+  what holds the words back.
 - We're An American Band with LRCLIB's words: 361 syllables, 337 in `lysc timeline`'s `sung`, `lysc check`
   clean. The Japanese words are as before (RWC P001 to P003 to the byte).
 
