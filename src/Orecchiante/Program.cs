@@ -3,7 +3,8 @@
 //
 //   orecchiante <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]
 //
-// (with <name>.lrc beside the recording, its words are put to the voice staff when they are Japanese: Words.cs)
+// (with <name>.lrc beside the recording, its words are put to the voice staff when they are Japanese: Words.cs; or
+// English, with English.Model in the models' folder: English.cs)
 // writes <name>.lys (a Lily# chord chart) beside the recording, or where -o says, and beside the chart
 // <name>.orecchiante.json (docs/SIDECAR.md), and the recording's six parts in <name>.parts/ (drums, bass, other,
 // vocals, guitar and piano .flac, to hear one at a time; SIDECAR.md, `parts`). A chart already there is not written over without --force: it may hold
@@ -102,6 +103,7 @@ InferenceSession? beatModel = null, chordModel = null, btcModel = null;
 InferenceSession[] voiceModels = [];
 InferenceSession? wordsModel = null;            // with words to put to the voice (a .lrc beside the recording)
 List<Mora>? wordsMorae = null;
+bool wordsEnglish = false;                      // the words are English syllables (English.Model)
 Song? wordsSong = null;
 string? linesFrom = null, heardFrom = null, voiceFrom = null, drumsFrom = null, bassFrom = null;     // voiceFrom "none": no singing heard; drumsFrom the same
 
@@ -227,7 +229,7 @@ Chart Read(string file, Action<string>? say = null, string? partsTo = null)
     rules += clock.Elapsed.TotalSeconds;
     if (vocalSamples != null)
     {
-        var sung = vocals16 != null ? new Melody.Sung(wordsModel!, vocals16, wordsMorae!) : null;
+        var sung = vocals16 != null ? new Melody.Sung(wordsModel!, vocals16, wordsMorae!, wordsEnglish) : null;
         Stage(sung != null ? "the melody and its words" : "the melody");
         Melody.Read(vocalSamples, chart, sung);
         if (sung != null) chart.Words = wordsSong;
@@ -353,6 +355,8 @@ if (args[0] == "words")
     if (from == null || lyricsAt == null || outAt == null) return Fail(2, "usage: orecchiante words <a folder of <id>.parts folders> --lyrics <folder> --out <folder> [--models <folder>] [--threads 8]");
     int threads = int.TryParse(Option("--threads"), out int t) ? t : 8;
     using var model = new InferenceSession(Path.Combine(modelsAt ?? AppContext.BaseDirectory, Words.Model), new SessionOptions { IntraOpNumThreads = threads });
+    string englishAt = Path.Combine(modelsAt ?? AppContext.BaseDirectory, English.Model);
+    using var englishModel = File.Exists(englishAt) ? new InferenceSession(englishAt, new SessionOptions { IntraOpNumThreads = threads }) : null;
     Directory.CreateDirectory(outAt);
     foreach (var parts in Directory.GetDirectories(from, "*.parts").Order())
     {
@@ -361,8 +365,15 @@ if (args[0] == "words")
         string? vocals = Directory.GetFiles(parts, "vocals.*").FirstOrDefault();
         if (text == null || vocals == null) continue;
         var clock = Stopwatch.StartNew();
-        var morae = Kana.Read(Words.LinesOf(text));
-        if (!Words.Sung(morae)) { Console.Error.WriteLine($"{id}: not words put to the voice (Words.Sung)"); continue; }
+        var lines = Words.LinesOf(text);
+        var morae = Kana.Read(lines);
+        bool english = false;
+        if (!Words.Sung(morae))
+        {
+            var syllables = English.Read(lines);
+            if (englishModel == null || !English.Sung(lines, syllables)) { Console.Error.WriteLine($"{id}: not words put to the voice (Words.Sung, English.Sung with {English.Model})"); continue; }
+            (morae, english) = (syllables, true);
+        }
         var (part, partRate) = Audio.Read(vocals);
         string R(double x) => Math.Round(x, 4).ToString(System.Globalization.CultureInfo.InvariantCulture);
         if (args.Contains("--none"))
@@ -373,7 +384,7 @@ if (args[0] == "words")
             Console.Error.WriteLine($"{id}: {heard.Count} notes heard, {clock.Elapsed.TotalSeconds:F1} s");
             continue;
         }
-        var sung = new Melody.Sung(model, [.. Resample.To(part, Words.Rate, partRate).Select(x => (float)x)], morae);
+        var sung = new Melody.Sung(english ? englishModel! : model, [.. Resample.To(part, Words.Rate, partRate).Select(x => (float)x)], morae, english);
         var notes = Melody.WordsOf(Resample.To(part, Features.Rate, partRate), sung);
         File.WriteAllText(Path.Combine(outAt, id + ".json"), "[" + string.Join(",\n", notes.Select(n => $"[{R(n.On)}, {R(n.Off)}, {n.Midi}, {Writer.Quoted(n.Syllable)}]")) + "]\n", new UTF8Encoding(false));
         Console.Error.WriteLine($"{id}: {morae.Count} morae, {notes.Count} notes, {clock.Elapsed.TotalSeconds:F1} s");
@@ -427,19 +438,24 @@ if (args[0] is not ("read" or "ears" or "features" or "audio" or "drums" or "bas
         try { Open(modelsAt, threads, true, true, true); }
         catch (Exception e) { return Fail(3, $"the models did not open ({e.Message.Trim()})"); }
         // The words, from <name>.lrc beside the recording (`orecchiante lyrics`), put to the voice when they are
-        // Japanese (Words.Sung; a song in English keeps "la" for now)
+        // Japanese (Words.Sung), or English (English.Sung) with English.Model there (optional: else "la" as before)
         string lrc = Path.ChangeExtension(recording, ".lrc");
         if (File.Exists(lrc))
         {
-            var morae = Kana.Read(Words.LinesOf(lrc));
-            if (!Words.Sung(morae)) Console.Error.WriteLine($"{Path.GetFileName(lrc)}: not words this puts to the voice yet (Japanese only), sung on \"la\"");
+            var lines = Words.LinesOf(lrc);
+            var morae = Kana.Read(lines);
+            var syllables = English.Read(lines);
+            bool japanese = Words.Sung(morae), english = !japanese && English.Sung(lines, syllables);
+            string? model = japanese ? Words.Model : english && File.Exists(Path.Combine(modelsAt, English.Model)) ? English.Model : null;
+            if (japanese && model != null && !File.Exists(Path.Combine(modelsAt, model))) return Fail(3, $"the model {model} is not in {Path.GetFullPath(modelsAt)} (--models <folder>)");
+            if (model == null)
+                Console.Error.WriteLine($"{Path.GetFileName(lrc)}: " + (english ? $"words in English, sung on \"la\" (no {English.Model} in {Path.GetFullPath(modelsAt)})" : "not words this puts to the voice (Japanese or English), sung on \"la\""));
             else
             {
-                if (!File.Exists(Path.Combine(modelsAt, Words.Model))) return Fail(3, $"the model {Words.Model} is not in {Path.GetFullPath(modelsAt)} (--models <folder>)");
-                try { wordsModel = new InferenceSession(Path.Combine(modelsAt, Words.Model), new SessionOptions { IntraOpNumThreads = threads }); }
-                catch (Exception e) { return Fail(3, $"the model {Words.Model} did not open ({e.Message.Trim()})"); }
-                (wordsMorae, wordsSong) = (morae, Lyrics.FromLrc(lrc));
-                Console.Error.WriteLine($"{Path.GetFileName(lrc)}: {morae.Count} morae to put to the voice");
+                try { wordsModel = new InferenceSession(Path.Combine(modelsAt, model), new SessionOptions { IntraOpNumThreads = threads }); }
+                catch (Exception e) { return Fail(3, $"the model {model} did not open ({e.Message.Trim()})"); }
+                (wordsMorae, wordsEnglish, wordsSong) = (english ? syllables : morae, english, Lyrics.FromLrc(lrc));
+                Console.Error.WriteLine($"{Path.GetFileName(lrc)}: {wordsMorae.Count} {(english ? "syllables" : "morae")} to put to the voice");
             }
         }
         var chart = Read(recording, Console.Error.WriteLine, partsMade);

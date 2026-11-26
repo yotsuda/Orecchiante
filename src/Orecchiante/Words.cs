@@ -9,7 +9,8 @@ namespace Orecchiante;
 /// kana (Kana), forced onto the separated vocals by a CTC speech model's probabilities of each kana (Model) and Viterbi,
 /// one mora a note (scratch/align/align.py's steps, which say what each one is, with its chosen values: ー a note of its
 /// own, っ part of the mora before, ん a note, the onsets 50 ms late, a note ending where the voice stops for 0.12 s
-/// or at the next).</summary>
+/// or at the next). Words in English (English.Read) go the same way with English.Model: a syllable a note, its
+/// letters the targets (README "The words in English").</summary>
 static partial class Words
 {
     /// <summary>reazon-research/japanese-wav2vec2-base-rs35kh (Apache-2.0) as ONNX, its MatMuls in int8
@@ -102,19 +103,25 @@ static partial class Words
 
     /// <summary>The words' notes on the vocals: vocals at Rate for the model, at Features.Rate for the voice's own
     /// pitch, loudness and melody (Melody.Pitch, Melody.NotesOf), as align.py makes them.</summary>
-    public static List<Note> Align(InferenceSession model, float[] vocals16, double[] f0, bool[] voiced, double[] rmsDb, List<(double On, double Off, int Midi)> heard, List<Mora> morae)
+    /// <param name="english">The words are English syllables (English.Read) and the model English's letters: a syllable
+    /// is its letters, the word break "|" between words (scratch/align/align_en.py WB=1), no lag; a syllable going on to
+    /// the next of its word ends in "-" (Lily#'s `Hap- py`).</param>
+    public static List<Note> Align(InferenceSession model, float[] vocals16, double[] f0, bool[] voiced, double[] rmsDb, List<(double On, double Off, int Midi)> heard, List<Mora> morae, bool english = false)
     {
         var (lp, tokens) = Emit(model, vocals16);
         int T = lp.GetLength(0), K = tokens.Length;
         var index = new Dictionary<string, int>();
         for (int i = 0; i < K; i++) index[tokens[i]] = i + 1;
         index[Kana.Any] = K + 1;                              // any kana: the column appended below
-        // the targets: each mora's characters (a kana the model lacks dropped)
+        // the targets: each mora's characters (a kana the model lacks dropped); in English the letters, and "|" before a word
         var y = new List<int>();
         var owner = new List<int>();
         for (int i = 0; i < morae.Count; i++)
-            foreach (char ch in morae[i].Kana)
+        {
+            if (english && i > 0 && !morae[i].Joined && index.TryGetValue("|", out int wb)) { y.Add(wb); owner.Add(-1); }
+            foreach (char ch in english ? morae[i].Kana.ToUpperInvariant() : morae[i].Kana)
                 if (index.TryGetValue(ch.ToString(), out int k)) { y.Add(k); owner.Add(i); }
+        }
         if (y.Count == 0 || T < y.Count) return [];
         // where the vocals are QuietDb under their loud frames, every kana costs Gate more than the blank
         double step = (double)Stride / Rate;
@@ -134,12 +141,14 @@ static partial class Words
         }
         var first = Viterbi(e, [.. y]);
         var start = new SortedDictionary<int, int>();
-        for (int j = 0; j < owner.Count; j++) start.TryAdd(owner[j], first[j]);
-        var times = start.Select(p => (Mora: morae[p.Key], At: p.Value * step + Centre + Lag)).ToList();
+        for (int j = 0; j < owner.Count; j++) if (owner[j] >= 0) start.TryAdd(owner[j], first[j]);
+        var times = start.Select(p => (Mora: morae[p.Key], At: p.Value * step + Centre + (english ? 0 : Lag),
+                                       Goes: english && p.Key + 1 < morae.Count && morae[p.Key + 1].Joined)).ToList();
         // which morae are notes: っ joins the mora before; ー sings that mora's vowel again
         var ons = new List<(Mora Mora, double At, string Syllable)>();
-        foreach (var (m, at) in times)
+        foreach (var (m, at, goes) in times)
         {
+            if (english) { ons.Add((m, at, m.Kana + (goes ? "-" : ""))); continue; }
             if (m.Kana == "っ") { if (ons.Count > 0) ons[^1] = ons[^1] with { Syllable = ons[^1].Syllable + "っ" }; continue; }
             string syllable = m.Kana == "ー" ? (ons.Count > 0 ? Kana.Vowel(ons[^1].Syllable) ?? "ー" : "ー") : m.Kana;
             ons.Add((m, at, syllable));
@@ -205,7 +214,8 @@ static partial class Words
                 i = n.On < slots[i] || i + 1 >= slots.Length ? i - 1 : i + 1;
             int e = Math.Max(Bass.Nearest(slots, n.Off), i + 1);
             if (!at.TryGetValue(i, out var had)) at[i] = (e, n.Midi, n.Syllable);
-            else at[i] = (Math.Max(had.End, e), had.End - i < e - i ? n.Midi : had.Midi, had.Syllable + "~" + n.Syllable);
+            else at[i] = (Math.Max(had.End, e), had.End - i < e - i ? n.Midi : had.Midi,
+                          had.Syllable.EndsWith('-') ? had.Syllable[..^1] + n.Syllable : had.Syllable + "~" + n.Syllable);   // two syllables of a word: one
         }
         var keys = at.Keys.ToList();
         var res = new List<(int, int, int, string)>();

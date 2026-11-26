@@ -1210,7 +1210,44 @@ staff's notes are the words' (`src/Orecchiante/Words.cs`, `Kana.cs`; `Melody.Rea
 | bars whose onsets are all the truth's | 0.141 → **0.399** | 0.180 → **0.472** |
 
 - 今宵の月のように with LRCLIB's words: 418 morae, 407 syllables in `lysc timeline`'s `sung`; the chart 86 s
-  (4:14), `lysc check` clean of the words. A song whose words are English keeps "la" (to come).
+  (4:14), `lysc check` clean of the words. A song whose words are English keeps "la" unless the English model
+  is there (below).
+
+### The words in English (2026-11-26, the model not in the package yet)
+
+Words in English are put to the voice the same way, a syllable a note, when the English model is beside the
+reader (`w2v-english-mm8.onnx`: facebook/wav2vec2-base-960h, Apache-2.0, 122 MB in 8-bit,
+`tools/d2/english_onnx.py`; not in `onnx/models.json`, so not in the package, until the owner decides on the
+size). With none, English words are sung on "la" as before.
+
+- **The syllables** (`English.cs`, its Python side `scratch/align/syl.py`): by the spelling alone, no
+  dictionary — the vowel groups (y after a consonant counts), less a silent e (love, loves, loved; not
+  lit-tle, kiss-es, want-ed), more where a group is said as two (go-ing, li-on); the consonants between two
+  groups go one to each side, one to the next (ba-by), digraphs kept whole. Of the words RWC-P's English songs
+  sing, 97.9% have CMUdict's number of syllables (pyphen's hyphenation, 84.9%).
+- **The alignment** (`Words.Align` with `english`; `scratch/align/align_en.py`): a syllable's letters are its
+  targets and the word break `|` comes between words; a note starts at its syllable's first letter (the median
+  is 3 ms after the truth's onset; at the first vowel it is 53 ms after and worse), no lag. The rest is the
+  Japanese rules. A syllable going on to the next of its word is written `Lit-`, so the chart says
+  `Lit- tle~Rock` (Lily#'s hyphen; two syllables on one 16th elide as in Japanese), and the chart says
+  `language english`.
+- **Measured** on RWC-P's 21 English songs (P031, P081 to P100; `dur.py all SRC=align TAG=en LEGATO=1
+  PULL=0.25 ONLY=…`, none with `PULL=0`):
+
+| | no words | words |
+|---|---|---|
+| bars with the truth's number of notes, 21 songs | 0.152 | **0.368** (.NET 0.365) |
+| ... the 13 whose lyrics have 90% of the truth's notes | 0.155 | **0.404** |
+| onset on the right 16th (F) | 0.607 | **0.660** |
+
+  Less than Japanese (0.29 → 0.59): 79% of the syllables start within 0.1 s of the truth's onset (90% in
+  Japanese), and RWC's English lyrics leave out repeats (918 of the 1207 notes missing fall where the lyrics
+  say nothing for 1.5 s). Tried and not kept: no word break (0.350), a word a note (0.231), the melody's notes
+  where the lyrics say nothing (`FILL`, 0.381, as in Japanese not taken), splitting a syllable where the pitch
+  moves (0.21 to 0.32), the onset at the first vowel (0.317), lag 0.05 (0.336). The 8-bit model is the torch
+  one's (0.370).
+- We're An American Band with LRCLIB's words: 361 syllables, 337 in `lysc timeline`'s `sung`, `lysc check`
+  clean. The Japanese words are as before (RWC P001 to P003 to the byte).
 
 ### The words, from LRCLIB (0.16.0)
 

@@ -4,8 +4,9 @@ using NMeCab.Specialized;
 
 namespace Orecchiante;
 
-/// <summary>A mora of the lyrics: its kana, or Kana.Any for words not read (Words, the words themselves).</summary>
-public sealed record Mora(string Kana, string? Words = null);
+/// <summary>A mora of the lyrics: its kana, or Kana.Any for words not read (Words, the words themselves). In English
+/// (English.Read) a syllable as written, Joined when it goes on the word before it.</summary>
+public sealed record Mora(string Kana, string? Words = null, bool Joined = false);
 
 /// <summary>Lyrics in kana cut in morae (scratch/align/words.py's steps, with IPAdic through NMeCab in place of
 /// unidic-lite through fugashi): ruby written after kanji, 誘(いざな), is sung as the ruby; the rest is read by the

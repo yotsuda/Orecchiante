@@ -13,8 +13,9 @@ static class Melody
     /// of xsc and RWC-P -24.5 dB, the separated vocals of instrumentals -18 to -38: their lead is read as the melody).</summary>
     public const double HeardDb = -30;
 
-    /// <summary>What puts the words to the voice (Words.Align): the model, the vocals at Words.Rate, the words.</summary>
-    public sealed record Sung(Microsoft.ML.OnnxRuntime.InferenceSession Model, float[] Vocals, List<Mora> Morae);
+    /// <summary>What puts the words to the voice (Words.Align): the model, the vocals at Words.Rate, the words (English:
+    /// English syllables and English.Model).</summary>
+    public sealed record Sung(Microsoft.ML.OnnxRuntime.InferenceSession Model, float[] Vocals, List<Mora> Morae, bool English = false);
 
     /// <summary>Each bar's music (Bar.Vocal) and the part's instrument (Chart.Singer) from the vocal part at 22050 Hz;
     /// with words, the notes are the words' (Words.Align) and each bar's syllables are Bar.Lyrics.</summary>
@@ -36,7 +37,7 @@ static class Melody
     static List<Words.Note> WordsOf((double[] F0, bool[] Voiced, double[] Db, List<(double On, double Off, int Midi)> Heard) h, Sung sung)
     {
         double loud = Percentile(h.Db, 95);
-        return Words.Align(sung.Model, sung.Vocals, h.F0, h.Voiced, [.. h.Db.Select(d => d - loud)], h.Heard, sung.Morae);
+        return Words.Align(sung.Model, sung.Vocals, h.F0, h.Voiced, [.. h.Db.Select(d => d - loud)], h.Heard, sung.Morae, sung.English);
     }
 
     public static void Read(double[] part, Chart chart, Sung? sung = null)

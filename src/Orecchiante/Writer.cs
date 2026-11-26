@@ -142,8 +142,9 @@ static class Writer
         // With words put to the voice (Melody.Read with words: Japanese, Words.Sung), the part names its words and the
         // singer sings them; each time a sung section comes round it is a section of its own (Words.Unfold).
         bool sungWords = vocal && chart.Bars.Any(bar => !string.IsNullOrEmpty(bar.Lyrics));
+        bool kana = chart.Bars.Any(bar => bar.Lyrics != null && Japanese(bar.Lyrics));     // the words in kana, or English (English.Read)
         if (vocal || bass) lines.Add("octave absolute");
-        if (vocal && !sungWords && !Japanese(title)) lines.Add("language english");
+        if (vocal && (sungWords ? !kana : !Japanese(title))) lines.Add("language english");
         if (sungWords) lines.AddRange([$"part vocal {{ instrument {chart.Singer ?? "tenor"}  lyrics words }}", "singer on vocal"]);
         else if (vocal) lines.AddRange([$"part vocal {{ instrument {chart.Singer ?? "tenor"} }}", $"singer on vocal sings \"{(Japanese(title) ? "ら" : "la")}\""]);
         if (bass) lines.Add("part bass { instrument bass }");
