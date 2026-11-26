@@ -23,6 +23,7 @@ sealed class Bar
     public string? Section;
     public double? Tempo;                       // its section's own tempo, on the first bar each time the section is played (SectionTempos)
     public string? Meter;                       // a bar of 2/4 or 3/4 in a chart of 4/4 (Reader.ShortMeters): its beats, `time 2/4` at its head
+    public string? Vocal;                       // its voice staff's music (Melody.Read), null when no voice is heard
     public string? Bass;                        // its bass staff's music (Bass.Read), null when no bass is heard
     public string? Kit;                         // its bar of the drum staff (Kit.Read): a groove's name or the bar written out; null when no drums are heard
     public Dictionary<string, string>? Drums;   // its drums as read, one line a drum struck (hh, sn, bd), before any groove
@@ -45,6 +46,7 @@ sealed class Chart
     public List<string> Form = [];
     public List<Bar> Bars = [];
     public List<Groove>? Grooves;               // the drum staff's grooves (Kit.Read)
+    public string? Singer;                      // the voice staff's instrument, tenor or soprano (Melody.Read)
 }
 
 /// <summary>The rules: from the bar lines a beat tracker found, what a chord model trained on recordings says and

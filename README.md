@@ -1086,6 +1086,38 @@ beatB | }`), a bar near no groove written out (`drums { { hh8 8 … } { bd4 … 
 - **What it costs:** about 2 seconds of a conversion (Like A Virgin, 4 minutes with the parts: 0.13.2 46.0 s,
   0.14.0 48.1 s, one run each).
 
+### The melody written out (0.15.0)
+
+When a voice is heard, the chart has a voice staff above the bass (`part vocal { instrument tenor }` or
+`soprano`, `vocal { … }` in every section) and a line `singer on vocal sings "ら"`: one syllable a note, so
+that what reads the singing has a syllable on each note before any words are written in — Lily#'s
+`lysc timeline` (`sung`) and through it Shosa's dances (Shosa's request 1, 2026-11-26: "the melody of the
+singing in the .lys"). The file beside the chart keeps each bar's reading (`vocal`; SIDECAR.md).
+
+- **How** (`src/Orecchiante/Melody.cs`, its Python side `tools/melody.py`, which says each step): the bass's
+  pYIN on the separated vocal part, C2 to C6 in frames of 2048; the pitch rounded after the voice's own
+  tuning and smoothed over 5 frames; a note where it changes and holds 6 frames (70 ms), or where an onset
+  falls while it holds; notes quieter than the song's sung notes by 8 dB dropped (backing voices, reverb,
+  the bleed of other parts: alone this took the onsets on the grid from 0.651 to 0.712); every note on the
+  chart's eighths (16ths off the eighths cost more than they gain in a voice), to the next note across a gap
+  of a 16th or less, tied over a bar line. The part is the tenor or the soprano, whichever leaves fewer notes
+  out of its range.
+- **Measured** on RWC-P's sung notes (the aligned MIDI's vocal track, rwc-annotations; `scratch/vocal/`:
+  `truth.py`, `hear.py`, `read.py`, `why.py`), on Beat This!'s beats cut in 16ths: **onsets on the right 16th
+  F 0.741 on 1-50 (recall 0.74, precision 0.74), 0.723 on 51-100**; with the pitch 0.506 and 0.493. The
+  pitch is as near as this truth can tell: the songs' own F0 annotation agrees with the MIDI's pitch on only
+  67% of the notes (many recordings sit half a semitone from A440, and the sung notes straddle the line), and
+  the reader agrees on 69% of the notes it finds. What is left: notes split where the truth holds one (a new
+  onset on the same pitch, 2400 on 1-50) and repeated syllables on one pitch read as one note (1200) — the
+  words, when they are written in, tell how many syllables there are. Tried and no better: the recording's
+  tuning instead of the voice's, a rise in loudness as the onset, an onset only with a dip in loudness,
+  the pitch as each note's commonest, 16ths off the eighths.
+- **Heard or not:** a staff when the vocal part's mean square is within 30 dB of the recording's. The quietest
+  sung songs of xsc and RWC-P are at -24.5 dB (Viva La Vida) and -21.0; instrumentals' lead (strings, a
+  synth, the guitar's tune) is separated as the voice at -18 to -26 dB and is read as the melody, as a synth
+  bass is read as the bass; parts with nothing in them are at -31.5 dB and below (`scratch/vocal/loud.py`).
+- `tools/melody_check.py`: We're An American Band, every bar the same as Python's.
+
 
 ### How a chart begins and ends
 

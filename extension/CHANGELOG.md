@@ -2,6 +2,17 @@
 
 Notable changes to Orecchiante (Dettato until 0.10.2) are recorded here, newest first.
 
+## 0.15.0
+
+- A voice staff: when the recording has singing, the chart has a `vocal` part above the bass, the
+  melody read from the separated vocal part (pYIN, every note on the chart's eighths, a note held over
+  a bar line tied). On the sung notes of 99 RWC songs, about 73% of the notes start on the right 16th;
+  the pitch is a guide. An instrumental's lead is often read as the melody; delete the part if not
+  wanted.
+- Each note is sung "ら" (`singer on vocal sings "ら"`), so that whatever reads the singing (Lily#'s
+  timeline, Shosa's dances) has a syllable on every note until the words are written in.
+- The file beside the chart keeps each bar's melody as it was read (`vocal`).
+
 ## 0.14.0
 
 - A bass staff: when the recording has a bass, the chart has a `bass` part under the chords, read

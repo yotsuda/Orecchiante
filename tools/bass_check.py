@@ -55,4 +55,5 @@ def main():
     print(f"all: bars {same_bars}/{all_bars} ({same_bars / max(all_bars, 1):.3f}), 16ths {same16 / max(all16, 1):.3f}")
 
 
-main()
+if __name__ == "__main__":
+    main()

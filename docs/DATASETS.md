@@ -88,6 +88,23 @@ pwsh -File scratch/bass/truth-yt/run_all.ps1                # align.py TRUTH=tru
   順に 4 小節以上続き、よく合う（または 1〜2 小節ずらしたより明らかに合う、または譜の半分以上を順に覆う）区間だけを答えにする。
 - 譜はバンドの編曲のことがある（録音より音を省く・移調する）。省いた所で読み取りが拾った音は「余分」に数えられる。
 
+### RWC-P の歌の音符（歌のメロディの採譜の答え。2026-11-26 から）
+
+| | |
+|---|---|
+| 中身 | rwc-annotations の `01_annotations_preprocessed/MIDI_aligned/RWC-P/*.mid`（録音に DTW で合わせ手で確かめた MIDI）の歌のトラック（`metadata_mapping_vocals.csv` が番号と半音のずれを言う。「not the main」「back」の行は除く＝P026 は外れて 99 曲）。ずれの向きは `melody/RWC-P/*.csv`（歌の F0、10 ms）で確かめる |
+| 条件 | 上の RWC-P と同じ（CC BY-NC 4.0、測るためだけ） |
+| 覚え書き | **音高の答えは半音の幅で揺れる**: F0 の注釈と MIDI の音高が合う音は 67%（多くは F0 が 1 半音下＝A440 から半音の半分ずれた録音で、歌う音が境目をまたぐ）。音の頭と長さは信じてよい |
+
+```
+.venv/Scripts/python scratch/vocal/truth.py          # → scratch/vocal/truth/<id>.json [[on, off, midi]]
+.venv/Scripts/python scratch/vocal/hear.py -j 6      # 分けた歌（scratch/parts/rwc）の pYIN などを scratch/vocal/hear/ に（1 曲 11 秒）
+.venv/Scripts/python scratch/vocal/read.py dev STEADY=6 DELTA=0.1 QUIET=8 LEGATO=1 PULL=0 LAG=-0.02    # 今の規則（tools/melody.py）、test は 1 リリースに 1 回
+.venv/Scripts/python scratch/vocal/why.py dev STEADY=6 DELTA=0.1 QUIET=8 PULL=0                        # 余分と取りこぼしの内訳
+```
+
+歌詞は `rwc-annotations-archive/RWC-MDB-P-2001_Lyrics/RM-P*.TXT`（100 曲、Shift JIS。保管庫の README は CC BY-NC 4.0、測るためだけ・配らない）。歌詞を音に割り当てる段（Shosa の依頼 1 の ②）を測るのに使える。
+
 ## 候補（まだ使っていない）
 
 | データ | 中身 | 音源 | ライセンス | 見立て |

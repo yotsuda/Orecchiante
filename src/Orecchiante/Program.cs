@@ -55,7 +55,7 @@ using System.Text;
 using Orecchiante;
 using Microsoft.ML.OnnxRuntime;
 
-const string version = "0.14.0";
+const string version = "0.15.0";
 const int protocol = 1;
 const string usage = "usage: orecchiante <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]\n"
                    + "       orecchiante --version [--json]\n"
@@ -184,6 +184,14 @@ Chart Read(string file, Action<string>? say = null, string? partsTo = null)
         var samples = Resample.To(part, Features.Rate, partRate);
         if (Bass.Heard(samples, low, Kit.HeardDb)) drumSamples = samples;
     }
+    // The vocal part, read into a voice staff (Melody.Read; Shosa's request 1, 2026-11-26).
+    double[]? vocalSamples = null;
+    if (partsTo != null && File.Exists(Path.Combine(partsTo, "vocals.wav")))
+    {
+        var (part, partRate) = Audio.Read(Path.Combine(partsTo, "vocals.wav"));
+        var samples = Resample.To(part, Features.Rate, partRate);
+        if (Bass.Heard(samples, low, Melody.HeardDb)) vocalSamples = samples;
+    }
     else if (From(bassFrom, name + ".bass.npy") is { } bassPart) heard = Features.WithBassPart(heard, bassPart);
     high = null;
     low = null!;
@@ -193,6 +201,11 @@ Chart Read(string file, Action<string>? say = null, string? partsTo = null)
     var (lines, beats) = Reader.LinesOf(tracked, logp, frames, step);    // the halves of bars are paired as the key heard says
     var chart = Reader.Read(Path.GetFileName(file), heard, lines, beats, logp, frames, step, voice, drums);
     rules += clock.Elapsed.TotalSeconds;
+    if (vocalSamples != null)
+    {
+        Stage("the melody");
+        Melody.Read(vocalSamples, chart);
+    }
     if (bassSamples != null)
     {
         Stage("the bass");

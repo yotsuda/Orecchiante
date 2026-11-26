@@ -53,39 +53,40 @@ static class Bass
     // --- 1. librosa.pyin (fill_na nan, center, zeros beyond the ends, transition_min_prob 1e-4) ---
 
     /// <summary>librosa.pyin(y, fmin=B0, fmax=C4, sr=22050, frame_length=4096, hop_length=256): the f0 of each frame
-    /// (NaN where unvoiced) and whether it is voiced.</summary>
-    internal static (double[] F0, bool[] Voiced) Pyin(double[] y)
+    /// (NaN where unvoiced) and whether it is voiced. The voice (Melody) asks for C2 to C6 in frames of 2048.</summary>
+    internal static (double[] F0, bool[] Voiced) Pyin(double[] y, int frame = Frame, double? low = null, double? high = null)
     {
-        int minPeriod = (int)Math.Floor(Rate / Fmax), maxPeriod = Math.Min((int)Math.Ceiling(Rate / Fmin), Frame - 1);
+        double fmin = low ?? Fmin, fmax = high ?? Fmax;
+        int minPeriod = (int)Math.Floor(Rate / fmax), maxPeriod = Math.Min((int)Math.Ceiling(Rate / fmin), frame - 1);
         int periods = maxPeriod - minPeriod + 1;
         // 12 * 10 * log2(C4 / B0) is 370 to the last bit in numpy; a hair under it here would lose a bin
-        int bins = (int)Math.Floor(12 * PerSemitone * Math.Log2(Fmax / Fmin) + 1e-9) + 1;
+        int bins = (int)Math.Floor(12 * PerSemitone * Math.Log2(fmax / fmin) + 1e-9) + 1;
         int frames = 1 + y.Length / Hop;
         double[] beta = BetaProbs();
         var obs = new double[frames][];
-        var fft = new Fft(2 * Frame);
-        Parallel.For(0, frames, () => (new double[2 * Frame], new double[2 * Frame], new double[maxPeriod + 1], new double[periods]), (t, _, b) =>
+        var fft = new Fft(2 * frame);
+        Parallel.For(0, frames, () => (new double[2 * frame], new double[2 * frame], new double[maxPeriod + 1], new double[periods]), (t, _, b) =>
         {
             var (re, im, d, yin) = b;
-            int first = t * Hop - Frame / 2;
+            int first = t * Hop - frame / 2;
             Array.Clear(re); Array.Clear(im);
-            for (int i = 0; i < Frame; i++) { int j = first + i; re[i] = j >= 0 && j < y.Length ? y[j] : 0; }
+            for (int i = 0; i < frame; i++) { int j = first + i; re[i] = j >= 0 && j < y.Length ? y[j] : 0; }
             // the energy's running sum, then the autocorrelation (the power spectrum is real and even: its transform is
             // the inverse's, times the size)
-            var energy = new double[Frame];
+            var energy = new double[frame];
             double run = 0;
-            for (int i = 0; i < Frame; i++) { run += re[i] * re[i]; energy[i] = run; }
+            for (int i = 0; i < frame; i++) { run += re[i] * re[i]; energy[i] = run; }
             fft.Forward(re, im);
-            for (int i = 0; i < 2 * Frame; i++) { re[i] = re[i] * re[i] + im[i] * im[i]; im[i] = 0; }
+            for (int i = 0; i < 2 * frame; i++) { re[i] = re[i] * re[i] + im[i] * im[i]; im[i] = 0; }
             fft.Forward(re, im);
-            double acf0 = re[0] / (2 * Frame);
+            double acf0 = re[0] / (2 * frame);
             d[0] = 0;
-            for (int k = 1; k <= maxPeriod; k++) d[k] = 2 * (acf0 - re[k] / (2 * Frame)) - energy[k - 1];
+            for (int k = 1; k <= maxPeriod; k++) d[k] = 2 * (acf0 - re[k] / (2 * frame)) - energy[k - 1];
             double sum = 0;
             var mean = new double[maxPeriod + 1];
             for (int k = 1; k <= maxPeriod; k++) { sum += d[k]; mean[k] = sum / k; }
             for (int p = minPeriod; p <= maxPeriod; p++) yin[p - minPeriod] = d[p] / (mean[p] + 2.2250738585072014e-308);
-            obs[t] = Observe(yin, minPeriod, bins, beta);
+            obs[t] = Observe(yin, minPeriod, bins, beta, fmin);
             return b;
         }, _ => { });
         var states = Viterbi(obs, bins);
@@ -94,7 +95,7 @@ static class Bass
         for (int t = 0; t < frames; t++)
         {
             voiced[t] = states[t] < bins;
-            f0[t] = voiced[t] ? Fmin * Math.Pow(2, states[t] % bins / (12.0 * PerSemitone)) : double.NaN;
+            f0[t] = voiced[t] ? fmin * Math.Pow(2, states[t] % bins / (12.0 * PerSemitone)) : double.NaN;
         }
         return (f0, voiced);
     }
@@ -109,7 +110,7 @@ static class Bass
     }
 
     /// <summary>__pyin_helper for one frame: the probability of each pitch bin voiced, then unvoiced (2 * bins).</summary>
-    static double[] Observe(double[] yin, int minPeriod, int bins, double[] beta)
+    static double[] Observe(double[] yin, int minPeriod, int bins, double[] beta, double fmin)
     {
         int n = yin.Length;
         var obs = new double[2 * bins];
@@ -154,7 +155,7 @@ static class Bass
                     if (Math.Abs(b) < Math.Abs(a)) shift = -b / a;
                 }
                 double f0 = Rate / (minPeriod + i + shift);
-                int bin = (int)Math.Clamp(Math.Round(12 * PerSemitone * Math.Log2(f0 / Fmin)), 0, bins);
+                int bin = (int)Math.Clamp(Math.Round(12 * PerSemitone * Math.Log2(f0 / fmin)), 0, bins);
                 obs[bin] = probs[t];
             }
         }
@@ -234,7 +235,7 @@ static class Bass
 
     // --- the onsets: librosa.onset.onset_detect(onset_envelope, backtrack=True) at 22050 Hz, hop 256 ---
 
-    internal static List<int> OnsetFrames(float[] strength)
+    internal static List<int> OnsetFrames(float[] strength, double delta = 0.07)
     {
         int n = strength.Length;
         double low = strength.Min();
@@ -242,9 +243,8 @@ static class Bass
         double high = x.Max() + 1.1754943508222875e-38;     // the smallest single (the strength is single in librosa)
         if (x.Max() == 0) return [];
         for (int i = 0; i < n; i++) x[i] /= high;
-        // peak_pick (greedy): pre_max 2, post_max 1, pre_avg 8, post_avg 9, wait 2, delta 0.07
+        // peak_pick (greedy): pre_max 2, post_max 1, pre_avg 8, post_avg 9, wait 2, delta 0.07 (the voice's 0.1)
         const int preMax = 2, postMax = 1, preAvg = 8, postAvg = 9, wait = 2;
-        const double delta = 0.07;
         double Max(int a, int b) { double m = double.NegativeInfinity; for (int i = a; i < b; i++) m = Math.Max(m, x[i]); return m; }
         double Mean(int a, int b) { double s = 0; for (int i = a; i < b; i++) s += x[i]; return s / (b - a); }
         var peaks = new List<int>();
@@ -347,7 +347,7 @@ static class Bass
         })];
     }
 
-    static int Nearest(double[] slots, double t)
+    internal static int Nearest(double[] slots, double t)
     {
         int i = Array.BinarySearch(slots, t);
         if (i < 0) i = ~i;
@@ -355,13 +355,14 @@ static class Bass
         return t - slots[i - 1] < slots[i] - t ? i - 1 : i;
     }
 
-    static List<(int First, int Last, int Midi)> RoundOnto(double[] slots, List<(double On, double Off, int Midi)> notes)
+    /// <param name="pull">0: every note on an eighth (the voice).</param>
+    internal static List<(int First, int Last, int Midi)> RoundOnto(double[] slots, List<(double On, double Off, int Midi)> notes, double pull = Pull)
     {
         var at = new SortedDictionary<int, (int End, int Midi)>();
         foreach (var (a, b, p) in notes)
         {
             int i = Nearest(slots, a);
-            if (i % 2 == 1 && Math.Abs(a - slots[i]) > Pull * (slots[Math.Min(i + 1, slots.Length - 1)] - slots[i]))
+            if (i % 2 == 1 && Math.Abs(a - slots[i]) > pull * (slots[Math.Min(i + 1, slots.Length - 1)] - slots[i]))
                 i = a < slots[i] || i + 1 >= slots.Length ? i - 1 : i + 1;
             int e = Math.Max(Nearest(slots, b), i + 1);
             if (!at.TryGetValue(i, out var had) || had.End - i < e - i) at[i] = (e, p);
@@ -416,13 +417,14 @@ static class Bass
 
     internal static string Text(int sixteenths) => Lengths.First(l => l.Sixteenths == sixteenths).Text;
 
-    static string PitchName(int midi, string[] names)
+    /// <param name="up">Written this many semitones above the sound: 12 the bass player's octave, 0 the voice's.</param>
+    static string PitchName(int midi, string[] names, int up)
     {
-        int w = midi + 12, o = (int)Math.Floor(w / 12.0) - 4;
+        int w = midi + up, o = (int)Math.Floor(w / 12.0) - 4;
         return names[((w % 12) + 12) % 12] + (o > 0 ? new string('\'', o) : new string(',', -o));
     }
 
-    static string BarMusic(List<(int From, int To, int Midi, bool Tied)> notes, int sixteenths, string[] names)
+    internal static string BarMusic(List<(int From, int To, int Midi, bool Tied)> notes, int sixteenths, string[] names, int up = 12)
     {
         var toks = new List<string>();
         int pos = 0;
@@ -430,7 +432,7 @@ static class Bass
         {
             if (a > pos) toks.AddRange(Pieces(pos, a - pos).Select(d => "r" + Text(d)));
             var ds = Pieces(a, b - a);
-            string name = PitchName(p, names);
+            string name = PitchName(p, names, up);
             toks.AddRange(ds.Select((d, k) => name + Text(d) + (k < ds.Count - 1 || tied ? "~" : "")));
             pos = b;
         }

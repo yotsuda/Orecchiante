@@ -105,12 +105,12 @@ def nearest(slots, t):
     return i - 1 if t - slots[i - 1] < slots[i] - t else i
 
 
-def round_onto(slots, notes):
-    """Step 3: [(16th, end 16th, midi)]."""
+def round_onto(slots, notes, pull=PULL):
+    """Step 3: [(16th, end 16th, midi)]. pull 0: every note on an eighth (tools/melody.py)."""
     out = {}
     for a, b, p in notes:
         i = nearest(slots, a)
-        if i % 2 and abs(a - slots[i]) > PULL * (slots[min(i + 1, len(slots) - 1)] - slots[i]):
+        if i % 2 and abs(a - slots[i]) > pull * (slots[min(i + 1, len(slots) - 1)] - slots[i]):
             i = i - 1 if a < slots[i] or i + 1 >= len(slots) else i + 1
         e = max(nearest(slots, b), i + 1)
         if i not in out or out[i][0] - i < e - i:
@@ -141,8 +141,9 @@ def pieces(pos, length, beat16=4):
     return out
 
 
-def pitch_name(midi, names):
-    w = midi + 12
+def pitch_name(midi, names, up=12):
+    """up: written this many semitones above the sound (12: the bass player's octave; 0: the voice)."""
+    w = midi + up
     o = w // 12 - 4
     return names[w % 12] + ("'" * o if o > 0 else "," * -o)
 
@@ -154,14 +155,14 @@ def names_for(key):
     return NAMES_FLAT if (name in FLAT_KEYS if mode == "major" else name in FLAT_MINOR) else NAMES_SHARP
 
 
-def bar_music(notes, n16, names):
+def bar_music(notes, n16, names, up=12):
     """notes: [(start, end, midi, tied on)] in the bar's 16ths -> the bar's music (step 5)."""
     toks, pos = [], 0
     for a, b, p, on in notes:
         if a > pos:
             toks += [f"r{DUR[d]}" for d in pieces(pos, a - pos)]
         ds = pieces(a, b - a)
-        nm = pitch_name(p, names)
+        nm = pitch_name(p, names, up)
         toks += [f"{nm}{DUR[d]}" + ("~" if k < len(ds) - 1 or on else "") for k, d in enumerate(ds)]
         pos = b
     if pos < n16:
@@ -169,7 +170,7 @@ def bar_music(notes, n16, names):
     return " ".join(toks)
 
 
-def heard(parts_folder):
+def heard(parts_folder, part="bass", heard_db=HEARD_DB):
     """Step 6, from the folder of the six parts (their sum is the recording)."""
     import librosa, soundfile as sf
     total, b = None, None
@@ -177,9 +178,9 @@ def heard(parts_folder):
         y, sr = sf.read(str(Path(parts_folder) / f"{name}.flac"), dtype="float32", always_2d=True)
         y = librosa.resample(y.mean(axis=1), orig_sr=sr, target_sr=SR).astype(np.float64)
         total = y if total is None else total[:len(y)] + y[:len(total)]
-        if name == "bass":
+        if name == part:
             b = y
-    return 10 * np.log10((b ** 2).mean() / (total ** 2).mean() + 1e-30) >= HEARD_DB
+    return 10 * np.log10((b ** 2).mean() / (total ** 2).mean() + 1e-30) >= heard_db
 
 
 def read(flac, side, key=None):

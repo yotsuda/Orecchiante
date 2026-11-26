@@ -105,11 +105,11 @@ static class Writer
             "",
         };
         int pickup = chart.Bars[0].Pickup;
-        bool bass = chart.Bars.Any(bar => bar.Bass != null), kit = chart.Bars.Any(bar => bar.Kit != null);
+        bool vocal = chart.Bars.Any(bar => bar.Vocal != null), bass = chart.Bars.Any(bar => bar.Bass != null), kit = chart.Bars.Any(bar => bar.Kit != null);
         // one section: the chart is the bars in their order; but not with a bar of its own time (Lily# takes a time in a
         // row out of a section for the whole chart), nor with a bass staff (a part's music is a section's). The row is
         // named prog, as Lily#'s own new chart names it (the owner, 2026-11-20; harmony before 0.10.2).
-        if (chart.Form.Count == 1 && pickup == 0 && chart.Bars.All(bar => bar.Meter == null) && !bass && !kit)
+        if (chart.Form.Count == 1 && pickup == 0 && chart.Bars.All(bar => bar.Meter == null) && !vocal && !bass && !kit)
         {
             lines.Add("chords prog {");
             lines.AddRange(Rows([.. chart.Bars.Select(bar => new List<Bar> { bar })], "  "));
@@ -128,8 +128,13 @@ static class Writer
             if (bar.BarOfSection > of.Count) of.Add([]);
             of[bar.BarOfSection - 1].Add(bar);
         }
-        // The bass staff (Bass.Read): pitches as they are written (absolute octaves), the part a bass guitar's.
-        if (bass) lines.AddRange(["octave absolute", "part bass { instrument bass }", ""]);
+        // The voice and bass staves (Melody.Read, Bass.Read): pitches as they are written (absolute octaves). The voice
+        // sings one "ら" a note, so that what reads the singing (Lily#'s `lysc timeline` `sung`, Shosa's dances) has a
+        // syllable on each note until the words are written in (Shosa's request 1, 2026-11-26).
+        if (vocal || bass) lines.Add("octave absolute");
+        if (vocal) lines.AddRange([$"part vocal {{ instrument {chart.Singer ?? "tenor"} }}", "singer on vocal sings \"ら\""]);
+        if (bass) lines.Add("part bass { instrument bass }");
+        if (vocal || bass) lines.Add("");
         if (kit)
         {
             // the drum staff (Kit.Read): each groove once, a one-bar phrase a drum and the chart playing them together
@@ -153,6 +158,12 @@ static class Writer
             lines.Add("  chords prog {");
             lines.AddRange(Rows(sections[name], "    ", name != "Pickup", last));
             lines.Add("  }");
+            if (vocal)
+            {
+                lines.Add("  vocal {");
+                lines.AddRange(BassRows(sections[name], chart.Time, "    ", bar => bar.Vocal));
+                lines.Add("  }");
+            }
             if (bass)
             {
                 lines.Add("  bass {");
@@ -170,6 +181,7 @@ static class Writer
         // Repeat signs only in the form, so that the form alone shows how the song goes (the owner, 2026-11-16).
         var shown = chart.Form.Select(s => s.Contains('_') ? "~" + s : s).ToList();   // a short section's name is hidden (read_chords.py --old-sections names them B_1)
         lines.AddRange(["form { " + FormWithRepeats(shown) + " }", "", "score {", "  chords prog"]);
+        if (vocal) lines.Add("  staff vocal");
         if (bass) lines.Add("  staff bass");
         if (kit) lines.Add("  staff kit");
         lines.AddRange(["}", ""]);
@@ -296,6 +308,7 @@ static class Writer
             b.Append("\n      ]");
             if (bar.Section is string section) b.Append($",\n      \"section\": {Quoted(section)},\n      \"barOfSection\": {bar.BarOfSection}");
             if (bar.Tempo is double tempo) b.Append($",\n      \"tempo\": {Bar.TempoText(tempo)}");
+            if (bar.Vocal is string sung) b.Append($",\n      \"vocal\": {Quoted(sung)}");
             if (bar.Bass is string music) b.Append($",\n      \"bass\": {Quoted(music)}");
             if (bar.Drums is { } drums)
                 b.Append(drums.Count == 0 ? ",\n      \"drums\": {}"
