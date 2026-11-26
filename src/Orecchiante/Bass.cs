@@ -47,7 +47,7 @@ static class Bass
             }
         }
         var names = NamesFor(chart.Key);
-        for (int k = 0; k < bars.Count; k++) bars[k].Bass = BarMusic(perBar[k], lengths[k], names);
+        for (int k = 0; k < bars.Count; k++) bars[k].Bass = BarMusic(perBar[k], lengths[k], names, six: chart.Time == "6/8");
     }
 
     // --- 1. librosa.pyin (fill_na nan, center, zeros beyond the ends, transition_min_prob 1e-4) ---
@@ -400,13 +400,22 @@ static class Bass
         return flats ? Flats : Sharps;
     }
 
-    internal static List<int> Pieces(int pos, int length)
+    /// <summary>6/8: the grid's four 16ths of a dotted quarter (SlotsOf cuts each beat in four), among its six (the
+    /// 8ths fall nearest the second and fourth). The drums' steps put them the same (Kit).</summary>
+    internal static readonly int[] Six = [0, 2, 3, 4];
+
+    /// <summary>A place on the grid as a 16th of the bar: itself, or in 6/8 among the dotted quarter's six.</summary>
+    internal static int Written(int q, bool six) => six ? q / 4 * 6 + Six[q % 4] : q;
+
+    /// <param name="beat">The beat in 16ths: 4, or 6 in 6/8 (a note within its dotted quarter, the bar's 2. whole).</param>
+    internal static List<int> Pieces(int pos, int length, int beat = 4)
     {
         var res = new List<int>();
         while (length > 0)
         {
-            int d = pos % 4 != 0
-                ? Lengths.First(l => l.Sixteenths <= Math.Min(length, 4 - pos % 4)).Sixteenths
+            int d = pos % beat != 0
+                ? Lengths.First(l => l.Sixteenths <= Math.Min(length, beat - pos % beat)).Sixteenths
+                : beat == 6 ? Lengths.First(l => l.Sixteenths <= length && (l.Sixteenths <= 6 || (l.Sixteenths == 12 && pos % 12 == 0))).Sixteenths
                 : Lengths.First(l => l.Sixteenths <= length && (l.Sixteenths <= 6 || (l.Sixteenths is 8 or 12 && pos % 8 == 0) || (l.Sixteenths == 16 && pos == 0))).Sixteenths;
             res.Add(d);
             pos += d;
@@ -424,19 +433,26 @@ static class Bass
         return names[((w % 12) + 12) % 12] + (o > 0 ? new string('\'', o) : new string(',', -o));
     }
 
-    internal static string BarMusic(List<(int From, int To, int Midi, bool Tied)> notes, int sixteenths, string[] names, int up = 12)
+    /// <param name="notes">From and to on the grid (SlotsOf: a beat in four).</param>
+    /// <param name="six">6/8: the grid's places written among the dotted quarter's six 16ths (Six), so that a bar is 2.
+    /// long (until 0.18.0 the grid was written as 16ths, a bar of 6/8 a half note).</param>
+    internal static string BarMusic(List<(int From, int To, int Midi, bool Tied)> notes, int sixteenths, string[] names, int up = 12, bool six = false)
     {
         var toks = new List<string>();
-        int pos = 0;
-        foreach (var (a, b, p, tied) in notes)
+        int pos = 0, beat = six ? 6 : 4, end = Written(sixteenths, six);
+        foreach (var (from, to, p, tied) in notes)
         {
-            if (a > pos) toks.AddRange(Pieces(pos, a - pos).Select(d => "r" + Text(d)));
-            var ds = Pieces(a, b - a);
+            int a = Written(from, six), b = Written(to, six);
+            if (a > pos) toks.AddRange(Pieces(pos, a - pos, beat).Select(d => "r" + Text(d)));
+            var ds = Pieces(a, b - a, beat);
             string name = PitchName(p, names, up);
             toks.AddRange(ds.Select((d, k) => name + Text(d) + (k < ds.Count - 1 || tied ? "~" : "")));
             pos = b;
         }
-        if (pos < sixteenths) toks.AddRange(Pieces(pos, sixteenths - pos).Select(d => "r" + Text(d)));
+        if (pos < end) toks.AddRange(Pieces(pos, end - pos, beat).Select(d => "r" + Text(d)));
         return string.Join(" ", toks);
     }
+
+    /// <summary>A bar of rests, `sixteenths` on the grid long.</summary>
+    internal static string Rests(int sixteenths, bool six = false) => BarMusic([], sixteenths, Sharps, six: six);
 }

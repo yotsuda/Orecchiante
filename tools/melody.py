@@ -124,7 +124,8 @@ def read(flac, side, key=None):
             i += take
             k, q = k + 1, 0
     names = bass.names_for(key or side.get("key"))
-    return instrument(notes), [bass.bar_music(per_bar[k], lens[k], names, up=0) for k in range(len(bars))]
+    six = side.get("time") == "6/8"
+    return instrument(notes), [bass.bar_music(per_bar[k], lens[k], names, up=0, six=six) for k in range(len(bars))]
 
 
 if __name__ == "__main__":

@@ -1057,7 +1057,10 @@ and each bar as its groove's name (`kit { beatA | % | % | beatB | }`), a bar nea
 inline. Until 0.17.0 a groove was three phrases of lengths (`phrase hatsA { hh8 8 8 8 8 8 8 8 | }`,
 `phrase beatA { drums { hatsA backA kickA } }`). The file beside the chart keeps each bar's reading (`bass`,
 `drums`, the latter as the rows of steps; SIDECAR.md), for a bar put right in Lily# to be reported against
-(Lily# REQUESTS 23).
+(Lily# REQUESTS 23). In 6/8 the grid still cuts each dotted quarter in four, and the staves (the voice's too)
+write those four on the 1st, 3rd, 4th and 5th of its six 16ths (`Bass.Written`, `tools/bass.py` `written`); until
+0.18.0 they were written as 16ths, a bar of 6/8 a half note long (Saving All My Love For You: 220 bars too short in
+`lysc check`, now none).
 
 - **The bass** (`src/Orecchiante/Bass.cs`, its Python side `tools/bass.py`, which says each step): librosa's
   pYIN on the separated bass part (B0 to C4); notes where the rounded pitch changes and holds 0.12 s, or where

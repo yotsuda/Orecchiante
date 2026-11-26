@@ -12,8 +12,6 @@ static class Kit
     const double Low = 150, MidFrom = 200, MidTo = 3000, High = 6000;
     const double Kick = 0.5, Hat = 6, Snare = 0.7, Wires = 0.85, Floor = 6, ScaleMin = 12;
     static readonly string[] Drums = ["hh", "sn", "bd"];
-    /// <summary>6/8: the grid's four 16ths of a dotted quarter, among its six (the 8ths fall nearest the second and fourth).</summary>
-    static readonly int[] Six = [0, 2, 3, 4];
     /// <summary>Drums heard: the drum part within this many dB of the recording (2026-11-23: 8 songs mixed again
     /// without their drums and separated, -42.6 dB and down; 162 of 165 xsc songs -20.6 dB and up, the other three,
     /// with no drums it seems, -44.5 and down).</summary>
@@ -39,7 +37,7 @@ static class Kit
         for (int g = 0; g < patterns.Count; g++)
         {
             var rows = LinesOf(patterns[g].Hits, patterns[g].Sixteenths, six);
-            named.Add(($"beat{Letters(g)}", rows.Count > 0 ? ChartOf(rows, six) : null, RestBar(patterns[g].Sixteenths)));
+            named.Add(($"beat{Letters(g)}", rows.Count > 0 ? ChartOf(rows, six) : null, Bass.Rests(patterns[g].Sixteenths, six)));
             if (named[^1].Steps is string steps) chart.Grooves.Add(new Groove(named[^1].Name, steps));
         }
         for (int k = 0; k < bars.Count; k++)
@@ -48,7 +46,7 @@ static class Kit
             bars[k].Drums = raw;
             if (assign[k] >= 0) bars[k].Kit = named[assign[k]].Steps != null ? named[assign[k]].Name : named[assign[k]].Silent;
             else if (raw.Count > 0) bars[k].Kit = ChartOf(raw, six);
-            else bars[k].Kit = RestBar(lengths[k]);
+            else bars[k].Kit = Bass.Rests(lengths[k], six);
         }
     }
 
@@ -202,15 +200,13 @@ static class Kit
     static string StepRow(List<int> starts, int sixteenths, bool six)
     {
         var beats = Enumerable.Range(0, sixteenths / 4).Select(_ => new string('.', six ? 6 : 4).ToCharArray()).ToArray();
-        foreach (int q in starts) beats[q / 4][six ? Six[q % 4] : q % 4] = 'x';
+        foreach (int q in starts) beats[q / 4][six ? Bass.Six[q % 4] : q % 4] = 'x';
         return string.Join(" ", beats.Select(b => new string(b)));
     }
 
     /// <summary>The steps chart of a bar's rows (Lily#'s `steps`, Orecchiante's request 24; `steps 4.` in 6/8).</summary>
     static string ChartOf(Dictionary<string, string> rows, bool six) =>
         $"steps{(six ? " 4." : "")} {{ " + string.Join(" ", Drums.Where(rows.ContainsKey).Select(d => $"{d} \"{rows[d]}\"")) + " }";
-
-    static string RestBar(int sixteenths) => string.Join(" ", Bass.Pieces(0, sixteenths).Select(d => "r" + Bass.Text(d)));
 
     static string Letters(int i)
     {

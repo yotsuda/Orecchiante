@@ -38,7 +38,7 @@ KICK, HAT, SNARE, WIRES = 0.5, 6.0, 0.7, 0.85
 FLOOR, SCALE_MIN = 6.0, 12.0
 NEAR, MIN_BARS, ROUNDS = 4, 3, 3
 DRUMS = ("hh", "sn", "bd")
-SIX = (0, 2, 3, 4)          # 6/8: the grid's four 16ths of a dotted quarter, among its six
+SIX = (0, 2, 3, 4)          # 6/8: the grid's four 16ths of a dotted quarter, among its six (bass.SIX)
 
 sys.path.insert(0, str(Path(__file__).parent))
 import bass  # noqa: E402  (the grid and the written lengths)
@@ -141,8 +141,8 @@ def chart_of(rows, six=False):
     return f"steps{' 4.' if six else ''} {{ " + " ".join(f'{d} "{rows[d]}"' for d in DRUMS if d in rows) + " }"
 
 
-def rest_bar(n16):
-    return " ".join(f"r{bass.DUR[d]}" for d in bass.pieces(0, n16))
+def rest_bar(n16, six=False):
+    return bass.bar_music([], n16, None, six=six)
 
 
 def letters(i):
@@ -173,7 +173,7 @@ def read(flac, side):
     for g, (n, p) in enumerate(pats):
         tag = letters(g)
         ls = lines_of(p, n, six)
-        named.append({"name": f"beat{tag}", "chart": chart_of(ls, six) if ls else None, "rest": rest_bar(n)})
+        named.append({"name": f"beat{tag}", "chart": chart_of(ls, six) if ls else None, "rest": rest_bar(n, six)})
     out = []
     for k in range(len(bars)):
         raw = lines_of(sets[k], lens[k], six)
@@ -183,7 +183,7 @@ def read(flac, side):
         elif raw:
             kit = chart_of(raw, six)
         else:
-            kit = rest_bar(lens[k])
+            kit = rest_bar(lens[k], six)
         out.append({"kit": kit, "drums": raw})
     return {"grooves": [g for g in named if g["chart"]], "bars": out, "assign": assign, "patterns": pats, "sets": sets}
 

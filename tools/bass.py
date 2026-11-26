@@ -128,11 +128,22 @@ def round_onto(slots, notes, pull=PULL):
     return res
 
 
+SIX = (0, 2, 3, 4)  # 6/8: the grid's four 16ths of a dotted quarter, among its six (the 8ths nearest the 2nd and 4th)
+
+
+def written(q, six=False):
+    """A place on the grid as a 16th of the bar: itself, or in 6/8 among the dotted quarter's six."""
+    return q // 4 * 6 + SIX[q % 4] if six else q
+
+
 def pieces(pos, length, beat16=4):
+    """beat16: the beat in 16ths, 4, or 6 in 6/8 (a note within its dotted quarter, the bar's 2. whole)."""
     out = []
     while length > 0:
         if pos % beat16:
             d = max(x for x in DUR if x <= min(length, beat16 - pos % beat16))
+        elif beat16 == 6:
+            d = max(x for x in DUR if x <= length and (x <= 6 or (x == 12 and pos % 12 == 0)))
         else:
             d = max(x for x in DUR if x <= length and (x <= 6 or (x in (8, 12) and pos % 8 == 0) or (x == 16 and pos == 0)))
         out.append(d)
@@ -155,18 +166,20 @@ def names_for(key):
     return NAMES_FLAT if (name in FLAT_KEYS if mode == "major" else name in FLAT_MINOR) else NAMES_SHARP
 
 
-def bar_music(notes, n16, names, up=12):
-    """notes: [(start, end, midi, tied on)] in the bar's 16ths -> the bar's music (step 5)."""
-    toks, pos = [], 0
+def bar_music(notes, n16, names, up=12, six=False):
+    """notes: [(start, end, midi, tied on)] on the bar's grid -> the bar's music (step 5). six: 6/8, the grid's places
+    written among the dotted quarter's six 16ths (SIX), a bar 2. long (until 0.18.0 a half note)."""
+    toks, pos, beat, end = [], 0, 6 if six else 4, written(n16, six)
     for a, b, p, on in notes:
+        a, b = written(a, six), written(b, six)
         if a > pos:
-            toks += [f"r{DUR[d]}" for d in pieces(pos, a - pos)]
-        ds = pieces(a, b - a)
+            toks += [f"r{DUR[d]}" for d in pieces(pos, a - pos, beat)]
+        ds = pieces(a, b - a, beat)
         nm = pitch_name(p, names, up)
         toks += [f"{nm}{DUR[d]}" + ("~" if k < len(ds) - 1 or on else "") for k, d in enumerate(ds)]
         pos = b
-    if pos < n16:
-        toks += [f"r{DUR[d]}" for d in pieces(pos, n16 - pos)]
+    if pos < end:
+        toks += [f"r{DUR[d]}" for d in pieces(pos, end - pos, beat)]
     return " ".join(toks)
 
 
@@ -204,7 +217,7 @@ def read(flac, side, key=None):
             i += take
             k, q = k + 1, 0
     names = names_for(key or side.get("key"))
-    return [bar_music(per_bar[k], lens[k], names) for k in range(len(bars))]
+    return [bar_music(per_bar[k], lens[k], names, six=side.get("time") == "6/8") for k in range(len(bars))]
 
 
 def main():

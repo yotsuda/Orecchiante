@@ -79,7 +79,7 @@ static class Melody
         var names = Bass.NamesFor(chart.Key);
         for (int k = 0; k < bars.Count; k++)
         {
-            bars[k].Vocal = Bass.BarMusic(perBar[k], lengths[k], names, up: 0);
+            bars[k].Vocal = Bass.BarMusic(perBar[k], lengths[k], names, up: 0, six: chart.Time == "6/8");
             if (sung != null) bars[k].Lyrics = string.Join(" ", syllables[k]);
         }
     }
