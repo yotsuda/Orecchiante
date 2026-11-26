@@ -122,9 +122,35 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
+## ReazonSpeech wav2vec 2.0 (Japanese)
+
+`bin/reazon-kana-mm8.onnx` — hears which kana is being sung, to put a song's words to its notes. It is
+reazon-research/japanese-wav2vec2-base-rs35kh, written out as ONNX with only its outputs for the kana kept
+(after the softmax over all of them), and with its matrix products held in 8-bit integers; otherwise unchanged.
+<https://huggingface.co/reazon-research/japanese-wav2vec2-base-rs35kh>
+
+Published by reazon-research under the Apache License, Version 2.0 — the license of Orecchiante itself, whose
+text is in `LICENSE`. The model was changed as said above.
+
+## NMeCab
+
+`bin/LibNMeCab.dll` — cuts Japanese words and reads them in kana (the words of a song, for the model above).
+<https://github.com/komutan/NMeCab> Copyright Tsuyoshi Komuta, after MeCab by Taku Kudo.
+
+It is used under the GNU Lesser General Public License, version 2.1 or later (its authors offer it under that
+or the GPL): the text is in `licenses/LGPL-2.1.txt`. It is the unchanged library as its package
+(LibNMeCab 0.10.2) has it, a file of its own that the reader loads; its source is at the address above, and it
+may be replaced by another build of it.
+
+## IPAdic
+
+`bin/IpaDic/` — the dictionary NMeCab reads with, compiled as the package LibNMeCab.IpaDicBin 0.10.0 has it.
+Copyright 2000, 2001, 2002, 2003 Nara Institute of Science and Technology, under the terms in
+`bin/IpaDic/COPYING` (use, reproduction and distribution permitted with the notice).
+
 ## ONNX Runtime
 
-`bin/onnxruntime.dll`, `bin/Microsoft.ML.OnnxRuntime.dll` — runs the three models.
+`bin/onnxruntime.dll`, `bin/Microsoft.ML.OnnxRuntime.dll` — runs the models.
 <https://github.com/microsoft/onnxruntime>
 
 Copyright (c) Microsoft Corporation, under the MIT License. Its license and its own third-party

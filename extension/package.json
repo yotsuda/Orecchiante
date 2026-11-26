@@ -2,7 +2,7 @@
   "name": "orecchiante",
   "displayName": "Orecchiante Chord Chart Transcriber",
   "description": "Reads a recording into an editable Lily# (.lys) chord chart: tempo, meter, key, bar lines and the chord of every bar, with the uncertain places marked. Open source (Apache-2.0). Runs locally on Windows; no cloud.",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "publisher": "yotsuda",
   "icon": "icon.png",
   "author": "Yoshifumi Tsuda",

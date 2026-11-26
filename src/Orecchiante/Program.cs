@@ -3,6 +3,7 @@
 //
 //   orecchiante <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]
 //
+// (with <name>.lrc beside the recording, its words are put to the voice staff when they are Japanese: Words.cs)
 // writes <name>.lys (a Lily# chord chart) beside the recording, or where -o says, and beside the chart
 // <name>.orecchiante.json (docs/SIDECAR.md), and the recording's six parts in <name>.parts/ (drums, bass, other,
 // vocals, guitar and piano .flac, to hear one at a time; SIDECAR.md, `parts`). A chart already there is not written over without --force: it may hold
@@ -53,6 +54,13 @@
 // writes <name>.feat.npz: oenv, chroma, bass and rms as read_chords.py's features() makes them for --ears,
 // and tuning (tools/measure.py --net reads them in place of its own).
 //
+//   orecchiante kana <a .txt or .lrc, or a folder of them> --out <folder>
+//   orecchiante words <a folder of <id>.parts folders> --lyrics <folder> --out <folder> [--models <folder>] [--none]
+//
+// the words in kana as Kana reads them (scratch/align/words.py's form), and the words' notes on separated vocals
+// (Melody.WordsOf; --none: the melody as heard without them), for scratch/vocal/dur.py SRC=align (README "The words
+// in the chart").
+//
 //   orecchiante audio <a recording or a folder of them> --out <folder>
 //
 // writes <file's name>.heard.wav (song.mp3.heard.wav): the samples as the reader takes them from the file (one channel, 32-bit float, the
@@ -62,7 +70,7 @@ using System.Text;
 using Orecchiante;
 using Microsoft.ML.OnnxRuntime;
 
-const string version = "0.16.0";
+const string version = "0.17.0";
 const int protocol = 1;
 const string usage = "usage: orecchiante <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]\n"
                    + "       orecchiante --version [--json]\n"
@@ -92,6 +100,9 @@ var started = Stopwatch.StartNew();
 double load = 0, mel = 0, beat = 0, cqt = 0, chord = 0, sing = 0, audio = 0, rules = 0;
 InferenceSession? beatModel = null, chordModel = null, btcModel = null;
 InferenceSession[] voiceModels = [];
+InferenceSession? wordsModel = null;            // with words to put to the voice (a .lrc beside the recording)
+List<Mora>? wordsMorae = null;
+Song? wordsSong = null;
 string? linesFrom = null, heardFrom = null, voiceFrom = null, drumsFrom = null, bassFrom = null;     // voiceFrom "none": no singing heard; drumsFrom the same
 
 int Fail(int code, string why) { Console.Error.WriteLine("orecchiante: " + why); return code; }
@@ -194,11 +205,16 @@ Chart Read(string file, Action<string>? say = null, string? partsTo = null)
     }
     // The vocal part, read into a voice staff (Melody.Read; Shosa's request 1, 2026-11-26).
     double[]? vocalSamples = null;
+    float[]? vocals16 = null;                       // for the words (Words.Rate)
     if (partsTo != null && File.Exists(Path.Combine(partsTo, "vocals.wav")))
     {
         var (part, partRate) = Audio.Read(Path.Combine(partsTo, "vocals.wav"));
         var samples = Resample.To(part, Features.Rate, partRate);
-        if (Bass.Heard(samples, low, Melody.HeardDb)) vocalSamples = samples;
+        if (Bass.Heard(samples, low, Melody.HeardDb))
+        {
+            vocalSamples = samples;
+            if (wordsModel != null) vocals16 = [.. Resample.To(part, Words.Rate, partRate).Select(x => (float)x)];
+        }
     }
     else if (From(bassFrom, name + ".bass.npy") is { } bassPart) heard = Features.WithBassPart(heard, bassPart);
     high = null;
@@ -211,8 +227,10 @@ Chart Read(string file, Action<string>? say = null, string? partsTo = null)
     rules += clock.Elapsed.TotalSeconds;
     if (vocalSamples != null)
     {
-        Stage("the melody");
-        Melody.Read(vocalSamples, chart);
+        var sung = vocals16 != null ? new Melody.Sung(wordsModel!, vocals16, wordsMorae!) : null;
+        Stage(sung != null ? "the melody and its words" : "the melody");
+        Melody.Read(vocalSamples, chart, sung);
+        if (sung != null) chart.Words = wordsSong;
     }
     if (bassSamples != null)
     {
@@ -224,6 +242,7 @@ Chart Read(string file, Action<string>? say = null, string? partsTo = null)
         Stage("the drums");
         Kit.Read(drumSamples, chart);
     }
+    if (chart.Words != null) Words.Unfold(chart);   // each time a sung section comes round, a section of its own
     return chart;
 }
 
@@ -302,6 +321,66 @@ if (args[0] == "lyrics")
     return 0;
 }
 
+if (args[0] == "kana")
+{
+    // For measuring: lyrics (.txt, a line a line, or .lrc) as Kana reads them, in scratch/align/words.py's form.
+    if (args.Length != 4 || args[2] != "--out") return Fail(2, "usage: orecchiante kana <a .txt or .lrc, or a folder of them> --out <folder>");
+    var texts = Directory.Exists(args[1]) ? Directory.GetFiles(args[1]).Where(f => f.EndsWith(".txt") || f.EndsWith(".lrc")).Order().ToArray() : [args[1]];
+    Directory.CreateDirectory(args[3]);
+    foreach (var file in texts)
+    {
+        var lines = new List<string>();
+        var dropped = new List<string>();
+        foreach (var text in Words.LinesOf(file))
+        {
+            var (kana, lost) = Kana.Of(text);
+            dropped.AddRange(lost);
+            if (kana.Length == 0) continue;
+            lines.Add($"{{\"text\": {Writer.Quoted(text)}, \"kana\": {Writer.Quoted(kana)}, \"morae\": [{string.Join(", ", Kana.Morae(kana).Select(Writer.Quoted))}]}}");
+        }
+        File.WriteAllText(Path.Combine(args[3], Path.GetFileNameWithoutExtension(file) + ".json"),
+            $"{{\"lines\": [\n{string.Join(",\n", lines)}\n], \"dropped\": [{string.Join(", ", dropped.Select(Writer.Quoted))}]}}\n", new UTF8Encoding(false));
+        Console.Error.WriteLine($"{Path.GetFileName(file)}: {lines.Count} lines, {dropped.Count} words not read");
+    }
+    return 0;
+}
+
+if (args[0] == "words")
+{
+    // For measuring: the words put to the voice (Melody.WordsOf) of separated vocals, <id>.parts/vocals.* in a folder,
+    // with <id>.lrc or <id>.txt from --lyrics: <id>.json [[on, off, midi, syllable]] in --out (scratch/vocal/dur.py SRC=align reads them).
+    string? from = args.Length > 1 ? args[1] : null, lyricsAt = Option("--lyrics"), outAt = Option("--out"), modelsAt = Option("--models");
+    if (from == null || lyricsAt == null || outAt == null) return Fail(2, "usage: orecchiante words <a folder of <id>.parts folders> --lyrics <folder> --out <folder> [--models <folder>] [--threads 8]");
+    int threads = int.TryParse(Option("--threads"), out int t) ? t : 8;
+    using var model = new InferenceSession(Path.Combine(modelsAt ?? AppContext.BaseDirectory, Words.Model), new SessionOptions { IntraOpNumThreads = threads });
+    Directory.CreateDirectory(outAt);
+    foreach (var parts in Directory.GetDirectories(from, "*.parts").Order())
+    {
+        string id = Path.GetFileName(parts)[..^".parts".Length];
+        string? text = new[] { ".lrc", ".txt" }.Select(x => Path.Combine(lyricsAt, id + x)).FirstOrDefault(File.Exists);
+        string? vocals = Directory.GetFiles(parts, "vocals.*").FirstOrDefault();
+        if (text == null || vocals == null) continue;
+        var clock = Stopwatch.StartNew();
+        var morae = Kana.Read(Words.LinesOf(text));
+        if (!Words.Sung(morae)) { Console.Error.WriteLine($"{id}: not words put to the voice (Words.Sung)"); continue; }
+        var (part, partRate) = Audio.Read(vocals);
+        string R(double x) => Math.Round(x, 4).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (args.Contains("--none"))
+        {
+            // the same songs without the words: the melody as 0.15.0 reads it
+            var heard = Melody.HeardOf(Resample.To(part, Features.Rate, partRate));
+            File.WriteAllText(Path.Combine(outAt, id + ".json"), "[" + string.Join(",\n", heard.Select(n => $"[{R(n.On)}, {R(n.Off)}, {n.Midi}]")) + "]\n");
+            Console.Error.WriteLine($"{id}: {heard.Count} notes heard, {clock.Elapsed.TotalSeconds:F1} s");
+            continue;
+        }
+        var sung = new Melody.Sung(model, [.. Resample.To(part, Words.Rate, partRate).Select(x => (float)x)], morae);
+        var notes = Melody.WordsOf(Resample.To(part, Features.Rate, partRate), sung);
+        File.WriteAllText(Path.Combine(outAt, id + ".json"), "[" + string.Join(",\n", notes.Select(n => $"[{R(n.On)}, {R(n.Off)}, {n.Midi}, {Writer.Quoted(n.Syllable)}]")) + "]\n", new UTF8Encoding(false));
+        Console.Error.WriteLine($"{id}: {morae.Count} morae, {notes.Count} notes, {clock.Elapsed.TotalSeconds:F1} s");
+    }
+    return 0;
+}
+
 if (args[0] is not ("read" or "ears" or "features" or "audio" or "drums" or "bass"))
 {
     // The user's way in, and Lily#'s.
@@ -347,6 +426,22 @@ if (args[0] is not ("read" or "ears" or "features" or "audio" or "drums" or "bas
         Console.Error.WriteLine("opening the models");
         try { Open(modelsAt, threads, true, true, true); }
         catch (Exception e) { return Fail(3, $"the models did not open ({e.Message.Trim()})"); }
+        // The words, from <name>.lrc beside the recording (`orecchiante lyrics`), put to the voice when they are
+        // Japanese (Words.Sung; a song in English keeps "la" for now)
+        string lrc = Path.ChangeExtension(recording, ".lrc");
+        if (File.Exists(lrc))
+        {
+            var morae = Kana.Read(Words.LinesOf(lrc));
+            if (!Words.Sung(morae)) Console.Error.WriteLine($"{Path.GetFileName(lrc)}: not words this puts to the voice yet (Japanese only), sung on \"la\"");
+            else
+            {
+                if (!File.Exists(Path.Combine(modelsAt, Words.Model))) return Fail(3, $"the model {Words.Model} is not in {Path.GetFullPath(modelsAt)} (--models <folder>)");
+                try { wordsModel = new InferenceSession(Path.Combine(modelsAt, Words.Model), new SessionOptions { IntraOpNumThreads = threads }); }
+                catch (Exception e) { return Fail(3, $"the model {Words.Model} did not open ({e.Message.Trim()})"); }
+                (wordsMorae, wordsSong) = (morae, Lyrics.FromLrc(lrc));
+                Console.Error.WriteLine($"{Path.GetFileName(lrc)}: {morae.Count} morae to put to the voice");
+            }
+        }
         var chart = Read(recording, Console.Error.WriteLine, partsMade);
         // The recording as the chart finds it: its file name beside the chart, else the way there from the chart's
         // folder ('/' between folders; the whole path when they are on different drives). SIDECAR.md, `audio`.

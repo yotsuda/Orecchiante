@@ -1,19 +1,18 @@
 param(
     [string]$Out = "$PSScriptRoot\..\out\extension",   # the staging folder and the .vsix
-    [string]$Models = "$PSScriptRoot\..\onnx"          # where the four .onnx are: in the repository (README: how they are made)
+    [string]$Models = "$PSScriptRoot\..\onnx"          # where the models onnx/models.json lists are (tools/fetch-models.ps1 puts them there)
 )
 # The reader as a VS Code extension (docs/ROADMAP.md, D2 and D4; the shape is Calamo's): orecchiante.exe
-# published self-contained for win-x64 into extension/bin, the three models beside it (where the program
+# published self-contained for win-x64 into extension/bin, the models beside it (where the program
 # looks for them), its `orecchiante --version --json` (bin/orecchiante.json, which extension.js hands to Lily#),
 # the licenses of what is bundled, and `vsce package --target win32-x64`.
 # Packages only: it publishes nothing. The icon and the LICENSE are the repository's own (one copy of each).
 $ErrorActionPreference = 'Stop'
 $root = Resolve-Path "$PSScriptRoot\.."
 $ext = "$root\extension"
-$onnx = 'beat-this-final0-dynamo.onnx', 'crema-chord.onnx', 'btc-large-voca.onnx', 'htdemucs_6s-mm8.onnx'
-foreach ($name in $onnx) {
-    if (-not (Test-Path "$Models\$name")) { throw "$name is not in ${Models}: pass -Models <folder>" }
-}
+# the models as models.json says, each checked by its SHA-256 (a stale one is never packed)
+$onnx = (Get-Content "$root\onnx\models.json" -Raw | ConvertFrom-Json).models.file
+& "$PSScriptRoot\fetch-models.ps1" -Models $Models -Check | Out-Null
 
 if (Test-Path $Out) { Remove-Item -Recurse -Force $Out }
 $stage = "$Out\stage"
@@ -42,6 +41,9 @@ $copies = @{
 }
 # (NAudio's packages carry no license file: its MIT text is in THIRD-PARTY-NOTICES.md; this only checks it is still there to name)
 PackageDir 'NAudio.Wasapi' | Out-Null
+# (NMeCab's carry none either: its LGPL-2.1 is extension/licenses/LGPL-2.1.txt; IPAdic's own COPYING comes with it, bin/IpaDic)
+PackageDir 'LibNMeCab' | Out-Null
+if (-not (Test-Path "$bin\IpaDic\sys.dic") -or -not (Test-Path "$bin\IpaDic\COPYING")) { throw "IPAdic is not in bin\IpaDic" }
 New-Item -ItemType Directory -Force "$bin\licenses" | Out-Null
 foreach ($name in $copies.Keys) { Copy-Item -LiteralPath $copies[$name] "$bin\licenses\$name" }
 

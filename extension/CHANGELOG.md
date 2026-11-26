@@ -2,6 +2,22 @@
 
 Notable changes to Orecchiante (Dettato until 0.10.2) are recorded here, newest first.
 
+## 0.17.0
+
+- The words on the voice staff: when `<name>.lrc` is beside the recording (`orecchiante lyrics` writes
+  it) and its words are Japanese, they are put to the separated vocals — a speech model hears which
+  kana is sung where, and each mora becomes a note with its syllable (`lyrics words` under the voice
+  staff, which the singer sings). On 49 RWC songs the bars with the right number of notes go from 29%
+  to 58%, and 83% of the notes start on the right 16th (74% before). Words the reader cannot read
+  (English in a Japanese song) take the melody's notes as they are heard.
+- The words are written in kana, as they are read (a kanji word as its reading).
+- Each time a sung section comes round it is written out as a section of its own (A, A2, A3, ...): the
+  words differ from verse to verse.
+- A chart with the words says whose they are in three comment lines at its head.
+- Words in English are not put to the voice yet: the notes are still sung "la".
+- New in the package: the speech model (reazon-research/japanese-wav2vec2-base-rs35kh, Apache-2.0,
+  124 MB in 8-bit) and NMeCab with IPAdic (LGPL-2.1 / NAIST), which read Japanese words in kana.
+
 ## 0.16.0
 
 - `orecchiante lyrics <recording>` writes `<name>.lrc` beside the recording: the song's lyrics from

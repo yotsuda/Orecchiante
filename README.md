@@ -1167,6 +1167,44 @@ when the onset is within a quarter of a 16th of them (`PULL=0.25`: its ceiling, 
   unsaid (+0.01 on the 18, −0.01 on the 31: the alignment does not leave the gap), no gate on the quiet
   frames, a penalty on the `＊`.
 
+### The words in the chart (0.17.0)
+
+When `<name>.lrc` is beside the recording (`orecchiante lyrics`, below) and its words are Japanese, the voice
+staff's notes are the words' (`src/Orecchiante/Words.cs`, `Kana.cs`; `Melody.Read` with them):
+
+- **The model** in ONNX (`tools/d2/reazon_onnx.py`): Reazon's samples-to-kana graph with the chunk's
+  normalisation and the softmax inside, only the kana's columns out (the larger of `あ` and `▁あ`), and the kana
+  in the model's metadata. fp32 (387 MB) says what torch says (the bars 0.585 on 1-50, the same to the third
+  place); its MatMuls in int8 (`reazon-kana-mm8.onnx`, 124 MB, the one shipped) 0.582, 4 s a song of 3.5 min;
+  the convolutions in 8 bits too (97.5 MB) need uint8 weights in onnxruntime 1.20 and run 3 times slower.
+- **The words in kana** by NMeCab with IPAdic (LGPL-2.1 / NAIST, NuGet `LibNMeCab` 0.10.2 and
+  `LibNMeCab.IpaDicBin` 0.10.0: .NET's own, no Python): 96% of unidic-lite's morae on RWC's lyrics (二人 as
+  ににん, 何 as なに); the bars the same, 0.582. The reading as written (は, を, つづく) and not as pronounced
+  (わ, お, つずく): 0.583 against 0.582 — the model was taught on written text, and the written form is what a
+  singer reads. Ruby after kanji, 誘(いざな), is sung as the ruby. Words it cannot read (English) are one `＊`
+  a run, filled by the melody's notes as heard, the words one to a note.
+- **Written:** a syllable a note in `lyrics words` under the voice staff (`part vocal { … lyrics words }`,
+  `singer on vocal`), `|` where the music has its bar lines; っ with the mora before (かっ), ー as the vowel
+  sung again (と お), two morae on one 16th one note singing both (`~`, Lily#'s elision). In kana: a kanji
+  word is sung over several notes, and Lily#'s reading (`漢[かん]`) belongs to one. Each time a sung section
+  comes round it is a section of its own (`Words.Unfold`: A, A2, A3, …, the next number free), its own notes
+  and words; Lily#'s verses would put the second verse's words on the first verse's notes. The three lines of
+  the notice head the chart (`Lyrics.Notice`; "from the .lrc beside the recording" when it is not LRCLIB's).
+- **Measured** in .NET (`orecchiante words <a folder of <id>.parts> --lyrics <folder> --out <folder>`, its
+  notes for `dur.py SRC=align`; `--none`: the same songs read as 0.15.0 reads them), on the songs whose words
+  are Japanese (`Words.Sung`: RWC-P 1-50 but P031, and 51-80; 81-100 are sung in English), RWC's lyrics as
+  plain lines (`scratch/align/plain.py`):
+
+| | 1-50, 0.15.0 → **0.17.0** | 51-80 (not looked at), 0.15.0 → **0.17.0** |
+|---|---|---|
+| bars with the truth's number of notes | 0.294 → **0.589** | 0.326 → **0.638** |
+| onset 16th F | 0.742 → **0.832** | 0.747 → **0.851** |
+| ... and its end 16th | 0.364 → **0.495** | 0.395 → **0.546** |
+| bars whose onsets are all the truth's | 0.141 → **0.399** | 0.180 → **0.472** |
+
+- 今宵の月のように with LRCLIB's words: 418 morae, 407 syllables in `lysc timeline`'s `sung`; the chart 86 s
+  (4:14), `lysc check` clean of the words. A song whose words are English keeps "la" (to come).
+
 ### The words, from LRCLIB (0.16.0)
 
     orecchiante lyrics <recording> [-o <x.lrc>] [--title <title>] [--artist <artist>] [--force]
@@ -1293,9 +1331,13 @@ pickup alone.
 A chart now takes three Python environments (3.7 GB: torch for Beat This!, TensorFlow for crema,
 librosa for the reader). Measured on 2026-11-14, for the choice of what to ship (a Python
 command, or a .NET one as Lily#'s and Calamo's are); nothing is chosen yet. The scripts are in
-`tools/d2/`, what they write in `scratch/d2/`. The four the reader runs (`beat-this-final0-dynamo`,
-`crema-chord`, `btc-large-voca`, `htdemucs_6s-mm8`) are committed in `onnx/`, which the extension is
-packed from (the owner, 2026-11-20): a model made again goes there by hand.
+`tools/d2/`, what they write in `scratch/d2/`. The models the reader runs (`beat-this-final0-dynamo`,
+`crema-chord`, `btc-large-voca`, `htdemucs_6s-mm8`, and since 0.17.0 `reazon-kana-mm8`) are listed in
+`onnx/models.json`, each with its SHA-256 and the GitHub Release asset it is fetched from
+(`tools/fetch-models.ps1` puts them in `onnx/`, which the extension is packed from). Not in git (2026-11-26,
+the owner agreeing: git keeps every version of a large file for good, and GitHub refuses a file over 100 MB);
+in the extension, so that it works as it is installed (the owner: models whose licenses allow it are shipped).
+A model made again: a new Release (`models-2`) with the files that changed, and their entries in models.json.
 
 **Both models run in onnxruntime and say the same.**
 
@@ -1958,7 +2000,8 @@ What it gives another extension is the reader's path and its `--version --json` 
 written when the package is made). The package is 113 MB (the beat model is 83 MB of it).
 
 ```
-tools/pack-extension.ps1       # out/extension/orecchiante-win32-x64-<version>.vsix (the models from onnx/)
+tools/fetch-models.ps1         # onnx/models.json's models into onnx/, from their Release (once after cloning)
+tools/pack-extension.ps1       # out/extension/orecchiante-win32-x64-<version>.vsix (the models from onnx/, checked)
 tools/deploy-extension.ps1     # packs, and installs it into this PC's VS Code; publishes nothing
 ```
 

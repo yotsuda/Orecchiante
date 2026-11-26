@@ -1,7 +1,7 @@
 name: Release
 
 # Tag-driven release, after Calamo's release.yml: pushing a tag like v0.13.2 packs the extension
-# (tools/pack-extension.ps1: orecchiante.exe published self-contained for win-x64, the four models
+# (tools/pack-extension.ps1: orecchiante.exe published self-contained for win-x64, the models
 # beside it, the licenses, the version check, `vsce package --target win32-x64`), attaches the .vsix
 # to a GitHub Release, and publishes it to the VS Code Marketplace.
 #
@@ -11,7 +11,10 @@ name: Release
 # Run by hand with publish_targets (win32-x64), it publishes that target of the current version from
 # its GitHub Release instead: the way to finish a release the Marketplace did not list.
 #
-# The four models are in the repository, in onnx/ (the owner, 2026-11-20; README says how each is made).
+# The models are not in the repository (2026-11-26, the owner agreeing: git keeps every version of a large
+# file for good, and GitHub refuses a file over 100 MB): onnx/models.json lists them, each an asset of the
+# GitHub Release `models-1` (or a later one) with its SHA-256, and tools/fetch-models.ps1 fetches them
+# before the pack. README says how each is made.
 #
 # Secret: VSCE_PAT, the same Marketplace -> Manage token as Lily#'s and Calamo's (the Microsoft account
 # that OWNS the publisher `yotsuda`; Calamo's release.yml says how it is made). It expires 2027-10-16:
@@ -66,6 +69,10 @@ jobs:
           $publisher = (Get-Content extension/package.json -Raw | ConvertFrom-Json).publisher
           npx --yes @vscode/vsce verify-pat $publisher
           if ($LASTEXITCODE -ne 0) { throw "verify-pat failed for '$publisher': nothing was published" }
+
+      - name: Models
+        # onnx/models.json's, from their Release, checked by SHA-256.
+        run: pwsh -NoProfile -File tools/fetch-models.ps1
 
       - name: Pack
         # The same script the local deploy uses (the models from onnx/).

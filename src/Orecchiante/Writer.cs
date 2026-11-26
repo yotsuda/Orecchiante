@@ -139,9 +139,13 @@ static class Writer
         // syllable on each note until the words are written in (Shosa's request 1, 2026-11-26): "ら" where the title is
         // written in Japanese, else "la" in English (the owner: the tool is for the whole world). Which voice sings is
         // the machine's (Lily# and Cantoria pick one that sings the language; with none, the part's instrument plays).
+        // With words put to the voice (Melody.Read with words: Japanese, Words.Sung), the part names its words and the
+        // singer sings them; each time a sung section comes round it is a section of its own (Words.Unfold).
+        bool sungWords = vocal && chart.Bars.Any(bar => !string.IsNullOrEmpty(bar.Lyrics));
         if (vocal || bass) lines.Add("octave absolute");
-        if (vocal && !Japanese(title)) lines.Add("language english");
-        if (vocal) lines.AddRange([$"part vocal {{ instrument {chart.Singer ?? "tenor"} }}", $"singer on vocal sings \"{(Japanese(title) ? "ら" : "la")}\""]);
+        if (vocal && !sungWords && !Japanese(title)) lines.Add("language english");
+        if (sungWords) lines.AddRange([$"part vocal {{ instrument {chart.Singer ?? "tenor"}  lyrics words }}", "singer on vocal"]);
+        else if (vocal) lines.AddRange([$"part vocal {{ instrument {chart.Singer ?? "tenor"} }}", $"singer on vocal sings \"{(Japanese(title) ? "ら" : "la")}\""]);
         if (bass) lines.Add("part bass { instrument bass }");
         if (vocal || bass) lines.Add("");
         if (kit)
@@ -172,6 +176,13 @@ static class Writer
                 lines.Add("  vocal {");
                 lines.AddRange(BassRows(sections[name], chart.Time, "    ", bar => bar.Vocal));
                 lines.Add("  }");
+                if (sungWords && sections[name].Any(said => !string.IsNullOrEmpty(said[0].Lyrics)))
+                {
+                    // a syllable a note, `|` where the music has its bar lines (an empty bar is `|` alone)
+                    lines.Add("  lyrics words {");
+                    lines.AddRange(LyricRows(sections[name], "    "));
+                    lines.Add("  }");
+                }
             }
             if (bass)
             {
@@ -191,10 +202,24 @@ static class Writer
         var shown = chart.Form.Select(s => s.Contains('_') ? "~" + s : s).ToList();   // a short section's name is hidden (read_chords.py --old-sections names them B_1)
         lines.AddRange(["form { " + FormWithRepeats(shown) + " }", "", "score {", "  chords prog"]);
         if (vocal) lines.Add("  staff vocal");
+        if (sungWords) lines.Add("  lyrics words");
         if (bass) lines.Add("  staff bass");
         if (kit) lines.Add("  staff kit");
         lines.AddRange(["}", ""]);
         return string.Join("\n", lines);
+    }
+
+    /// <summary>A section's words, lined as its staves are.</summary>
+    static IEnumerable<string> LyricRows(List<List<Bar>> bars, string indent)
+    {
+        var texts = bars.Select(said => said[0].Lyrics ?? "").ToList();
+        int i = 0;
+        foreach (int size in LineSizes(bars.Count))
+        {
+            var row = string.Join(" | ", texts.Skip(i).Take(size)) + " |";
+            yield return indent + (row.StartsWith(' ') ? row[1..] : row).Replace("  ", " ");
+            i += size;
+        }
     }
 
     /// <summary>A section's bass staff, its bars as the section is first played (a section played again is written once),
@@ -328,7 +353,7 @@ static class Writer
         return s.ToString();
     }
 
-    static string Quoted(string text)
+    internal static string Quoted(string text)
     {
         var s = new StringBuilder("\"");
         foreach (char c in text)

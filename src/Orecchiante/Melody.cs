@@ -13,21 +13,59 @@ static class Melody
     /// of xsc and RWC-P -24.5 dB, the separated vocals of instrumentals -18 to -38: their lead is read as the melody).</summary>
     public const double HeardDb = -30;
 
-    /// <summary>Each bar's music (Bar.Vocal) and the part's instrument (Chart.Singer) from the vocal part at 22050 Hz.</summary>
-    public static void Read(double[] part, Chart chart)
+    /// <summary>What puts the words to the voice (Words.Align): the model, the vocals at Words.Rate, the words.</summary>
+    public sealed record Sung(Microsoft.ML.OnnxRuntime.InferenceSession Model, float[] Vocals, List<Mora> Morae);
+
+    /// <summary>Each bar's music (Bar.Vocal) and the part's instrument (Chart.Singer) from the vocal part at 22050 Hz;
+    /// with words, the notes are the words' (Words.Align) and each bar's syllables are Bar.Lyrics.</summary>
+    /// <summary>The voice's pitch (pYIN), loudness (dB) and notes as heard (NotesOf), from the vocal part at 22050 Hz.</summary>
+    static (double[] F0, bool[] Voiced, double[] Db, List<(double On, double Off, int Midi)> Heard) Hear(double[] part)
     {
         var (f0, voiced) = Bass.Pyin(part, Frame, Fmin, Fmax);
-        var bars = chart.Bars;
         var strength = Features.Onsets(Features.Spectra(part, out _, Hop), Hop, 64, 8000);
-        var notes = NotesOf(f0, voiced, Bass.OnsetFrames(strength, Delta), Loudness(part, f0.Length))
-            .Where(n => bars[0].Start - 0.05 <= n.On && n.On < bars[^1].End).ToList();
-        chart.Singer = Instrument(notes);
+        var db = Loudness(part, f0.Length);
+        return (f0, voiced, db, NotesOf(f0, voiced, Bass.OnsetFrames(strength, Delta), db));
+    }
+
+    /// <summary>The notes as heard without words (NotesOf), in seconds: for measuring (`orecchiante words --none`).</summary>
+    internal static List<(double On, double Off, int Midi)> HeardOf(double[] part) => Hear(part).Heard;
+
+    /// <summary>The words' notes on the vocal part (Words.Align), in seconds: for measuring (`orecchiante words`) and Read.</summary>
+    internal static List<Words.Note> WordsOf(double[] part, Sung sung) => WordsOf(Hear(part), sung);
+
+    static List<Words.Note> WordsOf((double[] F0, bool[] Voiced, double[] Db, List<(double On, double Off, int Midi)> Heard) h, Sung sung)
+    {
+        double loud = Percentile(h.Db, 95);
+        return Words.Align(sung.Model, sung.Vocals, h.F0, h.Voiced, [.. h.Db.Select(d => d - loud)], h.Heard, sung.Morae);
+    }
+
+    public static void Read(double[] part, Chart chart, Sung? sung = null)
+    {
+        var h = Hear(part);
+        var heard = h.Heard;
+        var bars = chart.Bars;
+        bool InBars(double on) => bars[0].Start - 0.05 <= on && on < bars[^1].End;
         var (slots, where) = Bass.SlotsOf(bars);
+        List<(int First, int Last, int Midi, string? Syllable)> placed;
+        if (sung != null)
+        {
+            var words = WordsOf(h, sung).Where(n => InBars(n.On)).ToList();
+            chart.Singer = Instrument([.. words.Select(n => (n.On, n.Off, n.Midi))]);
+            placed = [.. Words.RoundOnto(slots, words).Select(x => (x.First, x.Last, x.Midi, (string?)x.Syllable))];
+        }
+        else
+        {
+            var notes = heard.Where(n => InBars(n.On)).ToList();
+            chart.Singer = Instrument(notes);
+            placed = [.. Bass.RoundOnto(slots, notes, pull: 0).Select(x => (x.First, x.Last, x.Midi, (string?)null))];
+        }
         var lengths = bars.Select(b => b.Beats.Count * 4).ToArray();
         var perBar = bars.Select(_ => new List<(int From, int To, int Midi, bool Tied)>()).ToArray();
-        foreach (var (first, last, midi) in Bass.RoundOnto(slots, notes, pull: 0))
+        var syllables = bars.Select(_ => new List<string>()).ToArray();
+        foreach (var (first, last, midi, syllable) in placed)
         {
             var (k, q) = where[first];
+            if (syllable != null && k < bars.Count) syllables[k].Add(syllable);   // a tie holds it: the syllable is the first note's
             int i = first;
             while (last > i && k < bars.Count)
             {
@@ -39,7 +77,11 @@ static class Melody
             }
         }
         var names = Bass.NamesFor(chart.Key);
-        for (int k = 0; k < bars.Count; k++) bars[k].Vocal = Bass.BarMusic(perBar[k], lengths[k], names, up: 0);
+        for (int k = 0; k < bars.Count; k++)
+        {
+            bars[k].Vocal = Bass.BarMusic(perBar[k], lengths[k], names, up: 0);
+            if (sung != null) bars[k].Lyrics = string.Join(" ", syllables[k]);
+        }
     }
 
     /// <summary>The voice with fewer notes out of its range (Lily#'s: tenor C3-C5, soprano C4-C6), tenor on a tie.</summary>

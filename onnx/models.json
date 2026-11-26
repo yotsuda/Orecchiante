@@ -1,0 +1,45 @@
+{
+  "about": "The models the reader runs, which the extension carries beside orecchiante.exe. They are not in the repository (git keeps every version of a large file for good); each is an asset of a GitHub Release of this repository, fetched by tools/fetch-models.ps1 and checked by its SHA-256. README, \"Without torch and TensorFlow\" and \"The words put to the voice\", says how each is made; extension/THIRD-PARTY-NOTICES.md, whose it is.",
+  "models": [
+    {
+      "file": "beat-this-final0-dynamo.onnx",
+      "bytes": 82858464,
+      "sha256": "1cf836847af2272b3bd4ca43fb8cc5924115c0e373661ecf4a8b3c16df59aaed",
+      "url": "https://github.com/yotsuda/Orecchiante/releases/download/models-1/beat-this-final0-dynamo.onnx",
+      "source": "Beat This! final0 (https://github.com/CPJKU/beat_this)",
+      "license": "MIT"
+    },
+    {
+      "file": "crema-chord.onnx",
+      "bytes": 2193586,
+      "sha256": "8a0a8aa2d7f8edaa9cb7a04f0cf7ee58dd26d007805098628a3090562b06c295",
+      "url": "https://github.com/yotsuda/Orecchiante/releases/download/models-1/crema-chord.onnx",
+      "source": "crema 0.2.0's chord model (https://github.com/bmcfee/crema)",
+      "license": "BSD-2-Clause"
+    },
+    {
+      "file": "btc-large-voca.onnx",
+      "bytes": 13070179,
+      "sha256": "6f784f4c123edbb93b60136f4d398401e8edc0b3c36b00dc9abe03a17a101d13",
+      "url": "https://github.com/yotsuda/Orecchiante/releases/download/models-1/btc-large-voca.onnx",
+      "source": "BTC's large-vocabulary model (https://github.com/jayg996/BTC-ISMIR19)",
+      "license": "MIT"
+    },
+    {
+      "file": "htdemucs_6s-mm8.onnx",
+      "bytes": 64430040,
+      "sha256": "326467b508f944675b53bb17e5bdafecee6316e661f823be72b3a31698d0e6db",
+      "url": "https://github.com/yotsuda/Orecchiante/releases/download/models-1/htdemucs_6s-mm8.onnx",
+      "source": "Demucs htdemucs_6s, matrix products in int8 (https://github.com/facebookresearch/demucs)",
+      "license": "MIT"
+    },
+    {
+      "file": "reazon-kana-mm8.onnx",
+      "bytes": 124284737,
+      "sha256": "6d5e04a9e377a97665adf47a8b623805e5670aabf73b412b54ae72cce2c834f9",
+      "url": "https://github.com/yotsuda/Orecchiante/releases/download/models-1/reazon-kana-mm8.onnx",
+      "source": "reazon-research/japanese-wav2vec2-base-rs35kh, the kana's columns, matrix products in int8 (https://huggingface.co/reazon-research/japanese-wav2vec2-base-rs35kh; tools/d2/reazon_onnx.py)",
+      "license": "Apache-2.0"
+    }
+  ]
+}

@@ -112,7 +112,7 @@ public static class Lyrics
         yield return "// Lyrics: \"" + (title != "" ? title : "untitled") + "\"" + (artist != "" ? $" as performed by {artist}" : "")
                      + (album != "" ? $" ({album})" : "");
         yield return "// The words are copyright of their writers and publishers, who reserve all rights.";
-        yield return $"// Text from LRCLIB (https://lrclib.net)" + (song.Id > 0 ? $", entry {song.Id}" : "")
+        yield return (song.Id > 0 ? $"// Text from LRCLIB (https://lrclib.net), entry {song.Id}" : "// Text from the .lrc beside the recording")
                      + ", for personal use only: do not share or publish the words with this chart.";
     }
 

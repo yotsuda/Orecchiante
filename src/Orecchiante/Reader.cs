@@ -24,6 +24,7 @@ sealed class Bar
     public double? Tempo;                       // its section's own tempo, on the first bar each time the section is played (SectionTempos)
     public string? Meter;                       // a bar of 2/4 or 3/4 in a chart of 4/4 (Reader.ShortMeters): its beats, `time 2/4` at its head
     public string? Vocal;                       // its voice staff's music (Melody.Read), null when no voice is heard
+    public string? Lyrics;                      // the syllables its voice sings, a note each (Melody.Read with words; "" none), null without words
     public string? Bass;                        // its bass staff's music (Bass.Read), null when no bass is heard
     public string? Kit;                         // its bar of the drum staff (Kit.Read): a groove's name or the bar written out; null when no drums are heard
     public Dictionary<string, string>? Drums;   // its drums as read, one line a drum struck (hh, sn, bd), before any groove
@@ -46,7 +47,7 @@ sealed class Chart
     /// <summary>The lyrics the voice staff's words come from (`orecchiante lyrics`, LRCLIB; Lyrics.FromLrc), or null
     /// while the notes are sung on "la". A chart with them says whose words they are at its head (Lyrics.Notice; the
     /// owner, 2026-11-26).</summary>
-    public Song? Words = null;                  // (set once the words are put to the notes: step 2, to come)
+    public Song? Words = null;                  // set when a .lrc beside the recording is put to the voice (Melody.Read with words)
     public List<string> Form = [];
     public List<Bar> Bars = [];
     public List<Groove>? Grooves;               // the drum staff's grooves (Kit.Read)
