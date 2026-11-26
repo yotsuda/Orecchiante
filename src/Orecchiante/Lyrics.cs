@@ -102,6 +102,52 @@ public static class Lyrics
         return new Song(id, S("trackName") ?? "", S("artistName") ?? "", S("albumName") ?? "", seconds, instrumental, Words(S("syncedLyrics")), Words(S("plainLyrics")));
     }
 
+    // What a chart with these words says at its head, as comments (the owner, 2026-11-26: "an appropriate copyright
+    // notice"). Whose words they are is not known here (LRCLIB names the performer, not the writer), so the notice
+    // names the song and the performer, gives the words to their writers and publishers, and says where the text came from.
+    public static IEnumerable<string> Notice(Song song)
+    {
+        static string C(string s) => string.Join(' ', s.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)).Trim();
+        string title = C(song.Title), artist = C(song.Artist), album = C(song.Album);
+        yield return "// Lyrics: \"" + (title != "" ? title : "untitled") + "\"" + (artist != "" ? $" as performed by {artist}" : "")
+                     + (album != "" ? $" ({album})" : "");
+        yield return "// The words are copyright of their writers and publishers, who reserve all rights.";
+        yield return $"// Text from LRCLIB (https://lrclib.net)" + (song.Id > 0 ? $", entry {song.Id}" : "")
+                     + ", for personal use only: do not share or publish the words with this chart.";
+    }
+
+    // A .lrc as `orecchiante lyrics` writes it, back into the song: the tags and the lines (with their times).
+    public static Song FromLrc(string path)
+    {
+        string title = "", artist = "", album = "";
+        double seconds = 0;
+        long id = 0;
+        var lines = new List<string>();
+        foreach (var raw in File.ReadAllLines(path))
+        {
+            var tag = System.Text.RegularExpressions.Regex.Match(raw, @"^\[(ti|ar|al|length|re):(.*)\]\s*$");
+            if (!tag.Success) { lines.Add(raw); continue; }
+            string value = tag.Groups[2].Value.Trim();
+            switch (tag.Groups[1].Value)
+            {
+                case "ti": title = value; break;
+                case "ar": artist = value; break;
+                case "al": album = value; break;
+                case "length":
+                    var mmss = value.Split(':');
+                    if (mmss.Length == 2 && int.TryParse(mmss[0], out int m) && double.TryParse(mmss[1], System.Globalization.CultureInfo.InvariantCulture, out double s)) seconds = m * 60 + s;
+                    break;
+                case "re":
+                    var lrclib = System.Text.RegularExpressions.Regex.Match(value, @"LRCLIB (\d+)");
+                    if (lrclib.Success) id = long.Parse(lrclib.Groups[1].Value);
+                    break;
+            }
+        }
+        string text = string.Join('\n', lines).Trim('\n');
+        bool timed = lines.Any(l => System.Text.RegularExpressions.Regex.IsMatch(l, @"^\[\d+:\d+"));
+        return new Song(id, title, artist, album, seconds, false, timed ? text : null, timed ? null : text);
+    }
+
     // The .lrc: LRC's tags, then the lines with their times, else the words without them.
     public static string Lrc(Song song, string version)
     {

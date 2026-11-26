@@ -109,6 +109,7 @@ static class Writer
             "fonts { music \"Petaluma\" }",
             "",
         };
+        if (chart.Words is { } words) lines.InsertRange(1, Lyrics.Notice(words));     // whose words, under the first line
         int pickup = chart.Bars[0].Pickup;
         bool vocal = chart.Bars.Any(bar => bar.Vocal != null), bass = chart.Bars.Any(bar => bar.Bass != null), kit = chart.Bars.Any(bar => bar.Kit != null);
         // one section: the chart is the bars in their order; but not with a bar of its own time (Lily# takes a time in a

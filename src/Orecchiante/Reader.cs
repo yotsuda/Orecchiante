@@ -43,6 +43,10 @@ sealed class Chart
     /// <summary>The parts the recording was separated into (Voice.Parts order), each the way to its file as `audio` is;
     /// null when none were written (orecchiante read, and so read_chords.py, write none).</summary>
     public List<(string Part, string Path)>? Parts;
+    /// <summary>The lyrics the voice staff's words come from (`orecchiante lyrics`, LRCLIB; Lyrics.FromLrc), or null
+    /// while the notes are sung on "la". A chart with them says whose words they are at its head (Lyrics.Notice; the
+    /// owner, 2026-11-26).</summary>
+    public Song? Words = null;                  // (set once the words are put to the notes: step 2, to come)
     public List<string> Form = [];
     public List<Bar> Bars = [];
     public List<Groove>? Grooves;               // the drum staff's grooves (Kit.Read)

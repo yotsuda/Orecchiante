@@ -1155,6 +1155,15 @@ LRCLIB, and only when this command is run. Nothing else in Orecchiante goes on t
   first, then the nearest in length.
 - **The .lrc:** `[ti:]`, `[ar:]`, `[al:]`, `[length:]` and `[re:Orecchiante <version>, LRCLIB <id>]`, then the
   lines as LRCLIB has them (`[mm:ss.xx]` before each when timed), UTF-8.
+- **A chart with these words says whose they are** (the owner, 2026-11-26: "an appropriate copyright notice
+  in the .lys as comments"), under its first line (`Lyrics.Notice`, from the .lrc's tags by `Lyrics.FromLrc`):
+
+      // Lyrics: "<title>" as performed by <artist> (<album>)
+      // The words are copyright of their writers and publishers, who reserve all rights.
+      // Text from LRCLIB (https://lrclib.net), entry <id>, for personal use only: do not share or publish the words with this chart.
+
+  LRCLIB names the performer, not who wrote the words, so the notice gives them to their writers and
+  publishers without naming them. No chart has words yet (step 2, to come): until then nothing is written.
 - **Asking politely, as LRCLIB asks:** `User-Agent: Orecchiante/<version> (+https://github.com/yotsuda/Orecchiante)`,
   one request at a time, 300 ms apart, at most 3 for a song; a 429 or 503 is waited out as its Retry-After
   says (with up to 30% more), twice, and more than 60 s is given up.
