@@ -1136,6 +1136,37 @@ chart keeps each bar's reading (`vocal`; SIDECAR.md).
   bass is read as the bass; parts with nothing in them are at -31.5 dB and below (`scratch/vocal/loud.py`).
 - `tools/melody_check.py`: We're An American Band, every bar the same as Python's.
 
+### The words put to the voice (experiment, 2026-11-26)
+
+Where the syllables start is what a pitch tracker misses (above); a model that knows how speech sounds hears
+the consonants. The lyrics are forced onto the separated vocals: a CTC speech model's probabilities of each
+kana every 20 ms, the lyrics in kana, Viterbi, one mora a note (`scratch/align/`: `words.py` the lyrics in
+kana by unidic-lite's pronunciations, ruby as written, RWC's repeat marks expanded, words it cannot read as a
+`＊` any kana may fill; `emit.py` the model; `align.py` the alignment and the notes, the end where the voice
+stops for 0.12 s or the next mora, the pitch pYIN's median; `diag.py`). Measured as above
+(`dur.py SRC=align`), RWC-P 1-50 (49 songs; RWC's lyrics, Japanese but for P031), 16ths off the eighths
+when the onset is within a quarter of a 16th of them (`PULL=0.25`: its ceiling, the truth itself, 0.955):
+
+| 1-50 (31 songs whose lyrics are whole) | pYIN (now) | xlsr-53-japanese (317M) | **Reazon base (97M), +50 ms** |
+|---|---|---|---|
+| bars with the truth's number of notes | 0.294 (0.305) | 0.512 (0.581) | **0.585 (0.657)** |
+| onset 16th F | 0.741 (0.737) | 0.803 (0.839) | **0.828 (0.855)** |
+| ... and its end 16th | 0.366 (0.361) | 0.469 (0.509) | **0.494 (0.522)** |
+| bars whose onsets are all the truth's | 0.141 (0.158) | 0.318 (0.376) | **0.392 (0.443)** |
+
+- The models: jonatasgrosman/wav2vec2-large-xlsr-53-japanese (characters) and reazon-research/japanese-wav2vec2-base-rs35kh
+  (subwords; its single-kana tokens, `▁` or not, the larger taken), both Apache-2.0, at 16 kHz. Reazon's morae
+  come 42 ms early (the median against the truth's onsets); +50 ms was chosen on 1-50 (+30 ms 0.555, +40 0.574, +60 0.587, +70 0.580).
+- **The morae land:** 90% of xlsr's morae within 100 ms of a truth onset (Reazon 88%), half within ±22 ms.
+  What is lost is mostly the lyrics: in 18 songs RWC's lyrics leave out repeats the song sings (P004 has two
+  verses of a song that sings more) or English words, and the alignment stretches the words over the rest.
+  LRCLIB's lyrics, written as sung, are more like the 31.
+- ー as a note of its own: +0.03. っ part of the mora before, ん its own note.
+- Tried and no better: a mora split where pYIN begins another pitch inside it (melismas: onsets +0.01, bars
+  −0.03; only in notes over 0.6 s and 3 semitones, about even), pYIN's notes where the lyrics leave 1.5-4 s
+  unsaid (+0.01 on the 18, −0.01 on the 31: the alignment does not leave the gap), no gate on the quiet
+  frames, a penalty on the `＊`.
+
 ### The words, from LRCLIB (0.16.0)
 
     orecchiante lyrics <recording> [-o <x.lrc>] [--title <title>] [--artist <artist>] [--force]
