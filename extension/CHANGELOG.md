@@ -24,6 +24,8 @@ Notable changes to Orecchiante (Dettato until 0.10.2) are recorded here, newest 
   <recording> --list [--query <words>]` lists the songs LRCLIB has for the title and artist, or for any
   words, and `--id <number>` fetches the one chosen (for Lily#'s list to choose from).
 - New in the package: an English speech model (facebook/wav2vec2-base-960h, Apache-2.0, 122 MB in 8-bit).
+- Renamed on the Marketplace from "Orecchiante Chord Chart Transcriber" to "Orecchiante Music Transcriber":
+  it writes more than a chord chart now. The extension's page says what it writes and how well.
 
 ## 0.17.0
 

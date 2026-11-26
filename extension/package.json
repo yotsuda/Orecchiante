@@ -1,7 +1,7 @@
 {
   "name": "orecchiante",
-  "displayName": "Orecchiante Chord Chart Transcriber",
-  "description": "Reads a recording into an editable Lily# (.lys) chord chart: tempo, meter, key, bar lines and the chord of every bar, with the uncertain places marked. Open source (Apache-2.0). Runs locally on Windows; no cloud.",
+  "displayName": "Orecchiante Music Transcriber",
+  "description": "Automatic music transcription for Lily#: reads a recording into an editable Lily# (.lys) score: tempo, meter, key, bar lines, sections and chords, with bass, drum and voice staves and the song's words, the uncertain places marked. Open source (Apache-2.0). Runs locally on Windows.",
   "version": "0.18.0",
   "publisher": "yotsuda",
   "icon": "icon.png",
@@ -23,10 +23,11 @@
     "Other"
   ],
   "keywords": [
+    "music transcription",
     "chord recognition",
-    "transcription",
     "chord chart",
-    "audio",
+    "audio to score",
+    "ear training",
     "lilysharp"
   ],
   "main": "./extension.js",
