@@ -1250,6 +1250,16 @@ reader (`w2v-english-mm8.onnx`: facebook/wav2vec2-base-960h, Apache-2.0, 122 MB 
   (Japanese 4.5%; `scratch/align/miss_dist.py`). In Japanese it does harm (Python, dev: onsets 0.831 → 0.70
   to 0.81 with any reach and shift): there the alignment is nearer than the peaks, so English only.
 
+  **What else was tried for English (2026-11-26, Python, 21 songs, against 0.372 / 0.713 with the onsets
+  moved):** the large model (facebook/wav2vec2-large-960h-lv60-self, Apache-2.0, three times the size) 0.410 /
+  0.700, or 0.397 / 0.732 with the onsets moved, its notes found 75% (base 72%): not worth 300 MB and more. A
+  wildcard between lines for what the lyrics leave out (`LINEWILD`, with or without the melody's notes in it):
+  0.371 / 0.714, the wildcard hardly used. An onset on an unvoiced frame moved to the first voiced one
+  (`VOICE`): 0.370 to 0.374. **The songs differ most:** P085 finds 90.5% of its notes (Japanese is 87%), P089
+  68% — there the lyrics are not all that is sung and syllables are sung over two notes ("go" 62 → 65, "out"
+  late after it; `scratch/align/show_en.py`). What is left is the lyrics against the singing and the melismas,
+  not the model or the separation.
+
   (A first count had 0.152 and 0.607 for no words: that was `dur.py`'s own pYIN reading, `SRC=pyin`, not
   0.15.0's; corrected the same day.) Less than Japanese (0.29 → 0.59), and the onsets no better: 79% of the
   syllables start within 0.1 s of the truth's onset (90% in Japanese), and RWC's English lyrics leave out
