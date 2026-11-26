@@ -2,6 +2,15 @@
 
 Notable changes to Orecchiante (Dettato until 0.10.2) are recorded here, newest first.
 
+## 0.16.0
+
+- `orecchiante lyrics <recording>` writes `<name>.lrc` beside the recording: the song's lyrics from
+  LRCLIB (lrclib.net, a free and open lyrics database), with times on the lines when it has them. The
+  song is found by the title, the artist and the length in the recording's tags (the file's name when
+  there are none; `--title` and `--artist` to say otherwise), within 2 seconds of the recording's length.
+  Nothing goes on the network unless this command is run. The words are for the voice staff's
+  syllables, still to come.
+
 ## 0.15.0
 
 - A voice staff: when the recording has singing, the chart has a `vocal` part above the bass, the

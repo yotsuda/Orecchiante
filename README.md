@@ -1136,6 +1136,37 @@ chart keeps each bar's reading (`vocal`; SIDECAR.md).
   bass is read as the bass; parts with nothing in them are at -31.5 dB and below (`scratch/vocal/loud.py`).
 - `tools/melody_check.py`: We're An American Band, every bar the same as Python's.
 
+### The words, from LRCLIB (0.16.0)
+
+    orecchiante lyrics <recording> [-o <x.lrc>] [--title <title>] [--artist <artist>] [--force]
+
+writes `<name>.lrc` beside the recording: the song's lyrics from [LRCLIB](https://lrclib.net) ("a free and
+open lyrics database", no key; its API: https://lrclib.net/docs.md), with times on the lines when LRCLIB has
+them, for the voice staff's syllables (Shosa's request 1, step 2). The owner, 2026-11-26: most lyrics sites
+stop a reader from selecting the words, so pasting them is too hard for most users; the words come from
+LRCLIB, and only when this command is run. Nothing else in Orecchiante goes on the network.
+
+- **Found by** the title, the artist and the length in the recording's tags (Windows' property system: ID3,
+  MP4, FLAC and ASF tags, what Explorer shows), the title from the file's name when there is no tag, the
+  length from the samples when the tags have none; `--title` and `--artist` say otherwise. With an artist,
+  `/api/get` (LRCLIB's own match, within 2 s of the length; not by the album: an album LRCLIB does not have
+  finds nothing), then `/api/search` by title and artist, then by both as words; without one, `/api/search`
+  by the title's words. Only songs within 2 s of the recording are taken, those with times on their lines
+  first, then the nearest in length.
+- **The .lrc:** `[ti:]`, `[ar:]`, `[al:]`, `[length:]` and `[re:Orecchiante <version>, LRCLIB <id>]`, then the
+  lines as LRCLIB has them (`[mm:ss.xx]` before each when timed), UTF-8.
+- **Asking politely, as LRCLIB asks:** `User-Agent: Orecchiante/<version> (+https://github.com/yotsuda/Orecchiante)`,
+  one request at a time, 300 ms apart, at most 3 for a song; a 429 or 503 is waited out as its Retry-After
+  says (with up to 30% more), twice, and more than 60 s is given up.
+- **Exit codes:** 0 written, 1 none found (or LRCLIB says the song has no singing), 2 the arguments (an .lrc
+  already there without `--force`), 3 LRCLIB not reached. stdout has the .lrc's path alone, stderr a line
+  each request and the song found.
+- **Tried on the owner's recordings (2026-11-26, no tags but the file's name):** We're An American Band, 糸
+  (Bank Band) and 今宵の月のように each found timed lines (47, 27, 38). Without an artist the length alone
+  chooses, and 今宵の月のように found a cover (10-FEET, 254 s against 255) before the original; with
+  `--artist エレファントカシマシ` the original. With tags (mp3, m4a and flac made with ffmpeg) the title, the
+  artist, the album and the length are read from each.
+
 
 ### How a chart begins and ends
 

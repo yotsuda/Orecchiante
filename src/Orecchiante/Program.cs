@@ -15,6 +15,13 @@
 // the version, and with --json also the protocol (the arguments, the exit codes and .orecchiante.json: raised when
 // they change incompatibly), the commands and the kinds of recording read (Audio.Inputs).
 //
+//   orecchiante lyrics <recording> [-o <x.lrc>] [--title <title>] [--artist <artist>] [--force]
+//
+// writes <name>.lrc beside the recording: its lyrics from LRCLIB (Lyrics.cs), found by the title, the artist and the
+// length its tags give (the title from the file's name when it has none), with times on the lines when LRCLIB has
+// them. Exit codes: 0 written, 1 none found (or LRCLIB says there is no singing), 2 the arguments (an .lrc in the way
+// too), 3 LRCLIB was not reached. stdout has the .lrc's path alone.
+//
 // And for measuring, on one recording or a folder of them, each part to a file:
 //
 //   orecchiante read <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--lines <folder>] [--heard <folder>] [--voice <folder>|none] [--drums <folder>]
@@ -55,10 +62,11 @@ using System.Text;
 using Orecchiante;
 using Microsoft.ML.OnnxRuntime;
 
-const string version = "0.15.0";
+const string version = "0.16.0";
 const int protocol = 1;
 const string usage = "usage: orecchiante <recording> [-o <x.lys>] [--force] [--models <folder>] [--threads 8]\n"
                    + "       orecchiante --version [--json]\n"
+                   + "       orecchiante lyrics <recording> [-o <x.lrc>] [--title <title>] [--artist <artist>] [--force]\n"
                    + "       orecchiante read <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--lines <folder>] [--heard <folder>] [--voice <folder>|none] [--drums <folder>] [--bass <folder>]\n"
                    + "       orecchiante ears <a recording or a folder of them> --out <folder> [--models <folder>] [--threads 8] [--cqt]\n"
                    + "       orecchiante features <a recording or a folder of them> --out <folder>\n"
@@ -70,7 +78,7 @@ if (args.Length > 0 && args[0] == "--version")
 {
     static string List(string[] items) => "[" + string.Join(",", items.Select(i => $"\"{i}\"")) + "]";
     Console.WriteLine(args.Contains("--json")
-        ? $"{{\"version\":\"{version}\",\"protocol\":{protocol},\"commands\":{List(["read"])},\"inputs\":{List(Audio.Inputs)}}}"
+        ? $"{{\"version\":\"{version}\",\"protocol\":{protocol},\"commands\":{List(["read", "lyrics"])},\"inputs\":{List(Audio.Inputs)}}}"
         : version);
     return 0;
 }
@@ -231,6 +239,67 @@ static void DeleteFolder(string path)
     foreach (var item in folder.EnumerateFileSystemInfos("*", SearchOption.AllDirectories).Append(folder))
         if (item.Attributes.HasFlag(FileAttributes.ReadOnly)) item.Attributes &= ~FileAttributes.ReadOnly;
     folder.Delete(true);
+}
+
+if (args[0] == "lyrics")
+{
+    string? recording = null, lrcPath = null, title = null, artist = null;
+    bool force = false;
+    for (int i = 1; i < args.Length; i++)
+    {
+        string a = args[i];
+        if (a is "-o" or "--title" or "--artist")
+        {
+            if (++i >= args.Length) return Fail(2, $"{a} wants a value\n{usage}");
+            if (a == "-o") lrcPath = args[i];
+            else if (a == "--title") title = args[i];
+            else artist = args[i];
+        }
+        else if (a == "--force") force = true;
+        else if (a.StartsWith('-')) return Fail(2, $"unknown option {a}\n{usage}");
+        else if (recording != null) return Fail(2, $"one recording at a time: {recording}, {a}");
+        else recording = a;
+    }
+    if (recording == null) return Fail(2, "no recording\n" + usage);
+    if (!File.Exists(recording)) return Fail(2, $"no file {recording}");
+    if (!Audio.Reads(recording)) return Fail(2, $"{Path.GetFileName(recording)}: not a kind of recording this reads ({string.Join(", ", Audio.Inputs)})");
+    recording = Path.GetFullPath(recording);
+    lrcPath = Path.GetFullPath(lrcPath ?? Path.ChangeExtension(recording, ".lrc"));
+    if (!lrcPath.EndsWith(".lrc", StringComparison.OrdinalIgnoreCase)) return Fail(2, $"-o wants a .lrc file, not {lrcPath}");
+    if (File.Exists(lrcPath) && !force) return Fail(2, $"{lrcPath} is already there (--force to write over it)");
+
+    var tags = Tags.Of(recording);
+    title ??= tags.Title ?? Path.GetFileNameWithoutExtension(recording);
+    artist ??= tags.Artist;
+    double seconds = tags.Seconds;
+    if (seconds <= 0)
+    {
+        // No length in the tags: the samples' (LRCLIB matches on it).
+        try { var (mono, rate) = Audio.Read(recording); seconds = mono.Length / (double)rate; }
+        catch (Exception e) when (Unread(e)) { return Fail(1, $"{Path.GetFileName(recording)} was not read: {e.Message}"); }
+    }
+    int whole = (int)Math.Round(seconds);
+    Console.Error.WriteLine($"{title}" + (artist != null ? $" by {artist}" : "") + (tags.Album != null ? $" ({tags.Album})" : "") + $", {whole / 60}:{whole % 60:D2}");
+    Song? song;
+    try { song = Lyrics.Find(title, artist, seconds, version, Console.Error.WriteLine); }
+    catch (Lyrics.Unreached e) { return Fail(3, e.Message); }
+    if (song == null) return Fail(1, $"LRCLIB has no lyrics for {title}" + (artist != null ? $" by {artist}" : "") + $" within {Lyrics.Within:0} s of {whole / 60}:{whole % 60:D2}" + (artist == null ? " (--artist may find them)" : ""));
+    if (song.Instrumental || (song.Synced == null && song.Plain == null)) return Fail(1, $"LRCLIB says {song.Title} by {song.Artist} has no singing");
+    Console.Error.WriteLine($"  {song.Title} by {song.Artist}" + (song.Album != "" ? $" ({song.Album})" : "") + $", {song.Seconds:F0} s, "
+        + (song.Synced != null ? "lines with their times" : "words without times") + $" (LRCLIB {song.Id})");
+    try
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(lrcPath)!);
+        File.WriteAllText(lrcPath + ".part", Lyrics.Lrc(song, version), new UTF8Encoding(false));
+        File.Move(lrcPath + ".part", lrcPath, true);
+    }
+    catch (Exception e) when (Unread(e))
+    {
+        try { File.Delete(lrcPath + ".part"); } catch (Exception x) when (Unread(x)) { }
+        return Fail(1, $"{lrcPath} was not written: {e.Message}");
+    }
+    Console.WriteLine(lrcPath);
+    return 0;
 }
 
 if (args[0] is not ("read" or "ears" or "features" or "audio" or "drums" or "bass"))
