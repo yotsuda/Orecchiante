@@ -150,14 +150,10 @@ static class Writer
         if (vocal || bass) lines.Add("");
         if (kit)
         {
-            // the drum staff (Kit.Read): each groove once, a one-bar phrase a drum and the chart playing them together
-            // (the owner, 2026-11-23: a simpler way to write drums)
+            // the drum staff (Kit.Read): each groove once, a one-bar phrase of a steps chart (the owner, 2026-11-23: a
+            // simpler way to write drums; Lily#'s `steps`, Orecchiante's request 24, 0.18.0)
             lines.Add("part kit { clef percussion }");
-            foreach (var g in chart.Grooves ?? [])
-            {
-                foreach (var (phrase, line) in g.Phrases) lines.Add($"phrase {phrase} {{ {line} | }}");
-                lines.Add($"phrase {g.Name} {{ drums {{ {string.Join(" ", g.Phrases.Select(p => p.Phrase))} }} }}");
-            }
+            foreach (var g in chart.Grooves ?? []) lines.Add($"phrase {g.Name} {{ {g.Steps} }}");
             lines.Add("");
         }
         lines.Add(JoinNote);                         // above the first section (the owner, 2026-11-17)

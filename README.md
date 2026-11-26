@@ -1050,10 +1050,14 @@ with 3 segments at once, so its notes differ a little between two conversions, a
 
 When a recording has a bass, the chart has a bass staff under the chords (`part bass { instrument bass }`,
 `bass { … }` in every section); with drums, a drum staff (`part kit { clef percussion }`) written in the
-song's grooves: each once as one-bar phrases, a line a drum (`phrase hatsA { hh8 8 8 8 8 8 8 8 | }`,
-`phrase beatA { drums { hatsA backA kickA } }`), and each bar as its groove's name (`kit { beatA | % | % |
-beatB | }`), a bar near no groove written out (`drums { { hh8 8 … } { bd4 … } }`). The file beside the chart keeps each bar's reading (`bass`,
-`drums`; SIDECAR.md), for a bar put right in Lily# to be reported against (Lily# REQUESTS 23).
+song's grooves: each once as a one-bar phrase of a step chart (0.18.0, Lily#'s `steps`, Lily# REQUESTS 24:
+`phrase beatA { steps { hh "x.x. x.x. x.x. x.x." sn ".... x... .... x..." bd "x... ..x. x.x. ...." } }`, a
+character a 16th, a beat four of them; in 6/8 `steps 4.` and six, the grid's four on 0, 2, 3 and 4 of them),
+and each bar as its groove's name (`kit { beatA | % | % | beatB | }`), a bar near no groove the same chart
+inline. Until 0.17.0 a groove was three phrases of lengths (`phrase hatsA { hh8 8 8 8 8 8 8 8 | }`,
+`phrase beatA { drums { hatsA backA kickA } }`). The file beside the chart keeps each bar's reading (`bass`,
+`drums`, the latter as the rows of steps; SIDECAR.md), for a bar put right in Lily# to be reported against
+(Lily# REQUESTS 23).
 
 - **The bass** (`src/Orecchiante/Bass.cs`, its Python side `tools/bass.py`, which says each step): librosa's
   pYIN on the separated bass part (B0 to C4); notes where the rounded pitch changes and holds 0.12 s, or where

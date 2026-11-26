@@ -2,6 +2,15 @@
 
 Notable changes to Orecchiante (Dettato until 0.10.2) are recorded here, newest first.
 
+## 0.18.0
+
+- The drum staff is written as step charts: a groove is one line,
+  `phrase beatA { steps { hh "x.x. x.x. x.x. x.x." sn ".... x... .... x..." bd "x... ..x. x.x. ...." } }`,
+  a character a 16th and a beat four of them (in 6/8, `steps 4.` and six). A bar near no groove is the
+  same chart inline. Before, each groove was three phrases of note lengths and rests.
+- The file beside the chart keeps each bar's drums in the same rows (`"hh": "x.x. x.x. x.x. x.x."`).
+- Needs a Lily# with `steps` (the version after 0.17.1); an older one cannot read the drum staff.
+
 ## 0.17.0
 
 - The words on the voice staff: when `<name>.lrc` is beside the recording (`orecchiante lyrics` writes

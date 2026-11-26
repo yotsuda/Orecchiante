@@ -27,8 +27,8 @@ for f in [a for a in sys.argv[1:] if not a.startswith("-")]:
             if o["drums"] != n:
                 print(f"  bar {k + 1}: python {o['drums']}\n          .net   {n}")
     lys = Path(f).with_name(Path(f).name.replace(".orecchiante.json", ".lys")).read_text(encoding="utf-8")
-    net_grooves = re.findall(r"^phrase (\w+) \{ (.*) \| \}$", lys, re.M)
-    py_grooves = [(name, line) for g in ours["grooves"] for name, line in g["phrases"]]
+    net_grooves = re.findall(r"^phrase (beat[A-Z]+) \{ (steps.*) \}$", lys, re.M)
+    py_grooves = [(g["name"], g["chart"]) for g in ours["grooves"]]
     print(f"{Path(f).name}: bars read the same {s}/{len(net)}, grooves {'the same' if net_grooves == py_grooves else 'differ'}"
-          f" ({len(ours['grooves'])} python, {sum(1 for n, _ in net_grooves if n.startswith('hats') or n.startswith('back') or n.startswith('kick'))} phrases .net)")
+          f" ({len(py_grooves)} python, {len(net_grooves)} .net)")
 print(f"all: bars {same}/{total}")

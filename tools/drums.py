@@ -16,10 +16,13 @@ From the drum part Orecchiante separated (<name>.parts/drums.flac):
    other has not); then, three times, each bar goes to the nearest groove of its length within NEAR (the earlier on a
    tie), and each groove becomes the hits more than half its bars have. A groove of MIN_BARS bars or more is named and
    its bars are written as it (their own hits put aside); any other bar is written out.
-5. writing: a groove as three one-bar phrases, one a drum (hats `hh`, back `sn`, kick `bd`; a drum it never strikes
-   left out), and `drums { hats back kick }`; a bar written out the same way, inline. A hit lasts to the next of its
-   drum within the beat, rests fill the rest, lengths as tools/bass.py writes them; a drum after itself is its length
-   alone (`hh8 8 8`), and a name or a rest after the same length has no length (`r4 sn r sn`). In a section, a bar the same as the one before is `%`.
+5. writing (0.18.0, Lily#'s `steps`, Orecchiante's request 24): a groove as a one-bar phrase of a steps chart,
+   `phrase beatA { steps { hh "x.x. x.x. x.x. x.x." sn ".... x... .... x..." bd "x... ..x. x.x. ...." } }`, a row a
+   drum struck (`hh`, `sn`, `bd`; a drum it never strikes left out), a character a 16th (`x` struck, `.` not), a beat
+   a run of four; a bar near no groove the same chart inline. In 6/8 the beat is the dotted quarter (`steps 4.`) of six
+   16ths, the grid's four put on 0, 2, 3 and 4 of them (SIX: the 8ths fall nearest the second and fourth). A bar of no
+   hits is rests. In a section, a bar the same as the one before is `%`. Each bar's `drums` in the file beside the
+   chart: {drum: its row}.
 6. drums heard (else no staff): the drum part's mean square within 30 dB of the recording's (Kit.HeardDb says why).
    .venv/Scripts/python tools/drums.py <drums.flac> <x.orecchiante.json>      (the grooves and each bar)
 """
@@ -34,7 +37,8 @@ GAP = 3
 KICK, HAT, SNARE, WIRES = 0.5, 6.0, 0.7, 0.85
 FLOOR, SCALE_MIN = 6.0, 12.0
 NEAR, MIN_BARS, ROUNDS = 4, 3, 3
-DRUMS = (("hh", "hats"), ("sn", "back"), ("bd", "kick"))
+DRUMS = ("hh", "sn", "bd")
+SIX = (0, 2, 3, 4)          # 6/8: the grid's four 16ths of a dotted quarter, among its six
 
 sys.path.insert(0, str(Path(__file__).parent))
 import bass  # noqa: E402  (the grid and the written lengths)
@@ -114,35 +118,27 @@ def grooves(sets, lens):
     return [index.get(a, -1) for a in assign], [pats[g] for g in keep]
 
 
-def line_music(starts, n16, name):
-    """One drum's line of a bar (step 5): each hit to the next within its beat, rests between, written short."""
-    toks, pos = [], 0
-    for n, a in enumerate(starts):
-        if a > pos:
-            toks += [("r", d) for d in bass.pieces(pos, a - pos)]
-        end = min(starts[n + 1] if n + 1 < len(starts) else n16, (a // 4 + 1) * 4)
-        toks += [(name, d) for d in bass.pieces(a, end - a)]
-        pos = end
-    if pos < n16:
-        toks += [("r", d) for d in bass.pieces(pos, n16 - pos)]
-    out, last = [], (None, None)
-    for i, (nm, d) in enumerate(toks):
-        # a drum after itself is its length alone (`hh8 8 8`); a name keeps its length off when the length is the last one
-        same = nm != "r" and nm == last[0]
-        text = bass.DUR[d] if same else nm + ("" if i > 0 and d == last[1] else bass.DUR[d])
-        out.append(text)
-        last = (nm, d)
-    return " ".join(out)
+def step_row(starts, n16, six=False):
+    """One drum's row of a bar (step 5): a character a 16th, a beat a run of four (six in 6/8)."""
+    beats = [["."] * (6 if six else 4) for _ in range(n16 // 4)]
+    for q in starts:
+        beats[q // 4][SIX[q % 4] if six else q % 4] = "x"
+    return " ".join("".join(b) for b in beats)
 
 
-def lines_of(hitset, n16):
-    """{drum: its line} for the drums struck (step 5)."""
+def lines_of(hitset, n16, six=False):
+    """{drum: its row} for the drums struck (step 5)."""
     out = {}
-    for drum, _ in DRUMS:
+    for drum in DRUMS:
         starts = sorted(q for q, d in hitset if d == drum)
         if starts:
-            out[drum] = line_music(starts, n16, drum)
+            out[drum] = step_row(starts, n16, six)
     return out
+
+
+def chart_of(rows, six=False):
+    """The steps chart of a bar's rows (step 5)."""
+    return f"steps{' 4.' if six else ''} {{ " + " ".join(f'{d} "{rows[d]}"' for d in DRUMS if d in rows) + " }"
 
 
 def rest_bar(n16):
@@ -159,10 +155,11 @@ def letters(i):
 
 
 def read(flac, side):
-    """{"grooves": [{"name", "phrases": [(phrase name, line)], "chart"}], "bars": [{"kit": the bar's text in the
-    staff, "drums": {drum: the line as read}}]}."""
+    """{"grooves": [{"name", "chart"}], "bars": [{"kit": the bar's text in the staff, "drums": {drum: the row as
+    read}}]}."""
     r = rises(flac)
     bars = side["bars"]
+    six = side.get("time") == "6/8"
     slots, where = bass.slots_of(bars)
     h = hits(r, slots[:-1])
     sets = [set() for _ in bars]
@@ -175,18 +172,16 @@ def read(flac, side):
     named = []
     for g, (n, p) in enumerate(pats):
         tag = letters(g)
-        ls = lines_of(p, n)
-        phrases = [(f"{word}{tag}", ls[drum]) for drum, word in DRUMS if drum in ls]
-        chart = f"drums {{ {' '.join(name for name, _ in phrases)} }}" if phrases else None
-        named.append({"name": f"beat{tag}", "phrases": phrases, "chart": chart, "rest": rest_bar(n)})
+        ls = lines_of(p, n, six)
+        named.append({"name": f"beat{tag}", "chart": chart_of(ls, six) if ls else None, "rest": rest_bar(n)})
     out = []
     for k in range(len(bars)):
-        raw = lines_of(sets[k], lens[k])
+        raw = lines_of(sets[k], lens[k], six)
         if assign[k] >= 0:
             g = named[assign[k]]
             kit = g["name"] if g["chart"] else g["rest"]
         elif raw:
-            kit = "drums { " + " ".join("{ " + raw[d] + " }" for d, _ in DRUMS if d in raw) + " }"
+            kit = chart_of(raw, six)
         else:
             kit = rest_bar(lens[k])
         out.append({"kit": kit, "drums": raw})
@@ -197,8 +192,6 @@ if __name__ == "__main__":
     side = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
     res = read(sys.argv[1], side)
     for g in res["grooves"]:
-        for name, line in g["phrases"]:
-            print(f"phrase {name} {{ {line} | }}")
         print(f"phrase {g['name']} {{ {g['chart']} }}")
     for k, b in enumerate(res["bars"]):
         print(k + 1, b["kit"])
