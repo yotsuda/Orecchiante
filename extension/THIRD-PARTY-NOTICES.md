@@ -132,6 +132,16 @@ reazon-research/japanese-wav2vec2-base-rs35kh, written out as ONNX with only its
 Published by reazon-research under the Apache License, Version 2.0 — the license of Orecchiante itself, whose
 text is in `LICENSE`. The model was changed as said above.
 
+## wav2vec 2.0 (English)
+
+`bin/w2v-english-mm8.onnx` — hears which letter is being sung, to put a song's words in English to its notes.
+It is facebook/wav2vec2-base-960h, written out as ONNX with only its outputs for the letters, the apostrophe and
+the word break kept (after the softmax over all of them), and with its matrix products held in 8-bit integers;
+otherwise unchanged. <https://huggingface.co/facebook/wav2vec2-base-960h>
+
+Published by Facebook (Meta AI) under the Apache License, Version 2.0 — the license of Orecchiante itself,
+whose text is in `LICENSE`. The model was changed as said above.
+
 ## NMeCab
 
 `bin/LibNMeCab.dll` — cuts Japanese words and reads them in kana (the words of a song, for the model above).

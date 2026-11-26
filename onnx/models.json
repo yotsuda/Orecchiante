@@ -40,6 +40,14 @@
       "url": "https://github.com/yotsuda/Orecchiante/releases/download/models-1/reazon-kana-mm8.onnx",
       "source": "reazon-research/japanese-wav2vec2-base-rs35kh, the kana's columns, matrix products in int8 (https://huggingface.co/reazon-research/japanese-wav2vec2-base-rs35kh; tools/d2/reazon_onnx.py)",
       "license": "Apache-2.0"
+    },
+    {
+      "file": "w2v-english-mm8.onnx",
+      "bytes": 121990732,
+      "sha256": "de516dac2b7181aad2960a191ff25c1f1df9dfa8d70016657eb0a3ebc99716ba",
+      "url": "https://github.com/yotsuda/Orecchiante/releases/download/models-1/w2v-english-mm8.onnx",
+      "source": "facebook/wav2vec2-base-960h, the letters' columns, matrix products in int8 (https://huggingface.co/facebook/wav2vec2-base-960h; tools/d2/english_onnx.py)",
+      "license": "Apache-2.0"
     }
   ]
 }

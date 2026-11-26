@@ -12,6 +12,11 @@ Notable changes to Orecchiante (Dettato until 0.10.2) are recorded here, newest 
 - Fixed: in 6/8 the voice and bass staves (and a drum bar of rests) were a half note long a bar, not a
   dotted half; each dotted quarter now holds its six 16ths.
 - Needs a Lily# with `steps` (the version after 0.17.1); an older one cannot read the drum staff.
+- The words on the voice staff in English too: when `<name>.lrc` beside the recording is in English, its
+  words are cut in syllables and put to the separated vocals, a syllable a note (`Lit- tle~Rock` under
+  the voice staff, sung in English). On RWC's 21 English songs the bars with the right number of notes
+  go from 15% to 37%, and 66% of the notes start on the right 16th (61% before).
+- New in the package: an English speech model (facebook/wav2vec2-base-960h, Apache-2.0, 122 MB in 8-bit).
 
 ## 0.17.0
 

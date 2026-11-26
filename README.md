@@ -1210,15 +1210,14 @@ staff's notes are the words' (`src/Orecchiante/Words.cs`, `Kana.cs`; `Melody.Rea
 | bars whose onsets are all the truth's | 0.141 → **0.399** | 0.180 → **0.472** |
 
 - 今宵の月のように with LRCLIB's words: 418 morae, 407 syllables in `lysc timeline`'s `sung`; the chart 86 s
-  (4:14), `lysc check` clean of the words. A song whose words are English keeps "la" unless the English model
-  is there (below).
+  (4:14), `lysc check` clean of the words. Words in English: below.
 
-### The words in English (2026-11-26, the model not in the package yet)
+### The words in English (0.18.0)
 
-Words in English are put to the voice the same way, a syllable a note, when the English model is beside the
+Words in English are put to the voice the same way, a syllable a note, with the English model beside the
 reader (`w2v-english-mm8.onnx`: facebook/wav2vec2-base-960h, Apache-2.0, 122 MB in 8-bit,
-`tools/d2/english_onnx.py`; not in `onnx/models.json`, so not in the package, until the owner decides on the
-size). With none, English words are sung on "la" as before.
+`tools/d2/english_onnx.py`; in `onnx/models.json` and the package, the owner's decision of 2026-11-26 — the
+.vsix 340 MB, 260 MB without it). Without it (a reader run from elsewhere), English words are sung on "la" as before.
 
 - **The syllables** (`English.cs`, its Python side `scratch/align/syl.py`): by the spelling alone, no
   dictionary — the vowel groups (y after a consonant counts), less a silent e (love, loves, loved; not
