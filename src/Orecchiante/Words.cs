@@ -189,7 +189,9 @@ static partial class Words
             var pitches = new List<double>();
             for (int j = a; j < end; j++) if (voiced[j]) pitches.Add(69 + 12 * Math.Log2(f0[j] / 440));
             double midi = pitches.Count > 0 ? Median(pitches) : 60.0;
-            notes.Add(new Note(t, Math.Max(end * (double)HHop / HRate, t + 0.03), (int)Math.Round(midi, MidpointRounding.ToEven), syllable));
+            // printed one way and sung another (Mora.Shown): Lily#'s reading, `Ah[あぁ]`, `は[わ]`
+            string label = m.Shown != null ? $"{m.Shown}[{syllable}]" : syllable;
+            notes.Add(new Note(t, Math.Max(end * (double)HHop / HRate, t + 0.03), (int)Math.Round(midi, MidpointRounding.ToEven), label));
         }
         return notes;
     }
