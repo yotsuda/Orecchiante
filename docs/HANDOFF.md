@@ -15,7 +15,7 @@
 
 **`orecchiante <録音> [-o <x.lys>] [--force]` が、mp3・m4a・mp4・aac・flac・wma・wav から `.lys` と `.orecchiante.json` を録音の隣に書く**
 （Python なし。RWC_P001 の mp3 で 6.3 秒）。配る形は .NET＋ONNX の実行ファイルを VS Code 拡張に入れる（Calamo と同じ形）。
-**拡張 `yotsuda.orecchiante` 0.18.0 は Marketplace に出ている**（2026-11-27、タグ `v0.18.0` で。win32-x64・darwin-arm64・darwin-x64 の 3 つ、340〜346 MB を Marketplace は受けた。載るまで 1 つ 13〜20 分。0.14.0〜0.17.0 は出さずに飛ばした。各版の中身は `extension/CHANGELOG.md`、`extension/`・`tools/deploy-extension.ps1`。Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
+**拡張 `yotsuda.orecchiante` 0.18.0 は Marketplace に出ている**（2026-11-27、タグ `v0.18.0` で。win32-x64・darwin-arm64・darwin-x64 の 3 つ、340〜346 MB を Marketplace は受けた。載るまで 1 つ 13〜20 分。0.14.0〜0.17.0 は出さずに飛ばした。**次の版に入るもの（CHANGELOG は版を上げるときに）:** 説明文「…on Windows and macOS」、弱起の和音を 1 拍ずつ（`Writer.Slots` の回避を外した＝Lily# 依頼 3、前は 4/4 の 3 拍の弱起に和音が 2 つあると最後の 1 つだけ）。各版の中身は `extension/CHANGELOG.md`、`extension/`・`tools/deploy-extension.ps1`。Lily# とは別の拡張）。**コマンドはない**: メニューは Lily# の
 「Convert Recording to Lily# (.lys)… (Preview)」で、Lily# が `ext.activate()` で `{path, version, protocol, inputs}` を受け取る。**Lily# のメニューからの変換はオーナーが確かめた（2026-11-20「すべて OK」）。** Lily# の公開版は v0.17.0 から変換メニューを持つ。
 
 ### コマンドと入力（D3。`Program.cs`・`Audio.cs`。README の「A recording as it comes」、Lily# 向けは便りの §2a）

@@ -181,6 +181,26 @@ public class WriterTests
 
     [Fact]
     public void Quoted_escapes_as_json() => Assert.Equal("\"a\\\"b\\\\c\\n\\u3042\"", Writer.Quoted("a\"b\\c\nあ"));
+
+    [Fact]
+    public void A_pickup_is_written_a_chord_a_beat()
+    {
+        // three beats of 4/4 before the first bar, G for two and G7 for one: Lily# counts a pickup's slots by its own beats
+        // (Lily#'s request 3, c9f060dc8; before it, Orecchiante wrote the last chord alone)
+        static Chord C(string name, double start, double end) => new() { Name = name, Start = start, End = end };
+        var chart = new Chart
+        {
+            Audio = "x.wav", Bpm = 120, Form = ["Pickup", "A"],
+            Bars =
+            [
+                new Bar { Number = 0, Pickup = 3, Section = "Pickup", BarOfSection = 1, Start = 0, End = 1.5, Chords = [C("G", 0, 1), C("G7", 1, 1.5)] },
+                new Bar { Number = 1, Section = "A", BarOfSection = 1, Start = 1.5, End = 3.5, Chords = [C("C", 1.5, 3.5)] },
+            ],
+        };
+        string lys = Writer.Lys(chart, "t", _ => null);
+        Assert.Contains("  partial 2.\n", lys);
+        Assert.Contains("\n    G . G7 |\n", lys);
+    }
 }
 
 public class WavTests

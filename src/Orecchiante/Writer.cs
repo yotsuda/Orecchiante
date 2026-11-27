@@ -45,10 +45,8 @@ static class Writer
         {
             int brief = said[0].Pickup;
             int n = said[0].Meter == "2/4" ? 2 : said[0].Meter == "3/4" ? 3 : beats;   // a bar of 2/4 or 3/4 (Reader.ShortMeters)
+            // a pickup's slots are its own beats (Lily#'s request 3, c9f060dc8: three beats of 4/4 written a chord a beat)
             var names = BeatNames(said[0], brief != 0 ? brief : n);
-            // Lily# fits a bar's slots to the meter's beats, a short bar's too: three beats of 4/4 cannot be
-            // written a chord a beat. The chord that leads into the first bar stands for them.
-            if (brief != 0 && names.Distinct().Count() > 1 && beats % brief != 0) names = [names[^1]];
             var marks = names.Select((name, i) => i == 0 || name != names[i - 1] ? name : ".").ToArray();
             var doubts = new Dictionary<string, string>();
             foreach (string name in names.Distinct())
