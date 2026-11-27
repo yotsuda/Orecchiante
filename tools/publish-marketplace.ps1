@@ -1,10 +1,10 @@
 param(
     [Parameter(Mandatory)][string[]]$Vsix,     # the packed VSIX files, named orecchiante-<target>-<version>.vsix
-    [int]$TimeoutMinutes = 30,                 # how long one target may take to appear on the Marketplace
+    [int]$TimeoutMinutes = 60,                 # how long one target may take to appear on the Marketplace
     [switch]$DryRun                            # say what would be published, and publish nothing
 )
 # Publishes VSIX files to the Marketplace ONE AT A TIME, each only after the one before it is listed
-# (Calamo's script; Orecchiante has one target, win32-x64; the waiting is what tells a release it really arrived).
+# (Calamo's script; Orecchiante's targets are win32-x64, darwin-arm64 and darwin-x64; the waiting is what tells a release it really arrived).
 #
 # `vsce publish` answering "Published" means the upload was accepted, not that the version is listed
 # (Cantoria 0.4.0: three targets said "Published", two were never listed). So the listing is what is
@@ -39,13 +39,16 @@ foreach ($file in $Vsix) {
     npx --yes @vscode/vsce publish --packagePath $item.FullName
     if ($LASTEXITCODE -ne 0) { $failed += $target; continue }
 
-    $deadline = (Get-Date).AddMinutes($TimeoutMinutes)
-    while (-not (Test-Listed $version $target)) {
-        if ((Get-Date) -gt $deadline) { break }
+    # A stopwatch, not the clock: 0.18.0's darwin-x64 gave up after 10 minutes of a 30-minute wait (the runner's
+    # clock jumped?) and was listed 20 minutes after it was accepted. Listing took 13 to 20 minutes for each target.
+    $watch = [Diagnostics.Stopwatch]::StartNew()
+    while (-not ($listed = Test-Listed $version $target)) {
+        if ($watch.Elapsed.TotalMinutes -gt $TimeoutMinutes) { break }
         Start-Sleep -Seconds 30
     }
-    if (Test-Listed $version $target) { "$version $target is listed" }
-    else { Write-Host "$version $target was accepted but is not listed after $TimeoutMinutes minutes"; $failed += $target }
+    $minutes = [int]$watch.Elapsed.TotalMinutes
+    if ($listed) { "$version $target is listed ($minutes minutes)" }
+    else { Write-Host "$version $target was accepted but is not listed after $minutes minutes"; $failed += $target }
 }
 if ($failed) { throw "not listed: $($failed -join ', ')" }
 $global:LASTEXITCODE = 0
