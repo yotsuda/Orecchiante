@@ -417,9 +417,9 @@ if (args[0] == "words")
             Console.Error.WriteLine($"{id}: {heard.Count} notes heard, {clock.Elapsed.TotalSeconds:F1} s");
             continue;
         }
-        // --heard: the lyrics only choose the songs; the words are heard (Words.Heard), as a conversion without words does
+        // --heard: the lyrics only choose the songs and the model (English: English.Model); the words are heard
+        // (Words.Heard), as a conversion without words does
         bool hear = args.Contains("--heard");
-        if (hear && english) continue;
         var sung = new Melody.Sung(english ? englishModel! : model, [.. Resample.To(part, Words.Rate, partRate).Select(x => (float)x)], morae, english, hear);
         var notes = Melody.WordsOf(Resample.To(part, Features.Rate, partRate), sung);
         File.WriteAllText(Path.Combine(outAt, id + ".json"), "[" + string.Join(",\n", notes.Select(n => $"[{R(n.On)}, {R(n.Off)}, {n.Midi}, {Writer.Quoted(n.Syllable)}]")) + "]\n", new UTF8Encoding(false));
@@ -494,14 +494,17 @@ if (args[0] is not ("read" or "ears" or "features" or "audio" or "drums" or "bas
                 Console.Error.WriteLine($"{Path.GetFileName(lrc)}: {wordsMorae.Count} {(english ? "syllables" : "morae")} to put to the voice");
             }
         }
-        // No words to put to the voice, a title in Japanese: the model hears the words, to place the notes only (they sing
-        // "ら" as before: half the kana it hears are wrong). README "The words heard" (Shosa's request 1 ③, 2026-11-28).
-        if (wordsModel == null && Writer.Japanese(Path.GetFileNameWithoutExtension(recording)) && File.Exists(Path.Combine(modelsAt, Words.Model)))
+        // No words to put to the voice: a model hears the words, to place the notes only (they sing "ら" or "la" as
+        // before: half the kana it hears are wrong). A title in Japanese, the kana model; else the English one.
+        // README "The words heard" (Shosa's request 1 ③, 2026-11-28).
+        bool japaneseTitle = Writer.Japanese(Path.GetFileNameWithoutExtension(recording));
+        string hearing = japaneseTitle ? Words.Model : English.Model;
+        if (wordsModel == null && File.Exists(Path.Combine(modelsAt, hearing)))
         {
-            try { wordsModel = new InferenceSession(Path.Combine(modelsAt, Words.Model), new SessionOptions { IntraOpNumThreads = threads }); }
-            catch (Exception e) { return Fail(3, $"the model {Words.Model} did not open ({e.Message.Trim()})"); }
-            wordsHeard = true;
-            Console.Error.WriteLine("no words to put to the voice: the notes are placed by the words heard, and sung on \"ら\"");
+            try { wordsModel = new InferenceSession(Path.Combine(modelsAt, hearing), new SessionOptions { IntraOpNumThreads = threads }); }
+            catch (Exception e) { return Fail(3, $"the model {hearing} did not open ({e.Message.Trim()})"); }
+            (wordsHeard, wordsEnglish) = (true, !japaneseTitle);
+            Console.Error.WriteLine("no words to put to the voice: the notes are placed by the words heard, and sung on " + (japaneseTitle ? "\"ら\"" : "\"la\""));
         }
         var chart = Read(recording, Console.Error.WriteLine, partsMade);
         // The recording as the chart finds it: its file name beside the chart, else the way there from the chart's

@@ -63,8 +63,9 @@ static partial class Words
     /// <summary>The words as the model hears them, with no lyrics (Shosa's request 1 ③, 2026-11-28): the likeliest token
     /// every frame, a repeat once, no blank, cut in morae. Half the kana are wrong (RWC-P 51-80: 0.48 of the kana, 0.30
     /// of the vowels), so they are not written: the alignment of them only places the notes, a syllable each
-    /// (README "The words heard").</summary>
-    public static List<Mora> Heard((float[,] LogP, string[] Tokens) emitted)
+    /// (README "The words heard"). English: the English model's letters, its word breaks "|", cut in syllables by
+    /// the spelling (English.Read).</summary>
+    public static List<Mora> Heard((float[,] LogP, string[] Tokens) emitted, bool english = false)
     {
         var (lp, tokens) = emitted;
         int T = lp.GetLength(0), C = lp.GetLength(1);
@@ -78,6 +79,7 @@ static partial class Words
             if (best != last && best != 0) heard.Append(tokens[best - 1]);
             last = best;
         }
+        if (english) return English.Read([heard.ToString().Replace("|", " ")]);
         return [.. Kana.Morae(heard.ToString().Replace("▁", "")).Select(m => new Mora(m))];
     }
 

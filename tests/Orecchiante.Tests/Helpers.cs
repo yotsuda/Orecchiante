@@ -185,6 +185,20 @@ public class HeardTests
         var morae = Words.Heard((lp, ["あ", "い", "ゃ", "ー"]));
         Assert.Equal(["あ", "いゃ", "ー"], morae.Select(m => m.Kana));
     }
+
+    [Fact]
+    public void English_words_heard_are_cut_in_syllables_at_the_word_breaks()
+    {
+        // columns: blank, B, A, Y, |, O, H; the English model's letters heard BABY|OH
+        float[,] lp =
+        {
+            { -9, 0, -9, -9, -9, -9, -9 }, { -9, -9, 0, -9, -9, -9, -9 }, { -9, 0, -9, -9, -9, -9, -9 },
+            { -9, -9, -9, 0, -9, -9, -9 }, { -9, -9, -9, -9, 0, -9, -9 }, { -9, -9, -9, -9, -9, 0, -9 }, { -9, -9, -9, -9, -9, -9, 0 },
+        };
+        var syllables = Words.Heard((lp, ["B", "A", "Y", "|", "O", "H"]), english: true);
+        Assert.Equal(["BA", "BY", "OH"], syllables.Select(m => m.Kana));
+        Assert.Equal([false, true, false], syllables.Select(m => m.Joined));
+    }
 }
 
 public class WriterTests

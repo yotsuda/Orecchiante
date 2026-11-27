@@ -15,7 +15,7 @@ static class Melody
 
     /// <summary>What puts the words to the voice (Words.Align): the model, the vocals at Words.Rate, the words (English:
     /// English syllables and English.Model). Heard: no words, the model hears them (Words.Heard) to place the notes, and
-    /// the notes sing "ら" as without words.</summary>
+    /// the notes sing "ら" or "la" as without words.</summary>
     public sealed record Sung(Microsoft.ML.OnnxRuntime.InferenceSession Model, float[] Vocals, List<Mora> Morae, bool English = false, bool Heard = false);
 
     /// <summary>Each bar's music (Bar.Vocal) and the part's instrument (Chart.Singer) from the vocal part at 22050 Hz;
@@ -39,7 +39,7 @@ static class Melody
     {
         double loud = Percentile(h.Db, 95);
         var emitted = sung.Heard ? Words.Emit(sung.Model, sung.Vocals) : ((float[,], string[])?)null;
-        var morae = emitted is { } e ? Words.Heard(e) : sung.Morae;
+        var morae = emitted is { } e ? Words.Heard(e, sung.English) : sung.Morae;
         return Words.Align(sung.Model, sung.Vocals, h.F0, h.Voiced, [.. h.Db.Select(d => d - loud)], h.Heard, morae, sung.English, h.Strength, emitted);
     }
 

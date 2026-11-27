@@ -1303,11 +1303,12 @@ reader (`w2v-english-mm8.onnx`: facebook/wav2vec2-base-960h, Apache-2.0, 122 MB 
 
 ### The words heard (after 0.18.0)
 
-Without words to put to the voice (no `.lrc`, or words neither Japanese nor English) and with a title in
-Japanese, the kana model hears the words (Shosa's request 1 ③, 2026-11-28): its likeliest token every
-20 ms, a repeat once, no blank (`Words.Heard`), and those kana go through the same alignment as lyrics. **They
-are not written**: half of them are wrong. The notes they place sing "ら" as before; what changes is where the
-notes are.
+Without words to put to the voice (no `.lrc`, or words neither Japanese nor English), a model hears the
+words (Shosa's request 1 ③, 2026-11-28): with a title in Japanese the kana model, else the English one. Its
+likeliest token every 20 ms, a repeat once, no blank (`Words.Heard`; English: the letters cut in syllables at
+its word breaks by the spelling, `English.Read`), and those go through the same alignment as lyrics. **They
+are not written**: half of them are wrong. The notes they place sing "ら" or "la" as before; what changes is
+where the notes are.
 
 - **How well it hears** (`scratch/align/hear.py`, the shipped model's output on RWC-P's separated vocals
   against RWC's lyrics in kana, ー and っ left out): with the blank as it is, as many kana heard as half the
@@ -1323,8 +1324,21 @@ notes are.
 | onset 16th F | 0.742 → **0.775** → 0.832 | 0.747 → **0.793** → 0.851 |
 
   Python (`align.py WORDS=words-heard`) said the same (0.351 / 0.776, 0.396 / 0.793). What it costs: the
-  model's 4 s on a song of 3.5 minutes, as with words. A title in English is left as before (the English model
-  heard without words is not measured).
+  model's 4 s on a song of 3.5 minutes, as with words.
+- **In English** (RWC-P's 21 English songs, as "The words in English"; nothing chosen on them, the blank's 4
+  nats are the kana's): the kana model hearing them does harm (bars 0.265 → 0.149, onsets 0.692 → 0.504), the
+  English model hearing them helps, on the odd and the even songs both:
+
+| | none → **heard** → words |
+|---|---|
+| bars with the truth's number of notes, 21 songs | 0.265 → **0.294** → 0.371 |
+| ... the odd ones, the even ones | 0.256 → **0.290**, 0.273 → **0.298** |
+| onset 16th F, 21 songs | 0.692 → **0.717** → 0.715 |
+
+  The whole run again with the Japanese songs (`notes/netheard2`): 0.292 and 0.717 in English (the run-to-run
+  wobble), 0.350 / 0.775 and 0.389 / 0.793 in Japanese, as above to the digit.
+  It hears more notes than are sung (8877 against 7592; none 7831): We're An American Band without its
+  `.lrc` sings 489 "la", `lysc check` clean of the words.
 
 ### The words, from LRCLIB (0.16.0)
 
