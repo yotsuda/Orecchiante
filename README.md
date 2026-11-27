@@ -1072,8 +1072,9 @@ write those four on the 1st, 3rd, 4th and 5th of its six 16ths (`Bass.Written`, 
   less; a note held over a bar line tied unless the part's onset strength there is 0.4 of the note's own or
   more. On the owner's ear-copied bass parts (DATASETS.md, the 85 even-numbered songs; scored as a score —
   bar, 16th, pitch, length — by `scratch/bass/grid.py`): **79% of the notes start on the right 16th, 68% have
-  the right pitch, 47% the right length too; 13% of the bars are right whole.** The test half (80 odd songs)
-  is not counted yet. The .NET reader is not the Python one to the letter (the part comes down to 22050 Hz by
+  the right pitch, 47% the right length too; 13% of the bars are right whole.** On the test half (80 odd songs,
+  not looked at; counted 2026-11-28, `read_pyin.py TUNE=1 STEADY=10 NAME=py10 test`, `post.py` for the onsets):
+  76%, 65%, 44% and 12%. The .NET reader is not the Python one to the letter (the part comes down to 22050 Hz by
   `Resample`, not soxr): `tools/bass_check.py` on 6 songs, 692 of 693 bars the same.
 - **The drums** (`Kit.cs`, `tools/drums.py`): on the separated drum part, the rise in dB of three bands (under
   150 Hz, 200 to 3000 Hz, from 6000 Hz) at each 16th: a bass drum where the low band rises half its song's
@@ -1299,6 +1300,31 @@ reader (`w2v-english-mm8.onnx`: facebook/wav2vec2-base-960h, Apache-2.0, 122 MB 
   what holds the words back.
 - We're An American Band with LRCLIB's words: 361 syllables, 337 in `lysc timeline`'s `sung`, `lysc check`
   clean. The Japanese words are as before (RWC P001 to P003 to the byte).
+
+### The words heard (after 0.18.0)
+
+Without words to put to the voice (no `.lrc`, or words neither Japanese nor English) and with a title in
+Japanese, the kana model hears the words (Shosa's request 1 ③, 2026-11-28): its likeliest token every
+20 ms, a repeat once, no blank (`Words.Heard`), and those kana go through the same alignment as lyrics. **They
+are not written**: half of them are wrong. The notes they place sing "ら" as before; what changes is where the
+notes are.
+
+- **How well it hears** (`scratch/align/hear.py`, the shipped model's output on RWC-P's separated vocals
+  against RWC's lyrics in kana, ー and っ left out): with the blank as it is, as many kana heard as half the
+  words and 0.68 of them wrong; the blank giving up 4 nats, chosen on 1-50's 31 whole lyrics (−2 0.56, −3
+  0.53, −4 0.52, −6 0.69): **0.48 of the kana wrong, 0.30 of the vowels** on 51-80 (not looked at). Too wrong
+  for a chart's words; the vowels, what a mouth shows, are right seven times in ten.
+- **Where the notes fall** (`orecchiante words … --heard`, `dur.py SRC=align`; the songs whose words are
+  Japanese, as "The words in the chart"):
+
+| | 1-50: none → **heard** → words | 51-80 (not looked at): none → **heard** → words |
+|---|---|---|
+| bars with the truth's number of notes | 0.294 → **0.350** → 0.589 | 0.326 → **0.389** → 0.638 |
+| onset 16th F | 0.742 → **0.775** → 0.832 | 0.747 → **0.793** → 0.851 |
+
+  Python (`align.py WORDS=words-heard`) said the same (0.351 / 0.776, 0.396 / 0.793). What it costs: the
+  model's 4 s on a song of 3.5 minutes, as with words. A title in English is left as before (the English model
+  heard without words is not measured).
 
 ### The words, from LRCLIB (0.16.0)
 

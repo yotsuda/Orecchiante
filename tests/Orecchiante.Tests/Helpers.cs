@@ -171,6 +171,22 @@ public class LyricsTests
     }
 }
 
+public class HeardTests
+{
+    [Fact]
+    public void The_words_are_heard_greedily_a_repeat_once_the_blank_giving_way()
+    {
+        // columns: blank, あ, い, ゃ, ー; a frame each row. Row 3: the blank likeliest by 1, but it gives up 4 (Words.HeardBlank)
+        float[,] lp =
+        {
+            { 0, -9, -9, -9, -9 }, { -9, 0, -9, -9, -9 }, { -9, 0, -9, -9, -9 },
+            { -1, -9, -2, -9, -9 }, { -9, -9, -9, 0, -9 }, { 0, -9, -9, -9, -9 }, { -9, -9, -9, -9, 0 },
+        };
+        var morae = Words.Heard((lp, ["あ", "い", "ゃ", "ー"]));
+        Assert.Equal(["あ", "いゃ", "ー"], morae.Select(m => m.Kana));
+    }
+}
+
 public class WriterTests
 {
     [Theory]

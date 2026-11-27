@@ -56,6 +56,31 @@ static partial class Words
         return (logp, tokens);
     }
 
+    /// <summary>What the blank's log probability gives up when the words are heard (Heard): fewest kana wrong on RWC-P
+    /// 1-50's whole lyrics (0: 0.68 of the kana wrong, as many heard as half the words; -4: 0.52; -6: 0.69).</summary>
+    const float HeardBlank = -4;
+
+    /// <summary>The words as the model hears them, with no lyrics (Shosa's request 1 ③, 2026-11-28): the likeliest token
+    /// every frame, a repeat once, no blank, cut in morae. Half the kana are wrong (RWC-P 51-80: 0.48 of the kana, 0.30
+    /// of the vowels), so they are not written: the alignment of them only places the notes, a syllable each
+    /// (README "The words heard").</summary>
+    public static List<Mora> Heard((float[,] LogP, string[] Tokens) emitted)
+    {
+        var (lp, tokens) = emitted;
+        int T = lp.GetLength(0), C = lp.GetLength(1);
+        var heard = new System.Text.StringBuilder();
+        int last = 0;
+        for (int t = 0; t < T; t++)
+        {
+            int best = 0;
+            float most = lp[t, 0] + HeardBlank;
+            for (int k = 1; k < C; k++) if (lp[t, k] > most) { most = lp[t, k]; best = k; }
+            if (best != last && best != 0) heard.Append(tokens[best - 1]);
+            last = best;
+        }
+        return [.. Kana.Morae(heard.ToString().Replace("▁", "")).Select(m => new Mora(m))];
+    }
+
     /// <summary>CTC forced alignment: e [T, C] log probabilities (column 0 the blank), y the targets' columns; each
     /// target's first frame. Ties as align.py's argmax: stay, then from the one before, then from two before.</summary>
     public static int[] Viterbi(double[,] e, int[] y)
@@ -108,9 +133,10 @@ static partial class Words
     /// the next of its word ends in "-" (Lily#'s `Hap- py`).</param>
     /// <param name="strength">The vocals' onset strength on f0's frames (64 mel bands to 8000 Hz): in English each
     /// syllable's onset moves to where the voice starts near it (Refine).</param>
-    public static List<Note> Align(InferenceSession model, float[] vocals16, double[] f0, bool[] voiced, double[] rmsDb, List<(double On, double Off, int Midi)> heard, List<Mora> morae, bool english = false, float[]? strength = null)
+    /// <param name="emitted">The model's output on these vocals when it is already made (Heard), else made here.</param>
+    public static List<Note> Align(InferenceSession model, float[] vocals16, double[] f0, bool[] voiced, double[] rmsDb, List<(double On, double Off, int Midi)> heard, List<Mora> morae, bool english = false, float[]? strength = null, (float[,] LogP, string[] Tokens)? emitted = null)
     {
-        var (lp, tokens) = Emit(model, vocals16);
+        var (lp, tokens) = emitted ?? Emit(model, vocals16);
         int T = lp.GetLength(0), K = tokens.Length;
         var index = new Dictionary<string, int>();
         for (int i = 0; i < K; i++) index[tokens[i]] = i + 1;

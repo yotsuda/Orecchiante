@@ -114,6 +114,7 @@ InferenceSession[] voiceModels = [];
 InferenceSession? wordsModel = null;            // with words to put to the voice (a .lrc beside the recording)
 List<Mora>? wordsMorae = null;
 bool wordsEnglish = false;                      // the words are English syllables (English.Model)
+bool wordsHeard = false;                        // no words: the model hears them to place the notes (Words.Heard)
 Song? wordsSong = null;
 string? linesFrom = null, heardFrom = null, voiceFrom = null, drumsFrom = null, bassFrom = null;     // voiceFrom "none": no singing heard; drumsFrom the same
 
@@ -239,10 +240,10 @@ Chart Read(string file, Action<string>? say = null, string? partsTo = null)
     rules += clock.Elapsed.TotalSeconds;
     if (vocalSamples != null)
     {
-        var sung = vocals16 != null ? new Melody.Sung(wordsModel!, vocals16, wordsMorae!, wordsEnglish) : null;
-        Stage(sung != null ? "the melody and its words" : "the melody");
+        var sung = vocals16 != null ? new Melody.Sung(wordsModel!, vocals16, wordsMorae ?? [], wordsEnglish, wordsHeard) : null;
+        Stage(sung is { Heard: false } ? "the melody and its words" : "the melody");
         Melody.Read(vocalSamples, chart, sung);
-        if (sung != null) chart.Words = wordsSong;
+        if (sung is { Heard: false }) chart.Words = wordsSong;
     }
     if (bassSamples != null)
     {
@@ -384,7 +385,7 @@ if (args[0] == "words")
     // For measuring: the words put to the voice (Melody.WordsOf) of separated vocals, <id>.parts/vocals.* in a folder,
     // with <id>.lrc or <id>.txt from --lyrics: <id>.json [[on, off, midi, syllable]] in --out (scratch/vocal/dur.py SRC=align reads them).
     string? from = args.Length > 1 ? args[1] : null, lyricsAt = Option("--lyrics"), outAt = Option("--out"), modelsAt = Option("--models");
-    if (from == null || lyricsAt == null || outAt == null) return Fail(2, "usage: orecchiante words <a folder of <id>.parts folders> --lyrics <folder> --out <folder> [--models <folder>] [--threads 8]");
+    if (from == null || lyricsAt == null || outAt == null) return Fail(2, "usage: orecchiante words <a folder of <id>.parts folders> --lyrics <folder> --out <folder> [--models <folder>] [--threads 8] [--none | --heard]");
     int threads = int.TryParse(Option("--threads"), out int t) ? t : 8;
     using var model = new InferenceSession(Path.Combine(modelsAt ?? AppContext.BaseDirectory, Words.Model), new SessionOptions { IntraOpNumThreads = threads });
     string englishAt = Path.Combine(modelsAt ?? AppContext.BaseDirectory, English.Model);
@@ -416,7 +417,10 @@ if (args[0] == "words")
             Console.Error.WriteLine($"{id}: {heard.Count} notes heard, {clock.Elapsed.TotalSeconds:F1} s");
             continue;
         }
-        var sung = new Melody.Sung(english ? englishModel! : model, [.. Resample.To(part, Words.Rate, partRate).Select(x => (float)x)], morae, english);
+        // --heard: the lyrics only choose the songs; the words are heard (Words.Heard), as a conversion without words does
+        bool hear = args.Contains("--heard");
+        if (hear && english) continue;
+        var sung = new Melody.Sung(english ? englishModel! : model, [.. Resample.To(part, Words.Rate, partRate).Select(x => (float)x)], morae, english, hear);
         var notes = Melody.WordsOf(Resample.To(part, Features.Rate, partRate), sung);
         File.WriteAllText(Path.Combine(outAt, id + ".json"), "[" + string.Join(",\n", notes.Select(n => $"[{R(n.On)}, {R(n.Off)}, {n.Midi}, {Writer.Quoted(n.Syllable)}]")) + "]\n", new UTF8Encoding(false));
         Console.Error.WriteLine($"{id}: {morae.Count} morae, {notes.Count} notes, {clock.Elapsed.TotalSeconds:F1} s");
@@ -489,6 +493,15 @@ if (args[0] is not ("read" or "ears" or "features" or "audio" or "drums" or "bas
                 (wordsMorae, wordsEnglish, wordsSong) = (english ? syllables : morae, english, Lyrics.FromLrc(lrc));
                 Console.Error.WriteLine($"{Path.GetFileName(lrc)}: {wordsMorae.Count} {(english ? "syllables" : "morae")} to put to the voice");
             }
+        }
+        // No words to put to the voice, a title in Japanese: the model hears the words, to place the notes only (they sing
+        // "ら" as before: half the kana it hears are wrong). README "The words heard" (Shosa's request 1 ③, 2026-11-28).
+        if (wordsModel == null && Writer.Japanese(Path.GetFileNameWithoutExtension(recording)) && File.Exists(Path.Combine(modelsAt, Words.Model)))
+        {
+            try { wordsModel = new InferenceSession(Path.Combine(modelsAt, Words.Model), new SessionOptions { IntraOpNumThreads = threads }); }
+            catch (Exception e) { return Fail(3, $"the model {Words.Model} did not open ({e.Message.Trim()})"); }
+            wordsHeard = true;
+            Console.Error.WriteLine("no words to put to the voice: the notes are placed by the words heard, and sung on \"ら\"");
         }
         var chart = Read(recording, Console.Error.WriteLine, partsMade);
         // The recording as the chart finds it: its file name beside the chart, else the way there from the chart's

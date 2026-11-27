@@ -14,8 +14,9 @@ static class Melody
     public const double HeardDb = -30;
 
     /// <summary>What puts the words to the voice (Words.Align): the model, the vocals at Words.Rate, the words (English:
-    /// English syllables and English.Model).</summary>
-    public sealed record Sung(Microsoft.ML.OnnxRuntime.InferenceSession Model, float[] Vocals, List<Mora> Morae, bool English = false);
+    /// English syllables and English.Model). Heard: no words, the model hears them (Words.Heard) to place the notes, and
+    /// the notes sing "ら" as without words.</summary>
+    public sealed record Sung(Microsoft.ML.OnnxRuntime.InferenceSession Model, float[] Vocals, List<Mora> Morae, bool English = false, bool Heard = false);
 
     /// <summary>Each bar's music (Bar.Vocal) and the part's instrument (Chart.Singer) from the vocal part at 22050 Hz;
     /// with words, the notes are the words' (Words.Align) and each bar's syllables are Bar.Lyrics.</summary>
@@ -37,7 +38,9 @@ static class Melody
     static List<Words.Note> WordsOf((double[] F0, bool[] Voiced, double[] Db, List<(double On, double Off, int Midi)> Heard, float[] Strength) h, Sung sung)
     {
         double loud = Percentile(h.Db, 95);
-        return Words.Align(sung.Model, sung.Vocals, h.F0, h.Voiced, [.. h.Db.Select(d => d - loud)], h.Heard, sung.Morae, sung.English, h.Strength);
+        var emitted = sung.Heard ? Words.Emit(sung.Model, sung.Vocals) : ((float[,], string[])?)null;
+        var morae = emitted is { } e ? Words.Heard(e) : sung.Morae;
+        return Words.Align(sung.Model, sung.Vocals, h.F0, h.Voiced, [.. h.Db.Select(d => d - loud)], h.Heard, morae, sung.English, h.Strength, emitted);
     }
 
     public static void Read(double[] part, Chart chart, Sung? sung = null)
@@ -52,7 +55,7 @@ static class Melody
         {
             var words = WordsOf(h, sung).Where(n => InBars(n.On)).ToList();
             chart.Singer = Instrument([.. words.Select(n => (n.On, n.Off, n.Midi))]);
-            placed = [.. Words.RoundOnto(slots, words).Select(x => (x.First, x.Last, x.Midi, (string?)x.Syllable))];
+            placed = [.. Words.RoundOnto(slots, words).Select(x => (x.First, x.Last, x.Midi, sung.Heard ? null : (string?)x.Syllable))];
         }
         else
         {
@@ -81,7 +84,7 @@ static class Melody
         for (int k = 0; k < bars.Count; k++)
         {
             bars[k].Vocal = Bass.BarMusic(perBar[k], lengths[k], names, up: 0, six: chart.Time == "6/8");
-            if (sung != null) bars[k].Lyrics = string.Join(" ", syllables[k]);
+            if (sung is { Heard: false }) bars[k].Lyrics = string.Join(" ", syllables[k]);
         }
     }
 
