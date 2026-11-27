@@ -1,0 +1,59 @@
+name: CI
+
+# On every push to a branch and every pull request: build the reader and run tests/Orecchiante.Tests: the helpers'
+# unit tests, and a recording made in the test read end to end by orecchiante.exe with the models (Recording.cs).
+# Windows, as the reader is (Media Foundation, the win-x64 build the extension carries).
+#
+# The models are not in the repository (onnx/models.json, release.yml): tools/fetch-models.ps1 fetches them from the
+# GitHub Release models-1, about 390 MB, kept in the Actions cache under models.json's hash so that only a change of
+# models.json fetches them again. No secret is used: a fork's pull request runs it as it is.
+
+on:
+  push:
+    branches: [ '**' ]
+    paths-ignore: [ 'docs/**', '**/*.md', 'scratch/**' ]
+  pull_request:
+    paths-ignore: [ 'docs/**', '**/*.md', 'scratch/**' ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Models from the cache
+        id: models
+        uses: actions/cache@v4
+        with:
+          path: onnx/*.onnx
+          key: models-${{ hashFiles('onnx/models.json') }}
+
+      - name: Models
+        # Checked by SHA-256 either way; fetched only when the cache did not have them.
+        run: pwsh -NoProfile -File tools/fetch-models.ps1
+
+      - name: Build
+        run: dotnet build tests/Orecchiante.Tests -c Release
+
+      - name: Test
+        run: dotnet test tests/Orecchiante.Tests -c Release --no-build --logger "trx;LogFileName=tests.trx" --logger "console;verbosity=normal"
+
+      - name: Keep the results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: tests/Orecchiante.Tests/TestResults/*.trx
+          if-no-files-found: ignore

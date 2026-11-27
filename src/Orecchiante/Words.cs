@@ -350,10 +350,10 @@ static partial class Words
         return timed.Count > 0 ? [.. timed.OrderBy(t => t.At).ThenBy(t => t.Order).Select(t => t.Text)] : plain;
     }
 
-    /// <summary>[mm:ss.xx] in seconds.</summary>
+    /// <summary>[mm:ss.xx] in seconds (or [mm:ss:xx], which LrcTime takes too: until 0.18.0 its hundredths were lost).</summary>
     internal static double Seconds(string tag)
     {
         var p = tag.Trim('[', ']', '<', '>').Split(':');
-        return int.Parse(p[0]) * 60 + double.Parse(p[1].Replace(':', '.'), System.Globalization.CultureInfo.InvariantCulture);
+        return int.Parse(p[0]) * 60 + double.Parse(string.Join('.', p[1..]), System.Globalization.CultureInfo.InvariantCulture);
     }
 }

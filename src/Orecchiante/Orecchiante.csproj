@@ -21,6 +21,10 @@
     <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
   </ItemGroup>
   <ItemGroup>
+    <!-- tests/Orecchiante.Tests reaches the internal helpers (Bass.Pieces, Words.Seconds, ...) -->
+    <InternalsVisibleTo Include="Orecchiante.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- what Sections weighs a bar line's cues with: written by scratch/xsc/dp.py with json, read by tools/read_chords.py too -->
     <EmbeddedResource Include="..\..\tools\sections_dp.json" LogicalName="sections_dp.json" />
   </ItemGroup>

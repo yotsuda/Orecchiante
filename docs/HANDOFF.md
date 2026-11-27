@@ -22,7 +22,7 @@
 
 - stdout は書いた `.lys` のパス 1 行、stderr は段階ごとに 1 行（0.8.12 からパートの分離の 5% ごとも。`Voice.Loudness` の `separated`）で失敗時は最後の行が `orecchiante: <理由>`。終了コード 0 書けた／1 録音が読めない／
   2 引数（`.lys` が既にある、を含む）／3 読み取り器自身。2 つのファイルは `.part` に書いてから置き換える。5 秒未満は読まない。
-- `orecchiante --version --json` → 版・`protocol` 1・`commands`・`inputs`（拡張が `bin\orecchiante.json` から返す）。版は `Program.cs` と `extension/package.json` の 2 か所。
+- `orecchiante --version --json` → 版・`protocol` 1・`commands`・`inputs`（拡張が `bin\orecchiante.json` から返す）。版は `Program.cs` と `extension/package.json` の 2 か所。**テストと CI（2026-11-27、オーナー「push したら CI test が動くように」）:** `dotnet test tests\Orecchiante.Tests -c Release`＝助け手の単体テスト（`Helpers.cs`）と、テストの中で合成した 16 小節（120、C G Am F、ベース・ドラム）を `orecchiante.exe` が通しで読む `Recording.cs`（`onnx/` のモデルが要る。`ORECCHIANTE_KEEP=1` で書いたものを残す）、49 件 約 10 秒。`.github/workflows/ci.yml` が push（ブランチ）と PR で windows-latest に走らせる（モデルは models.json のハッシュで Actions のキャッシュ）。見つけた誤り: `[mm:ss:xx]` の百分の一秒が落ちていた（`Words.Seconds`、直した）。
 - **wav 以外は Windows の Media Foundation（NAudio 2.2.1、MIT）で読み、エンコーダの足す頭の無音を `Audio.Lead` が取り除く**（合わせる相手は再生する側。`F:\Music` の 7 種すべて ffmpeg と 0 標本。細部は README の「A recording as it comes」）。
   58 分の録音も読める（残る大きいメモリ: `Features.Of` と Beat This! の段で各 +1.2 GB）。道具: `tools/heard_check.py`・`kinds_check.py`・`chrome_lag.py`。ffmpeg は PATH にある。
 
