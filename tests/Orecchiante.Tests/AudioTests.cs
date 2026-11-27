@@ -7,7 +7,7 @@ namespace Orecchiante.Tests;
 /// Windows, AudioToolbox on macOS) against a player's: the bars' seconds are to be the player's (README "A recording
 /// as it comes"). Data/chirp.wav is 1.5 s (44100 Hz, 16 bits, one channel) silent but for one chirp at sample 44100:
 /// 882 samples rising linearly from 200 to 5000 Hz, a Hann window, 16000 at most; the other files are it encoded by ffmpeg 7
-/// (2026-11-27: libmp3lame 128k with LAME's note, the same without it (-write_xing 0), ffmpeg's AAC in .m4a, FLAC).
+/// (2026-11-27: libmp3lame 128k with LAME's note, the same without it (-write_xing 0), LAME's varying rate -q:a 2 with its Xing note, ffmpeg's AAC in .m4a, FLAC).
 /// Expected is where ffmpeg's own decoding puts the chirp (as a browser does, measured when the files were made).</summary>
 public class AudioTests
 {
@@ -19,6 +19,7 @@ public class AudioTests
     [InlineData("chirp.flac", 0)]
     [InlineData("chirp.mp3", 0)]
     [InlineData("chirp-no-note.mp3", 1105)]
+    [InlineData("chirp-vbr.mp3", 0)]
     [InlineData("chirp.m4a", 0)]
     public void The_sound_begins_where_a_player_begins_it(string file, int expected)
     {
@@ -34,7 +35,7 @@ public class AudioTests
     {
         // only where ffmpeg is installed (this PC; not needed on the CI): the expected numbers above are ffmpeg's
         var (template, _) = Wav.Read(Data("chirp.wav"));
-        foreach (var (file, expected) in new[] { ("chirp.flac", 0), ("chirp.mp3", 0), ("chirp-no-note.mp3", 1105), ("chirp.m4a", 0) })
+        foreach (var (file, expected) in new[] { ("chirp.flac", 0), ("chirp.mp3", 0), ("chirp-no-note.mp3", 1105), ("chirp-vbr.mp3", 0), ("chirp.m4a", 0) })
         {
             if (Ffmpeg(Data(file)) is not { } decoded) return;
             Assert.True(Math.Abs(Lag(template, decoded) - expected) <= 1, $"{file}: ffmpeg {Lag(template, decoded)}");

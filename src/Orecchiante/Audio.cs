@@ -20,7 +20,16 @@ static class Audio
         if (Path.GetExtension(path).Equals(".wav", StringComparison.OrdinalIgnoreCase))
             try { return Wav.Read(path); }
             catch (Exception e) when (e is NotSupportedException or InvalidDataException or ArgumentException or IndexOutOfRangeException) { }      // (a .wav of another kind: the system may know it)
-        if (OperatingSystem.IsMacOS()) return Apple.Read(path);
+        if (OperatingSystem.IsMacOS())
+        {
+            var (samples, sampleRate) = Apple.Read(path);
+            int ahead = (int)Math.Min(Lead(path, sampleRate), samples.Length - 1);      // below 0: silence put in front
+            if (ahead == 0) return (samples, sampleRate);
+            var moved = new double[samples.Length - ahead];
+            if (ahead > 0) Array.Copy(samples, ahead, moved, 0, moved.Length);
+            else Array.Copy(samples, 0, moved, -ahead, samples.Length);
+            return (moved, sampleRate);
+        }
         if (!OperatingSystem.IsWindows()) throw new InvalidDataException("only a .wav is read on this system");
         try
         {
@@ -63,11 +72,12 @@ static class Audio
         }
     }
 
-    /// <summary>The samples Windows gives before the recording's own first one. An mp3 or AAC encoder puts some
-    /// silence in front, and the file says how much; a player that goes by that (a browser, ffmpeg) starts after
-    /// it, Media Foundation does not. The bars' seconds are to be the player's (README: measured on files ffmpeg wrote).
-    /// Below 0: Windows gives that many fewer than the player at the start (they are put back as silence).
-    /// 0 where the file does not say, or is not read as expected.</summary>
+    /// <summary>The samples the system's decoder gives before the recording's own first one. An mp3 or AAC encoder puts
+    /// some silence in front, and the file says how much; a player that goes by that (a browser, ffmpeg) starts after
+    /// it, Media Foundation does not, and AudioToolbox does for AAC but not for LAME's note in an mp3. The bars' seconds
+    /// are to be the player's (README: measured on files ffmpeg wrote; tests/Orecchiante.Tests/AudioTests.cs on both
+    /// systems). Below 0: the decoder gives that many fewer than the player at the start (they are put back as
+    /// silence). 0 where the file does not say, or is not read as expected.</summary>
     static int Lead(string path, int rate)
     {
         try
@@ -75,7 +85,14 @@ static class Audio
             using var file = File.OpenRead(path);
             return Path.GetExtension(path).ToLowerInvariant() switch
             {
-                ".mp3" => Mp3Lead(file),
+                ".mp3" when OperatingSystem.IsMacOS() => Mp3Note(file) switch { null => -529, { Delay: > 0 and < 3000 } n => n.Delay, _ => 0 },
+                ".mp3" => Mp3Note(file) switch
+                {
+                    null => -528,
+                    { Delay: > 0 and < 3000 } n => n.Frame + n.Delay + 1,
+                    { } n => n.Frame,
+                },
+                ".m4a" or ".mp4" when OperatingSystem.IsMacOS() => 0,      // (the edit list and iTunSMPB, Apple's own: gone by)
                 ".m4a" or ".mp4" => Mp4Lead(file, rate),
                 _ => 0,
             };
@@ -83,11 +100,17 @@ static class Audio
         catch (Exception e) when (e is IOException or ArgumentException or IndexOutOfRangeException or OverflowException) { return 0; }
     }
 
-    /// <summary>An mp3 whose first frame is the encoder's note and not sound: Windows gives that frame as silence
-    /// (when it says "Info": a constant bit rate), then the encoder's delay (in LAME's part of the note), then one
-    /// sample more. An mp3 with no note (as iTunes writes them) Windows gives 528 samples fewer at the start than
-    /// a browser and ffmpeg do, at 44100 and at 16000 Hz alike (MEASURED 2026-11-16 on the user's files, README).</summary>
-    static int Mp3Lead(Stream file)
+    /// <summary>The encoder's note an mp3's first frame may be in place of sound ("Xing", or "Info" for a constant bit
+    /// rate), or null when the first frame is sound (as iTunes writes them) or none is found: Frame, the samples of
+    /// that frame a decoder gives as silence (an "Info" frame's); Delay, the encoder's delay in LAME's part of the note
+    /// (0 without it). What the decoders make of it (MEASURED: Windows 2026-11-16 on the user's files, README;
+    /// macOS 2026-11-27 on the CI, AudioTests):
+    /// - Windows gives the Info frame as silence, then the encoder's delay, then one sample more (Frame + Delay + 1
+    ///   ahead of a player); with no note, 528 samples fewer at the start than a browser and ffmpeg, at 44100 and
+    ///   16000 Hz alike.
+    /// - macOS passes over the frame and the decoder's own 529 samples, not the encoder's delay (Delay ahead); with
+    ///   no note it passes over the 529 as well, which a player does not (529 fewer).</summary>
+    static (int Frame, int Delay)? Mp3Note(Stream file)
     {
         var head = new byte[10];
         file.ReadExactly(head);
@@ -115,17 +138,16 @@ static class Audio
             int version = b[i + 1] >> 3 & 3;      // 3: MPEG 1
             bool mono = b[i + 3] >> 6 == 3, crc = (b[i + 1] & 1) == 0;
             int note = i + 4 + (crc ? 2 : 0) + (version == 3 ? (mono ? 17 : 32) : (mono ? 9 : 17));
-            if (note + 8 > got) return 0;
+            if (note + 8 > got) return (0, 0);
             string id = System.Text.Encoding.ASCII.GetString(b, note, 4);
-            if (id is not ("Xing" or "Info")) return -528;      // the first frame is sound
+            if (id is not ("Xing" or "Info")) return null;      // the first frame is sound
             // (a note that says "Xing", as a file of varying bit rate has, Windows knows and passes over itself)
             int frame = id == "Xing" ? 0 : version == 3 ? 1152 : 576, flags = b[note + 7];
             int lame = note + 8 + ((flags & 1) != 0 ? 4 : 0) + ((flags & 2) != 0 ? 4 : 0) + ((flags & 4) != 0 ? 100 : 0) + ((flags & 8) != 0 ? 4 : 0);
-            if (lame + 24 > got) return frame;
-            int delay = b[lame + 21] << 4 | b[lame + 22] >> 4;
-            return delay is > 0 and < 3000 ? frame + delay + 1 : frame;
+            if (lame + 24 > got) return (frame, 0);
+            return (frame, b[lame + 21] << 4 | b[lame + 22] >> 4);
         }
-        return 0;
+        return (0, 0);
     }
 
     /// <summary>An MPEG-4 file whose sound track says where it begins (the first entry of its edit list): Windows
