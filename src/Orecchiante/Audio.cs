@@ -4,33 +4,24 @@ using NAudio.Wave;
 namespace Orecchiante;
 
 /// <summary>A recording's samples, whatever it is kept in: a plain .wav by this program's own reading (Wav),
-/// anything else by Windows' Media Foundation, which has the decoders (README: "A recording as it comes").</summary>
+/// anything else by the system's decoders: Windows' Media Foundation, macOS's AudioToolbox (Apple) (README: "A recording
+/// as it comes").</summary>
 static class Audio
 {
-    /// <summary>The kinds of file read, by extension (`orecchiante --version --json` lists them).</summary>
-    public static readonly string[] Inputs = ["wav", "mp3", "m4a", "mp4", "aac", "flac", "wma"];
+    /// <summary>The kinds of file read, by extension (`orecchiante --version --json` lists them): macOS has no WMA.</summary>
+    public static readonly string[] Inputs = OperatingSystem.IsWindows() ? ["wav", "mp3", "m4a", "mp4", "aac", "flac", "wma"]
+                                                                         : ["wav", "mp3", "m4a", "mp4", "aac", "flac"];
 
     public static bool Reads(string path) => Inputs.Contains(Path.GetExtension(path).TrimStart('.').ToLowerInvariant());
-
-    /// <summary>A .wav of 16 bits as FLAC, by Windows' own encoder: lossless and with nothing put before the first
-    /// sample (ffmpeg gives back the same samples), so a part's seconds are the recording's.</summary>
-    public static void Flac(string wav, string flac)
-    {
-        NAudio.MediaFoundation.MediaFoundationApi.Startup();
-        using var reader = new WaveFileReader(wav);
-        var type = MediaFoundationEncoder.GetOutputMediaTypes(NAudio.MediaFoundation.AudioSubtypes.MFAudioFormat_FLAC)
-            .FirstOrDefault(t => t.SampleRate == reader.WaveFormat.SampleRate && t.ChannelCount == reader.WaveFormat.Channels && t.BitsPerSample == 16)
-            ?? throw new IOException("Windows has no FLAC encoder for the parts");
-        using var encoder = new MediaFoundationEncoder(type);
-        encoder.Encode(flac, reader);
-    }
 
     /// <summary>The channels averaged, at the recording's own rate. InvalidDataException says why not, in words for the user.</summary>
     public static (double[] Mono, int Rate) Read(string path)
     {
         if (Path.GetExtension(path).Equals(".wav", StringComparison.OrdinalIgnoreCase))
             try { return Wav.Read(path); }
-            catch (Exception e) when (e is NotSupportedException or InvalidDataException or ArgumentException or IndexOutOfRangeException) { }      // (a .wav of another kind: Windows may know it)
+            catch (Exception e) when (e is NotSupportedException or InvalidDataException or ArgumentException or IndexOutOfRangeException) { }      // (a .wav of another kind: the system may know it)
+        if (OperatingSystem.IsMacOS()) return Apple.Read(path);
+        if (!OperatingSystem.IsWindows()) throw new InvalidDataException("only a .wav is read on this system");
         try
         {
             using var reader = new MediaFoundationReader(path, new MediaFoundationReader.MediaFoundationReaderSettings { RequestFloatOutput = true });

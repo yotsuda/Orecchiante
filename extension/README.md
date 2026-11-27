@@ -22,7 +22,7 @@ Install both.
 2. Lily# asks whether to fetch the song's words. If you say yes, it looks the song up in
    [LRCLIB](https://lrclib.net) (a free, open lyrics database) and lets you choose among the songs it
    finds, or search with other words.
-3. After about 45 seconds for a three-and-a-half-minute song (on a 24-core PC), `x.lys` opens. It is written beside the recording,
+3. After about 45 seconds for a three-and-a-half-minute song (on a 24-core Windows PC), `x.lys` opens. It is written beside the recording,
    with `x.orecchiante.json` (when each bar begins in the recording, and what was heard in it) and
    `x.parts\` (the recording separated into drums, bass, vocals, guitar, piano and the rest).
 4. Correct what it misheard. Lily# draws and plays the score as you edit, plays the recording beside
@@ -48,8 +48,9 @@ and length to LRCLIB, and only when you choose to fetch the words.
 
 ## Requirements
 
-- Windows x64.
-- A recording Windows can decode: mp3, m4a, mp4, aac, flac, wma or wav, of 5 seconds or more.
+- Windows x64, or macOS (Apple silicon or Intel).
+- A recording of 5 seconds or more: mp3, m4a, mp4, aac, flac or wav (and wma on Windows). On macOS, an m4a,
+  mp4 or aac recording is converted, but Lily# does not play it beside the score yet; mp3, flac and wav play on both.
 - A Lily# version that reads step charts (the one after 0.17.1).
 
 ## Licenses

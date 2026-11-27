@@ -496,22 +496,8 @@ if (args[0] is not ("read" or "ears" or "features" or "audio" or "drums" or "bas
         string chartFolder = Path.GetDirectoryName(chartPath)!;
         chart.Audio = Path.GetRelativePath(chartFolder, Path.GetFullPath(recording)).Replace('\\', '/');
         Console.Error.WriteLine("the parts");
-        // A second each, all at once. Windows' encoder now and then refuses one when several start together
-        // (MFCreateSinkWriterFromURL: ArgumentException, 2 of 190 songs, 2026-11-19): those are made again, one at a time.
-        // (Likely why: a .wav is read without Media Foundation, so the six threads were the first to start it, and
-        // NAudio's Startup is not guarded. It is started here once; the retry stays for anything else.)
-        NAudio.MediaFoundation.MediaFoundationApi.Startup();
-        var refused = new System.Collections.Concurrent.ConcurrentBag<string>();
-        Parallel.ForEach(Voice.Parts, part =>
-        {
-            try { Audio.Flac(Path.Combine(partsMade, part + ".wav"), Path.Combine(partsMade, part + ".flac")); }
-            catch (ArgumentException) { refused.Add(part); }
-        });
-        foreach (var part in refused)
-        {
-            File.Delete(Path.Combine(partsMade, part + ".flac"));
-            Audio.Flac(Path.Combine(partsMade, part + ".wav"), Path.Combine(partsMade, part + ".flac"));
-        }
+        // All at once, by Flac (until 0.18.0 Windows' encoder, which now and then refused one when several started together)
+        Parallel.ForEach(Voice.Parts, part => Flac.Encode(Path.Combine(partsMade, part + ".wav"), Path.Combine(partsMade, part + ".flac")));
         foreach (var part in Voice.Parts) File.Delete(Path.Combine(partsMade, part + ".wav"));
         chart.Parts = Voice.Parts.Select(p => (p, Path.GetRelativePath(chartFolder, Path.Combine(partsPath, p + ".flac")).Replace('\\', '/'))).ToList();
         lys = Writer.Lys(chart, Path.GetFileNameWithoutExtension(recording), Lysc.Shape);

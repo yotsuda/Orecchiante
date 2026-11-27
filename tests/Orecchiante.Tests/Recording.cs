@@ -26,8 +26,10 @@ public sealed class RecordingFixture : IDisposable
         string models = Environment.GetEnvironmentVariable("ORECCHIANTE_MODELS") is { Length: > 0 } m ? m : Path.Combine(Repo(), "onnx");
         if (!File.Exists(Path.Combine(models, "beat-this-final0-dynamo.onnx")))
             throw new InvalidOperationException($"no models in {models}: run tools/fetch-models.ps1 (or set ORECCHIANTE_MODELS)");
-        string exe = Path.Combine(AppContext.BaseDirectory, "orecchiante.exe");
-        var start = new ProcessStartInfo(exe) { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
+        // the reader as the extension runs it (orecchiante.exe, or orecchiante on macOS), else through dotnet
+        string exe = Path.Combine(AppContext.BaseDirectory, OperatingSystem.IsWindows() ? "orecchiante.exe" : "orecchiante");
+        var start = new ProcessStartInfo(File.Exists(exe) ? exe : "dotnet") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
+        if (!File.Exists(exe)) start.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "orecchiante.dll"));
         foreach (var a in new[] { Path.Combine(Folder, "song.wav"), "--models", models }) start.ArgumentList.Add(a);
         using var p = Process.Start(start)!;
         var err = p.StandardError.ReadToEndAsync();

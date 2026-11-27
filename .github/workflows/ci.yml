@@ -1,8 +1,9 @@
 name: CI
 
 # On every push to a branch and every pull request: build the reader and run tests/Orecchiante.Tests: the helpers'
-# unit tests, and a recording made in the test read end to end by orecchiante.exe with the models (Recording.cs).
-# Windows, as the reader is (Media Foundation, the win-x64 build the extension carries).
+# unit tests, the FLAC writer, where a decoder begins a recording (AudioTests: on macOS the measure of AudioToolbox
+# against a player), and a recording made in the test read end to end with the models (Recording.cs). On Windows and
+# on macOS (Apple silicon), the two the extension is packed for.
 #
 # The models are not in the repository (onnx/models.json, release.yml): tools/fetch-models.ps1 fetches them from the
 # GitHub Release models-1, about 390 MB, kept in the Actions cache under models.json's hash so that only a change of
@@ -25,7 +26,11 @@ concurrency:
 
 jobs:
   test:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ windows-latest, macos-latest ]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -38,7 +43,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: onnx/*.onnx
-          key: models-${{ hashFiles('onnx/models.json') }}
+          key: models-${{ runner.os }}-${{ hashFiles('onnx/models.json') }}
 
       - name: Models
         # Checked by SHA-256 either way; fetched only when the cache did not have them.
@@ -54,6 +59,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: test-results-${{ matrix.os }}
           path: tests/Orecchiante.Tests/TestResults/*.trx
           if-no-files-found: ignore

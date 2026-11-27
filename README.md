@@ -956,7 +956,10 @@ plays (REQUESTS 16, as many parts as are listed). **Since 0.8.0 they are six, `g
 - Mono, 16 bits at 44100 Hz, as long as the recording and on its seconds: the four added up are
   the recording (in mono) to 32.1 dB (糸) and 31.9 dB (`RWC_P001`) of signal to difference, at a lag of 0
   samples (`scratch/sec/parts_check.py`). Windows' own FLAC encoder (Media Foundation) puts
-  nothing before the first sample: written and read back by ffmpeg, the samples are the same.
+  nothing before the first sample: written and read back by ffmpeg, the samples are the same. (Since
+  0.18.0 the reader's own `Flac.cs` writes them, on Windows and macOS alike: the same samples back by
+  ffmpeg and by the tests' decoder, `tests/Orecchiante.Tests/FlacTests.cs`; the six parts of a 3½-minute
+  song 37.3 MB, Windows' 33.8 MB: fixed predictors only, no LPC.)
 - The charts are the same as 0.6.1's, letter for letter (`RWC_P001`, 糸, My Life: the owner's
   sections all there). The segments are put together a batch of 24 at a time, each sample's sum in the
   segments' order as before, and the samples a batch finishes are written and let go.
@@ -1655,6 +1658,12 @@ orecchiante song.mp3                    # song.lys and song.orecchiante.json bes
 orecchiante song.mp3 -o charts/x.lys    # there, with x.orecchiante.json ("audio": "../song.mp3"); --force writes over a chart
 orecchiante --version --json            # {"version":"0.2.0","protocol":1,"commands":["read"],"inputs":["wav","mp3","m4a","mp4","aac","flac","wma"]}
 ```
+
+On macOS (0.18.0) the same command reads a recording by the system's AudioToolbox (`Apple.cs`): wav, mp3,
+m4a, mp4, aac and flac, not wma (`inputs` says so). Where the sound begins against a player's (the encoder's
+silence in front, below) is measured on the CI's macOS by `tests/Orecchiante.Tests/AudioTests.cs`: a chirp
+encoded by ffmpeg into an mp3 with and without LAME's note, an m4a and a flac, each to land where ffmpeg's
+decoding puts it.
 
 stderr says each step as it begins (opening the models, listening, the beats, the chords, the
 bars, the chords and the sections, the parts) and what was read; and, since 0.8.12, how much of the

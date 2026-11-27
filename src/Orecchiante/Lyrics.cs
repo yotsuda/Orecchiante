@@ -214,13 +214,14 @@ public static class Lyrics
 }
 
 // A recording's title, artists, album and length as Windows' property system reads them from its tags (ID3, MP4,
-// FLAC's comments, ASF): what Explorer shows.
+// FLAC's comments, ASF): what Explorer shows. On macOS, AudioToolbox's (Apple.Tags).
 public static class Tags
 {
     public sealed record Found(string? Title, string? Artist, string? Album, double Seconds);
 
     public static Found Of(string path)
     {
+        if (OperatingSystem.IsMacOS()) return Apple.Tags(path);
         if (!OperatingSystem.IsWindows()) return new(null, null, null, 0);
         var iid = typeof(IPropertyStore).GUID;
         if (SHGetPropertyStoreFromParsingName(Path.GetFullPath(path), IntPtr.Zero, 0, ref iid, out var store) != 0 || store == null)

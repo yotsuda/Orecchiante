@@ -28,6 +28,8 @@ venv/
 *.ogg
 *.opus
 *.wma
+# ...except the tests' sounds, made by the tests' author (a chirp; tests/Orecchiante.Tests/AudioTests.cs says how)
+!tests/Orecchiante.Tests/Data/*
 *.aiff
 *.mp4
 *.webm

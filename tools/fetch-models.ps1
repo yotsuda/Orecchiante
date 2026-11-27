@@ -1,5 +1,5 @@
 param(
-    [string]$Models = "$PSScriptRoot\..\onnx",     # where the models go (and onnx/models.json is read from)
+    [string]$Models = "$PSScriptRoot/../onnx",     # where the models go (and onnx/models.json is read from)
     [switch]$Check                                 # only say which are missing or differ; fetch nothing
 )
 # The models the reader runs, as onnx/models.json lists them: each one not already there with its SHA-256 is
@@ -7,7 +7,7 @@ param(
 # The only network this does is those downloads. The release workflow runs it before packing; run it once after
 # cloning, and again when models.json changes.
 $ErrorActionPreference = 'Stop'
-$list = Get-Content "$PSScriptRoot\..\onnx\models.json" -Raw | ConvertFrom-Json
+$list = Get-Content "$PSScriptRoot/../onnx/models.json" -Raw | ConvertFrom-Json
 New-Item -ItemType Directory -Force $Models | Out-Null
 $bad = @()
 foreach ($m in $list.models) {

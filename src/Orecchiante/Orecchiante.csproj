@@ -8,7 +8,8 @@
     <!-- orecchiante.exe in development as in an extension's bin (as calamo.exe is) -->
     <AssemblyName>orecchiante</AssemblyName>
     <InvariantGlobalization>true</InvariantGlobalization>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <!-- win-x64 here; osx-arm64 or osx-x64 on a Mac (tools/pack-extension.ps1 -Rid names the one packed) -->
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>

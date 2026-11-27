@@ -24,6 +24,11 @@ Notable changes to Orecchiante (Dettato until 0.10.2) are recorded here, newest 
   <recording> --list [--query <words>]` lists the songs LRCLIB has for the title and artist, or for any
   words, and `--id <number>` fetches the one chosen (for Lily#'s list to choose from).
 - New in the package: an English speech model (facebook/wav2vec2-base-960h, Apache-2.0, 122 MB in 8-bit).
+- On macOS too (Apple silicon and Intel): a package for each, the recording read by macOS's own AudioToolbox
+  (mp3, m4a, mp4, aac, flac, wav; not wma) and its tags too. Lily# shows Convert Recording there when this
+  extension is installed.
+- The parts are written by a FLAC writer of the reader's own, the same on both systems (until now Windows'
+  encoder, which macOS has not). Lossless as before; the files are about a tenth larger.
 - Fixed: a line of an `.lrc` timed `[mm:ss:xx]` (not `[mm:ss.xx]`) lost its hundredths of a second, so two
   lines close together could be sung in the wrong order.
 - Renamed on the Marketplace from "Orecchiante Chord Chart Transcriber" to "Orecchiante Music Transcriber":
