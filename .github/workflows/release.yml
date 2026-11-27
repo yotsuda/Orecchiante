@@ -1,6 +1,6 @@
 name: Release
 
-# Tag-driven release, after Calamo's release.yml: pushing a tag like v0.13.2 packs the extension
+# Tag-driven release, after Calamo's release.yml: pushing a tag like v0.13.2 runs the tests, packs the extension
 # (tools/pack-extension.ps1: orecchiante.exe published self-contained for win-x64, the models
 # beside it, the licenses, the version check, `vsce package --target win32-x64`), attaches the .vsix
 # to a GitHub Release, and publishes it to the VS Code Marketplace.
@@ -73,6 +73,11 @@ jobs:
       - name: Models
         # onnx/models.json's, from their Release, checked by SHA-256.
         run: pwsh -NoProfile -File tools/fetch-models.ps1
+
+      - name: Test
+        # ci.yml's tests (tests/Orecchiante.Tests, a recording read end to end with these models) before anything is
+        # packed or published: a version that fails them is never spent on the Marketplace.
+        run: dotnet test tests/Orecchiante.Tests -c Release --logger "console;verbosity=normal"
 
       - name: Pack
         # The same script the local deploy uses (the models from onnx/).
