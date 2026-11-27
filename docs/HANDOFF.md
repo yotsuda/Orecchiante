@@ -197,4 +197,4 @@
 - **Lily# の和音付け（`ChordHarmonizer.cs`）が作る行の名前 `harmony` を `prog` にそろえるか**（オーナー「あとで別途検討」2026-11-20。そろえるなら既に `prog` がある譜面での重なりを見る）。
 - 使いたい曲の種類が RWC-P と違うなら、その種類の曲を数曲（Chord Tracker の結果があればそれも）。
 - **（決まった 2026-11-26）モデルの重みは製品に同梱、リポジトリには入れない**＝ROADMAP §5。Marketplace は 340 MB の .vsix（0.18.0、英語のモデル込み）を受けた（2026-11-27）。
-- **拡張の説明文の「no cloud」**（0.16.0 から `orecchiante lyrics` だけ LRCLIB に問い合わせる）。
+- **拡張の説明文の「no cloud」**（0.16.0 から `orecchiante lyrics` だけ LRCLIB に問い合わせる）。0.18.0 で「no cloud」は消し「Runs locally on Windows」、README の Privacy に LRCLIB へ送るものを書いた。次の版から「…on Windows and macOS」（公開中の 0.18.0 は Windows だけと書いたまま）。

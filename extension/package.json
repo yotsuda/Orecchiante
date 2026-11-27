@@ -1,7 +1,7 @@
 {
   "name": "orecchiante",
   "displayName": "Orecchiante Music Transcriber",
-  "description": "Automatic music transcription for Lily#: reads a recording into an editable Lily# (.lys) score: tempo, meter, key, bar lines, sections and chords, with bass, drum and voice staves and the song's words, the uncertain places marked. Open source (Apache-2.0). Runs locally on Windows.",
+  "description": "Automatic music transcription for Lily#: reads a recording into an editable Lily# (.lys) score: tempo, meter, key, bar lines, sections and chords, with bass, drum and voice staves and the song's words, the uncertain places marked. Open source (Apache-2.0). Runs locally on Windows and macOS.",
   "version": "0.18.0",
   "publisher": "yotsuda",
   "icon": "icon.png",
